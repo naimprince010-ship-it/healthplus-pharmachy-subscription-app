@@ -1,0 +1,235 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  COD
+  ONLINE
+}
+
+enum BannerLocation {
+  HOME_HERO
+  HOME_MID
+  CATEGORY_TOP
+}
+
+model User {
+  id                String            @id @default(cuid())
+  name              String
+  email             String?           @unique
+  phone             String            @unique
+  password          String
+  role              Role              @default(USER)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  addresses         Address[]
+  prescriptions     Prescription[]
+  orders            Order[]
+  memberships       UserMembership[]
+  subscriptions     Subscription[]
+}
+
+model Address {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName        String
+  phone           String
+  addressLine1    String
+  addressLine2    String?
+  city            String
+  zoneId          String
+  zone            Zone     @relation(fields: [zoneId], references: [id])
+  isDefault       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  orders          Order[]
+}
+
+model Zone {
+  id              String    @id @default(cuid())
+  name            String    @unique
+  deliveryCharge  Float
+  deliveryDays    String
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  addresses       Address[]
+}
+
+model Category {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  slug        String     @unique
+  description String?
+  imageUrl    String?
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  medicines   Medicine[]
+}
+
+model Medicine {
+  id              String              @id @default(cuid())
+  name            String
+  genericName     String?
+  manufacturer    String?
+  description     String?
+  price           Float
+  discountPrice   Float?
+  strength        String?
+  unit            String              @default("pcs")
+  imageUrl        String?
+  categoryId      String
+  category        Category            @relation(fields: [categoryId], references: [id])
+  inStock         Boolean             @default(true)
+  stockQuantity   Int                 @default(0)
+  requiresPrescription Boolean         @default(false)
+  isActive        Boolean             @default(true)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  orderItems      OrderItem[]
+  subscriptionItems SubscriptionItem[]
+}
+
+model Prescription {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  phone       String
+  zoneId      String?
+  fileUrl     String
+  status      String   @default("PENDING")
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Order {
+  id              String        @id @default(cuid())
+  orderNumber     String        @unique
+  userId          String
+  user            User          @relation(fields: [userId], references: [id])
+  addressId       String
+  address         Address       @relation(fields: [addressId], references: [id])
+  status          OrderStatus   @default(PENDING)
+  subtotal        Float
+  discount        Float         @default(0)
+  deliveryCharge  Float
+  total           Float
+  paymentMethod   PaymentMethod @default(COD)
+  paymentStatus   String        @default("PENDING")
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  items           OrderItem[]
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  medicineId  String
+  medicine    Medicine @relation(fields: [medicineId], references: [id])
+  quantity    Int
+  price       Float
+  discount    Float    @default(0)
+  total       Float
+  createdAt   DateTime @default(now())
+}
+
+model MembershipPlan {
+  id              String           @id @default(cuid())
+  name            String           @unique
+  description     String?
+  price           Float
+  durationDays    Int
+  discountPercent Float
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  memberships     UserMembership[]
+}
+
+model UserMembership {
+  id          String         @id @default(cuid())
+  userId      String
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId      String
+  plan        MembershipPlan @relation(fields: [planId], references: [id])
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model SubscriptionPlan {
+  id            String         @id @default(cuid())
+  name          String         @unique
+  slug          String         @unique
+  description   String?
+  price         Float
+  durationDays  Int            @default(30)
+  imageUrl      String?
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  items         SubscriptionItem[]
+  subscriptions Subscription[]
+}
+
+model SubscriptionItem {
+  id          String           @id @default(cuid())
+  planId      String
+  plan        SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  medicineId  String
+  medicine    Medicine         @relation(fields: [medicineId], references: [id])
+  quantity    Int
+  createdAt   DateTime         @default(now())
+}
+
+model Subscription {
+  id              String           @id @default(cuid())
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId          String
+  plan            SubscriptionPlan @relation(fields: [planId], references: [id])
+  startDate       DateTime
+  nextDeliveryDate DateTime
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model Banner {
+  id          String         @id @default(cuid())
+  title       String
+  description String?
+  imageUrl    String
+  link        String?
+  location    BannerLocation @default(HOME_HERO)
+  order       Int            @default(0)
+  isActive    Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
