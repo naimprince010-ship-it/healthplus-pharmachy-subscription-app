@@ -130,6 +130,17 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Category ID required' }, { status: 400 })
     }
 
+    const medicineCount = await prisma.medicine.count({
+      where: { categoryId: id },
+    })
+
+    if (medicineCount > 0) {
+      return NextResponse.json(
+        { error: `Cannot delete category with ${medicineCount} medicine(s). Please reassign or delete the medicines first.` },
+        { status: 400 }
+      )
+    }
+
     await prisma.category.delete({
       where: { id },
     })

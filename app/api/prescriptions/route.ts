@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    let fileUrl: string
+    let fileUrl: string | null = null
     try {
       fileUrl = await uploadPrescription(file)
     } catch (error) {
@@ -43,33 +43,57 @@ export async function POST(request: NextRequest) {
     }
 
     const { prisma } = await import('@/lib/prisma')
+    const { deletePrescription } = await import('@/lib/supabase')
 
     let userId = session?.user?.id
 
     if (!userId) {
-      const guestUser = await prisma.user.upsert({
-        where: { phone },
-        update: {},
-        create: {
-          name,
-          phone,
-          password: '',
-          role: 'USER',
-        },
-      })
-      userId = guestUser.id
+      try {
+        const guestUser = await prisma.user.upsert({
+          where: { phone },
+          update: {},
+          create: {
+            name,
+            phone,
+            password: '',
+            role: 'USER',
+          },
+        })
+        userId = guestUser.id
+      } catch (error) {
+        if (fileUrl) {
+          try {
+            await deletePrescription(fileUrl)
+          } catch (deleteError) {
+            console.error('Failed to clean up file after user creation error:', deleteError)
+          }
+        }
+        throw error
+      }
     }
 
-    const prescription = await prisma.prescription.create({
-      data: {
-        name,
-        phone,
-        zoneId,
-        fileUrl,
-        userId,
-        status: 'PENDING',
-      },
-    })
+    let prescription
+    try {
+      prescription = await prisma.prescription.create({
+        data: {
+          name,
+          phone,
+          zoneId,
+          fileUrl,
+          userId,
+          status: 'PENDING',
+        },
+      })
+    } catch (error) {
+      if (fileUrl) {
+        try {
+          await deletePrescription(fileUrl)
+        } catch (deleteError) {
+          console.error('Failed to clean up file after prescription creation error:', deleteError)
+        }
+      }
+      throw error
+    }
 
     await Promise.all([
       sendSMS(phone, 'PRESCRIPTION_RECEIVED', { name }),
