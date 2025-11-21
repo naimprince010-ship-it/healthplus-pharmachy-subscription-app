@@ -51,6 +51,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid address' }, { status: 400 })
     }
 
+    const medicineIds = items.map(item => item.medicineId)
+    const medicines = await prisma.medicine.findMany({
+      where: { id: { in: medicineIds } },
+    })
+
+    if (medicines.length !== items.length) {
+      return NextResponse.json({ error: 'Some medicines not found' }, { status: 400 })
+    }
+
     const membership = await prisma.userMembership.findFirst({
       where: {
         userId: session.user.id,
@@ -62,7 +71,13 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+    const subtotal = items.reduce((sum, item) => {
+      const medicine = medicines.find(m => m.id === item.medicineId)
+      if (!medicine) return sum
+      const price = medicine.discountPrice || medicine.price
+      return sum + price * item.quantity
+    }, 0)
+    
     const discount = membership ? subtotal * (membership.plan.discountPercent / 100) : 0
     const deliveryCharge = address.zone.deliveryCharge
     const total = subtotal - discount + deliveryCharge
@@ -82,13 +97,17 @@ export async function POST(request: NextRequest) {
         status: 'PENDING',
         notes,
         items: {
-          create: items.map((item) => ({
-            medicineId: item.medicineId,
-            quantity: item.quantity,
-            price: item.price,
-            discount: 0,
-            total: item.price * item.quantity,
-          })),
+          create: items.map((item) => {
+            const medicine = medicines.find(m => m.id === item.medicineId)!
+            const price = medicine.discountPrice || medicine.price
+            return {
+              medicineId: item.medicineId,
+              quantity: item.quantity,
+              price,
+              discount: 0,
+              total: price * item.quantity,
+            }
+          }),
         },
       },
       include: {

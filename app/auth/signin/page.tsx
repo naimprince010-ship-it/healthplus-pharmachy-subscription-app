@@ -7,16 +7,24 @@ import Link from 'next/link'
 import { z } from 'zod'
 
 const signinSchema = z.object({
-  phone: z
+  identifier: z
     .string()
-    .regex(/^(\+88)?01[3-9]\d{8}$/, 'Invalid Bangladesh phone number'),
+    .min(1, 'Email or phone is required')
+    .refine(
+      (val) => {
+        const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)
+        const isBdPhone = /^(?:\+?880|0)1[3-9]\d{8}$/.test(val.replace(/\s+/g, ''))
+        return isEmail || isBdPhone
+      },
+      { message: 'Enter a valid email or Bangladesh phone number' }
+    ),
   password: z.string().min(1, 'Password is required'),
 })
 
 export default function SignInPage() {
   const router = useRouter()
   const [formData, setFormData] = useState({
-    phone: '',
+    identifier: '',
     password: '',
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -43,18 +51,14 @@ export default function SignInPage() {
         return
       }
 
-      const normalizedPhone = formData.phone.startsWith('+88')
-        ? formData.phone
-        : `+88${formData.phone}`
-
       const result = await signIn('credentials', {
-        phone: normalizedPhone,
+        identifier: formData.identifier,
         password: formData.password,
         redirect: false,
       })
 
       if (result?.error) {
-        setServerError('Invalid phone number or password')
+        setServerError('Invalid credentials')
         setIsLoading(false)
         return
       }
@@ -95,24 +99,24 @@ export default function SignInPage() {
 
           <div className="space-y-4 rounded-md shadow-sm">
             <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                Phone Number
+              <label htmlFor="identifier" className="block text-sm font-medium text-gray-700">
+                Email or Phone Number
               </label>
               <input
-                id="phone"
-                name="phone"
-                type="tel"
-                autoComplete="tel"
+                id="identifier"
+                name="identifier"
+                type="text"
+                autoComplete="username"
                 required
-                value={formData.phone}
+                value={formData.identifier}
                 onChange={(e) =>
-                  setFormData({ ...formData, phone: e.target.value })
+                  setFormData({ ...formData, identifier: e.target.value })
                 }
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-teal-500 focus:outline-none focus:ring-teal-500 sm:text-sm"
-                placeholder="01XXXXXXXXX"
+                placeholder="Email or phone (01XXXXXXXXX)"
               />
-              {errors.phone && (
-                <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
+              {errors.identifier && (
+                <p className="mt-1 text-sm text-red-600">{errors.identifier}</p>
               )}
             </div>
 

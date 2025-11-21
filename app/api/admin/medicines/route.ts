@@ -138,6 +138,28 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Medicine ID required' }, { status: 400 })
     }
 
+    const orderItemCount = await prisma.orderItem.count({
+      where: { medicineId: id },
+    })
+
+    if (orderItemCount > 0) {
+      return NextResponse.json(
+        { error: `Cannot delete medicine that has been ordered (${orderItemCount} order(s)). Consider marking it as inactive instead.` },
+        { status: 400 }
+      )
+    }
+
+    const subscriptionItemCount = await prisma.subscriptionItem.count({
+      where: { medicineId: id },
+    })
+
+    if (subscriptionItemCount > 0) {
+      return NextResponse.json(
+        { error: `Cannot delete medicine that is in subscription plans (${subscriptionItemCount} plan(s)). Consider marking it as inactive instead.` },
+        { status: 400 }
+      )
+    }
+
     await prisma.medicine.delete({
       where: { id },
     })

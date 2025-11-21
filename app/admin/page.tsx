@@ -1,24 +1,15 @@
 import { Package, Users, ShoppingBag, FileText, Shield, Image } from 'lucide-react'
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
-import { auth } from '@/lib/auth'
 
 export default async function AdminDashboard() {
-  const session = await auth()
-
-  if (!session || session.user.role !== 'ADMIN') {
-    redirect('/auth/signin')
-  }
-
   return (
-    <div className="bg-gray-50 py-16">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-sm text-gray-600">Welcome, {session.user.name}</p>
-        </div>
+    <div>
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-gray-900">Dashboard Overview</h1>
+        <p className="mt-2 text-gray-600">Quick access to all admin modules</p>
+      </div>
 
-        <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <Link
             href="/admin/medicines"
             className="rounded-lg bg-white p-6 shadow transition-transform hover:scale-105"
@@ -91,7 +82,6 @@ export default async function AdminDashboard() {
             <p className="mt-2 text-gray-600">Review uploaded prescriptions</p>
           </Link>
         </div>
-      </div>
     </div>
   )
 }
