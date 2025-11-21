@@ -5,6 +5,8 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { Tracking } from "@/components/Tracking";
+import { CartProvider } from "@/contexts/CartContext";
+import { SessionProvider } from "next-auth/react";
 
 export const runtime = 'nodejs'
 
@@ -42,11 +44,15 @@ export default function RootLayout({
         <link rel="canonical" href="https://healthplus.com" />
       </head>
       <body className={`${inter.variable} font-sans antialiased`}>
-        <Tracking />
-        <Navbar />
-        <main className="min-h-screen">{children}</main>
-        <Footer />
-        <WhatsAppButton />
+        <SessionProvider>
+          <CartProvider>
+            <Tracking />
+            <Navbar />
+            <main className="min-h-screen">{children}</main>
+            <Footer />
+            <WhatsAppButton />
+          </CartProvider>
+        </SessionProvider>
       </body>
     </html>
   );
