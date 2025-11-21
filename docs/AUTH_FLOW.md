@@ -1115,3 +1115,235 @@ If you encounter any issues:
 ---
 
 *Last Updated: November 21, 2025*
+
+---
+
+## Creating a Real Admin with Bangladesh Phone Number
+
+This section documents how to create a real admin user with an actual Bangladesh phone number for production use.
+
+### Prerequisites
+
+- Access to the production database (Supabase)
+- Node.js environment with Prisma configured
+- bcryptjs for password hashing
+
+### Phone Number Format
+
+Bangladesh phone numbers can be provided in multiple formats, but are normalized and stored as `+8801XXXXXXXXX`:
+
+**Accepted Input Formats:**
+- `01XXXXXXXXX` (local format)
+- `8801XXXXXXXXX` (country code without +)
+- `+8801XXXXXXXXX` (international format)
+
+**Stored Format:**
+- Always normalized to: `+8801XXXXXXXXX`
+
+### Step-by-Step Process
+
+#### 1. Prepare User Details
+
+```javascript
+const phone = '+8801938264923';  // Normalized format
+const email = 'nrdurjoy@gmail.com';  // Real email
+const password = 'HealthPlus2024!Admin';  // Secure password
+const name = 'Real Admin';
+const role = 'ADMIN';
+```
+
+#### 2. Create Admin User Script
+
+Create a script to add the admin user with proper password hashing:
+
+```javascript
+// scripts/create-real-admin.js
+const { hash } = require('bcryptjs');
+const { prisma } = require('../lib/prisma');
+
+async function createRealAdmin() {
+  const phone = '+8801938264923';
+  const email = 'nrdurjoy@gmail.com';
+  const password = 'HealthPlus2024!Admin';
+  const name = 'Real Admin';
+  
+  // Hash password with bcrypt (12 rounds)
+  const hashedPassword = await hash(password, 12);
+  
+  // Check if user already exists
+  const existingPhone = await prisma.user.findUnique({
+    where: { phone }
+  });
+  
+  if (existingPhone) {
+    console.log('User with this phone already exists!');
+    return;
+  }
+  
+  const existingEmail = await prisma.user.findUnique({
+    where: { email }
+  });
+  
+  if (existingEmail) {
+    console.log('User with this email already exists!');
+    return;
+  }
+  
+  // Create admin user
+  const user = await prisma.user.create({
+    data: {
+      phone,
+      email,
+      password: hashedPassword,
+      name,
+      role: 'ADMIN',
+    },
+  });
+  
+  console.log('✅ Admin user created successfully!');
+  console.log('ID:', user.id);
+  console.log('Phone:', user.phone);
+  console.log('Email:', user.email);
+  console.log('Role:', user.role);
+  
+  await prisma.$disconnect();
+}
+
+createRealAdmin().catch(console.error);
+```
+
+#### 3. Run the Script
+
+```bash
+node scripts/create-real-admin.js
+```
+
+#### 4. Verify User Creation
+
+**Using Prisma:**
+```javascript
+const user = await prisma.user.findUnique({
+  where: { phone: '+8801938264923' }
+});
+console.log(user);
+```
+
+**Using SQL (Supabase SQL Editor):**
+```sql
+SELECT id, phone, email, role, "createdAt" 
+FROM "public"."User" 
+WHERE phone = '+8801938264923';
+```
+
+#### 5. Test Login
+
+**Test with Phone Number:**
+1. Go to: `https://your-app.vercel.app/auth/signin`
+2. Enter phone: `+8801938264923` (or `01938264923`)
+3. Enter password: `HealthPlus2024!Admin`
+4. Click "Sign in"
+5. Should redirect to `/dashboard`
+
+**Test with Email:**
+1. Go to: `https://your-app.vercel.app/auth/signin`
+2. Enter email: `nrdurjoy@gmail.com`
+3. Enter password: `HealthPlus2024!Admin`
+4. Click "Sign in"
+5. Should redirect to `/dashboard`
+
+#### 6. Verify Admin Access
+
+After login, verify admin privileges:
+
+1. **Check Session:**
+   - Session should include: `{ id, role: 'ADMIN', phone, email, name }`
+
+2. **Access Admin Panel:**
+   - Navigate to: `/admin`
+   - Should see admin dashboard (not redirected)
+
+3. **Test Admin Routes:**
+   - `/admin/prescriptions` - Review prescriptions
+   - `/admin/sales` - View sales metrics
+   - All admin API routes should be accessible
+
+### Security Considerations
+
+1. **Password Strength:**
+   - Minimum 12 characters
+   - Include uppercase, lowercase, numbers, and special characters
+   - Example: `HealthPlus2024!Admin`
+
+2. **Password Hashing:**
+   - Always use bcrypt with 12 rounds
+   - Never store plain text passwords
+   - Hash is generated during user creation
+
+3. **Phone Number Validation:**
+   - Must be valid Bangladesh mobile number
+   - Starts with 01 followed by 3-9
+   - Total 11 digits (local format)
+
+4. **Email Validation:**
+   - Must be valid email format
+   - Must be unique in database
+   - Case-insensitive (stored as lowercase)
+
+### Troubleshooting
+
+**Issue: "User with this phone already exists"**
+- Solution: Check if user exists, delete if needed, or use different phone number
+
+**Issue: "User with this email already exists"**
+- Solution: Check if user exists, delete if needed, or use different email
+
+**Issue: Login fails with correct credentials**
+- Check: DATABASE_URL has `connection_limit=10` (not 1)
+- Check: User role is 'ADMIN' in database
+- Check: Password was hashed correctly (bcrypt, 12 rounds)
+
+**Issue: Can't access /admin after login**
+- Check: Session includes `role: 'ADMIN'`
+- Check: Middleware is protecting admin routes
+- Check: User is actually logged in (check cookies)
+
+### Example: Real Admin Created
+
+```
+Phone: +8801938264923
+Email: nrdurjoy@gmail.com
+Password: HealthPlus2024!Admin
+Name: Real Admin
+Role: ADMIN
+```
+
+**Login Methods:**
+1. Phone: `+8801938264923` or `01938264923` or `8801938264923`
+2. Email: `nrdurjoy@gmail.com`
+
+Both methods use the same password and authenticate to the same user account.
+
+### Alternative: Using Signup API
+
+You can also create a user via the signup API, then promote to admin:
+
+```bash
+# 1. Create user via API
+curl -X POST https://your-app.vercel.app/api/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone": "01938264923",
+    "email": "nrdurjoy@gmail.com",
+    "password": "HealthPlus2024!Admin",
+    "name": "Real Admin"
+  }'
+
+# 2. Promote to admin via SQL
+# In Supabase SQL Editor:
+UPDATE "public"."User" 
+SET role = 'ADMIN' 
+WHERE phone = '+8801938264923';
+```
+
+This method ensures phone normalization is handled by the signup route.
+
