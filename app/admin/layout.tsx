@@ -13,5 +13,5 @@ export default async function AdminLayout({
     redirect('/auth/signin')
   }
 
-  return <AdminLayoutClient userName={session.user.name}>{children}</AdminLayoutClient>
+  return <AdminLayoutClient userName={session.user.name ?? undefined}>{children}</AdminLayoutClient>
 }
