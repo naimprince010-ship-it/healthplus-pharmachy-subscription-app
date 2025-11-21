@@ -10,7 +10,7 @@ export const authOptions = {
   },
   providers: [],
   callbacks: {
-    async jwt({ token, user }: any) {
+    async jwt({ token, user }: { token: any; user?: any }) {
       if (user) {
         token.id = user.id
         token.role = user.role
@@ -18,7 +18,7 @@ export const authOptions = {
       }
       return token
     },
-    async session({ session, token }: any) {
+    async session({ session, token }: { session: any; token: any }) {
       if (session.user) {
         session.user.id = token.id
         session.user.role = token.role

@@ -1,9 +1,12 @@
 import { Activity, Heart, Baby, Users, Package } from 'lucide-react'
-import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
+
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 async function getSubscriptionPlans() {
   try {
+    const { prisma } = await import('@/lib/prisma')
     return await prisma.subscriptionPlan.findMany({
       where: { isActive: true },
       orderBy: { price: 'asc' },

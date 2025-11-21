@@ -6,6 +6,8 @@ import { Footer } from "@/components/Footer";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { Tracking } from "@/components/Tracking";
 
+export const runtime = 'nodejs'
+
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
