@@ -1,11 +1,22 @@
 import { Package, Shield, Calendar, ShoppingBag } from 'lucide-react'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import { auth } from '@/lib/auth'
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const session = await auth()
+
+  if (!session) {
+    redirect('/auth/signin')
+  }
+
   return (
     <div className="bg-gray-50 py-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold text-gray-900">My Dashboard</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold text-gray-900">My Dashboard</h1>
+          <p className="text-sm text-gray-600">Welcome, {session.user.name}</p>
+        </div>
 
         <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-lg bg-white p-6 shadow">

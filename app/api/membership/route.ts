@@ -1,22 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { addDays } from 'date-fns'
+import { auth } from '@/lib/auth'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-async function getServerSession() {
-  return null
-}
-
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    
-    const user = session as { user?: { id: string } }
-    if (!user?.user) {
+    const session = await auth()
+    if (!session || !session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -33,7 +25,7 @@ export async function POST(request: NextRequest) {
 
     const existingMembership = await prisma.userMembership.findFirst({
       where: {
-        userId: user.user.id,
+        userId: session.user.id,
         isActive: true,
         endDate: { gte: new Date() },
       },
@@ -51,7 +43,7 @@ export async function POST(request: NextRequest) {
 
     const membership = await prisma.userMembership.create({
       data: {
-        userId: user.user.id,
+        userId: session.user.id,
         planId: plan.id,
         startDate,
         endDate,
@@ -74,20 +66,15 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
-    const session = await getServerSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    
-    const user = session as { user?: { id: string } }
-    if (!user?.user) {
+    const session = await auth()
+    if (!session || !session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { prisma } = await import('@/lib/prisma')
     const membership = await prisma.userMembership.findFirst({
       where: {
-        userId: user.user.id,
+        userId: session.user.id,
         isActive: true,
         endDate: { gte: new Date() },
       },
