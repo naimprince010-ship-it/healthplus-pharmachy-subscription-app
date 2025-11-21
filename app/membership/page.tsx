@@ -30,7 +30,7 @@ export default async function MembershipPage() {
         </div>
 
         <div className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-          {plans.map((plan) => (
+          {plans.map((plan: any) => (
             <div
               key={plan.id}
               className="rounded-2xl border-2 border-gray-200 bg-white p-8 shadow-lg transition-transform hover:scale-105"
