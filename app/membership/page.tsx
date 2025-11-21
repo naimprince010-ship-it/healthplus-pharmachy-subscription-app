@@ -1,10 +1,11 @@
 import { Shield, Check } from 'lucide-react'
 import Link from 'next/link'
+import type { MembershipPlan } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-async function getMembershipPlans() {
+async function getMembershipPlans(): Promise<MembershipPlan[]> {
   try {
     const { prisma } = await import('@/lib/prisma')
     return await prisma.membershipPlan.findMany({
@@ -30,7 +31,7 @@ export default async function MembershipPage() {
         </div>
 
         <div className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-          {plans.map((plan: any) => (
+          {plans.map((plan) => (
             <div
               key={plan.id}
               className="rounded-2xl border-2 border-gray-200 bg-white p-8 shadow-lg transition-transform hover:scale-105"
