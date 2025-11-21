@@ -17,7 +17,7 @@ const signupSchema = z.object({
     .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
     .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
     .regex(/[0-9]/, 'Password must contain at least one number'),
-  email: z.string().email('Invalid email').optional().or(z.literal('')),
+  email: z.string().email('Invalid email').min(1, 'Email is required'),
 })
 
 export async function POST(request: NextRequest) {
@@ -38,6 +38,7 @@ export async function POST(request: NextRequest) {
     const { name, phone, password, email } = validationResult.data
 
     const normalizedPhone = phone.startsWith('+88') ? phone : `+88${phone}`
+    const normalizedEmail = email.toLowerCase().trim()
 
     const existingUser = await prisma.user.findUnique({
       where: { phone: normalizedPhone },
@@ -50,17 +51,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (email) {
-      const existingEmail = await prisma.user.findUnique({
-        where: { email },
-      })
+    const existingEmail = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+    })
 
-      if (existingEmail) {
-        return NextResponse.json(
-          { error: 'User with this email already exists' },
-          { status: 409 }
-        )
-      }
+    if (existingEmail) {
+      return NextResponse.json(
+        { error: 'User with this email already exists' },
+        { status: 409 }
+      )
     }
 
     const hashedPassword = await hash(password, 12)
@@ -70,7 +69,7 @@ export async function POST(request: NextRequest) {
         name,
         phone: normalizedPhone,
         password: hashedPassword,
-        email: email || null,
+        email: normalizedEmail,
         role: 'USER',
       },
       select: {

@@ -17,7 +17,7 @@ const signupSchema = z.object({
     .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
     .regex(/[0-9]/, 'Password must contain at least one number'),
   confirmPassword: z.string(),
-  email: z.string().email('Invalid email').optional().or(z.literal('')),
+  email: z.string().email('Invalid email').min(1, 'Email is required'),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ['confirmPassword'],
@@ -64,7 +64,7 @@ export default function SignUpPage() {
         body: JSON.stringify({
           name: formData.name,
           phone: formData.phone,
-          email: formData.email,
+          email: formData.email.toLowerCase().trim(),
           password: formData.password,
         }),
       })
@@ -165,13 +165,14 @@ export default function SignUpPage() {
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email (Optional)
+                Email
               </label>
               <input
                 id="email"
                 name="email"
                 type="email"
                 autoComplete="email"
+                required
                 value={formData.email}
                 onChange={(e) =>
                   setFormData({ ...formData, email: e.target.value })

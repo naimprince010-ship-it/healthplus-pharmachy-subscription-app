@@ -103,19 +103,57 @@ enum Role {
 **Option A: Via Database (Recommended)**
 
 1. **Sign up a normal user** through the signup page (`/auth/signup`)
+   - Provide: name, phone, email, password
+   - Both phone and email are now required
+
 2. **Connect to your Supabase database** (SQL Editor)
-3. **Run this SQL query:**
+
+3. **Run this SQL query to promote user to ADMIN:**
    ```sql
+   -- Promote by phone
    UPDATE "User" 
    SET role = 'ADMIN' 
    WHERE phone = '+8801XXXXXXXXX';
+   
+   -- OR promote by email
+   UPDATE "User" 
+   SET role = 'ADMIN' 
+   WHERE email = 'admin@example.com';
    ```
-   Replace `+8801XXXXXXXXX` with the actual phone number.
+   Replace with the actual phone number or email.
 
 4. **Verify the change:**
    ```sql
-   SELECT id, name, phone, role FROM "User" WHERE role = 'ADMIN';
+   SELECT id, name, phone, email, role 
+   FROM "User" 
+   WHERE role = 'ADMIN';
    ```
+
+**Creating Admin with Real Email + Phone:**
+
+To create a new admin user with specific credentials:
+
+```sql
+-- First, check if user exists
+SELECT id, name, phone, email, role FROM "User" 
+WHERE phone = '+8801XXXXXXXXX' OR email = 'newadmin@healthplus.com';
+
+-- If user doesn't exist, sign them up through /auth/signup first
+-- Then promote to ADMIN:
+UPDATE "User" 
+SET role = 'ADMIN' 
+WHERE email = 'newadmin@healthplus.com';
+
+-- Verify
+SELECT id, name, phone, email, role FROM "User" 
+WHERE email = 'newadmin@healthplus.com';
+```
+
+**Important Notes:**
+- Both phone and email must be unique in the database
+- Email is stored in lowercase
+- Phone is stored with +88 prefix
+- Admin can log in with either phone or email
 
 **Option B: Via Seed Script (For Initial Setup)**
 
@@ -154,8 +192,8 @@ You could create a protected API route that allows existing admins to create new
 {
   "name": "John Doe",
   "phone": "01712345678",  // or "+8801712345678"
-  "password": "SecurePass123!",
-  "email": "john@example.com"  // optional
+  "email": "john@example.com",  // REQUIRED
+  "password": "SecurePass123!"
 }
 ```
 
@@ -164,31 +202,35 @@ You could create a protected API route that allows existing admins to create new
 - **phone**: Must match Bangladesh phone format: `^(\+88)?01[3-9]\d{8}$`
   - Accepts: `01712345678` or `+8801712345678`
   - Automatically normalizes to `+88` format
+- **email**: Valid email format (REQUIRED)
+  - Automatically converted to lowercase
+  - Must be unique in database
 - **password**: 
   - Minimum 8 characters
   - At least one uppercase letter
   - At least one lowercase letter
   - At least one number
-- **email**: Valid email format (optional)
 
 ### 3. Signup Process Flow
 
 ```
 1. User submits signup form
    ↓
-2. Zod validates input
+2. Zod validates input (name, phone, email, password)
    ↓
 3. Phone number normalized (+88 prefix)
    ↓
-4. Check if phone already exists
+4. Email normalized (lowercase, trimmed)
    ↓
-5. Check if email already exists (if provided)
+5. Check if phone already exists
    ↓
-6. Hash password with bcrypt (12 rounds)
+6. Check if email already exists
    ↓
-7. Create user in database with role='USER'
+7. Hash password with bcrypt (12 rounds)
    ↓
-8. Return success response (no auto-login)
+8. Create user in database with role='USER'
+   ↓
+9. Return success response (no auto-login)
 ```
 
 ### 4. Prisma Model & Table
@@ -202,12 +244,15 @@ You could create a protected API route that allows existing admins to create new
 
 **Database Write:**
 ```typescript
+const normalizedPhone = phone.startsWith('+88') ? phone : `+88${phone}`
+const normalizedEmail = email.toLowerCase().trim()
+
 const user = await prisma.user.create({
   data: {
     name,
     phone: normalizedPhone,  // +8801XXXXXXXXX
+    email: normalizedEmail,  // lowercase email
     password: hashedPassword,
-    email: email || null,
     role: 'USER',  // Default role
   },
 })
@@ -260,56 +305,112 @@ const user = await prisma.user.create({
 
 **API Endpoint:** `POST /api/auth/callback/credentials` (handled by NextAuth)
 
-### 2. Login Process
+### 2. Login with Phone or Email
+
+**Users can log in using EITHER their phone number OR email address** with the same password.
+
+**Accepted Formats:**
+
+**Phone Numbers (Bangladesh):**
+- `01712345678` (local format)
+- `8801712345678` (country code without +)
+- `+8801712345678` (international format)
+
+All formats are automatically normalized to `+8801XXXXXXXXX` before database lookup.
+
+**Email Addresses:**
+- Any valid email format: `user@example.com`
+- Case-insensitive (automatically converted to lowercase)
+
+**Example Login Inputs:**
+```
+✅ 01712345678 + password
+✅ +8801712345678 + password
+✅ admin@healthplus.com + password
+✅ ADMIN@healthplus.com + password (case doesn't matter)
+```
+
+### 3. Login Process
 
 ```
-1. User enters phone + password
+1. User enters identifier (phone or email) + password
    ↓
 2. Form submits to NextAuth
    ↓
 3. NextAuth calls CredentialsProvider.authorize()
    ↓
-4. authorize() calls verifyCredentials(phone, password)
+4. authorize() calls verifyCredentials(identifier, password)
    ↓
-5. verifyCredentials() queries database
+5. verifyCredentials() attempts phone lookup first
    ↓
-6. User found? → Compare password with bcrypt
+6. If not found by phone, attempts email lookup
    ↓
-7. Password valid? → Return user object
+7. User found? → Compare password with bcrypt
    ↓
-8. NextAuth creates JWT token
+8. Password valid? → Return user object
    ↓
-9. JWT stored in HTTP-only cookie
+9. NextAuth creates JWT token
    ↓
-10. User redirected based on role
+10. JWT stored in HTTP-only cookie
+   ↓
+11. User redirected based on role
 ```
 
-### 3. Phone & Password Validation
+### 4. Identifier & Password Validation
 
 **verifyCredentials Function** (`lib/auth.ts`):
 
 ```typescript
-export async function verifyCredentials(phone: string, password: string) {
+function normalizeBdPhone(input: string): string | null {
+  const raw = input.replace(/\s+/g, '')
+  const bdLocal = /^01[3-9]\d{8}$/
+  const bdNoPlus = /^8801[3-9]\d{8}$/
+  const bdPlus = /^\+8801[3-9]\d{8}$/
+  
+  if (bdLocal.test(raw)) return `+88${raw}`
+  if (bdNoPlus.test(raw)) return `+${raw}`
+  if (bdPlus.test(raw)) return raw
+  return null
+}
+
+export async function verifyCredentials(identifier: string, password: string) {
   const { prisma } = await import('./prisma')  // Dynamic import for Edge compatibility
   
-  // 1. Find user by phone
-  const user = await prisma.user.findUnique({
-    where: { phone },
-  })
+  let user = null
+  
+  // 1. Try phone lookup first
+  const maybePhone = normalizeBdPhone(identifier)
+  if (maybePhone) {
+    user = await prisma.user.findUnique({
+      where: { phone: maybePhone },
+    })
+  }
+  
+  // 2. If not found by phone, try email lookup
+  if (!user) {
+    const email = identifier.trim().toLowerCase()
+    const looksLikeEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    
+    if (looksLikeEmail) {
+      user = await prisma.user.findUnique({
+        where: { email },
+      })
+    }
+  }
 
-  // 2. Check if user exists and has password
+  // 3. Check if user exists and has password
   if (!user || !user.password) {
     return null
   }
 
-  // 3. Compare password with bcrypt
+  // 4. Compare password with bcrypt
   const isPasswordValid = await compare(password, user.password)
 
   if (!isPasswordValid) {
     return null
   }
 
-  // 4. Return user data (without password)
+  // 5. Return user data (without password)
   return {
     id: user.id,
     name: user.name,
@@ -320,10 +421,16 @@ export async function verifyCredentials(phone: string, password: string) {
 }
 ```
 
+**Lookup Priority:**
+1. **Phone first**: If identifier looks like a Bangladesh phone number, normalize and search by phone
+2. **Email second**: If not found by phone (or doesn't look like phone), treat as email and search by email
+3. **Case-insensitive email**: Emails are automatically lowercased before lookup
+
 **Security Features:**
 - Password never returned in response
 - bcrypt.compare() for secure password verification
 - Returns `null` on any failure (no specific error messages to prevent enumeration)
+- Generic error message: "Invalid credentials" (doesn't reveal whether phone/email exists)
 
 ### 4. Session Management
 
@@ -349,6 +456,7 @@ async jwt({ token, user }) {
     token.id = user.id
     token.role = user.role
     token.phone = user.phone
+    token.email = user.email
     token.name = user.name
   }
   return token
@@ -362,6 +470,7 @@ async session({ session, token }) {
     session.user.id = token.id as string
     session.user.role = token.role as string
     session.user.phone = token.phone as string
+    session.user.email = token.email as string | undefined
     session.user.name = token.name as string
   }
   return session
@@ -638,7 +747,7 @@ Orders are NOT deleted (they reference the user but don't cascade delete).
   user: {
     id: string,
     name: string,
-    email: string | null,
+    email: string | undefined,  // Now included in session
     phone: string,
     role: 'USER' | 'ADMIN'
   },
