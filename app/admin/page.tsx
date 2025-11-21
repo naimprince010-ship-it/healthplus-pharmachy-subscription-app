@@ -1,11 +1,22 @@
 import { Package, Users, ShoppingBag, FileText, Shield, Image } from 'lucide-react'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import { auth } from '@/lib/auth'
 
-export default function AdminDashboard() {
+export default async function AdminDashboard() {
+  const session = await auth()
+
+  if (!session || session.user.role !== 'ADMIN') {
+    redirect('/auth/signin')
+  }
+
   return (
     <div className="bg-gray-50 py-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+          <p className="text-sm text-gray-600">Welcome, {session.user.name}</p>
+        </div>
 
         <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <Link
@@ -57,7 +68,7 @@ export default function AdminDashboard() {
             href="/admin/banners"
             className="rounded-lg bg-white p-6 shadow transition-transform hover:scale-105"
           >
-            <Image className="h-12 w-12 text-teal-600" />
+            <Image className="h-12 w-12 text-teal-600" aria-label="Banners icon" />
             <h2 className="mt-4 text-xl font-bold text-gray-900">Banners</h2>
             <p className="mt-2 text-gray-600">Manage promotional banners</p>
           </Link>
