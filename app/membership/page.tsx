@@ -1,10 +1,11 @@
 import { Shield, Check } from 'lucide-react'
 import Link from 'next/link'
+import type { MembershipPlan } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-async function getMembershipPlans() {
+async function getMembershipPlans(): Promise<MembershipPlan[]> {
   try {
     const { prisma } = await import('@/lib/prisma')
     return await prisma.membershipPlan.findMany({
