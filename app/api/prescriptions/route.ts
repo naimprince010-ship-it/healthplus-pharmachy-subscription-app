@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { sendSMS, sendEmail } from '@/lib/notifications'
+import { sendSMS, sendEmail, notifyAdmin } from '@/lib/notifications'
 import { auth } from '@/lib/auth'
+import { uploadPrescription, validatePrescriptionFile } from '@/lib/supabase'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -22,7 +23,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const fileUrl = `/uploads/prescriptions/${Date.now()}-${file.name}`
+    const validation = validatePrescriptionFile(file)
+    if (!validation.valid) {
+      return NextResponse.json(
+        { error: validation.error },
+        { status: 400 }
+      )
+    }
+
+    let fileUrl: string
+    try {
+      fileUrl = await uploadPrescription(file)
+    } catch (error) {
+      console.error('File upload error:', error)
+      return NextResponse.json(
+        { error: 'Failed to upload file' },
+        { status: 500 }
+      )
+    }
+
     const { prisma } = await import('@/lib/prisma')
 
     let userId = session?.user?.id
@@ -34,7 +53,7 @@ export async function POST(request: NextRequest) {
         create: {
           name,
           phone,
-          password: '', // Guest users don't have passwords
+          password: '',
           role: 'USER',
         },
       })
@@ -52,8 +71,15 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    await sendSMS(phone, 'PRESCRIPTION_RECEIVED', { name })
-    await sendEmail(`${phone}@example.com`, 'PRESCRIPTION_RECEIVED', { name })
+    await Promise.all([
+      sendSMS(phone, 'PRESCRIPTION_RECEIVED', { name }),
+      sendEmail(`${phone}@example.com`, 'PRESCRIPTION_RECEIVED', { name }),
+      notifyAdmin('ADMIN_NEW_PRESCRIPTION', {
+        prescriptionId: prescription.id,
+        customerName: name,
+        phone,
+      }),
+    ])
 
     return NextResponse.json({ success: true, prescription })
   } catch (error) {
@@ -78,8 +104,8 @@ export async function GET() {
     const prescriptions = await prisma.prescription.findMany({
       where:
         session.user.role === 'ADMIN'
-          ? {} // Admin sees all
-          : { userId: session.user.id }, // Users see only their own
+          ? {}
+          : { userId: session.user.id },
       orderBy: { createdAt: 'desc' },
       include: {
         user: {
@@ -96,6 +122,32 @@ export async function GET() {
     console.error('Fetch prescriptions error:', error)
     return NextResponse.json(
       { error: 'Failed to fetch prescriptions' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const session = await auth()
+    
+    if (!session || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    }
+
+    const { id, status } = await request.json()
+    const { prisma } = await import('@/lib/prisma')
+
+    const prescription = await prisma.prescription.update({
+      where: { id },
+      data: { status },
+    })
+
+    return NextResponse.json({ success: true, prescription })
+  } catch (error) {
+    console.error('Update prescription error:', error)
+    return NextResponse.json(
+      { error: 'Failed to update prescription' },
       { status: 500 }
     )
   }

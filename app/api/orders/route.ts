@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
+import { sendSMS, sendEmail } from '@/lib/notifications'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -96,8 +97,27 @@ export async function POST(request: NextRequest) {
             medicine: true,
           },
         },
+        user: {
+          select: {
+            name: true,
+            phone: true,
+          },
+        },
       },
     })
+
+    await Promise.all([
+      sendSMS(order.user.phone, 'ORDER_CONFIRMED', {
+        name: order.user.name,
+        orderNumber: order.orderNumber,
+        total: order.total,
+      }),
+      sendEmail(`${order.user.phone}@example.com`, 'ORDER_CONFIRMED', {
+        name: order.user.name,
+        orderNumber: order.orderNumber,
+        total: order.total,
+      }),
+    ])
 
     return NextResponse.json({ success: true, order }, { status: 201 })
   } catch (error) {

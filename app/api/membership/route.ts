@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { addDays } from 'date-fns'
+import { addDays, format } from 'date-fns'
 import { auth } from '@/lib/auth'
+import { sendSMS, sendEmail } from '@/lib/notifications'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -51,8 +52,25 @@ export async function POST(request: NextRequest) {
       },
       include: {
         plan: true,
+        user: {
+          select: {
+            name: true,
+            phone: true,
+          },
+        },
       },
     })
+
+    await Promise.all([
+      sendSMS(membership.user.phone, 'MEMBERSHIP_PURCHASED', {
+        name: membership.user.name,
+        expiresAt: format(endDate, 'MMM dd, yyyy'),
+      }),
+      sendEmail(`${membership.user.phone}@example.com`, 'MEMBERSHIP_PURCHASED', {
+        name: membership.user.name,
+        expiresAt: format(endDate, 'MMM dd, yyyy'),
+      }),
+    ])
 
     return NextResponse.json({ success: true, membership })
   } catch (error) {

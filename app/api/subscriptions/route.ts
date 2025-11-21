@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
-import { addDays } from 'date-fns'
+import { addDays, format } from 'date-fns'
+import { sendSMS, sendEmail } from '@/lib/notifications'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -84,8 +85,27 @@ export async function POST(request: NextRequest) {
             },
           },
         },
+        user: {
+          select: {
+            name: true,
+            phone: true,
+          },
+        },
       },
     })
+
+    await Promise.all([
+      sendSMS(subscription.user.phone, 'SUBSCRIPTION_STARTED', {
+        name: subscription.user.name,
+        planName: subscription.plan.name,
+        nextDelivery: format(nextDeliveryDate, 'MMM dd, yyyy'),
+      }),
+      sendEmail(`${subscription.user.phone}@example.com`, 'SUBSCRIPTION_STARTED', {
+        name: subscription.user.name,
+        planName: subscription.plan.name,
+        nextDelivery: format(nextDeliveryDate, 'MMM dd, yyyy'),
+      }),
+    ])
 
     return NextResponse.json({ success: true, subscription }, { status: 201 })
   } catch (error) {
@@ -125,6 +145,33 @@ export async function GET() {
     console.error('Fetch subscriptions error:', error)
     return NextResponse.json(
       { error: 'Failed to fetch subscriptions' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { id, isActive } = await request.json()
+
+    const subscription = await prisma.subscription.update({
+      where: {
+        id,
+        userId: session.user.id,
+      },
+      data: { isActive },
+    })
+
+    return NextResponse.json({ success: true, subscription })
+  } catch (error) {
+    console.error('Update subscription error:', error)
+    return NextResponse.json(
+      { error: 'Failed to update subscription' },
       { status: 500 }
     )
   }

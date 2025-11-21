@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { Upload, Shield, Package, Heart, Baby, Activity, Users } from 'lucide-react'
+import { Shield, Package, Heart, Baby, Activity, Users } from 'lucide-react'
+import PrescriptionUploadForm from '@/components/PrescriptionUploadForm'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -62,72 +63,7 @@ export default async function HomePage() {
             </div>
 
             {/* Prescription Upload Form */}
-            <div className="rounded-2xl bg-white p-8 shadow-xl">
-              <div className="mb-6 flex items-center space-x-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-100">
-                  <Upload className="h-6 w-6 text-teal-600" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900">Upload Prescription</h2>
-                  <p className="text-sm text-gray-600">We&apos;ll call you back shortly</p>
-                </div>
-              </div>
-              <form className="space-y-4">
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                    placeholder="Enter your name"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                    Phone Number
-                  </label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                    placeholder="01XXX-XXXXXX"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="zone" className="block text-sm font-medium text-gray-700">
-                    Delivery Zone
-                  </label>
-                  <select
-                    id="zone"
-                    className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  >
-                    <option>Select your zone</option>
-                    <option>Dhaka Central</option>
-                    <option>Dhaka North</option>
-                    <option>Dhaka South</option>
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="prescription" className="block text-sm font-medium text-gray-700">
-                    Prescription Image
-                  </label>
-                  <input
-                    type="file"
-                    id="prescription"
-                    accept="image/*,.pdf"
-                    className="mt-1 block w-full text-sm text-gray-600 file:mr-4 file:rounded-lg file:border-0 file:bg-teal-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-teal-600 hover:file:bg-teal-100"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="w-full rounded-lg bg-teal-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-teal-700"
-                >
-                  Submit Prescription
-                </button>
-              </form>
-            </div>
+            <PrescriptionUploadForm />
           </div>
         </div>
       </section>

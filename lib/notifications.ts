@@ -4,6 +4,9 @@ type NotificationTemplate =
   | 'ORDER_CONFIRMED'
   | 'MEMBERSHIP_EXPIRING'
   | 'DELIVERY_REMINDER'
+  | 'SUBSCRIPTION_STARTED'
+  | 'MEMBERSHIP_PURCHASED'
+  | 'ADMIN_NEW_PRESCRIPTION'
 
 interface NotificationData {
   [key: string]: string | number
@@ -14,7 +17,10 @@ const SMS_TEMPLATES: Record<NotificationTemplate, (data: NotificationData) => st
   PRESCRIPTION_RECEIVED: (data) => `Dear ${data.name}, we received your prescription. Our team will contact you soon. - HealthPlus`,
   ORDER_CONFIRMED: (data) => `Order ${data.orderNumber} confirmed! Total: ৳${data.total}. Delivery in ${data.days} days. - HealthPlus`,
   MEMBERSHIP_EXPIRING: (data) => `Dear ${data.name}, your HealthPlus membership expires on ${data.expiryDate}. Renew now to keep your 10% discount!`,
-  DELIVERY_REMINDER: (data) => `Your order ${data.orderNumber} will be delivered today. Please be available. - HealthPlus`
+  DELIVERY_REMINDER: (data) => `Your order ${data.orderNumber} will be delivered today. Please be available. - HealthPlus`,
+  SUBSCRIPTION_STARTED: (data) => `Hello ${data.name}, your ${data.planName} subscription is active! Next delivery: ${data.nextDelivery} - HealthPlus`,
+  MEMBERSHIP_PURCHASED: (data) => `Hello ${data.name}, your HealthPlus membership is active! Enjoy 10% discount until ${data.expiresAt}`,
+  ADMIN_NEW_PRESCRIPTION: (data) => `New prescription from ${data.customerName} (${data.phone}). ID: ${data.prescriptionId}`
 }
 
 const EMAIL_TEMPLATES: Record<NotificationTemplate, (data: NotificationData) => { subject: string; body: string }> = {
@@ -66,6 +72,35 @@ const EMAIL_TEMPLATES: Record<NotificationTemplate, (data: NotificationData) => 
       <p>Please ensure someone is available to receive the delivery.</p>
       <p>Thank you for choosing HealthPlus!</p>
     `
+  }),
+  SUBSCRIPTION_STARTED: (data) => ({
+    subject: 'Subscription Started - HealthPlus',
+    body: `
+      <h2>Subscription Active</h2>
+      <p>Hello ${data.name},</p>
+      <p>Your ${data.planName} subscription is now active!</p>
+      <p><strong>Next Delivery:</strong> ${data.nextDelivery}</p>
+      <p>Thank you for choosing HealthPlus!</p>
+    `
+  }),
+  MEMBERSHIP_PURCHASED: (data) => ({
+    subject: 'Membership Activated - HealthPlus',
+    body: `
+      <h2>Membership Activated</h2>
+      <p>Hello ${data.name},</p>
+      <p>Your HealthPlus membership is now active until ${data.expiresAt}.</p>
+      <p>Enjoy 10% discount on all medicines!</p>
+    `
+  }),
+  ADMIN_NEW_PRESCRIPTION: (data) => ({
+    subject: 'New Prescription - Admin Alert',
+    body: `
+      <h2>New Prescription Received</h2>
+      <p><strong>Customer:</strong> ${data.customerName}</p>
+      <p><strong>Phone:</strong> ${data.phone}</p>
+      <p><strong>Prescription ID:</strong> ${data.prescriptionId}</p>
+      <p>Please review and process this prescription.</p>
+    `
   })
 }
 
@@ -103,4 +138,17 @@ export async function sendOTP(phone: string, otp: string): Promise<boolean> {
 
 export function generateOTP(): string {
   return Math.floor(100000 + Math.random() * 900000).toString()
+}
+
+export async function notifyAdmin(
+  template: NotificationTemplate,
+  data: NotificationData
+): Promise<void> {
+  const adminPhone = process.env.ADMIN_PHONE || '+8801712345678'
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@healthplus.com'
+
+  await Promise.all([
+    sendSMS(adminPhone, template, data),
+    sendEmail(adminEmail, template, data)
+  ])
 }
