@@ -1,5 +1,4 @@
 import { compare } from 'bcryptjs'
-import { prisma } from './prisma'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import NextAuth from 'next-auth'
 
@@ -54,6 +53,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 })
 
 export async function verifyCredentials(phone: string, password: string) {
+  const { prisma } = await import('./prisma')
+  
   const user = await prisma.user.findUnique({
     where: { phone },
   })
