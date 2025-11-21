@@ -21,15 +21,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       async authorize(credentials) {
         console.log('[AUTH] authorize() called')
         
-        if (!credentials?.identifier || !credentials?.password) {
+        const input = credentials?.identifier ?? credentials?.phone
+        
+        if (!input || !credentials?.password) {
           console.log('[AUTH] Missing credentials')
           return null
         }
 
-        console.log('[AUTH] Verifying credentials for identifier:', credentials.identifier.substring(0, 6) + '***')
+        console.log('[AUTH] Verifying credentials for input:', input.substring(0, 6) + '***')
         
         const user = await verifyCredentials(
-          credentials.identifier as string,
+          input as string,
           credentials.password as string
         )
 
