@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 import { addDays } from 'date-fns'
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 async function getServerSession() {
   return null
@@ -19,6 +21,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { planId } = await request.json()
+    const { prisma } = await import('@/lib/prisma')
 
     const plan = await prisma.membershipPlan.findUnique({
       where: { id: planId },
@@ -81,6 +84,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { prisma } = await import('@/lib/prisma')
     const membership = await prisma.userMembership.findFirst({
       where: {
         userId: user.user.id,

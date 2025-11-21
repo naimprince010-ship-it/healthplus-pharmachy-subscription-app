@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 import { sendSMS, sendEmail } from '@/lib/notifications'
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,6 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     const fileUrl = `/uploads/prescriptions/${Date.now()}-${file.name}`
+    const { prisma } = await import('@/lib/prisma')
 
     const prescription = await prisma.prescription.create({
       data: {
@@ -47,6 +50,7 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
     const userId = searchParams.get('userId')
+    const { prisma } = await import('@/lib/prisma')
 
     const prescriptions = await prisma.prescription.findMany({
       where: userId ? { userId } : {},
