@@ -1,0 +1,178 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  CANCELLED
+}
+
+enum PlanType {
+  BP_MONTHLY
+  DIABETES_MONTHLY
+  HEART_MONTHLY
+  GENERAL_MONTHLY
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String
+  password      String
+  phone         String?
+  address       String?
+  role          Role           @default(CUSTOMER)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  subscriptions Subscription[]
+  memberships   Membership[]
+  orders        Order[]
+  carts         Cart[]
+  
+  @@map("users")
+}
+
+model MedicinePlan {
+  id            String         @id @default(cuid())
+  name          String
+  description   String
+  type          PlanType
+  price         Float          // Monthly price
+  duration      Int            @default(30) // Days
+  medicines     String[]       // Array of medicine names
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  subscriptions Subscription[]
+  
+  @@map("medicine_plans")
+}
+
+model Subscription {
+  id            String              @id @default(cuid())
+  userId        String
+  planId        String
+  status        SubscriptionStatus  @default(ACTIVE)
+  startDate     DateTime            @default(now())
+  endDate       DateTime
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan          MedicinePlan        @relation(fields: [planId], references: [id], onDelete: Cascade)
+  
+  @@map("subscriptions")
+}
+
+model Membership {
+  id            String              @id @default(cuid())
+  userId        String
+  status        SubscriptionStatus  @default(ACTIVE)
+  price         Float               @default(100) // 100 BDT
+  discount      Float               @default(10) // 10% discount
+  startDate     DateTime            @default(now())
+  endDate       DateTime
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("memberships")
+}
+
+model Medicine {
+  id            String         @id @default(cuid())
+  name          String
+  description   String
+  price         Float
+  stock         Int            @default(0)
+  category      String
+  imageUrl      String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  cartItems     CartItem[]
+  orderItems    OrderItem[]
+  
+  @@map("medicines")
+}
+
+model Cart {
+  id            String         @id @default(cuid())
+  userId        String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items         CartItem[]
+  
+  @@unique([userId])
+  @@map("carts")
+}
+
+model CartItem {
+  id            String         @id @default(cuid())
+  cartId        String
+  medicineId    String
+  quantity      Int            @default(1)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  cart          Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  medicine      Medicine       @relation(fields: [medicineId], references: [id], onDelete: Cascade)
+  
+  @@map("cart_items")
+}
+
+model Order {
+  id            String         @id @default(cuid())
+  userId        String
+  status        OrderStatus    @default(PENDING)
+  total         Float
+  discount      Float          @default(0)
+  finalTotal    Float
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items         OrderItem[]
+  
+  @@map("orders")
+}
+
+model OrderItem {
+  id            String         @id @default(cuid())
+  orderId       String
+  medicineId    String
+  quantity      Int
+  price         Float
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  order         Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  medicine      Medicine       @relation(fields: [medicineId], references: [id], onDelete: Cascade)
+  
+  @@map("order_items")
+}
