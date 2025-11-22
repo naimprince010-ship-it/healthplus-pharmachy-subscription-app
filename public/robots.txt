@@ -14,4 +14,4 @@ Disallow: /checkout
 Disallow: /orders/
 
 # Sitemap
-Sitemap: https://healthplus-pharmachy-subscription-6bgczcbyq.vercel.app/sitemap.xml
+Sitemap: https://healthplus.com/sitemap.xml
