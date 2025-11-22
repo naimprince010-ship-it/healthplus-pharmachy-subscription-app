@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { Menu, ExternalLink } from 'lucide-react'
+import { UserMenu } from '@/components/UserMenu'
 
 interface AdminHeaderProps {
   onMenuClick: () => void
@@ -30,8 +31,9 @@ export function AdminHeader({ onMenuClick, userName }: AdminHeaderProps) {
           )}
         </div>
 
-        {/* Right side - Visit site button */}
-        <div className="ml-auto">
+        {/* Right side - User menu and Visit site button */}
+        <div className="ml-auto flex items-center space-x-3">
+          <UserMenu userName={userName} variant="admin" />
           <Link
             href="/"
             target="_blank"
