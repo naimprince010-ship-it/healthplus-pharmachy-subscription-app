@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { ShoppingCart, User, Menu, X } from 'lucide-react'
 import { useState } from 'react'
 import { useSession } from 'next-auth/react'
+import { UserMenu } from './UserMenu'
 
 export function Navbar() {
   const pathname = usePathname()
@@ -74,12 +75,16 @@ export function Navbar() {
                 0
               </span>
             </Link>
-            <Link
-              href={profileHref}
-              className="text-gray-700 transition-colors hover:text-teal-600"
-            >
-              <User className="h-5 w-5" />
-            </Link>
+            {session ? (
+              <UserMenu variant="navbar" />
+            ) : (
+              <Link
+                href="/auth/signin"
+                className="text-gray-700 transition-colors hover:text-teal-600"
+              >
+                <User className="h-5 w-5" />
+              </Link>
+            )}
           </div>
 
           <div className="md:hidden">
