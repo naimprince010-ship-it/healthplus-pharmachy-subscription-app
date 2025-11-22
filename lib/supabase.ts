@@ -111,8 +111,12 @@ export async function uploadMedicineImage(
   file: File,
   medicineId?: string
 ): Promise<{ url: string; path: string; mimeType: string; size: number }> {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL === 'https://placeholder.supabase.co') {
+    throw new Error('NEXT_PUBLIC_SUPABASE_URL is not configured in production environment')
+  }
+  
   if (!supabaseServiceRoleKey) {
-    throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured')
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured in production environment')
   }
 
   const bucket = process.env.SUPABASE_MEDICINE_BUCKET || 'medicine-images'
