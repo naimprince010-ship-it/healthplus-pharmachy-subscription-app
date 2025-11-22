@@ -101,7 +101,8 @@ export const deleteMedicineSchema = z.object({
 /**
  * Type exports for use in API routes and components
  */
-export type CreateMedicineInput = z.infer<typeof createMedicineSchema>
+export type CreateMedicineInput = z.input<typeof createMedicineSchema>
+export type CreateMedicineOutput = z.output<typeof createMedicineSchema>
 export type UpdateMedicineInput = z.infer<typeof updateMedicineSchema>
 export type MedicineListQuery = z.infer<typeof medicineListQuerySchema>
 export type DeleteMedicineInput = z.infer<typeof deleteMedicineSchema>

@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Save } from 'lucide-react'
-import { useForm } from 'react-hook-form'
+import { useForm, type DefaultValues } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { createMedicineSchema } from '@/lib/validations/medicine'
+import { createMedicineSchema, type CreateMedicineInput } from '@/lib/validations/medicine'
 import { Tabs } from '@/components/ui/Tabs'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { ImageUpload } from '@/components/admin/ImageUpload'
@@ -20,7 +20,7 @@ interface Category {
 interface MedicineFormProps {
   mode: 'create' | 'edit'
   medicineId?: string
-  initialData?: Record<string, unknown>
+  initialData?: Partial<CreateMedicineInput>
 }
 
 export function MedicineForm({ mode, medicineId, initialData }: MedicineFormProps) {
@@ -31,20 +31,22 @@ export function MedicineForm({ mode, medicineId, initialData }: MedicineFormProp
   const [imageUrl, setImageUrl] = useState(initialData?.imageUrl || '')
   const [imagePath, setImagePath] = useState(initialData?.imagePath || '')
 
+  const defaults: DefaultValues<CreateMedicineInput> = (initialData ?? {
+    isActive: true,
+    requiresPrescription: false,
+    isFeatured: false,
+    stockQuantity: 0,
+  }) as DefaultValues<CreateMedicineInput>
+
   const {
     register,
     handleSubmit,
     formState: { errors },
     watch,
     setValue,
-  } = useForm({
+  } = useForm<CreateMedicineInput>({
     resolver: zodResolver(createMedicineSchema),
-    defaultValues: initialData || {
-      isActive: true,
-      requiresPrescription: false,
-      isFeatured: false,
-      stockQuantity: 0,
-    },
+    defaultValues: defaults,
   })
 
   const unitPrice = watch('unitPrice')
@@ -85,7 +87,7 @@ export function MedicineForm({ mode, medicineId, initialData }: MedicineFormProp
     }
   }
 
-  const onSubmit = async (data: Record<string, unknown>) => {
+  const onSubmit = async (data: CreateMedicineInput) => {
     setLoading(true)
     setError(null)
 
