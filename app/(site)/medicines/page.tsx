@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { Search } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { AddToCartButton } from '@/components/AddToCartButton'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -133,62 +134,84 @@ export default async function MedicinesPage({
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-4">
-            {medicines.map((medicine) => (
-              <Link
-                key={medicine.id}
-                href={`/medicines/${medicine.slug}`}
-                className="group rounded-lg border border-gray-200 p-4 shadow-sm transition-shadow hover:shadow-md"
-              >
-                <div className="relative mb-4 h-48 overflow-hidden rounded-lg bg-gray-100">
-                  {medicine.imageUrl ? (
-                    <Image
-                      src={medicine.imageUrl}
-                      alt={medicine.name}
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-gray-400">
-                      No image
+            {medicines.map((medicine) => {
+              const imageUrl =
+                medicine.imageUrl ||
+                (medicine.imagePath
+                  ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/medicine-images/${medicine.imagePath}`
+                  : null)
+
+              return (
+                <div
+                  key={medicine.id}
+                  className="group flex flex-col rounded-lg border border-gray-200 p-4 shadow-sm transition-shadow hover:shadow-md"
+                >
+                  <Link href={`/medicines/${medicine.slug}`} className="flex-1">
+                    <div className="relative mb-4 h-48 overflow-hidden rounded-lg bg-gray-100">
+                      {imageUrl ? (
+                        <Image
+                          src={imageUrl}
+                          alt={medicine.name}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-gray-400">
+                          No image
+                        </div>
+                      )}
+                      {medicine.isFeatured && (
+                        <span className="absolute right-2 top-2 rounded-full bg-yellow-400 px-2 py-1 text-xs font-semibold text-gray-900">
+                          Featured
+                        </span>
+                      )}
+                      {medicine.requiresPrescription && (
+                        <span className="absolute left-2 top-2 rounded-full bg-red-500 px-2 py-1 text-xs font-semibold text-white">
+                          Rx
+                        </span>
+                      )}
                     </div>
-                  )}
-                  {medicine.isFeatured && (
-                    <span className="absolute right-2 top-2 rounded-full bg-yellow-400 px-2 py-1 text-xs font-semibold text-gray-900">
-                      Featured
-                    </span>
-                  )}
-                  {medicine.requiresPrescription && (
-                    <span className="absolute left-2 top-2 rounded-full bg-red-500 px-2 py-1 text-xs font-semibold text-white">
-                      Rx
-                    </span>
-                  )}
-                </div>
-                <h3 className="font-semibold text-gray-900 group-hover:text-teal-600">
-                  {medicine.name}
-                </h3>
-                {medicine.genericName && (
-                  <p className="mt-1 text-sm text-gray-600">{medicine.genericName}</p>
-                )}
-                {medicine.strength && (
-                  <p className="mt-1 text-xs text-gray-500">{medicine.strength}</p>
-                )}
-                <div className="mt-4 flex items-center justify-between">
-                  <div>
-                    <span className="text-xl font-bold text-gray-900">
-                      ৳{medicine.sellingPrice.toFixed(2)}
-                    </span>
-                    {medicine.mrp && medicine.mrp > medicine.sellingPrice && (
-                      <span className="ml-2 text-sm text-gray-500 line-through">
-                        ৳{medicine.mrp.toFixed(2)}
-                      </span>
+                    <h3 className="font-semibold text-gray-900 group-hover:text-teal-600">
+                      {medicine.name}
+                    </h3>
+                    {medicine.genericName && (
+                      <p className="mt-1 text-sm text-gray-600">
+                        {medicine.genericName}
+                      </p>
                     )}
+                    {medicine.strength && (
+                      <p className="mt-1 text-xs text-gray-500">{medicine.strength}</p>
+                    )}
+                    <div className="mt-4 flex items-center justify-between">
+                      <div>
+                        <span className="text-xl font-bold text-gray-900">
+                          ৳{medicine.sellingPrice.toFixed(2)}
+                        </span>
+                        {medicine.mrp && medicine.mrp > medicine.sellingPrice && (
+                          <span className="ml-2 text-sm text-gray-500 line-through">
+                            ৳{medicine.mrp.toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {medicine.stockQuantity === 0 && (
+                      <p className="mt-2 text-xs text-red-600">Out of stock</p>
+                    )}
+                  </Link>
+                  <div className="mt-4">
+                    <AddToCartButton
+                      medicineId={medicine.id}
+                      name={medicine.name}
+                      price={medicine.sellingPrice}
+                      image={imageUrl || undefined}
+                      requiresPrescription={medicine.requiresPrescription}
+                      stockQuantity={medicine.stockQuantity}
+                      className="w-full"
+                    />
                   </div>
                 </div>
-                {medicine.stockQuantity === 0 && (
-                  <p className="mt-2 text-xs text-red-600">Out of stock</p>
-                )}
-              </Link>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
