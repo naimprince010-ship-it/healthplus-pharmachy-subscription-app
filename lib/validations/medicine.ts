@@ -11,15 +11,20 @@ export const createMedicineSchema = z.object({
   name: z.string().min(1, 'Name is required').max(200, 'Name is too long'),
   genericName: z.string().max(200).optional(),
   brandName: z.string().max(200).optional(),
-  dosageForm: z.string().max(100).optional(), // e.g., Tablet, Capsule, Syrup
-  packSize: z.string().max(100).optional(), // e.g., "1 strip x 10 tablets"
-  strength: z.string().max(100).optional(), // e.g., "500mg"
+  manufacturer: z.string().min(1, 'Manufacturer is required').max(200),
+  dosageForm: z.string().max(100).optional(),
+  packSize: z.string().max(100).optional(),
+  strength: z.string().max(100).optional(),
   description: z.string().max(2000).optional(),
   
   categoryId: z.string().min(1, 'Category is required'),
   
   mrp: z.number().positive('MRP must be positive').optional(),
-  sellingPrice: z.number().positive('Selling price must be positive'),
+  sellingPrice: z.number().positive('Selling price must be positive').optional(),
+  unitPrice: z.number().positive('Unit price must be positive').optional(),
+  stripPrice: z.number().positive('Strip price must be positive').optional(),
+  tabletsPerStrip: z.number().int().positive('Tablets per strip must be positive').optional(),
+  
   stockQuantity: z.number().int().nonnegative('Stock cannot be negative').optional().default(0),
   minStockAlert: z.number().int().positive().optional(),
   
@@ -29,13 +34,20 @@ export const createMedicineSchema = z.object({
   canonicalUrl: z.string().url().optional().or(z.literal('')),
   
   imageUrl: z.string().url().optional().or(z.literal('')),
+  imagePath: z.string().optional(),
+  
+  uses: z.string().max(2000).optional(),
+  sideEffects: z.string().max(2000).optional(),
+  contraindications: z.string().max(2000).optional(),
+  storageInstructions: z.string().max(500).optional(),
+  expiryDate: z.string().optional(),
   
   requiresPrescription: z.boolean().optional().default(false),
   isFeatured: z.boolean().optional().default(false),
   isActive: z.boolean().optional().default(true),
 }).refine(
   (data) => {
-    if (data.mrp && data.sellingPrice > data.mrp) {
+    if (data.mrp && data.sellingPrice && data.sellingPrice > data.mrp) {
       return false
     }
     return true

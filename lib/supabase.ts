@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 const isConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
@@ -10,6 +11,13 @@ if (!isConfigured) {
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
+  },
+})
 
 export async function uploadPrescription(file: File): Promise<string> {
   if (!isConfigured) {
@@ -75,4 +83,99 @@ export function validatePrescriptionFile(file: File): { valid: boolean; error?: 
   }
 
   return { valid: true }
+}
+
+/**
+ * Validate medicine image file
+ */
+export function validateMedicineImage(file: File): { valid: boolean; error?: string } {
+  const maxSize = 1 * 1024 * 1024 // 1MB
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png']
+
+  if (file.size > maxSize) {
+    return { valid: false, error: 'Image size must be less than 1MB' }
+  }
+
+  if (!allowedTypes.includes(file.type)) {
+    return { valid: false, error: 'Only JPG and PNG images are allowed' }
+  }
+
+  return { valid: true }
+}
+
+/**
+ * Upload medicine image to Supabase Storage
+ * Returns the public URL and storage path
+ */
+export async function uploadMedicineImage(
+  file: File,
+  medicineId?: string
+): Promise<{ url: string; path: string; mimeType: string; size: number }> {
+  if (!supabaseServiceRoleKey) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured')
+  }
+
+  const bucket = process.env.SUPABASE_MEDICINE_BUCKET || 'medicine-images'
+  
+  try {
+    const { data: buckets } = await supabaseAdmin.storage.listBuckets()
+    const bucketExists = buckets?.some((b) => b.name === bucket)
+    
+    if (!bucketExists) {
+      await supabaseAdmin.storage.createBucket(bucket, {
+        public: true,
+        fileSizeLimit: 1024 * 1024, // 1MB
+        allowedMimeTypes: ['image/jpeg', 'image/png'],
+      })
+    }
+  } catch (error) {
+    console.error('Bucket check/create error:', error)
+  }
+
+  const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+  const uuid = `${Date.now()}-${Math.random().toString(36).substring(7)}`
+  const fileName = `${uuid}.${fileExt}`
+  const filePath = medicineId 
+    ? `medicines/${medicineId}/${fileName}`
+    : `medicines/${fileName}`
+
+  const { data, error } = await supabaseAdmin.storage
+    .from(bucket)
+    .upload(filePath, file, {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: file.type,
+    })
+
+  if (error) {
+    throw new Error(`Upload failed: ${error.message}`)
+  }
+
+  const { data: urlData } = supabaseAdmin.storage
+    .from(bucket)
+    .getPublicUrl(data.path)
+
+  return {
+    url: urlData.publicUrl,
+    path: data.path,
+    mimeType: file.type,
+    size: file.size,
+  }
+}
+
+/**
+ * Delete medicine image from Supabase Storage
+ */
+export async function deleteMedicineImage(path: string): Promise<void> {
+  if (!supabaseServiceRoleKey) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured')
+  }
+
+  const bucket = process.env.SUPABASE_MEDICINE_BUCKET || 'medicine-images'
+
+  const { error } = await supabaseAdmin.storage.from(bucket).remove([path])
+
+  if (error) {
+    throw new Error(`Delete failed: ${error.message}`)
+  }
 }

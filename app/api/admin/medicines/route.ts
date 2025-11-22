@@ -3,6 +3,12 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { createMedicineSchema, medicineListQuerySchema } from '@/lib/validations/medicine'
 import { generateUniqueMedicineSlug } from '@/lib/slug'
+import {
+  parseTabletsFromPackSize,
+  computeStripPrice,
+  defaultSellingPrice,
+  generateSeoTitle,
+} from '@/lib/pricing'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -133,28 +139,71 @@ export async function POST(request: NextRequest) {
 
     const slug = await generateUniqueMedicineSlug(data.name)
 
+    let tabletsPerStrip = data.tabletsPerStrip
+    if (!tabletsPerStrip && data.packSize) {
+      tabletsPerStrip = parseTabletsFromPackSize(data.packSize)
+    }
+
+    let stripPrice = data.stripPrice
+    if (!stripPrice && data.unitPrice && tabletsPerStrip) {
+      stripPrice = computeStripPrice(data.unitPrice, tabletsPerStrip)
+    }
+
+    let sellingPrice = data.sellingPrice
+    if (!sellingPrice && stripPrice) {
+      sellingPrice = stripPrice
+    }
+
+    if (!sellingPrice) {
+      return NextResponse.json(
+        { error: 'Selling price is required (either directly or computed from unit price)' },
+        { status: 400 }
+      )
+    }
+
+    let seoTitle = data.seoTitle
+    if (!seoTitle) {
+      seoTitle = generateSeoTitle({
+        name: data.name,
+        strength: data.strength,
+        dosageForm: data.dosageForm,
+        packSize: data.packSize,
+      })
+    }
+
+    const expiryDate = data.expiryDate ? new Date(data.expiryDate) : undefined
+
     const medicine = await prisma.medicine.create({
       data: {
         name: data.name,
         slug,
         genericName: data.genericName,
         brandName: data.brandName,
-        manufacturer: data.brandName, // Backward compatibility
+        manufacturer: data.manufacturer,
         dosageForm: data.dosageForm,
         packSize: data.packSize,
         strength: data.strength,
         description: data.description,
         categoryId: data.categoryId,
         mrp: data.mrp,
-        sellingPrice: data.sellingPrice,
-        price: data.sellingPrice, // Backward compatibility
+        sellingPrice,
+        price: sellingPrice,
+        unitPrice: data.unitPrice,
+        stripPrice,
+        tabletsPerStrip,
         stockQuantity: data.stockQuantity,
         minStockAlert: data.minStockAlert,
-        seoTitle: data.seoTitle,
+        seoTitle,
         seoDescription: data.seoDescription,
         seoKeywords: data.seoKeywords,
         canonicalUrl: data.canonicalUrl,
         imageUrl: data.imageUrl,
+        imagePath: data.imagePath,
+        uses: data.uses,
+        sideEffects: data.sideEffects,
+        contraindications: data.contraindications,
+        storageInstructions: data.storageInstructions,
+        expiryDate,
         requiresPrescription: data.requiresPrescription,
         isFeatured: data.isFeatured,
         isActive: data.isActive,

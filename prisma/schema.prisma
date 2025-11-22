@@ -93,7 +93,7 @@ model Medicine {
   slug            String              @unique
   genericName     String?
   brandName       String?
-  manufacturer    String?             // Deprecated: use brandName instead
+  manufacturer    String              // Required manufacturer field
   dosageForm      String?             // e.g., Tablet, Capsule, Syrup, Injection
   packSize        String?             // e.g., "1 strip x 10 tablets"
   description     String?
@@ -105,6 +105,9 @@ model Medicine {
   sellingPrice    Float               // Actual selling price
   price           Float               // Deprecated: use sellingPrice instead
   discountPrice   Float?              // Deprecated: use mrp/sellingPrice instead
+  unitPrice       Float?              // Price per tablet/capsule
+  stripPrice      Float?              // Price per strip
+  tabletsPerStrip Int?                // Number of tablets per strip
   
   // Stock
   stockQuantity   Int                 @default(0)
@@ -120,6 +123,14 @@ model Medicine {
   
   // Media
   imageUrl        String?
+  imagePath       String?             // Storage path for deletion
+  
+  // Additional Details
+  uses                  String?       // Common uses
+  sideEffects           String?       // Side effects
+  contraindications     String?       // Contraindications
+  storageInstructions   String?       // Storage instructions
+  expiryDate            DateTime?     // Expiry date
   
   // Relations & Status
   categoryId      String
