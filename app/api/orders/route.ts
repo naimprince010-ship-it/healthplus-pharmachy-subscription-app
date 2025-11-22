@@ -8,7 +8,8 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 const createOrderSchema = z.object({
-  addressId: z.string(),
+  addressId: z.string().optional(),
+  zoneId: z.string().optional(),
   items: z.array(
     z.object({
       medicineId: z.string(),
@@ -18,6 +19,8 @@ const createOrderSchema = z.object({
   ).min(1),
   paymentMethod: z.enum(['COD', 'ONLINE']),
   notes: z.string().optional(),
+}).refine((data) => data.addressId || data.zoneId, {
+  message: 'Either addressId or zoneId must be provided',
 })
 
 export async function POST(request: NextRequest) {
@@ -40,15 +43,54 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { addressId, items, paymentMethod, notes } = validationResult.data
+    const { addressId, zoneId, items, paymentMethod, notes } = validationResult.data
 
-    const address = await prisma.address.findUnique({
-      where: { id: addressId },
-      include: { zone: true },
-    })
+    let address
+    let finalAddressId: string
 
-    if (!address) {
-      return NextResponse.json({ error: 'Invalid address' }, { status: 400 })
+    if (addressId) {
+      address = await prisma.address.findUnique({
+        where: { id: addressId },
+        include: { zone: true },
+      })
+
+      if (!address) {
+        return NextResponse.json({ error: 'Invalid address' }, { status: 400 })
+      }
+      finalAddressId = addressId
+    } else if (zoneId) {
+      const zone = await prisma.zone.findUnique({
+        where: { id: zoneId },
+      })
+
+      if (!zone) {
+        return NextResponse.json({ error: 'Invalid zone' }, { status: 400 })
+      }
+
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { name: true, phone: true },
+      })
+
+      if (!user) {
+        return NextResponse.json({ error: 'User not found' }, { status: 400 })
+      }
+
+      address = await prisma.address.create({
+        data: {
+          userId: session.user.id,
+          fullName: user.name,
+          phone: user.phone,
+          addressLine1: 'N/A',
+          city: 'N/A',
+          zoneId: zoneId,
+          isDefault: false,
+        },
+        include: { zone: true },
+      })
+      finalAddressId = address.id
+    } else {
+      return NextResponse.json({ error: 'Address or zone required' }, { status: 400 })
     }
 
     const medicineIds = items.map(item => item.medicineId)
@@ -88,7 +130,7 @@ export async function POST(request: NextRequest) {
       data: {
         orderNumber,
         userId: session.user.id,
-        addressId,
+        addressId: finalAddressId,
         subtotal,
         discount,
         deliveryCharge,
