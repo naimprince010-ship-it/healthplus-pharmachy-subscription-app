@@ -7,13 +7,17 @@ export default auth((req) => {
 
   if (path.startsWith('/admin')) {
     if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.redirect(new URL('/auth/signin', req.url))
+      const signInUrl = new URL('/auth/signin', req.url)
+      signInUrl.searchParams.set('callbackUrl', req.nextUrl.pathname + req.nextUrl.search)
+      return NextResponse.redirect(signInUrl)
     }
   }
 
   if (path.startsWith('/dashboard')) {
     if (!session) {
-      return NextResponse.redirect(new URL('/auth/signin', req.url))
+      const signInUrl = new URL('/auth/signin', req.url)
+      signInUrl.searchParams.set('callbackUrl', req.nextUrl.pathname + req.nextUrl.search)
+      return NextResponse.redirect(signInUrl)
     }
   }
 

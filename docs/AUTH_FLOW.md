@@ -524,7 +524,69 @@ export default auth((req) => {
 })
 ```
 
-### 6. Redirect Rules After Login
+### 6. Role-Based Redirect After Login
+
+After successful login, users are automatically redirected based on their role and any callback URL:
+
+**Redirect Priority (in order):**
+
+1. **Valid Callback URL** (if present and not just `/`)
+   - If user tried to access a protected page while logged out
+   - Middleware passes `?callbackUrl=/original/path` to signin page
+   - After login, user returns to that page
+   - Example: Trying to access `/membership` → login → return to `/membership`
+
+2. **Role-Based Default** (if no callback URL or callback is `/`)
+   - **ADMIN users** → Redirected to `/admin`
+   - **USER users** → Redirected to `/dashboard`
+
+**Implementation** (`app/auth/signin/page.tsx`):
+
+```typescript
+// After successful signIn with redirect: false
+const callbackUrl = searchParams.get('callbackUrl')
+
+// Validate callback URL (must be same-origin relative path, not starting with //)
+const isValidCallback = callbackUrl && callbackUrl.startsWith('/') && !callbackUrl.startsWith('//')
+
+// If valid callback URL and not just '/', use it
+if (isValidCallback && callbackUrl !== '/') {
+  router.push(callbackUrl)
+  router.refresh()
+  return
+}
+
+// Otherwise, redirect based on user role
+const session = await getSession()
+const role = session?.user?.role
+
+if (role === 'ADMIN') {
+  router.push('/admin')
+} else {
+  router.push('/dashboard')
+}
+router.refresh()
+```
+
+**Examples:**
+
+| Scenario | User Role | Callback URL | Final Redirect |
+|----------|-----------|--------------|----------------|
+| Direct login | ADMIN | None | `/admin` |
+| Direct login | USER | None | `/dashboard` |
+| Tried to access `/membership` | USER | `/membership` | `/membership` |
+| Tried to access `/admin` | USER | `/admin` | `/admin` (then middleware redirects to signin again) |
+| Tried to access `/dashboard` | ADMIN | `/dashboard` | `/dashboard` |
+| Callback URL is `/` | ADMIN | `/` | `/admin` |
+| Callback URL is `/` | USER | `/` | `/dashboard` |
+
+**Security Notes:**
+- Callback URLs are validated to prevent open redirects
+- Only same-origin relative paths starting with `/` are allowed
+- URLs starting with `//` are rejected (could be used for protocol-relative URLs)
+- Middleware still enforces role-based access control on protected routes
+
+### 7. Middleware Protection & Callback URLs
 
 **Middleware Configuration** (`middleware.ts`):
 
@@ -536,14 +598,18 @@ export default auth((req) => {
   // Admin routes - require ADMIN role
   if (path.startsWith('/admin')) {
     if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.redirect(new URL('/auth/signin', req.url))
+      const signInUrl = new URL('/auth/signin', req.url)
+      signInUrl.searchParams.set('callbackUrl', req.nextUrl.pathname + req.nextUrl.search)
+      return NextResponse.redirect(signInUrl)
     }
   }
 
   // Dashboard routes - require any authenticated user
   if (path.startsWith('/dashboard')) {
     if (!session) {
-      return NextResponse.redirect(new URL('/auth/signin', req.url))
+      const signInUrl = new URL('/auth/signin', req.url)
+      signInUrl.searchParams.set('callbackUrl', req.nextUrl.pathname + req.nextUrl.search)
+      return NextResponse.redirect(signInUrl)
     }
   }
 
@@ -555,10 +621,10 @@ export const config = {
 }
 ```
 
-**Redirect Logic:**
-- **USER login** → Can access `/dashboard`, redirected from `/admin`
+**Access Control:**
+- **USER login** → Can access `/dashboard`, blocked from `/admin`
 - **ADMIN login** → Can access both `/admin` and `/dashboard`
-- **No session** → Redirected to `/auth/signin`
+- **No session** → Redirected to `/auth/signin` with callback URL preserved
 
 ---
 
@@ -1346,4 +1412,3 @@ WHERE phone = '+8801938264923';
 ```
 
 This method ensures phone normalization is handled by the signup route.
-

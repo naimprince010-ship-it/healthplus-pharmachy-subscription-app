@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { signIn, getSession } from 'next-auth/react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { z } from 'zod'
 
@@ -23,6 +23,7 @@ const signinSchema = z.object({
 
 export default function SignInPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [formData, setFormData] = useState({
     identifier: '',
     password: '',
@@ -63,7 +64,24 @@ export default function SignInPage() {
         return
       }
 
-      router.push('/dashboard')
+      const callbackUrl = searchParams.get('callbackUrl')
+      
+      const isValidCallback = callbackUrl && callbackUrl.startsWith('/') && !callbackUrl.startsWith('//')
+      
+      if (isValidCallback && callbackUrl !== '/') {
+        router.push(callbackUrl)
+        router.refresh()
+        return
+      }
+      
+      const session = await getSession()
+      const role = session?.user?.role
+      
+      if (role === 'ADMIN') {
+        router.push('/admin')
+      } else {
+        router.push('/dashboard')
+      }
       router.refresh()
     } catch (error) {
       console.error('Sign in error:', error)
