@@ -4,12 +4,20 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { ShoppingCart, User, Menu, X } from 'lucide-react'
 import { useState } from 'react'
+import { useSession } from 'next-auth/react'
 
 export function Navbar() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { data: session } = useSession()
 
   const isActive = (path: string) => pathname === path
+
+  const profileHref = !session 
+    ? '/auth/signin' 
+    : session.user?.role === 'ADMIN' 
+    ? '/admin' 
+    : '/dashboard'
 
   return (
     <nav className="sticky top-0 z-40 w-full border-b border-gray-200 bg-white shadow-sm">
@@ -67,7 +75,7 @@ export function Navbar() {
               </span>
             </Link>
             <Link
-              href="/dashboard"
+              href={profileHref}
               className="text-gray-700 transition-colors hover:text-teal-600"
             >
               <User className="h-5 w-5" />
@@ -124,11 +132,11 @@ export function Navbar() {
               Cart
             </Link>
             <Link
-              href="/dashboard"
+              href={profileHref}
               className="block rounded-md px-3 py-2 text-base font-medium text-gray-700 hover:bg-teal-50 hover:text-teal-600"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Dashboard
+              {session?.user?.role === 'ADMIN' ? 'Admin Panel' : 'Dashboard'}
             </Link>
           </div>
         </div>
