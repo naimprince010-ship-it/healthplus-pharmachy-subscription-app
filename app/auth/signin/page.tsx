@@ -48,7 +48,6 @@ function SignInForm() {
           }
         })
         setErrors(fieldErrors)
-        setIsLoading(false)
         return
       }
 
@@ -60,7 +59,6 @@ function SignInForm() {
 
       if (result?.error) {
         setServerError('Invalid credentials')
-        setIsLoading(false)
         return
       }
 
@@ -74,7 +72,14 @@ function SignInForm() {
         return
       }
       
-      const session = await getSession()
+      let session = await getSession()
+      let retries = 0
+      while (!session?.user && retries < 3) {
+        await new Promise(resolve => setTimeout(resolve, 300))
+        session = await getSession()
+        retries++
+      }
+      
       const role = session?.user?.role
       
       if (role === 'ADMIN') {
@@ -86,6 +91,7 @@ function SignInForm() {
     } catch (error) {
       console.error('Sign in error:', error)
       setServerError('An error occurred. Please try again.')
+    } finally {
       setIsLoading(false)
     }
   }
