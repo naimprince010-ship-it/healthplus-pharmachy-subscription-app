@@ -48,10 +48,18 @@
 - **Schema:** `prisma/schema.prisma`
 - **Migrations:** `prisma/migrations/`
 
-**Supabase (PostgreSQL)**
+**Supabase (PostgreSQL + Storage)**
 - **Why:** Managed PostgreSQL with excellent free tier, built-in auth (not used), storage
 - **Connection:** Transaction pooler (port 6543) for serverless compatibility
-- **Features Used:** Database, Storage (future)
+- **Features Used:** 
+  - Database (primary)
+  - Storage (medicine images, prescription uploads)
+  - Two buckets: `healthplus` (prescriptions), `medicine-images` (medicine photos)
+- **Storage Configuration:**
+  - Server-side uploads using SUPABASE_SERVICE_ROLE_KEY (never exposed to client)
+  - Public buckets for direct image access
+  - Max file size: 1MB for medicine images, 5MB for prescriptions
+  - Allowed types: JPG/PNG for medicines, JPG/PNG/PDF for prescriptions
 
 ### Authentication
 
@@ -232,8 +240,11 @@ All API routes are located in `app/api/` and follow RESTful conventions.
 **Admin APIs (Admin Role Required):**
 
 - `GET /api/admin/medicines` - List all medicines
-- `POST /api/admin/medicines` - Create medicine
-- `PUT /api/admin/medicines` - Update medicine
+- `POST /api/admin/medicines` - Create medicine (with auto-pricing logic)
+- `PUT /api/admin/medicines/[id]` - Update medicine (with image replacement)
+- `DELETE /api/admin/medicines/[id]` - Delete medicine (soft/hard delete with image cleanup)
+- `POST /api/admin/uploads/medicine-image` - Upload medicine image to Supabase Storage
+- `DELETE /api/admin/uploads/medicine-image` - Delete medicine image from Supabase Storage
 - `GET /api/admin/categories` - List all categories
 - `POST /api/admin/categories` - Create category
 - `PUT /api/admin/categories` - Update category

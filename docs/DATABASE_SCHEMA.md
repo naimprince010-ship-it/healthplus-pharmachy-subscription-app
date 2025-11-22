@@ -152,19 +152,45 @@ These models are fundamental to the system and changes require careful planning:
 **Fields:**
 - `id` (String, PK): Unique identifier (CUID)
 - `name` (String): Medicine brand name
+- `slug` (String, Unique): URL-friendly slug
 - `genericName` (String, Optional): Generic/scientific name
-- `manufacturer` (String, Optional): Manufacturer name
+- `brandName` (String, Optional): Brand name
+- `manufacturer` (String, **REQUIRED**): Manufacturer name
+- `dosageForm` (String, Optional): Form (e.g., Tablet, Capsule, Syrup)
+- `packSize` (String, Optional): Pack size (e.g., "1 strip x 10 tablets")
 - `description` (String, Optional): Medicine description
-- `price` (Float): Regular price
-- `discountPrice` (Float, Optional): Promotional discount price
 - `strength` (String, Optional): Dosage strength (e.g., "500mg")
 - `unit` (String): Unit of measurement (default: "pcs")
-- `imageUrl` (String, Optional): Medicine image URL
+- **Pricing Fields:**
+  - `mrp` (Float, Optional): Maximum Retail Price
+  - `sellingPrice` (Float, **REQUIRED**): Final selling price (defaults to stripPrice if not provided)
+  - `price` (Float): Deprecated - use sellingPrice instead
+  - `discountPrice` (Float, Optional): Deprecated - use mrp/sellingPrice instead
+  - `unitPrice` (Float, Optional): Price per single tablet/capsule
+  - `stripPrice` (Float, Optional): Price per strip (auto-computed: unitPrice × tabletsPerStrip)
+  - `tabletsPerStrip` (Int, Optional): Number of tablets per strip (auto-parsed from packSize)
+- `stockQuantity` (Int): Current stock quantity (default: 0)
+- `minStockAlert` (Int, Optional): Low stock alert threshold
+- `inStock` (Boolean): Stock availability flag (default: true)
+- **SEO Fields:**
+  - `seoTitle` (String, Optional): SEO title (auto-generated if empty)
+  - `seoDescription` (String, Optional): SEO description
+  - `seoKeywords` (String, Optional): SEO keywords
+  - `canonicalUrl` (String, Optional): Canonical URL
+  - `isFeatured` (Boolean): Featured flag (default: false)
+- **Media:**
+  - `imageUrl` (String, Optional): Medicine image URL (public URL from Supabase Storage)
+  - `imagePath` (String, Optional): Storage path for safe deletion
+- **Additional Details:**
+  - `uses` (String, Optional): Common uses
+  - `sideEffects` (String, Optional): Side effects
+  - `contraindications` (String, Optional): Contraindications
+  - `storageInstructions` (String, Optional): Storage instructions
+  - `expiryDate` (DateTime, Optional): Expiry date
 - `categoryId` (String, FK): Reference to Category
-- `inStock` (Boolean): Stock availability flag
-- `stockQuantity` (Int): Current stock quantity
-- `requiresPrescription` (Boolean): Requires prescription flag
-- `isActive` (Boolean): Active/inactive flag
+- `requiresPrescription` (Boolean): Requires prescription flag (default: false)
+- `isActive` (Boolean): Active/inactive flag (default: true)
+- `deletedAt` (DateTime, Optional): Soft delete timestamp
 - `createdAt` (DateTime): Creation timestamp
 - `updatedAt` (DateTime): Last update timestamp
 
@@ -173,11 +199,23 @@ These models are fundamental to the system and changes require careful planning:
 - Has many: `orderItems`, `subscriptionItems`
 
 **Business Rules:**
-- Name and category are required
-- Price must be positive
+- Name, manufacturer, and category are required
+- Slug is auto-generated from name (unique)
+- **Pricing Logic:**
+  - If unitPrice and tabletsPerStrip provided → stripPrice = unitPrice × tabletsPerStrip (server-side)
+  - If sellingPrice not provided and stripPrice exists → sellingPrice = stripPrice (server-side)
+  - Client-side auto-calculation for UX, server-side for integrity
+  - tabletsPerStrip auto-parsed from packSize if not provided (e.g., "1 strip x 10 tablets" → 10)
+- **Image Handling:**
+  - Images uploaded to Supabase Storage (medicine-images bucket)
+  - Max size: 1MB, allowed types: JPG, PNG
+  - imagePath stored for safe deletion
+  - Soft delete preserves images, hard delete removes images
 - Stock quantity cannot be negative
 - If requiresPrescription is true, show warning to customers
 - Inactive medicines not shown in catalog
+- Soft delete: deletedAt set to current timestamp (not shown in catalog)
+- Hard delete: Only if no order history (referential integrity)
 
 ---
 

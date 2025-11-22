@@ -245,11 +245,21 @@ HealthPlus is a comprehensive online pharmacy platform that enables customers to
 **Admin Capabilities:**
 
 **Medicine Management:**
-- Create, read, update medicines
-- Set pricing, stock quantity, discount prices
+- Create, read, update medicines with comprehensive form (5 tabs: Basic Info, Pricing & Stock, SEO, Details, Media)
+- **Pricing:** Set unit price, strip price (auto-calculated), selling price, MRP
+  - Auto-calculation: stripPrice = unitPrice × tabletsPerStrip (client-side for UX, server-side for integrity)
+  - Auto-detection: tabletsPerStrip parsed from packSize (e.g., "1 strip x 10 tablets" → 10)
+  - Default logic: sellingPrice defaults to stripPrice if not provided
+- **Stock:** Set stock quantity, low stock alert threshold
+- **Media:** Upload medicine images to Supabase Storage (max 1MB, JPG/PNG only)
+  - Images stored in medicine-images bucket with unique paths
+  - Replace/delete functionality with safe cleanup
+- **Additional Details:** Uses, side effects, contraindications, storage instructions, expiry date
+- **SEO:** Auto-generated SEO title, custom SEO description/keywords, canonical URL
 - Mark medicines as requiring prescription
-- Activate/deactivate medicines
+- Activate/deactivate medicines (soft delete with deletedAt timestamp)
 - Assign medicines to categories
+- Required fields: name, manufacturer, category
 
 **Category Management:**
 - Create, read, update categories
