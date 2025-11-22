@@ -10,16 +10,17 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 interface MedicineDetailPageProps {
-  params: {
+  params: Promise<{
     slug: string
-  }
+  }>
 }
 
 export async function generateMetadata({
   params,
 }: MedicineDetailPageProps): Promise<Metadata> {
+  const { slug } = await params
   const medicine = await prisma.medicine.findUnique({
-    where: { slug: params.slug },
+    where: { slug },
   })
 
   if (!medicine) {
@@ -46,9 +47,10 @@ export async function generateMetadata({
 export default async function MedicineDetailPage({
   params,
 }: MedicineDetailPageProps) {
+  const { slug } = await params
   const medicine = await prisma.medicine.findUnique({
     where: {
-      slug: params.slug,
+      slug,
     },
     include: {
       category: {
