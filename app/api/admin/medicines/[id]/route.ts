@@ -3,6 +3,12 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { updateMedicineSchema } from '@/lib/validations/medicine'
 import { generateUniqueMedicineSlug } from '@/lib/slug'
+import {
+  parseTabletsFromPackSize,
+  computeStripPrice,
+  generateSeoTitle,
+} from '@/lib/pricing'
+import { deleteMedicineImage } from '@/lib/supabase'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -95,34 +101,74 @@ export async function PUT(
       slug = await generateUniqueMedicineSlug(data.name, id)
     }
 
+    let tabletsPerStrip = data.tabletsPerStrip
+    if (tabletsPerStrip === undefined && data.packSize) {
+      tabletsPerStrip = parseTabletsFromPackSize(data.packSize)
+    }
+
+    let stripPrice = data.stripPrice
+    if (!stripPrice && data.unitPrice && tabletsPerStrip) {
+      stripPrice = computeStripPrice(data.unitPrice, tabletsPerStrip)
+    }
+
+    let sellingPrice = data.sellingPrice
+    if (!sellingPrice && stripPrice) {
+      sellingPrice = stripPrice
+    }
+
+    let seoTitle = data.seoTitle
+    if (data.seoTitle === undefined && !existing.seoTitle && data.name) {
+      seoTitle = generateSeoTitle({
+        name: data.name || existing.name,
+        strength: data.strength || existing.strength || undefined,
+        dosageForm: data.dosageForm || existing.dosageForm || undefined,
+        packSize: data.packSize || existing.packSize || undefined,
+      })
+    }
+
+    if (data.imagePath && data.imagePath !== existing.imagePath && existing.imagePath) {
+      try {
+        await deleteMedicineImage(existing.imagePath)
+      } catch (error) {
+        console.error('Failed to delete old image:', error)
+      }
+    }
+
     const updateData: any = {}
     if (data.name !== undefined) updateData.name = data.name
     if (data.name !== undefined) updateData.slug = slug
     if (data.genericName !== undefined) updateData.genericName = data.genericName
-    if (data.brandName !== undefined) {
-      updateData.brandName = data.brandName
-      updateData.manufacturer = data.brandName // Backward compatibility
-    }
+    if (data.brandName !== undefined) updateData.brandName = data.brandName
+    if (data.manufacturer !== undefined) updateData.manufacturer = data.manufacturer
     if (data.dosageForm !== undefined) updateData.dosageForm = data.dosageForm
     if (data.packSize !== undefined) updateData.packSize = data.packSize
     if (data.strength !== undefined) updateData.strength = data.strength
     if (data.description !== undefined) updateData.description = data.description
     if (data.categoryId !== undefined) updateData.categoryId = data.categoryId
     if (data.mrp !== undefined) updateData.mrp = data.mrp
-    if (data.sellingPrice !== undefined) {
-      updateData.sellingPrice = data.sellingPrice
-      updateData.price = data.sellingPrice // Backward compatibility
+    if (sellingPrice !== undefined) {
+      updateData.sellingPrice = sellingPrice
+      updateData.price = sellingPrice
     }
+    if (data.unitPrice !== undefined) updateData.unitPrice = data.unitPrice
+    if (stripPrice !== undefined) updateData.stripPrice = stripPrice
+    if (tabletsPerStrip !== undefined) updateData.tabletsPerStrip = tabletsPerStrip
     if (data.stockQuantity !== undefined) {
       updateData.stockQuantity = data.stockQuantity
       updateData.inStock = data.stockQuantity > 0
     }
     if (data.minStockAlert !== undefined) updateData.minStockAlert = data.minStockAlert
-    if (data.seoTitle !== undefined) updateData.seoTitle = data.seoTitle
+    if (seoTitle !== undefined) updateData.seoTitle = seoTitle
     if (data.seoDescription !== undefined) updateData.seoDescription = data.seoDescription
     if (data.seoKeywords !== undefined) updateData.seoKeywords = data.seoKeywords
     if (data.canonicalUrl !== undefined) updateData.canonicalUrl = data.canonicalUrl
     if (data.imageUrl !== undefined) updateData.imageUrl = data.imageUrl
+    if (data.imagePath !== undefined) updateData.imagePath = data.imagePath
+    if (data.uses !== undefined) updateData.uses = data.uses
+    if (data.sideEffects !== undefined) updateData.sideEffects = data.sideEffects
+    if (data.contraindications !== undefined) updateData.contraindications = data.contraindications
+    if (data.storageInstructions !== undefined) updateData.storageInstructions = data.storageInstructions
+    if (data.expiryDate !== undefined) updateData.expiryDate = data.expiryDate ? new Date(data.expiryDate) : null
     if (data.requiresPrescription !== undefined) updateData.requiresPrescription = data.requiresPrescription
     if (data.isFeatured !== undefined) updateData.isFeatured = data.isFeatured
     if (data.isActive !== undefined) updateData.isActive = data.isActive
@@ -197,6 +243,14 @@ export async function DELETE(
         message: `Medicine soft deleted (${orderItemCount} order(s), ${subscriptionItemCount} subscription(s)). Data preserved for historical records.`,
         medicine,
       })
+    }
+
+    if (existing.imagePath) {
+      try {
+        await deleteMedicineImage(existing.imagePath)
+      } catch (error) {
+        console.error('Failed to delete medicine image:', error)
+      }
     }
 
     await prisma.medicine.delete({

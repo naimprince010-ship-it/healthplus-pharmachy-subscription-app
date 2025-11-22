@@ -3,6 +3,9 @@ import { Search } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function MedicinesPage({
   searchParams,
 }: {
@@ -11,7 +14,12 @@ export default async function MedicinesPage({
   const search = searchParams.search || ''
   const categoryId = searchParams.category || ''
 
-  const where: any = {
+  const where: {
+    isActive: boolean
+    deletedAt: null
+    OR?: Array<{ name?: { contains: string; mode: 'insensitive' }; genericName?: { contains: string; mode: 'insensitive' }; brandName?: { contains: string; mode: 'insensitive' } }>
+    categoryId?: string
+  } = {
     isActive: true,
     deletedAt: null,
   }
@@ -28,29 +36,43 @@ export default async function MedicinesPage({
     where.categoryId = categoryId
   }
 
-  const [medicines, categories] = await Promise.all([
-    prisma.medicine.findMany({
-      where,
-      include: {
-        category: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
+  let medicines: Awaited<ReturnType<typeof prisma.medicine.findMany>> = []
+  let categories: Awaited<ReturnType<typeof prisma.category.findMany>> = []
+
+  try {
+    const result = await Promise.all([
+      prisma.medicine.findMany({
+        where,
+        include: {
+          category: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
           },
         },
-      },
-      orderBy: [
-        { isFeatured: 'desc' },
-        { createdAt: 'desc' },
-      ],
-      take: 50,
-    }),
-    prisma.category.findMany({
-      where: { isActive: true },
-      orderBy: { name: 'asc' },
-    }),
-  ])
+        orderBy: [
+          { isFeatured: 'desc' },
+          { createdAt: 'desc' },
+        ],
+        take: 50,
+      }),
+      prisma.category.findMany({
+        where: { isActive: true },
+        orderBy: { name: 'asc' },
+      }),
+    ])
+    medicines = result[0]
+    categories = result[1]
+  } catch (error: unknown) {
+    const err = error as { code?: string }
+    if (err.code === 'P2022') {
+      console.warn('Database schema mismatch - migration needed')
+    } else {
+      console.error('Failed to fetch medicines:', error)
+    }
+  }
 
   return (
     <div className="bg-white py-16">
