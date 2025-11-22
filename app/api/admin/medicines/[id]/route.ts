@@ -120,9 +120,9 @@ export async function PUT(
     if (data.seoTitle === undefined && !existing.seoTitle && data.name) {
       seoTitle = generateSeoTitle({
         name: data.name || existing.name,
-        strength: data.strength || existing.strength,
-        dosageForm: data.dosageForm || existing.dosageForm,
-        packSize: data.packSize || existing.packSize,
+        strength: data.strength || existing.strength || undefined,
+        dosageForm: data.dosageForm || existing.dosageForm || undefined,
+        packSize: data.packSize || existing.packSize || undefined,
       })
     }
 
