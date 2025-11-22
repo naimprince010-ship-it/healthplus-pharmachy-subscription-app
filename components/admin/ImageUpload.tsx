@@ -73,6 +73,7 @@ export function ImageUpload({ value, path, onChange, medicineId }: ImageUploadPr
     <div className="space-y-4">
       {value && (
         <div className="relative inline-block">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={value}
             alt="Medicine"

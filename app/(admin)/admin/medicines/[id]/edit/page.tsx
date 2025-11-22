@@ -7,12 +7,8 @@ import { MedicineForm } from '@/components/admin/MedicineForm'
 export default function EditMedicinePage() {
   const params = useParams()
   const medicineId = params.id as string
-  const [initialData, setInitialData] = useState<any>(null)
+  const [initialData, setInitialData] = useState<Record<string, unknown> | null>(null)
   const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchMedicine()
-  }, [medicineId])
 
   const fetchMedicine = async () => {
     setLoading(true)
@@ -61,6 +57,11 @@ export default function EditMedicinePage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    fetchMedicine()
+  }, [medicineId, fetchMedicine])
+
 
   if (loading) {
     return (

@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { ArrowLeft, Save } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { createMedicineSchema, type CreateMedicineInput } from '@/lib/validations/medicine'
+import { createMedicineSchema } from '@/lib/validations/medicine'
 import { Tabs } from '@/components/ui/Tabs'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { ImageUpload } from '@/components/admin/ImageUpload'
@@ -20,7 +20,7 @@ interface Category {
 interface MedicineFormProps {
   mode: 'create' | 'edit'
   medicineId?: string
-  initialData?: any
+  initialData?: Record<string, unknown>
 }
 
 export function MedicineForm({ mode, medicineId, initialData }: MedicineFormProps) {
@@ -80,12 +80,12 @@ export function MedicineForm({ mode, medicineId, initialData }: MedicineFormProp
       if (res.ok) {
         setCategories(data.categories || [])
       }
-    } catch (error) {
-      console.error('Failed to fetch categories:', error)
+    } catch (err) {
+      console.error('Failed to fetch categories:', err)
     }
   }
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: Record<string, unknown>) => {
     setLoading(true)
     setError(null)
 

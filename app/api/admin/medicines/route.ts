@@ -6,7 +6,6 @@ import { generateUniqueMedicineSlug } from '@/lib/slug'
 import {
   parseTabletsFromPackSize,
   computeStripPrice,
-  defaultSellingPrice,
   generateSeoTitle,
 } from '@/lib/pricing'
 

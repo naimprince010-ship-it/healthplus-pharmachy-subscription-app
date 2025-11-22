@@ -11,7 +11,12 @@ export default async function MedicinesPage({
   const search = searchParams.search || ''
   const categoryId = searchParams.category || ''
 
-  const where: any = {
+  const where: {
+    isActive: boolean
+    deletedAt: null
+    OR?: Array<{ name?: { contains: string; mode: 'insensitive' }; genericName?: { contains: string; mode: 'insensitive' }; brandName?: { contains: string; mode: 'insensitive' } }>
+    categoryId?: string
+  } = {
     isActive: true,
     deletedAt: null,
   }
