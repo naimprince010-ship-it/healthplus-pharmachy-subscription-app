@@ -90,20 +90,44 @@ model Category {
 model Medicine {
   id              String              @id @default(cuid())
   name            String
+  slug            String              @unique
   genericName     String?
-  manufacturer    String?
+  brandName       String?
+  manufacturer    String?             // Deprecated: use brandName instead
+  dosageForm      String?             // e.g., Tablet, Capsule, Syrup, Injection
+  packSize        String?             // e.g., "1 strip x 10 tablets"
   description     String?
-  price           Float
-  discountPrice   Float?
   strength        String?
   unit            String              @default("pcs")
+  
+  // Pricing (new fields)
+  mrp             Float?              // Maximum Retail Price
+  sellingPrice    Float               // Actual selling price
+  price           Float               // Deprecated: use sellingPrice instead
+  discountPrice   Float?              // Deprecated: use mrp/sellingPrice instead
+  
+  // Stock
+  stockQuantity   Int                 @default(0)
+  minStockAlert   Int?                // Low stock alert threshold
+  inStock         Boolean             @default(true)
+  
+  // SEO Fields
+  seoTitle        String?
+  seoDescription  String?
+  seoKeywords     String?
+  canonicalUrl    String?
+  isFeatured      Boolean             @default(false)
+  
+  // Media
   imageUrl        String?
+  
+  // Relations & Status
   categoryId      String
   category        Category            @relation(fields: [categoryId], references: [id])
-  inStock         Boolean             @default(true)
-  stockQuantity   Int                 @default(0)
   requiresPrescription Boolean         @default(false)
   isActive        Boolean             @default(true)
+  deletedAt       DateTime?           // Soft delete timestamp
+  
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
   orderItems      OrderItem[]
