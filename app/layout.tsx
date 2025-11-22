@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
-import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { Tracking } from "@/components/Tracking";
 import { CartProvider } from "@/contexts/CartContext";
 import { SessionProvider } from "next-auth/react";
@@ -47,10 +44,7 @@ export default function RootLayout({
         <SessionProvider>
           <CartProvider>
             <Tracking />
-            <Navbar />
-            <main className="min-h-screen">{children}</main>
-            <Footer />
-            <WhatsAppButton />
+            {children}
           </CartProvider>
         </SessionProvider>
       </body>
