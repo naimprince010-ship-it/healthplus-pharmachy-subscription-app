@@ -1,37 +1,101 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { z } from 'zod'
+import { createMedicineSchema, medicineListQuerySchema } from '@/lib/validations/medicine'
+import { generateUniqueMedicineSlug } from '@/lib/slug'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const medicineSchema = z.object({
-  name: z.string().min(1),
-  genericName: z.string().optional(),
-  manufacturer: z.string().optional(),
-  price: z.number().positive(),
-  stock: z.number().int().nonnegative(),
-  categoryId: z.string(),
-  description: z.string().optional(),
-  isActive: z.boolean().optional(),
-})
-
-export async function GET() {
+/**
+ * GET /api/admin/medicines
+ * List medicines with search, filter, and pagination
+ */
+export async function GET(request: NextRequest) {
   try {
     const session = await auth()
     if (!session || session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
-    const medicines = await prisma.medicine.findMany({
-      include: {
-        category: true,
-      },
-      orderBy: { createdAt: 'desc' },
+    const { searchParams } = new URL(request.url)
+    const queryResult = medicineListQuerySchema.safeParse({
+      page: searchParams.get('page') || '1',
+      limit: searchParams.get('limit') || '20',
+      search: searchParams.get('search') || undefined,
+      categoryId: searchParams.get('categoryId') || undefined,
+      isActive: searchParams.get('isActive') || 'all',
+      isFeatured: searchParams.get('isFeatured') || 'all',
+      requiresPrescription: searchParams.get('requiresPrescription') || 'all',
+      sortBy: searchParams.get('sortBy') || 'createdAt',
+      sortOrder: searchParams.get('sortOrder') || 'desc',
     })
 
-    return NextResponse.json({ medicines })
+    if (!queryResult.success) {
+      return NextResponse.json(
+        { error: 'Invalid query parameters', details: queryResult.error.flatten() },
+        { status: 400 }
+      )
+    }
+
+    const query = queryResult.data
+    const skip = (query.page - 1) * query.limit
+
+    const where: any = {
+      deletedAt: null, // Only show non-deleted medicines
+    }
+
+    if (query.search) {
+      where.OR = [
+        { name: { contains: query.search, mode: 'insensitive' } },
+        { genericName: { contains: query.search, mode: 'insensitive' } },
+        { brandName: { contains: query.search, mode: 'insensitive' } },
+      ]
+    }
+
+    if (query.categoryId) {
+      where.categoryId = query.categoryId
+    }
+
+    if (query.isActive !== 'all') {
+      where.isActive = query.isActive === 'true'
+    }
+
+    if (query.isFeatured !== 'all') {
+      where.isFeatured = query.isFeatured === 'true'
+    }
+
+    if (query.requiresPrescription !== 'all') {
+      where.requiresPrescription = query.requiresPrescription === 'true'
+    }
+
+    const total = await prisma.medicine.count({ where })
+
+    const medicines = await prisma.medicine.findMany({
+      where,
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+      orderBy: { [query.sortBy]: query.sortOrder },
+      skip,
+      take: query.limit,
+    })
+
+    return NextResponse.json({
+      medicines,
+      pagination: {
+        page: query.page,
+        limit: query.limit,
+        total,
+        totalPages: Math.ceil(total / query.limit),
+      },
+    })
   } catch (error) {
     console.error('Fetch medicines error:', error)
     return NextResponse.json(
@@ -41,6 +105,10 @@ export async function GET() {
   }
 }
 
+/**
+ * POST /api/admin/medicines
+ * Create a new medicine
+ */
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()
@@ -49,7 +117,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const validationResult = medicineSchema.safeParse(body)
+    const validationResult = createMedicineSchema.safeParse(body)
 
     if (!validationResult.success) {
       return NextResponse.json(
@@ -61,13 +129,45 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const data = validationResult.data
+
+    const slug = await generateUniqueMedicineSlug(data.name)
+
     const medicine = await prisma.medicine.create({
       data: {
-        ...validationResult.data,
-        isActive: validationResult.data.isActive ?? true,
+        name: data.name,
+        slug,
+        genericName: data.genericName,
+        brandName: data.brandName,
+        manufacturer: data.brandName, // Backward compatibility
+        dosageForm: data.dosageForm,
+        packSize: data.packSize,
+        strength: data.strength,
+        description: data.description,
+        categoryId: data.categoryId,
+        mrp: data.mrp,
+        sellingPrice: data.sellingPrice,
+        price: data.sellingPrice, // Backward compatibility
+        stockQuantity: data.stockQuantity,
+        minStockAlert: data.minStockAlert,
+        seoTitle: data.seoTitle,
+        seoDescription: data.seoDescription,
+        seoKeywords: data.seoKeywords,
+        canonicalUrl: data.canonicalUrl,
+        imageUrl: data.imageUrl,
+        requiresPrescription: data.requiresPrescription,
+        isFeatured: data.isFeatured,
+        isActive: data.isActive,
+        inStock: data.stockQuantity > 0,
       },
       include: {
-        category: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
       },
     })
 
@@ -76,99 +176,6 @@ export async function POST(request: NextRequest) {
     console.error('Create medicine error:', error)
     return NextResponse.json(
       { error: 'Failed to create medicine' },
-      { status: 500 }
-    )
-  }
-}
-
-export async function PATCH(request: NextRequest) {
-  try {
-    const session = await auth()
-    if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-    }
-
-    const body = await request.json()
-    const { id, ...data } = body
-
-    if (!id) {
-      return NextResponse.json({ error: 'Medicine ID required' }, { status: 400 })
-    }
-
-    const validationResult = medicineSchema.partial().safeParse(data)
-    if (!validationResult.success) {
-      return NextResponse.json(
-        {
-          error: 'Validation failed',
-          details: validationResult.error.flatten().fieldErrors,
-        },
-        { status: 400 }
-      )
-    }
-
-    const medicine = await prisma.medicine.update({
-      where: { id },
-      data: validationResult.data,
-      include: {
-        category: true,
-      },
-    })
-
-    return NextResponse.json({ success: true, medicine })
-  } catch (error) {
-    console.error('Update medicine error:', error)
-    return NextResponse.json(
-      { error: 'Failed to update medicine' },
-      { status: 500 }
-    )
-  }
-}
-
-export async function DELETE(request: NextRequest) {
-  try {
-    const session = await auth()
-    if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-    }
-
-    const { searchParams } = new URL(request.url)
-    const id = searchParams.get('id')
-
-    if (!id) {
-      return NextResponse.json({ error: 'Medicine ID required' }, { status: 400 })
-    }
-
-    const orderItemCount = await prisma.orderItem.count({
-      where: { medicineId: id },
-    })
-
-    if (orderItemCount > 0) {
-      return NextResponse.json(
-        { error: `Cannot delete medicine that has been ordered (${orderItemCount} order(s)). Consider marking it as inactive instead.` },
-        { status: 400 }
-      )
-    }
-
-    const subscriptionItemCount = await prisma.subscriptionItem.count({
-      where: { medicineId: id },
-    })
-
-    if (subscriptionItemCount > 0) {
-      return NextResponse.json(
-        { error: `Cannot delete medicine that is in subscription plans (${subscriptionItemCount} plan(s)). Consider marking it as inactive instead.` },
-        { status: 400 }
-      )
-    }
-
-    await prisma.medicine.delete({
-      where: { id },
-    })
-
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Delete medicine error:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete medicine' },
       { status: 500 }
     )
   }

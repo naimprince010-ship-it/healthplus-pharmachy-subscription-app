@@ -217,9 +217,11 @@ async function main() {
     prisma.medicine.create({
       data: {
         name: 'Amlodipine 5mg',
+        slug: 'amlodipine-5mg',
         genericName: 'Amlodipine',
         description: 'Used to treat high blood pressure and chest pain',
         price: 150,
+        sellingPrice: 150,
         stockQuantity: 500,
         categoryId: bpCategory!.id,
         requiresPrescription: true,
@@ -229,9 +231,11 @@ async function main() {
     prisma.medicine.create({
       data: {
         name: 'Losartan 50mg',
+        slug: 'losartan-50mg',
         genericName: 'Losartan',
         description: 'Blood pressure medication',
         price: 180,
+        sellingPrice: 180,
         stockQuantity: 400,
         categoryId: bpCategory!.id,
         requiresPrescription: true,
@@ -241,9 +245,11 @@ async function main() {
     prisma.medicine.create({
       data: {
         name: 'Metformin 500mg',
+        slug: 'metformin-500mg',
         genericName: 'Metformin',
         description: 'Used to control blood sugar levels in type 2 diabetes',
         price: 120,
+        sellingPrice: 120,
         stockQuantity: 600,
         categoryId: diabetesCategory!.id,
         requiresPrescription: true,
@@ -253,9 +259,11 @@ async function main() {
     prisma.medicine.create({
       data: {
         name: 'Glimepiride 2mg',
+        slug: 'glimepiride-2mg',
         genericName: 'Glimepiride',
         description: 'Diabetes medication to control blood sugar',
         price: 200,
+        sellingPrice: 200,
         stockQuantity: 300,
         categoryId: diabetesCategory!.id,
         requiresPrescription: true,
@@ -265,9 +273,11 @@ async function main() {
     prisma.medicine.create({
       data: {
         name: 'Baby Vitamin D Drops',
+        slug: 'baby-vitamin-d-drops',
         genericName: 'Cholecalciferol',
         description: 'Essential vitamin D supplement for babies',
         price: 250,
+        sellingPrice: 250,
         stockQuantity: 200,
         categoryId: babyCareCategory!.id,
         requiresPrescription: false,
@@ -277,9 +287,11 @@ async function main() {
     prisma.medicine.create({
       data: {
         name: 'Gripe Water',
+        slug: 'gripe-water',
         genericName: 'Herbal Digestive',
         description: 'Relief from colic and gas in babies',
         price: 180,
+        sellingPrice: 180,
         stockQuantity: 250,
         categoryId: babyCareCategory!.id,
         requiresPrescription: false,
@@ -289,9 +301,11 @@ async function main() {
     prisma.medicine.create({
       data: {
         name: 'Multivitamin Tablets',
+        slug: 'multivitamin-tablets',
         genericName: 'Multivitamin',
         description: 'Complete daily vitamin supplement',
         price: 300,
+        sellingPrice: 300,
         stockQuantity: 400,
         categoryId: vitaminCategory!.id,
         requiresPrescription: false,
