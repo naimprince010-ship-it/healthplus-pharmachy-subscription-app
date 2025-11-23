@@ -2,10 +2,16 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import { unstable_noStore as noStore } from 'next/cache'
+import Link from 'next/link'
+import { Eye } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
-export default async function OrdersPage() {
+export default async function OrdersPage({
+  searchParams,
+}: {
+  searchParams: { status?: string }
+}) {
   noStore()
   
   const session = await auth()
@@ -13,8 +19,11 @@ export default async function OrdersPage() {
     redirect('/auth/signin')
   }
 
+  const statusFilter = searchParams.status as 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'ALL' | undefined
+
   const orders = await prisma.order.findMany({
-    take: 50,
+    where: statusFilter && statusFilter !== 'ALL' ? { status: statusFilter as any } : undefined,
+    take: 100,
     orderBy: { createdAt: 'desc' },
     include: {
       user: {
@@ -26,6 +35,18 @@ export default async function OrdersPage() {
     },
   })
 
+  const statusOptions = [
+    { value: 'ALL', label: 'All Orders' },
+    { value: 'PENDING', label: 'Pending' },
+    { value: 'CONFIRMED', label: 'Confirmed' },
+    { value: 'PROCESSING', label: 'Processing' },
+    { value: 'SHIPPED', label: 'Out for Delivery' },
+    { value: 'DELIVERED', label: 'Delivered' },
+    { value: 'CANCELLED', label: 'Cancelled' },
+  ]
+
+  const currentStatus = statusFilter || 'ALL'
+
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="mx-auto max-w-7xl">
@@ -33,6 +54,25 @@ export default async function OrdersPage() {
           <h1 className="text-3xl font-bold text-gray-900">Orders</h1>
           <div className="text-sm text-gray-600">
             Total: {orders.length} orders
+          </div>
+        </div>
+
+        <div className="mb-6 flex items-center gap-2">
+          <span className="text-sm font-medium text-gray-700">Filter by status:</span>
+          <div className="flex flex-wrap gap-2">
+            {statusOptions.map((option) => (
+              <Link
+                key={option.value}
+                href={`/admin/orders${option.value !== 'ALL' ? `?status=${option.value}` : ''}`}
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                  currentStatus === option.value
+                    ? 'bg-teal-600 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                {option.label}
+              </Link>
+            ))}
           </div>
         </div>
 
@@ -58,11 +98,14 @@ export default async function OrdersPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                   Date
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 bg-white">
               {orders.map((order) => (
-                <tr key={order.id}>
+                <tr key={order.id} className="hover:bg-gray-50">
                   <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
                     {order.orderNumber}
                   </td>
@@ -93,6 +136,15 @@ export default async function OrdersPage() {
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                     {new Date(order.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm">
+                    <Link
+                      href={`/admin/orders/${order.id}`}
+                      className="inline-flex items-center gap-2 text-teal-600 hover:text-teal-700"
+                    >
+                      <Eye className="h-4 w-4" />
+                      View Details
+                    </Link>
                   </td>
                 </tr>
               ))}
