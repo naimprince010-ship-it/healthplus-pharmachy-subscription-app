@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft, Package, User, MapPin, CreditCard, Clock, CheckCircle, XCircle } from 'lucide-react'
 import Link from 'next/link'
 
@@ -57,25 +57,44 @@ const statusFlow = [
   { key: 'DELIVERED', label: 'Delivered', icon: CheckCircle },
 ]
 
-export default function OrderDetailsPage({ params }: { params: { id: string } }) {
+export default function OrderDetailsPage() {
   const router = useRouter()
+  const params = useParams<{ id: string }>()
+  const orderId = params?.id
+  
   const [order, setOrder] = useState<Order | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
   const [isUpdating, setIsUpdating] = useState(false)
 
   useEffect(() => {
-    fetchOrder()
-  }, [params.id])
+    if (orderId) {
+      fetchOrder()
+    }
+  }, [orderId])
 
   const fetchOrder = async () => {
+    if (!orderId) {
+      setError('Order ID is missing')
+      setIsLoading(false)
+      return
+    }
+
     try {
-      const response = await fetch(`/api/admin/orders/${params.id}`, {
+      const response = await fetch(`/api/admin/orders/${encodeURIComponent(orderId)}`, {
         credentials: 'include',
       })
+      
+      if (response.status === 404) {
+        setError('Order not found')
+        setIsLoading(false)
+        return
+      }
+      
       if (!response.ok) {
         throw new Error('Failed to fetch order')
       }
+      
       const data = await response.json()
       setOrder(data.order)
     } catch (err) {
@@ -87,13 +106,13 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
   }
 
   const updateStatus = async (newStatus: string) => {
-    if (!order) return
+    if (!order || !orderId) return
 
     setIsUpdating(true)
     setError('')
 
     try {
-      const response = await fetch(`/api/admin/orders/${params.id}/status`, {
+      const response = await fetch(`/api/admin/orders/${encodeURIComponent(orderId)}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
