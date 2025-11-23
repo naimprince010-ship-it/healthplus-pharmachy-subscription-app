@@ -8,11 +8,9 @@ export const dynamic = 'force-dynamic'
 
 const createOrderSchema = z.object({
   addressId: z.string().optional(),
-  zoneId: z.string().optional(),
+  zoneId: z.string().min(1, 'Zone is required'), // Required: must select a delivery zone
   deliveryCharge: z.number().positive().optional(),
   notes: z.string().optional(),
-}).refine((data) => data.addressId || data.zoneId, {
-  message: 'Either addressId or zoneId must be provided',
 })
 
 export async function POST(
@@ -40,6 +38,18 @@ export async function POST(
     }
 
     const { addressId, zoneId, deliveryCharge: customDeliveryCharge, notes } = validationResult.data
+
+    const selectedZone = await prisma.zone.findUnique({
+      where: { id: zoneId },
+    })
+
+    if (!selectedZone) {
+      return NextResponse.json({ error: 'Invalid zone' }, { status: 400 })
+    }
+
+    if (!selectedZone.isActive) {
+      return NextResponse.json({ error: 'Selected zone is not active' }, { status: 400 })
+    }
 
     const prescription = await prisma.prescription.findUnique({
       where: { id: prescriptionId },
@@ -85,16 +95,15 @@ export async function POST(
       if (!address) {
         return NextResponse.json({ error: 'Invalid address' }, { status: 400 })
       }
-      finalAddressId = addressId
-    } else if (zoneId) {
-      const zone = await prisma.zone.findUnique({
-        where: { id: zoneId },
-      })
 
-      if (!zone) {
-        return NextResponse.json({ error: 'Invalid zone' }, { status: 400 })
+      if (address.zoneId !== zoneId) {
+        return NextResponse.json({ 
+          error: 'Address zone does not match selected delivery zone' 
+        }, { status: 400 })
       }
 
+      finalAddressId = addressId
+    } else {
       address = await prisma.address.create({
         data: {
           userId: prescription.userId,
@@ -108,8 +117,6 @@ export async function POST(
         include: { zone: true },
       })
       finalAddressId = address.id
-    } else {
-      return NextResponse.json({ error: 'Address or zone required' }, { status: 400 })
     }
 
     const membership = await prisma.userMembership.findFirst({
@@ -133,7 +140,8 @@ export async function POST(
       ? subtotal * (membership.plan.discountPercent / 100) 
       : 0
     
-    const deliveryCharge = customDeliveryCharge ?? address.zone.deliveryCharge
+    const zoneFee = selectedZone.deliveryFee ?? selectedZone.deliveryCharge
+    const deliveryCharge = customDeliveryCharge ?? zoneFee
     const total = subtotal - membershipDiscountAmount + deliveryCharge
 
     const orderNumber = `ORD-${Date.now()}`
@@ -143,6 +151,7 @@ export async function POST(
         orderNumber,
         userId: prescription.userId,
         addressId: finalAddressId,
+        zoneId: zoneId, // Required: delivery zone for this order
         prescriptionId: prescription.id,
         subtotal,
         discount: membershipDiscountAmount,

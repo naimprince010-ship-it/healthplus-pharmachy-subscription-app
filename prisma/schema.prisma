@@ -67,12 +67,16 @@ model Address {
 model Zone {
   id              String    @id @default(cuid())
   name            String    @unique
-  deliveryCharge  Float
+  description     String?   // List of areas covered
+  deliveryCharge  Float     // Deprecated: use deliveryFee instead
+  deliveryFee     Int?      // Delivery fee in BDT
   deliveryDays    String
   isActive        Boolean   @default(true)
+  sortOrder       Int       @default(0)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   addresses       Address[]
+  orders          Order[]
 }
 
 model Category {
@@ -189,6 +193,8 @@ model Order {
   user                      User          @relation(fields: [userId], references: [id])
   addressId                 String
   address                   Address       @relation(fields: [addressId], references: [id])
+  zoneId                    String        // Required: delivery zone for this order
+  zone                      Zone          @relation(fields: [zoneId], references: [id])
   prescriptionId            String?       @unique // Optional: linked prescription
   prescription              Prescription? @relation(fields: [prescriptionId], references: [id], onDelete: SetNull)
   status                    OrderStatus   @default(PENDING)

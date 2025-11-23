@@ -47,6 +47,7 @@ export async function POST(request: NextRequest) {
 
     let address
     let finalAddressId: string
+    let finalZoneId: string
 
     if (addressId) {
       address = await prisma.address.findUnique({
@@ -58,6 +59,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Invalid address' }, { status: 400 })
       }
       finalAddressId = addressId
+      finalZoneId = address.zoneId
     } else if (zoneId) {
       const zone = await prisma.zone.findUnique({
         where: { id: zoneId },
@@ -66,6 +68,7 @@ export async function POST(request: NextRequest) {
       if (!zone) {
         return NextResponse.json({ error: 'Invalid zone' }, { status: 400 })
       }
+      finalZoneId = zoneId
 
       const user = await prisma.user.findUnique({
         where: { id: session.user.id },
@@ -131,6 +134,7 @@ export async function POST(request: NextRequest) {
         orderNumber,
         userId: session.user.id,
         addressId: finalAddressId,
+        zoneId: finalZoneId,
         subtotal,
         discount,
         membershipDiscountAmount: discount > 0 ? discount : null,
