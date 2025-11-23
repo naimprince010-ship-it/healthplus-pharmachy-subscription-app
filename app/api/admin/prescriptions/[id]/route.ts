@@ -29,7 +29,16 @@ export async function GET(
           },
         },
         items: {
-          include: {
+          select: {
+            id: true,
+            prescriptionId: true,
+            medicineId: true,
+            genericName: true,
+            strength: true,
+            quantity: true,
+            note: true,
+            createdAt: true,
+            updatedAt: true,
             medicine: {
               select: {
                 id: true,
