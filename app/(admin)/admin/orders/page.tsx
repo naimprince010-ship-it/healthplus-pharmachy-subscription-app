@@ -14,7 +14,7 @@ const validStatuses: OrderStatus[] = ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHI
 export default async function OrdersPage({
   searchParams,
 }: {
-  searchParams: { status?: string }
+  searchParams: Promise<{ status?: string }>
 }) {
   noStore()
   
@@ -23,7 +23,8 @@ export default async function OrdersPage({
     redirect('/auth/signin')
   }
 
-  const rawStatus = searchParams.status?.toString().toUpperCase()
+  const { status } = await searchParams
+  const rawStatus = status?.toString().toUpperCase()
   const statusFilter = rawStatus && rawStatus !== 'ALL' && validStatuses.includes(rawStatus as OrderStatus) 
     ? (rawStatus as OrderStatus) 
     : undefined

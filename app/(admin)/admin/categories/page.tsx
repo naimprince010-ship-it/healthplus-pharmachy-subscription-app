@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic'
 export default async function CategoriesPage({
   searchParams,
 }: {
-  searchParams: { search?: string; status?: string }
+  searchParams: Promise<{ search?: string; status?: string }>
 }) {
   noStore()
 
@@ -21,8 +21,9 @@ export default async function CategoriesPage({
     redirect('/auth/signin')
   }
 
-  const search = searchParams.search || ''
-  const status = searchParams.status?.toUpperCase() || 'ALL'
+  const params = await searchParams
+  const search = params.search || ''
+  const status = params.status?.toUpperCase() || 'ALL'
 
   const where: {
     OR?: Array<{ name: { contains: string; mode: 'insensitive' } } | { slug: { contains: string; mode: 'insensitive' } }>
