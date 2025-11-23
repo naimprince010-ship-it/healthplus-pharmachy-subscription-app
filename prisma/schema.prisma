@@ -76,15 +76,19 @@ model Zone {
 }
 
 model Category {
-  id          String     @id @default(cuid())
-  name        String     @unique
-  slug        String     @unique
-  description String?
-  imageUrl    String?
-  isActive    Boolean    @default(true)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  medicines   Medicine[]
+  id                String     @id @default(cuid())
+  name              String     @unique
+  slug              String     @unique
+  description       String?
+  imageUrl          String?
+  parentCategoryId  String?
+  parentCategory    Category?  @relation("CategoryToSubCategory", fields: [parentCategoryId], references: [id], onDelete: SetNull)
+  subCategories     Category[] @relation("CategoryToSubCategory")
+  isActive          Boolean    @default(true)
+  sortOrder         Int        @default(0)
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  medicines         Medicine[]
 }
 
 model Medicine {

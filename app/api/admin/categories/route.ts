@@ -1,26 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { createCategorySchema } from '@/lib/validations/category'
 import { z } from 'zod'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const categorySchema = z.object({
-  name: z.string().min(1),
-  slug: z.string().min(1),
-  description: z.string().optional(),
-  isActive: z.boolean().optional(),
-})
-
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await auth()
     if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const search = searchParams.get('search') || ''
+    const status = searchParams.get('status')?.toUpperCase() || 'ALL'
+
+    const where: any = {}
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { slug: { contains: search, mode: 'insensitive' } },
+      ]
+    }
+
+    if (status === 'ACTIVE') {
+      where.isActive = true
+    } else if (status === 'INACTIVE') {
+      where.isActive = false
     }
 
     const categories = await prisma.category.findMany({
+      where,
       include: {
         _count: {
           select: { medicines: true },
@@ -43,113 +57,53 @@ export async function POST(request: NextRequest) {
   try {
     const session = await auth()
     if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const body = await request.json()
-    const validationResult = categorySchema.safeParse(body)
+    const validatedData = createCategorySchema.parse(body)
 
-    if (!validationResult.success) {
+    const existingSlug = await prisma.category.findUnique({
+      where: { slug: validatedData.slug },
+    })
+    if (existingSlug) {
       return NextResponse.json(
-        {
-          error: 'Validation failed',
-          details: validationResult.error.flatten().fieldErrors,
-        },
+        { error: 'A category with this slug already exists' },
+        { status: 400 }
+      )
+    }
+
+    const existingName = await prisma.category.findUnique({
+      where: { name: validatedData.name },
+    })
+    if (existingName) {
+      return NextResponse.json(
+        { error: 'A category with this name already exists' },
         { status: 400 }
       )
     }
 
     const category = await prisma.category.create({
       data: {
-        ...validationResult.data,
-        isActive: validationResult.data.isActive ?? true,
+        name: validatedData.name,
+        slug: validatedData.slug,
+        description: validatedData.description || null,
+        imageUrl: validatedData.imageUrl || null,
+        isActive: validatedData.isActive ?? true,
       },
     })
 
-    return NextResponse.json({ success: true, category }, { status: 201 })
+    return NextResponse.json({ category }, { status: 201 })
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Validation error', details: error.issues },
+        { status: 400 }
+      )
+    }
     console.error('Create category error:', error)
     return NextResponse.json(
       { error: 'Failed to create category' },
-      { status: 500 }
-    )
-  }
-}
-
-export async function PATCH(request: NextRequest) {
-  try {
-    const session = await auth()
-    if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-    }
-
-    const body = await request.json()
-    const { id, ...data } = body
-
-    if (!id) {
-      return NextResponse.json({ error: 'Category ID required' }, { status: 400 })
-    }
-
-    const validationResult = categorySchema.partial().safeParse(data)
-    if (!validationResult.success) {
-      return NextResponse.json(
-        {
-          error: 'Validation failed',
-          details: validationResult.error.flatten().fieldErrors,
-        },
-        { status: 400 }
-      )
-    }
-
-    const category = await prisma.category.update({
-      where: { id },
-      data: validationResult.data,
-    })
-
-    return NextResponse.json({ success: true, category })
-  } catch (error) {
-    console.error('Update category error:', error)
-    return NextResponse.json(
-      { error: 'Failed to update category' },
-      { status: 500 }
-    )
-  }
-}
-
-export async function DELETE(request: NextRequest) {
-  try {
-    const session = await auth()
-    if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-    }
-
-    const { searchParams } = new URL(request.url)
-    const id = searchParams.get('id')
-
-    if (!id) {
-      return NextResponse.json({ error: 'Category ID required' }, { status: 400 })
-    }
-
-    const medicineCount = await prisma.medicine.count({
-      where: { categoryId: id },
-    })
-
-    if (medicineCount > 0) {
-      return NextResponse.json(
-        { error: `Cannot delete category with ${medicineCount} medicine(s). Please reassign or delete the medicines first.` },
-        { status: 400 }
-      )
-    }
-
-    await prisma.category.delete({
-      where: { id },
-    })
-
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Delete category error:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete category' },
       { status: 500 }
     )
   }
