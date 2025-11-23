@@ -23,9 +23,6 @@ export async function GET(
         user: {
           select: { name: true, phone: true, email: true },
         },
-        address: {
-          include: { zone: true },
-        },
         items: {
           include: {
             medicine: {
@@ -40,7 +37,35 @@ export async function GET(
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ order })
+    let address = null
+    if (order.addressId) {
+      try {
+        address = await prisma.address.findUnique({
+          where: { id: order.addressId },
+          include: { zone: true },
+        })
+      } catch (err) {
+        console.error('Error fetching address:', err)
+      }
+    }
+
+    if (!address) {
+      address = {
+        id: 'N/A',
+        fullName: order.user.name,
+        phone: order.user.phone,
+        addressLine1: 'N/A',
+        addressLine2: null,
+        city: 'N/A',
+        zone: {
+          id: 'N/A',
+          name: 'N/A',
+          deliveryCharge: 0,
+        },
+      }
+    }
+
+    return NextResponse.json({ order: { ...order, address } })
   } catch (error) {
     console.error('Error fetching order:', error)
     return NextResponse.json(

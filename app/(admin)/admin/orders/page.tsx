@@ -4,8 +4,11 @@ import { redirect } from 'next/navigation'
 import { unstable_noStore as noStore } from 'next/cache'
 import Link from 'next/link'
 import { Eye } from 'lucide-react'
+import { OrderStatus } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
+
+const validStatuses: OrderStatus[] = ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED']
 
 export default async function OrdersPage({
   searchParams,
@@ -19,10 +22,13 @@ export default async function OrdersPage({
     redirect('/auth/signin')
   }
 
-  const statusFilter = searchParams.status as 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'ALL' | undefined
+  const rawStatus = searchParams.status?.toString().toUpperCase()
+  const statusFilter = rawStatus && rawStatus !== 'ALL' && validStatuses.includes(rawStatus as OrderStatus) 
+    ? (rawStatus as OrderStatus) 
+    : undefined
 
   const orders = await prisma.order.findMany({
-    where: statusFilter && statusFilter !== 'ALL' ? { status: statusFilter as any } : undefined,
+    where: statusFilter ? { status: statusFilter } : undefined,
     take: 100,
     orderBy: { createdAt: 'desc' },
     include: {
