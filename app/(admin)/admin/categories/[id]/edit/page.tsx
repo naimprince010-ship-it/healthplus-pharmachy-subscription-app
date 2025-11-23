@@ -22,8 +22,8 @@ export default async function EditCategoryPage({
       description: true,
       imageUrl: true,
       isActive: true,
-      createdAt: true,
-      updatedAt: true,
+      parentCategoryId: true,
+      sortOrder: true,
     },
   })
 

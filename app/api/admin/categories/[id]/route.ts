@@ -54,6 +54,11 @@ export async function PUT(
 
     const { id } = await params
     const body = await request.json()
+    
+    if (body.parentId && !body.parentCategoryId) {
+      body.parentCategoryId = body.parentId
+    }
+    
     const validatedData = updateCategorySchema.parse({ ...body, id })
 
     const existingCategory = await prisma.category.findUnique({
@@ -90,12 +95,64 @@ export async function PUT(
       }
     }
 
-    const updateData: any = {}
+    if (validatedData.parentCategoryId !== undefined) {
+      if (validatedData.parentCategoryId) {
+        const parentExists = await prisma.category.findUnique({
+          where: { id: validatedData.parentCategoryId },
+        })
+        if (!parentExists) {
+          return NextResponse.json(
+            { error: 'Parent category not found' },
+            { status: 400 }
+          )
+        }
+
+        if (validatedData.parentCategoryId === id) {
+          return NextResponse.json(
+            { error: 'A category cannot be its own parent' },
+            { status: 400 }
+          )
+        }
+
+        let currentParentId: string | null = validatedData.parentCategoryId
+        const visited = new Set([id])
+        
+        while (currentParentId) {
+          if (visited.has(currentParentId)) {
+            return NextResponse.json(
+              { error: 'Circular reference detected: this would create a category loop' },
+              { status: 400 }
+            )
+          }
+          visited.add(currentParentId)
+          
+          const parent: { parentCategoryId: string | null } | null = await prisma.category.findUnique({
+            where: { id: currentParentId },
+            select: { parentCategoryId: true },
+          })
+          
+          if (!parent) break
+          currentParentId = parent.parentCategoryId
+        }
+      }
+    }
+
+    const updateData: {
+      name?: string
+      slug?: string
+      description?: string | null
+      imageUrl?: string | null
+      isActive?: boolean
+      parentCategoryId?: string | null
+      sortOrder?: number
+    } = {}
     if (validatedData.name !== undefined) updateData.name = validatedData.name
     if (validatedData.slug !== undefined) updateData.slug = validatedData.slug
     if (validatedData.description !== undefined) updateData.description = validatedData.description
     if (validatedData.imageUrl !== undefined) updateData.imageUrl = validatedData.imageUrl
     if (validatedData.isActive !== undefined) updateData.isActive = validatedData.isActive
+    if (validatedData.parentCategoryId !== undefined) updateData.parentCategoryId = validatedData.parentCategoryId
+    if (validatedData.sortOrder !== undefined) updateData.sortOrder = validatedData.sortOrder
 
     const category = await prisma.category.update({
       where: { id },
