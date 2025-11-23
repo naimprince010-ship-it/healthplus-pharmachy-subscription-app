@@ -5,6 +5,7 @@ import { unstable_noStore as noStore } from 'next/cache'
 import Link from 'next/link'
 import { Eye } from 'lucide-react'
 import { OrderStatus } from '@prisma/client'
+import OrdersStatusFilter from '@/components/admin/OrdersStatusFilter'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,18 +42,6 @@ export default async function OrdersPage({
     },
   })
 
-  const statusOptions = [
-    { value: 'ALL', label: 'All Orders' },
-    { value: 'PENDING', label: 'Pending' },
-    { value: 'CONFIRMED', label: 'Confirmed' },
-    { value: 'PROCESSING', label: 'Processing' },
-    { value: 'SHIPPED', label: 'Out for Delivery' },
-    { value: 'DELIVERED', label: 'Delivered' },
-    { value: 'CANCELLED', label: 'Cancelled' },
-  ]
-
-  const currentStatus = statusFilter || 'ALL'
-
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="mx-auto max-w-7xl">
@@ -63,24 +52,7 @@ export default async function OrdersPage({
           </div>
         </div>
 
-        <div className="mb-6 flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-700">Filter by status:</span>
-          <div className="flex flex-wrap gap-2">
-            {statusOptions.map((option) => (
-              <Link
-                key={option.value}
-                href={`/admin/orders${option.value !== 'ALL' ? `?status=${option.value}` : ''}`}
-                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                  currentStatus === option.value
-                    ? 'bg-teal-600 text-white'
-                    : 'bg-white text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                {option.label}
-              </Link>
-            ))}
-          </div>
-        </div>
+        <OrdersStatusFilter />
 
         <div className="overflow-hidden rounded-lg bg-white shadow">
           <table className="min-w-full divide-y divide-gray-200">
