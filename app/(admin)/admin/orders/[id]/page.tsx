@@ -70,7 +70,9 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
 
   const fetchOrder = async () => {
     try {
-      const response = await fetch(`/api/admin/orders/${params.id}`)
+      const response = await fetch(`/api/admin/orders/${params.id}`, {
+        credentials: 'include',
+      })
       if (!response.ok) {
         throw new Error('Failed to fetch order')
       }
@@ -95,6 +97,7 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
+        credentials: 'include',
       })
 
       if (!response.ok) {
