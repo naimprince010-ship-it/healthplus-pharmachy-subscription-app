@@ -41,7 +41,11 @@ export default async function CategoriesPage({
 
   const categories = await prisma.category.findMany({
     where,
-    include: {
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      isActive: true,
       _count: {
         select: { medicines: true },
       },
