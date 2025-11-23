@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Eye, Plus, Edit, Trash2, ShoppingCart } from 'lucide-react'
 import { MedicineAutocomplete } from '@/components/MedicineAutocomplete'
+import { ZoneSelectionModal } from '@/components/ZoneSelectionModal'
 
 interface PrescriptionItem {
   id: string
@@ -58,6 +59,7 @@ export default function PrescriptionDetailPage({ params }: { params: Promise<{ i
   const [prescriptionId, setPrescriptionId] = useState<string>('')
   const [editingItem, setEditingItem] = useState<PrescriptionItem | null>(null)
   const [showAddItem, setShowAddItem] = useState(false)
+  const [showZoneModal, setShowZoneModal] = useState(false)
   const [itemForm, setItemForm] = useState({
     genericName: '',
     strength: '',
@@ -191,7 +193,7 @@ export default function PrescriptionDetailPage({ params }: { params: Promise<{ i
     }
   }
 
-  async function handleCreateOrder() {
+  function handleCreateOrder() {
     if (!prescription) return
 
     if (prescription.items.filter(i => i.medicineId).length === 0) {
@@ -199,14 +201,20 @@ export default function PrescriptionDetailPage({ params }: { params: Promise<{ i
       return
     }
 
-    if (!confirm('Create order from this prescription?')) return
+    setShowZoneModal(true)
+  }
+
+  async function handleZoneConfirm(zoneId: string) {
+    if (!prescription) return
+
+    setShowZoneModal(false)
 
     try {
       const response = await fetch(`/api/admin/prescriptions/${prescriptionId}/create-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          zoneId: prescription.zoneId || '1', // Default zone if not specified
+          zoneId: zoneId,
         }),
       })
 
@@ -527,6 +535,16 @@ export default function PrescriptionDetailPage({ params }: { params: Promise<{ i
           </div>
         </div>
       </div>
+
+      {/* Zone Selection Modal */}
+      <ZoneSelectionModal
+        isOpen={showZoneModal}
+        onClose={() => setShowZoneModal(false)}
+        onConfirm={handleZoneConfirm}
+        customerName={prescription.name}
+        customerPhone={prescription.phone}
+        prescriptionId={prescription.id}
+      />
     </div>
   )
 }
