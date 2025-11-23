@@ -147,41 +147,62 @@ model Medicine {
   updatedAt       DateTime            @updatedAt
   orderItems      OrderItem[]
   subscriptionItems SubscriptionItem[]
+  prescriptionItems PrescriptionItem[]
 }
 
 model Prescription {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name        String
-  phone       String
-  zoneId      String?
-  fileUrl     String
-  fileType    String?
-  status      String   @default("NEW")
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String              @id @default(cuid())
+  userId       String
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String              // Customer full name
+  phone        String              // Normalized phone number
+  zoneId       String?             // Delivery zone
+  fileUrl      String              // Prescription file URL
+  fileType     String?             // File MIME type
+  status       String              @default("NEW") // NEW, REVIEWING, QUOTED, ORDERED, COMPLETED, CANCELLED
+  notes        String?             // Admin internal notes
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  items        PrescriptionItem[]  // Prescription items parsed by admin
+  order        Order?              // Linked order if converted
+}
+
+model PrescriptionItem {
+  id              String       @id @default(cuid())
+  prescriptionId  String
+  prescription    Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+  medicineId      String?      // Optional: mapped to actual Medicine
+  medicine        Medicine?    @relation(fields: [medicineId], references: [id], onDelete: SetNull)
+  genericName     String       // Generic name from prescription
+  strength        String?      // e.g., "500mg"
+  quantity        Int          // Quantity prescribed
+  note            String?      // Additional notes
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 }
 
 model Order {
-  id              String        @id @default(cuid())
-  orderNumber     String        @unique
-  userId          String
-  user            User          @relation(fields: [userId], references: [id])
-  addressId       String
-  address         Address       @relation(fields: [addressId], references: [id])
-  status          OrderStatus   @default(PENDING)
-  subtotal        Float
-  discount        Float         @default(0)
-  deliveryCharge  Float
-  total           Float
-  paymentMethod   PaymentMethod @default(COD)
-  paymentStatus   String        @default("PENDING")
-  notes           String?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  items           OrderItem[]
+  id                        String        @id @default(cuid())
+  orderNumber               String        @unique
+  userId                    String
+  user                      User          @relation(fields: [userId], references: [id])
+  addressId                 String
+  address                   Address       @relation(fields: [addressId], references: [id])
+  prescriptionId            String?       @unique // Optional: linked prescription
+  prescription              Prescription? @relation(fields: [prescriptionId], references: [id], onDelete: SetNull)
+  status                    OrderStatus   @default(PENDING)
+  subtotal                  Float
+  discount                  Float         @default(0)
+  membershipDiscountAmount  Float?        // Membership discount applied
+  membershipPlanName        String?       // Membership plan name at time of order
+  deliveryCharge            Float
+  total                     Float
+  paymentMethod             PaymentMethod @default(COD)
+  paymentStatus             String        @default("PENDING")
+  notes                     String?
+  createdAt                 DateTime      @default(now())
+  updatedAt                 DateTime      @updatedAt
+  items                     OrderItem[]
 }
 
 model OrderItem {

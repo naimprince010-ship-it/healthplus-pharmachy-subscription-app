@@ -139,14 +139,22 @@ export default function AdminPrescriptionsPage() {
                     {new Date(prescription.createdAt).toLocaleDateString()}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm">
-                    <button
-                      onClick={() => window.open(prescription.fileUrl, '_blank')}
-                      className="inline-flex items-center rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
-                      title="View / Download Prescription"
-                    >
-                      <Eye className="mr-2 h-4 w-4" />
-                      View File
-                    </button>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => router.push(`/admin/prescriptions/${prescription.id}`)}
+                        className="inline-flex items-center rounded-lg bg-teal-600 px-3 py-2 text-sm font-medium text-white hover:bg-teal-700"
+                        title="View Details"
+                      >
+                        View Details
+                      </button>
+                      <button
+                        onClick={() => window.open(prescription.fileUrl, '_blank')}
+                        className="inline-flex items-center rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                        title="View / Download Prescription"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
