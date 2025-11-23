@@ -114,7 +114,7 @@ export default function DashboardPage() {
           <div>
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold text-gray-900">Recent Orders</h2>
-              <Link href="/orders" className="text-sm font-semibold text-teal-600 hover:text-teal-700">
+              <Link href="/dashboard/orders" className="text-sm font-semibold text-teal-600 hover:text-teal-700">
                 View All
               </Link>
             </div>
