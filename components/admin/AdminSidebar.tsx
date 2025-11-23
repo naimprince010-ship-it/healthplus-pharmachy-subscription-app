@@ -13,6 +13,7 @@ import {
   Image,
   Users,
   BarChart3,
+  MapPin,
   X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -31,6 +32,7 @@ const navItems: NavItem[] = [
   { label: 'Subscriptions', href: '/admin/subscriptions', icon: Calendar },
   { label: 'Memberships', href: '/admin/membership', icon: Shield },
   { label: 'Prescriptions', href: '/admin/prescriptions', icon: FileText },
+  { label: 'Delivery Zones', href: '/admin/delivery-zones', icon: MapPin },
   { label: 'Banners', href: '/admin/banners', icon: Image },
   { label: 'Users', href: '/admin/users', icon: Users },
   { label: 'Sales / Reports', href: '/admin/sales', icon: BarChart3 },
