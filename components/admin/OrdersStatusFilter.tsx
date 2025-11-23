@@ -25,6 +25,7 @@ export default function OrdersStatusFilter() {
       params.set('status', status)
       router.push(`/admin/orders?${params.toString()}`)
     }
+    router.refresh()
   }
 
   return (
