@@ -30,7 +30,7 @@ const navItems: NavItem[] = [
   { label: 'Categories', href: '/admin/categories', icon: FolderTree },
   { label: 'Orders', href: '/admin/orders', icon: ShoppingBag },
   { label: 'Subscriptions', href: '/admin/subscriptions', icon: Calendar },
-  { label: 'Memberships', href: '/admin/membership', icon: Shield },
+  { label: 'Memberships', href: '/admin/memberships', icon: Shield },
   { label: 'Prescriptions', href: '/admin/prescriptions', icon: FileText },
   { label: 'Delivery Zones', href: '/admin/delivery-zones', icon: MapPin },
   { label: 'Banners', href: '/admin/banners', icon: Image },
