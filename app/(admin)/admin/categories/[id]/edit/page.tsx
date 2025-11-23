@@ -6,15 +6,17 @@ import CategoryForm from '@/components/admin/CategoryForm'
 export default async function EditCategoryPage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
   const session = await auth()
   if (!session || session.user.role !== 'ADMIN') {
     redirect('/auth/signin')
   }
 
+  const { id } = await params
+
   const category = await prisma.category.findUnique({
-    where: { id: params.id },
+    where: { id },
     select: {
       id: true,
       name: true,
@@ -34,7 +36,7 @@ export default async function EditCategoryPage({
   const categories = await prisma.category.findMany({
     where: {
       isActive: true,
-      id: { not: params.id },
+      id: { not: id },
     },
     orderBy: { name: 'asc' },
     select: {
