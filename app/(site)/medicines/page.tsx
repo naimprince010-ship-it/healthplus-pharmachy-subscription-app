@@ -10,10 +10,11 @@ export const revalidate = 0
 export default async function MedicinesPage({
   searchParams,
 }: {
-  searchParams: { search?: string; category?: string }
+  searchParams: Promise<{ search?: string; category?: string }>
 }) {
-  const search = searchParams.search || ''
-  const categoryId = searchParams.category || ''
+  const params = await searchParams
+  const search = params.search || ''
+  const categoryId = params.category || ''
 
   const where: {
     isActive: boolean
