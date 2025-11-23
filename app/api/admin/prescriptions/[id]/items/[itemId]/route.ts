@@ -12,6 +12,7 @@ const updateItemSchema = z.object({
   quantity: z.number().int().positive().optional(),
   note: z.string().optional(),
   medicineId: z.string().optional().nullable(),
+  medicineNameSnapshot: z.string().optional().nullable(),
 })
 
 export async function PATCH(

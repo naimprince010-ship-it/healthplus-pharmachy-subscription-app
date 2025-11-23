@@ -168,17 +168,18 @@ model Prescription {
 }
 
 model PrescriptionItem {
-  id              String       @id @default(cuid())
-  prescriptionId  String
-  prescription    Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
-  medicineId      String?      // Optional: mapped to actual Medicine
-  medicine        Medicine?    @relation(fields: [medicineId], references: [id], onDelete: SetNull)
-  genericName     String       // Generic name from prescription
-  strength        String?      // e.g., "500mg"
-  quantity        Int          // Quantity prescribed
-  note            String?      // Additional notes
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id                   String       @id @default(cuid())
+  prescriptionId       String
+  prescription         Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+  medicineId           String?      // Optional: mapped to actual Medicine
+  medicine             Medicine?    @relation(fields: [medicineId], references: [id], onDelete: SetNull)
+  medicineNameSnapshot String?      // Snapshot of medicine name at time of selection (for historical accuracy)
+  genericName          String       // Generic name from prescription
+  strength             String?      // e.g., "500mg"
+  quantity             Int          // Quantity prescribed
+  note                 String?      // Additional notes
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
 }
 
 model Order {

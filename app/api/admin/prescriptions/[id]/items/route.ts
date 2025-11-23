@@ -12,6 +12,7 @@ const createItemSchema = z.object({
   quantity: z.number().int().positive(),
   note: z.string().optional(),
   medicineId: z.string().optional(),
+  medicineNameSnapshot: z.string().optional(),
 })
 
 export async function POST(
@@ -38,7 +39,7 @@ export async function POST(
       )
     }
 
-    const { genericName, strength, quantity, note, medicineId } = validationResult.data
+    const { genericName, strength, quantity, note, medicineId, medicineNameSnapshot } = validationResult.data
 
     const prescription = await prisma.prescription.findUnique({
       where: { id: prescriptionId },
@@ -65,6 +66,7 @@ export async function POST(
         quantity,
         note,
         medicineId,
+        medicineNameSnapshot,
       },
       include: {
         medicine: {

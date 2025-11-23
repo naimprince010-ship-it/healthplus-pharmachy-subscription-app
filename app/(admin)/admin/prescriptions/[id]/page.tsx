@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Eye, Plus, Edit, Trash2, ShoppingCart } from 'lucide-react'
+import { MedicineAutocomplete } from '@/components/MedicineAutocomplete'
 
 interface PrescriptionItem {
   id: string
@@ -12,6 +13,7 @@ interface PrescriptionItem {
   quantity: number
   note?: string
   medicineId?: string
+  medicineNameSnapshot?: string
   medicine?: {
     id: string
     name: string
@@ -62,6 +64,7 @@ export default function PrescriptionDetailPage({ params }: { params: Promise<{ i
     quantity: 1,
     note: '',
     medicineId: '',
+    medicineNameSnapshot: '',
   })
 
   useEffect(() => {
@@ -126,15 +129,18 @@ export default function PrescriptionDetailPage({ params }: { params: Promise<{ i
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...itemForm,
+          genericName: itemForm.genericName,
+          strength: itemForm.strength || undefined,
           quantity: Number(itemForm.quantity),
+          note: itemForm.note || undefined,
           medicineId: itemForm.medicineId || undefined,
+          medicineNameSnapshot: itemForm.medicineNameSnapshot || undefined,
         }),
       })
 
       if (response.ok) {
         setShowAddItem(false)
-        setItemForm({ genericName: '', strength: '', quantity: 1, note: '', medicineId: '' })
+        setItemForm({ genericName: '', strength: '', quantity: 1, note: '', medicineId: '', medicineNameSnapshot: '' })
         fetchPrescription()
       }
     } catch (error) {
@@ -150,15 +156,18 @@ export default function PrescriptionDetailPage({ params }: { params: Promise<{ i
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...itemForm,
+          genericName: itemForm.genericName,
+          strength: itemForm.strength || undefined,
           quantity: Number(itemForm.quantity),
+          note: itemForm.note || undefined,
           medicineId: itemForm.medicineId || null,
+          medicineNameSnapshot: itemForm.medicineNameSnapshot || null,
         }),
       })
 
       if (response.ok) {
         setEditingItem(null)
-        setItemForm({ genericName: '', strength: '', quantity: 1, note: '', medicineId: '' })
+        setItemForm({ genericName: '', strength: '', quantity: 1, note: '', medicineId: '', medicineNameSnapshot: '' })
         fetchPrescription()
       }
     } catch (error) {
@@ -218,11 +227,12 @@ export default function PrescriptionDetailPage({ params }: { params: Promise<{ i
   function startEditItem(item: PrescriptionItem) {
     setEditingItem(item)
     setItemForm({
-      genericName: item.genericName,
+      genericName: item.medicineNameSnapshot || item.genericName,
       strength: item.strength || '',
       quantity: item.quantity,
       note: item.note || '',
       medicineId: item.medicineId || '',
+      medicineNameSnapshot: item.medicineNameSnapshot || '',
     })
   }
 
@@ -381,13 +391,36 @@ export default function PrescriptionDetailPage({ params }: { params: Promise<{ i
                 <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
                   <h3 className="mb-3 font-medium">{editingItem ? 'Edit Item' : 'Add New Item'}</h3>
                   <div className="space-y-3">
-                    <input
-                      type="text"
-                      placeholder="Generic Name *"
-                      value={itemForm.genericName}
-                      onChange={(e) => setItemForm({ ...itemForm, genericName: e.target.value })}
-                      className="w-full rounded border px-3 py-2"
-                    />
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-gray-700">
+                        Medicine / Generic Name *
+                      </label>
+                      <MedicineAutocomplete
+                        value={itemForm.genericName}
+                        onChange={(value) => setItemForm({ ...itemForm, genericName: value })}
+                        onSelect={(medicine, snapshot) => {
+                          if (medicine) {
+                            setItemForm({
+                              ...itemForm,
+                              genericName: medicine.genericName || medicine.name,
+                              strength: itemForm.strength || medicine.strength || '',
+                              medicineId: medicine.id,
+                              medicineNameSnapshot: snapshot || '',
+                            })
+                          } else {
+                            setItemForm({
+                              ...itemForm,
+                              medicineId: '',
+                              medicineNameSnapshot: '',
+                            })
+                          }
+                        }}
+                        placeholder="Search medicines or enter custom name..."
+                      />
+                      <p className="mt-1 text-xs text-gray-500">
+                        Start typing to search medicines, or enter custom text
+                      </p>
+                    </div>
                     <input
                       type="text"
                       placeholder="Strength (e.g., 500mg)"
@@ -403,13 +436,6 @@ export default function PrescriptionDetailPage({ params }: { params: Promise<{ i
                       className="w-full rounded border px-3 py-2"
                       min="1"
                     />
-                    <input
-                      type="text"
-                      placeholder="Medicine ID (optional)"
-                      value={itemForm.medicineId}
-                      onChange={(e) => setItemForm({ ...itemForm, medicineId: e.target.value })}
-                      className="w-full rounded border px-3 py-2"
-                    />
                     <textarea
                       placeholder="Note (optional)"
                       value={itemForm.note}
@@ -417,6 +443,11 @@ export default function PrescriptionDetailPage({ params }: { params: Promise<{ i
                       className="w-full rounded border px-3 py-2"
                       rows={2}
                     />
+                    {itemForm.medicineId && (
+                      <div className="rounded bg-green-50 p-2 text-sm text-green-700">
+                        ✓ Mapped to medicine in catalog
+                      </div>
+                    )}
                     <div className="flex space-x-2">
                       <button
                         onClick={editingItem ? handleUpdateItem : handleAddItem}
@@ -428,7 +459,7 @@ export default function PrescriptionDetailPage({ params }: { params: Promise<{ i
                         onClick={() => {
                           setShowAddItem(false)
                           setEditingItem(null)
-                          setItemForm({ genericName: '', strength: '', quantity: 1, note: '', medicineId: '' })
+                          setItemForm({ genericName: '', strength: '', quantity: 1, note: '', medicineId: '', medicineNameSnapshot: '' })
                         }}
                         className="rounded bg-gray-300 px-4 py-2 hover:bg-gray-400"
                       >
@@ -448,12 +479,14 @@ export default function PrescriptionDetailPage({ params }: { params: Promise<{ i
                     <div key={item.id} className="rounded-lg border border-gray-200 p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <p className="font-medium text-gray-900">{item.genericName}</p>
+                          <p className="font-medium text-gray-900">
+                            {item.medicineNameSnapshot || item.genericName}
+                          </p>
                           {item.strength && <p className="text-sm text-gray-600">Strength: {item.strength}</p>}
                           <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
                           {item.medicine && (
                             <p className="text-sm text-green-600">
-                              Mapped: {item.medicine.name} (৳{item.medicine.sellingPrice})
+                              ✓ Mapped: {item.medicine.name} (৳{item.medicine.sellingPrice})
                             </p>
                           )}
                           {item.note && <p className="text-sm text-gray-500">Note: {item.note}</p>}
