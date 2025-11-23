@@ -131,7 +131,7 @@ export default async function OrdersPage({
 
           {orders.length === 0 && (
             <div className="py-12 text-center text-gray-500">
-              No orders found
+              {statusFilter ? `No orders with ${statusFilter} status yet` : 'No orders found'}
             </div>
           )}
         </div>
