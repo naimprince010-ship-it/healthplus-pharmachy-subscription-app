@@ -183,3 +183,81 @@ export async function deleteMedicineImage(path: string): Promise<void> {
     throw new Error(`Delete failed: ${error.message}`)
   }
 }
+
+/**
+ * Upload prescription file to Supabase Storage using admin client
+ * Returns the public URL, storage path, MIME type, and file size
+ */
+export async function uploadPrescriptionFile(
+  file: File
+): Promise<{ url: string; path: string; mimeType: string; size: number }> {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL === 'https://placeholder.supabase.co') {
+    throw new Error('NEXT_PUBLIC_SUPABASE_URL is not configured in production environment')
+  }
+  
+  if (!supabaseServiceRoleKey) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured in production environment')
+  }
+
+  const bucket = 'healthplus'
+  
+  try {
+    const { data: buckets } = await supabaseAdmin.storage.listBuckets()
+    const bucketExists = buckets?.some((b) => b.name === bucket)
+    
+    if (!bucketExists) {
+      await supabaseAdmin.storage.createBucket(bucket, {
+        public: true,
+        fileSizeLimit: 5 * 1024 * 1024,
+        allowedMimeTypes: ['image/jpeg', 'image/png', 'application/pdf'],
+      })
+    }
+  } catch (error) {
+    console.error('Bucket check/create error:', error)
+  }
+
+  const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+  const uuid = `${Date.now()}-${Math.random().toString(36).substring(7)}`
+  const fileName = `${uuid}.${fileExt}`
+  const filePath = `prescriptions/${fileName}`
+
+  const { data, error } = await supabaseAdmin.storage
+    .from(bucket)
+    .upload(filePath, file, {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: file.type,
+    })
+
+  if (error) {
+    throw new Error(`Upload failed: ${error.message}`)
+  }
+
+  const { data: urlData } = supabaseAdmin.storage
+    .from(bucket)
+    .getPublicUrl(data.path)
+
+  return {
+    url: urlData.publicUrl,
+    path: data.path,
+    mimeType: file.type,
+    size: file.size,
+  }
+}
+
+/**
+ * Delete prescription file from Supabase Storage using admin client
+ */
+export async function deletePrescriptionFile(path: string): Promise<void> {
+  if (!supabaseServiceRoleKey) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured')
+  }
+
+  const bucket = 'healthplus'
+
+  const { error } = await supabaseAdmin.storage.from(bucket).remove([path])
+
+  if (error) {
+    throw new Error(`Delete failed: ${error.message}`)
+  }
+}

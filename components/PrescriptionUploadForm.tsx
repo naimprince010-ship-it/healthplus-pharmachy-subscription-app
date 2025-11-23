@@ -7,14 +7,52 @@ export default function PrescriptionUploadForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [fileError, setFileError] = useState('')
+
+  function validateFile(file: File | null): boolean {
+    setFileError('')
+    
+    if (!file) {
+      return true
+    }
+
+    const maxSize = 5 * 1024 * 1024
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf']
+
+    if (file.size > maxSize) {
+      setFileError('File size must be less than 5MB')
+      return false
+    }
+
+    if (!allowedTypes.includes(file.type)) {
+      setFileError('Only JPG, JPEG, PNG, and PDF files are allowed')
+      return false
+    }
+
+    return true
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] || null
+    if (!validateFile(file)) {
+      e.target.value = ''
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setLoading(true)
     setError('')
+    setFileError('')
     setSuccess(false)
 
     const formData = new FormData(e.currentTarget)
+    const file = formData.get('file') as File
+
+    if (!validateFile(file)) {
+      setLoading(false)
+      return
+    }
 
     try {
       const response = await fetch('/api/prescriptions', {
@@ -51,13 +89,19 @@ export default function PrescriptionUploadForm() {
 
       {success && (
         <div className="mb-4 rounded-lg bg-green-50 p-4 text-green-800">
-          Prescription uploaded successfully! We&apos;ll contact you soon.
+          <strong>Success!</strong> Your prescription has been submitted. We will call you shortly.
         </div>
       )}
 
       {error && (
         <div className="mb-4 rounded-lg bg-red-50 p-4 text-red-800">
-          {error}
+          <strong>Error:</strong> {error}
+        </div>
+      )}
+
+      {fileError && (
+        <div className="mb-4 rounded-lg bg-red-50 p-4 text-red-800">
+          <strong>File Error:</strong> {fileError}
         </div>
       )}
 
@@ -84,10 +128,14 @@ export default function PrescriptionUploadForm() {
             id="phone"
             name="phone"
             required
-            pattern="[0-9]{11}"
+            pattern="^(\+?88)?01[3-9]\d{8}$"
+            title="Use 01XXXXXXXXX, 8801XXXXXXXXX, or +8801XXXXXXXXX"
             className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-            placeholder="01XXX-XXXXXX"
+            placeholder="01712345678"
           />
+          <p className="mt-1 text-xs text-gray-500">
+            Format: 01XXXXXXXXX, 8801XXXXXXXXX, or +8801XXXXXXXXX
+          </p>
         </div>
         <div>
           <label htmlFor="zoneId" className="block text-sm font-medium text-gray-700">
@@ -107,7 +155,7 @@ export default function PrescriptionUploadForm() {
         </div>
         <div>
           <label htmlFor="file" className="block text-sm font-medium text-gray-700">
-            Prescription Image (JPG, PNG, PDF - Max 5MB)
+            Prescription File
           </label>
           <input
             type="file"
@@ -115,8 +163,12 @@ export default function PrescriptionUploadForm() {
             name="file"
             required
             accept="image/jpeg,image/jpg,image/png,application/pdf"
+            onChange={handleFileChange}
             className="mt-1 block w-full text-sm text-gray-600 file:mr-4 file:rounded-lg file:border-0 file:bg-teal-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-teal-600 hover:file:bg-teal-100"
           />
+          <p className="mt-1 text-xs text-gray-500">
+            Allowed formats: JPG, JPEG, PNG, PDF. Max size: 5MB.
+          </p>
         </div>
         <button
           type="submit"

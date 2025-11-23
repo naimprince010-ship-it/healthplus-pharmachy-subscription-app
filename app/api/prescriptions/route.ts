@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sendSMS, sendEmail, notifyAdmin } from '@/lib/notifications'
 import { auth } from '@/lib/auth'
-import { uploadPrescription, validatePrescriptionFile } from '@/lib/supabase'
+import { uploadPrescriptionFile, validatePrescriptionFile, deletePrescriptionFile } from '@/lib/supabase'
+import { normalizeBDPhone } from '@/lib/utils'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -23,6 +24,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    let normalizedPhone: string
+    try {
+      normalizedPhone = normalizeBDPhone(phone)
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Invalid phone number format' },
+        { status: 400 }
+      )
+    }
+
     const validation = validatePrescriptionFile(file)
     if (!validation.valid) {
       return NextResponse.json(
@@ -31,39 +42,38 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    let fileUrl: string | null = null
+    let uploadResult: { url: string; path: string; mimeType: string; size: number } | null = null
     try {
-      fileUrl = await uploadPrescription(file)
+      uploadResult = await uploadPrescriptionFile(file)
     } catch (error) {
       console.error('File upload error:', error)
       return NextResponse.json(
-        { error: 'Failed to upload file' },
+        { error: error instanceof Error ? error.message : 'Failed to upload file' },
         { status: 500 }
       )
     }
 
     const { prisma } = await import('@/lib/prisma')
-    const { deletePrescription } = await import('@/lib/supabase')
 
     let userId = session?.user?.id
 
     if (!userId) {
       try {
         const guestUser = await prisma.user.upsert({
-          where: { phone },
+          where: { phone: normalizedPhone },
           update: {},
           create: {
             name,
-            phone,
+            phone: normalizedPhone,
             password: '',
             role: 'USER',
           },
         })
         userId = guestUser.id
       } catch (error) {
-        if (fileUrl) {
+        if (uploadResult) {
           try {
-            await deletePrescription(fileUrl)
+            await deletePrescriptionFile(uploadResult.path)
           } catch (deleteError) {
             console.error('Failed to clean up file after user creation error:', deleteError)
           }
@@ -77,17 +87,18 @@ export async function POST(request: NextRequest) {
       prescription = await prisma.prescription.create({
         data: {
           name,
-          phone,
+          phone: normalizedPhone,
           zoneId,
-          fileUrl,
+          fileUrl: uploadResult.url,
+          fileType: uploadResult.mimeType,
           userId,
-          status: 'PENDING',
+          status: 'NEW',
         },
       })
     } catch (error) {
-      if (fileUrl) {
+      if (uploadResult) {
         try {
-          await deletePrescription(fileUrl)
+          await deletePrescriptionFile(uploadResult.path)
         } catch (deleteError) {
           console.error('Failed to clean up file after prescription creation error:', deleteError)
         }
@@ -96,12 +107,12 @@ export async function POST(request: NextRequest) {
     }
 
     await Promise.all([
-      sendSMS(phone, 'PRESCRIPTION_RECEIVED', { name }),
-      sendEmail(`${phone}@example.com`, 'PRESCRIPTION_RECEIVED', { name }),
+      sendSMS(normalizedPhone, 'PRESCRIPTION_RECEIVED', { name }),
+      sendEmail(`${normalizedPhone}@example.com`, 'PRESCRIPTION_RECEIVED', { name }),
       notifyAdmin('ADMIN_NEW_PRESCRIPTION', {
         prescriptionId: prescription.id,
         customerName: name,
-        phone,
+        phone: normalizedPhone,
       }),
     ])
 

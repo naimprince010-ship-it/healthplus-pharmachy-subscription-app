@@ -42,3 +42,26 @@ export function isValidEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   return emailRegex.test(email)
 }
+
+/**
+ * Normalize Bangladeshi phone number to international format (+8801XXXXXXXXX)
+ * Accepts: 01712345678, 8801712345678, +8801712345678
+ * Returns: +8801712345678 or throws error if invalid
+ */
+export function normalizeBDPhone(phone: string): string {
+  const cleaned = phone.replace(/\s+/g, '').trim()
+  
+  if (!isValidPhone(cleaned)) {
+    throw new Error('Invalid phone number format. Use 01XXXXXXXXX, 8801XXXXXXXXX, or +8801XXXXXXXXX')
+  }
+  
+  if (cleaned.startsWith('+880')) {
+    return cleaned
+  } else if (cleaned.startsWith('880')) {
+    return `+${cleaned}`
+  } else if (cleaned.startsWith('01')) {
+    return `+88${cleaned}`
+  }
+  
+  throw new Error('Invalid phone number format')
+}

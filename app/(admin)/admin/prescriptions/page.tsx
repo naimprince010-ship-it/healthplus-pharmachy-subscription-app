@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { CheckCircle, XCircle, Eye } from 'lucide-react'
+import { Eye } from 'lucide-react'
 
 interface Prescription {
   id: string
@@ -17,6 +17,17 @@ interface Prescription {
     phone: string
   }
 }
+
+const STATUS_OPTIONS = ['NEW', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'] as const
+const STATUS_COLORS = {
+  NEW: 'bg-yellow-100 text-yellow-800',
+  IN_PROGRESS: 'bg-blue-100 text-blue-800',
+  COMPLETED: 'bg-green-100 text-green-800',
+  CANCELLED: 'bg-red-100 text-red-800',
+  PENDING: 'bg-yellow-100 text-yellow-800',
+  APPROVED: 'bg-green-100 text-green-800',
+  REJECTED: 'bg-red-100 text-red-800',
+} as const
 
 export default function AdminPrescriptionsPage() {
   const { data: session, status } = useSession()
@@ -110,49 +121,32 @@ export default function AdminPrescriptionsPage() {
                     {prescription.phone}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm">
-                    <span
-                      className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                        prescription.status === 'APPROVED'
-                          ? 'bg-green-100 text-green-800'
-                          : prescription.status === 'REJECTED'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-yellow-100 text-yellow-800'
+                    <select
+                      value={prescription.status}
+                      onChange={(e) => updateStatus(prescription.id, e.target.value)}
+                      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold border-0 cursor-pointer ${
+                        STATUS_COLORS[prescription.status as keyof typeof STATUS_COLORS] || 'bg-gray-100 text-gray-800'
                       }`}
                     >
-                      {prescription.status}
-                    </span>
+                      {STATUS_OPTIONS.map((status) => (
+                        <option key={status} value={status}>
+                          {status}
+                        </option>
+                      ))}
+                    </select>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                     {new Date(prescription.createdAt).toLocaleDateString()}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm">
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => window.open(prescription.fileUrl, '_blank')}
-                        className="text-blue-600 hover:text-blue-900"
-                        title="View"
-                      >
-                        <Eye className="h-5 w-5" />
-                      </button>
-                      {prescription.status === 'PENDING' && (
-                        <>
-                          <button
-                            onClick={() => updateStatus(prescription.id, 'APPROVED')}
-                            className="text-green-600 hover:text-green-900"
-                            title="Approve"
-                          >
-                            <CheckCircle className="h-5 w-5" />
-                          </button>
-                          <button
-                            onClick={() => updateStatus(prescription.id, 'REJECTED')}
-                            className="text-red-600 hover:text-red-900"
-                            title="Reject"
-                          >
-                            <XCircle className="h-5 w-5" />
-                          </button>
-                        </>
-                      )}
-                    </div>
+                    <button
+                      onClick={() => window.open(prescription.fileUrl, '_blank')}
+                      className="inline-flex items-center rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                      title="View / Download Prescription"
+                    >
+                      <Eye className="mr-2 h-4 w-4" />
+                      View File
+                    </button>
                   </td>
                 </tr>
               ))}
