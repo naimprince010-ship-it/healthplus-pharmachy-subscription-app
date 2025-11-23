@@ -41,15 +41,16 @@ export default function PrescriptionUploadForm() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    const form = e.currentTarget
     setLoading(true)
     setError('')
     setFileError('')
     setSuccess(false)
 
-    const formData = new FormData(e.currentTarget)
-    const file = formData.get('file') as File
+    const formData = new FormData(form)
+    const file = formData.get('file') as File | null
 
-    if (!validateFile(file)) {
+    if (!file || !validateFile(file)) {
       setLoading(false)
       return
     }
@@ -66,8 +67,13 @@ export default function PrescriptionUploadForm() {
         throw new Error(data.error || 'Upload failed')
       }
 
+      try {
+        form.reset()
+      } catch {
+        console.warn('Form reset failed')
+      }
+
       setSuccess(true)
-      e.currentTarget.reset()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed')
     } finally {
