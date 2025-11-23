@@ -133,6 +133,8 @@ export async function POST(request: NextRequest) {
         addressId: finalAddressId,
         subtotal,
         discount,
+        membershipDiscountAmount: discount > 0 ? discount : null,
+        membershipPlanName: membership ? membership.plan.name : null,
         deliveryCharge,
         total,
         paymentMethod,

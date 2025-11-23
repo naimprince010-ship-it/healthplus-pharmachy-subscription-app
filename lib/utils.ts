@@ -65,3 +65,24 @@ export function normalizeBDPhone(phone: string): string {
   
   throw new Error('Invalid phone number format')
 }
+
+/**
+ * Get active membership for a user
+ * Returns the user's active membership if they have one that hasn't expired
+ */
+export async function getUserActiveMembership(userId: string) {
+  const { prisma } = await import('@/lib/prisma')
+  
+  const membership = await prisma.userMembership.findFirst({
+    where: {
+      userId,
+      isActive: true,
+      endDate: { gte: new Date() },
+    },
+    include: {
+      plan: true,
+    },
+  })
+
+  return membership
+}
