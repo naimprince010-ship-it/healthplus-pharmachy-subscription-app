@@ -1,0 +1,4 @@
+
+ALTER TABLE "Prescription" ADD COLUMN IF NOT EXISTS "fileType" TEXT;
+
+ALTER TABLE "Prescription" ALTER COLUMN "status" SET DEFAULT 'NEW';

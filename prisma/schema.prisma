@@ -157,7 +157,8 @@ model Prescription {
   phone       String
   zoneId      String?
   fileUrl     String
-  status      String   @default("PENDING")
+  fileType    String?
+  status      String   @default("NEW")
   notes       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
