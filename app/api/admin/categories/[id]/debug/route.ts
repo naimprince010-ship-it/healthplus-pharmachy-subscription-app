@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth()
@@ -12,8 +12,10 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
+
     const category = await prisma.category.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: {
         id: true,
         name: true,
@@ -33,7 +35,7 @@ export async function GET(
     const categories = await prisma.category.findMany({
       where: {
         isActive: true,
-        id: { not: params.id },
+        id: { not: id },
       },
       orderBy: { name: 'asc' },
       select: {
@@ -66,11 +68,12 @@ export async function GET(
       },
     })
   } catch (error: any) {
+    const { id } = await params
     console.error('Debug endpoint error:', {
       message: error.message,
       name: error.name,
       stack: error.stack,
-      categoryId: params.id,
+      categoryId: id,
     })
     
     return NextResponse.json(
