@@ -43,12 +43,25 @@ export default async function EditCategoryPage({
     },
   })
 
+  const categoryData = {
+    id: category.id,
+    name: category.name,
+    slug: category.slug,
+    description: category.description ?? null,
+    imageUrl: category.imageUrl ?? null,
+    isActive: category.isActive,
+    parentCategoryId: category.parentCategoryId ?? null,
+    sortOrder: category.sortOrder ?? 0,
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="mx-auto max-w-3xl">
         <h1 className="mb-8 text-3xl font-bold text-gray-900">Edit Category</h1>
-        <CategoryForm category={category} categories={categories} />
+        <CategoryForm category={categoryData} categories={categories} />
       </div>
     </div>
   )
 }
+
+export const runtime = 'nodejs'
