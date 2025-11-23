@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS "PrescriptionItem" (
   "id" TEXT NOT NULL PRIMARY KEY,
   "prescriptionId" TEXT NOT NULL,
   "medicineId" TEXT,
+  "medicineNameSnapshot" TEXT,
   "genericName" TEXT NOT NULL,
   "strength" TEXT,
   "quantity" INTEGER NOT NULL,
@@ -37,3 +38,5 @@ CREATE INDEX IF NOT EXISTS "Order_prescriptionId_idx" ON "Order"("prescriptionId
 UPDATE "Prescription" SET "status" = 'NEW' WHERE "status" = 'PENDING';
 UPDATE "Prescription" SET "status" = 'COMPLETED' WHERE "status" = 'APPROVED';
 UPDATE "Prescription" SET "status" = 'CANCELLED' WHERE "status" = 'REJECTED';
+
+ALTER TABLE "PrescriptionItem" ADD COLUMN IF NOT EXISTS "medicineNameSnapshot" TEXT;
