@@ -225,11 +225,11 @@ export async function DELETE(
       where: { medicineId: id },
     })
 
-    const subscriptionItemCount = await prisma.subscriptionItem.count({
-      where: { medicineId: id },
-    })
+    // const subscriptionItemCount = await prisma.subscriptionItem.count({
+    //   where: { medicineId: id },
+    // })
 
-    if (orderItemCount > 0 || subscriptionItemCount > 0) {
+    if (orderItemCount > 0) {
       const medicine = await prisma.medicine.update({
         where: { id },
         data: {
@@ -240,7 +240,7 @@ export async function DELETE(
 
       return NextResponse.json({
         success: true,
-        message: `Medicine soft deleted (${orderItemCount} order(s), ${subscriptionItemCount} subscription(s)). Data preserved for historical records.`,
+        message: `Medicine soft deleted (${orderItemCount} order(s)). Data preserved for historical records.`,
         medicine,
       })
     }

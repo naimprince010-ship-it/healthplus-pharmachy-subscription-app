@@ -15,6 +15,7 @@ import {
   BarChart3,
   MapPin,
   X,
+  PackageCheck,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -30,6 +31,7 @@ const navItems: NavItem[] = [
   { label: 'Categories', href: '/admin/categories', icon: FolderTree },
   { label: 'Orders', href: '/admin/orders', icon: ShoppingBag },
   { label: 'Subscriptions', href: '/admin/subscriptions', icon: Calendar },
+  { label: 'Subscription Plans', href: '/admin/subscription-plans', icon: PackageCheck },
   { label: 'Memberships', href: '/admin/memberships', icon: Shield },
   { label: 'Prescriptions', href: '/admin/prescriptions', icon: FileText },
   { label: 'Delivery Zones', href: '/admin/delivery-zones', icon: MapPin },

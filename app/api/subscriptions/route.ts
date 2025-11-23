@@ -9,7 +9,11 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 const createSubscriptionSchema = z.object({
-  planId: z.string(),
+  planId: z.number(),
+  fullName: z.string(),
+  phone: z.string(),
+  address: z.string(),
+  zoneId: z.string(),
 })
 
 export async function POST(request: NextRequest) {
@@ -32,17 +36,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { planId } = validationResult.data
+    const { planId, fullName, phone, address, zoneId } = validationResult.data
 
     const plan = await prisma.subscriptionPlan.findUnique({
       where: { id: planId },
-      include: {
-        items: {
-          include: {
-            medicine: true,
-          },
-        },
-      },
     })
 
     if (!plan || !plan.isActive) {
@@ -53,7 +50,7 @@ export async function POST(request: NextRequest) {
       where: {
         userId: session.user.id,
         planId,
-        isActive: true,
+        status: { in: ['pending', 'active'] },
       },
     })
 
@@ -65,26 +62,22 @@ export async function POST(request: NextRequest) {
     }
 
     const startDate = new Date()
-    const nextDeliveryDate = addDays(startDate, 30)
+    const nextDelivery = addDays(startDate, 30)
 
     const subscription = await prisma.subscription.create({
       data: {
         userId: session.user.id,
         planId: plan.id,
+        pricePerPeriod: plan.priceMonthly,
+        status: 'pending',
         startDate,
-        nextDeliveryDate,
-        isActive: true,
+        nextDelivery,
+        address,
+        zoneId,
       },
       include: {
-        plan: {
-          include: {
-            items: {
-              include: {
-                medicine: true,
-              },
-            },
-          },
-        },
+        plan: true,
+        zone: true,
         user: {
           select: {
             name: true,
@@ -95,15 +88,15 @@ export async function POST(request: NextRequest) {
     })
 
     await Promise.all([
-      sendSMS(subscription.user.phone, 'SUBSCRIPTION_STARTED', {
-        name: subscription.user.name,
+      sendSMS(phone, 'SUBSCRIPTION_STARTED', {
+        name: fullName,
         planName: subscription.plan.name,
-        nextDelivery: format(nextDeliveryDate, 'MMM dd, yyyy'),
+        nextDelivery: format(nextDelivery, 'MMM dd, yyyy'),
       }),
-      sendEmail(`${subscription.user.phone}@example.com`, 'SUBSCRIPTION_STARTED', {
-        name: subscription.user.name,
+      sendEmail(`${phone}@example.com`, 'SUBSCRIPTION_STARTED', {
+        name: fullName,
         planName: subscription.plan.name,
-        nextDelivery: format(nextDeliveryDate, 'MMM dd, yyyy'),
+        nextDelivery: format(nextDelivery, 'MMM dd, yyyy'),
       }),
     ])
 
@@ -127,15 +120,8 @@ export async function GET() {
     const subscriptions = await prisma.subscription.findMany({
       where: { userId: session.user.id },
       include: {
-        plan: {
-          include: {
-            items: {
-              include: {
-                medicine: true,
-              },
-            },
-          },
-        },
+        plan: true,
+        zone: true,
       },
       orderBy: { createdAt: 'desc' },
     })
@@ -157,14 +143,14 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id, isActive } = await request.json()
+    const { id, status } = await request.json()
 
     const subscription = await prisma.subscription.update({
       where: {
         id,
         userId: session.user.id,
       },
-      data: { isActive },
+      data: { status },
     })
 
     return NextResponse.json({ success: true, subscription })

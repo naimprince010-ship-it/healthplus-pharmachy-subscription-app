@@ -145,9 +145,9 @@ export default async function HomePage() {
                   )}
                 </div>
                 <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
-                <p className="mt-2 text-sm text-gray-600">{plan.description}</p>
+                <p className="mt-2 text-sm text-gray-600">{plan.shortDescription}</p>
                 <div className="mt-4 flex items-baseline space-x-2">
-                  <span className="text-3xl font-bold text-gray-900">৳{plan.price}</span>
+                  <span className="text-3xl font-bold text-gray-900">৳{plan.priceMonthly}</span>
                   <span className="text-gray-600">/month</span>
                 </div>
                 <Link

@@ -20,7 +20,7 @@ export async function GET() {
       }),
       prisma.subscription.count({
         where: {
-          isActive: true,
+          status: 'active',
         },
       }),
       prisma.userMembership.count({

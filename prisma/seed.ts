@@ -154,53 +154,49 @@ async function main() {
   console.log('📋 Creating subscription plans...')
   
   const bpCarePlan = await prisma.subscriptionPlan.upsert({
-    where: { name: 'BP Care Package' },
+    where: { slug: 'bp-care-package' },
     update: {},
     create: {
       name: 'BP Care Package',
       slug: 'bp-care-package',
-      description: 'Monthly blood pressure management package with essential medicines',
-      price: 1500,
-      durationDays: 30,
+      shortDescription: 'Monthly blood pressure management package with essential medicines',
+      priceMonthly: 1500,
       isActive: true,
     },
   })
 
   const diabetesPlan = await prisma.subscriptionPlan.upsert({
-    where: { name: 'Diabetes Care Package' },
+    where: { slug: 'diabetes-care-package' },
     update: {},
     create: {
       name: 'Diabetes Care Package',
       slug: 'diabetes-care-package',
-      description: 'Complete diabetes management package with medications and supplements',
-      price: 2000,
-      durationDays: 30,
+      shortDescription: 'Complete diabetes management package with medications and supplements',
+      priceMonthly: 2000,
       isActive: true,
     },
   })
 
   const babyCarePlan = await prisma.subscriptionPlan.upsert({
-    where: { name: 'Baby Care Package' },
+    where: { slug: 'baby-care-package' },
     update: {},
     create: {
       name: 'Baby Care Package',
       slug: 'baby-care-package',
-      description: 'Essential baby care medicines and supplements for healthy growth',
-      price: 1200,
-      durationDays: 30,
+      shortDescription: 'Essential baby care medicines and supplements for healthy growth',
+      priceMonthly: 1200,
       isActive: true,
     },
   })
 
   const familyPlan = await prisma.subscriptionPlan.upsert({
-    where: { name: 'Family Pack' },
+    where: { slug: 'family-pack' },
     update: {},
     create: {
       name: 'Family Pack',
       slug: 'family-pack',
-      description: 'Comprehensive family health package with essential medicines for all ages',
-      price: 3500,
-      durationDays: 30,
+      shortDescription: 'Comprehensive family health package with essential medicines for all ages',
+      priceMonthly: 3500,
       isActive: true,
     },
   })
@@ -322,73 +318,7 @@ async function main() {
   ].map(p => p.then(m => m!)))
   console.log(`✅ Created ${medicines.length} sample medicines`)
 
-  console.log('🔗 Linking medicines to subscription plans...')
-  
-  await prisma.subscriptionItem.createMany({
-    data: [
-      {
-        planId: bpCarePlan.id,
-        medicineId: medicines[0].id, // Amlodipine
-        quantity: 30,
-      },
-      {
-        planId: bpCarePlan.id,
-        medicineId: medicines[1].id, // Losartan
-        quantity: 30,
-      },
-    ],
-    skipDuplicates: true,
-  })
-
-  await prisma.subscriptionItem.createMany({
-    data: [
-      {
-        planId: diabetesPlan.id,
-        medicineId: medicines[2].id, // Metformin
-        quantity: 60,
-      },
-      {
-        planId: diabetesPlan.id,
-        medicineId: medicines[3].id, // Glimepiride
-        quantity: 30,
-      },
-    ],
-    skipDuplicates: true,
-  })
-
-  await prisma.subscriptionItem.createMany({
-    data: [
-      {
-        planId: babyCarePlan.id,
-        medicineId: medicines[4].id, // Vitamin D Drops
-        quantity: 1,
-      },
-      {
-        planId: babyCarePlan.id,
-        medicineId: medicines[5].id, // Gripe Water
-        quantity: 2,
-      },
-    ],
-    skipDuplicates: true,
-  })
-
-  await prisma.subscriptionItem.createMany({
-    data: [
-      {
-        planId: familyPlan.id,
-        medicineId: medicines[6].id, // Multivitamin
-        quantity: 60,
-      },
-      {
-        planId: familyPlan.id,
-        medicineId: medicines[4].id, // Vitamin D Drops
-        quantity: 1,
-      },
-    ],
-    skipDuplicates: true,
-  })
-
-  console.log('✅ Linked medicines to subscription plans')
+  console.log('✅ Subscription plans created (items managed via itemsSummary field)')
 
   console.log('🎨 Creating banner placeholders...')
   const banners = await Promise.all([
