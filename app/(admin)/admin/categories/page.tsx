@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import { unstable_noStore as noStore } from 'next/cache'
 import Link from 'next/link'
-import { Edit, Trash2, Plus } from 'lucide-react'
+import { Edit, Plus } from 'lucide-react'
 import CategoryFilters from '@/components/admin/CategoryFilters'
 import DeleteCategoryButton from '@/components/admin/DeleteCategoryButton'
 
@@ -24,7 +24,10 @@ export default async function CategoriesPage({
   const search = searchParams.search || ''
   const status = searchParams.status?.toUpperCase() || 'ALL'
 
-  const where: any = {}
+  const where: {
+    OR?: Array<{ name: { contains: string; mode: 'insensitive' } } | { slug: { contains: string; mode: 'insensitive' } }>
+    isActive?: boolean
+  } = {}
 
   if (search) {
     where.OR = [
@@ -41,12 +44,21 @@ export default async function CategoriesPage({
 
   const categories = await prisma.category.findMany({
     where,
-    include: {
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      isActive: true,
+      parentCategoryId: true,
+      sortOrder: true,
       _count: {
         select: { medicines: true },
       },
     },
-    orderBy: { name: 'asc' },
+    orderBy: [
+      { sortOrder: 'asc' },
+      { name: 'asc' },
+    ],
   })
 
   return (

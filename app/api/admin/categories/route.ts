@@ -18,7 +18,10 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || ''
     const status = searchParams.get('status')?.toUpperCase() || 'ALL'
 
-    const where: any = {}
+    const where: {
+      OR?: Array<{ name: { contains: string; mode: 'insensitive' } } | { slug: { contains: string; mode: 'insensitive' } }>
+      isActive?: boolean
+    } = {}
 
     if (search) {
       where.OR = [
@@ -61,6 +64,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    
+    if (body.parentId && !body.parentCategoryId) {
+      body.parentCategoryId = body.parentId
+    }
+    
     const validatedData = createCategorySchema.parse(body)
 
     const existingSlug = await prisma.category.findUnique({
@@ -83,12 +91,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    if (validatedData.parentCategoryId) {
+      const parentExists = await prisma.category.findUnique({
+        where: { id: validatedData.parentCategoryId },
+      })
+      if (!parentExists) {
+        return NextResponse.json(
+          { error: 'Parent category not found' },
+          { status: 400 }
+        )
+      }
+    }
+
     const category = await prisma.category.create({
       data: {
         name: validatedData.name,
         slug: validatedData.slug,
         description: validatedData.description || null,
         imageUrl: validatedData.imageUrl || null,
+        parentCategoryId: validatedData.parentCategoryId || null,
+        sortOrder: validatedData.sortOrder ?? 0,
         isActive: validatedData.isActive ?? true,
       },
     })

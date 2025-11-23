@@ -15,6 +15,16 @@ export default async function EditCategoryPage({
 
   const category = await prisma.category.findUnique({
     where: { id: params.id },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      description: true,
+      imageUrl: true,
+      isActive: true,
+      parentCategoryId: true,
+      sortOrder: true,
+    },
   })
 
   if (!category) {
