@@ -32,197 +32,197 @@ enum BannerLocation {
 }
 
 model User {
-  id                String            @id @default(cuid())
-  name              String
-  email             String?           @unique
-  phone             String            @unique
-  password          String
-  role              Role              @default(USER)
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-  addresses         Address[]
-  prescriptions     Prescription[]
-  orders            Order[]
-  memberships       UserMembership[]
-  subscriptions     Subscription[]
+  id            String           @id @default(cuid())
+  name          String
+  email         String?          @unique
+  phone         String           @unique
+  password      String
+  role          Role             @default(USER)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  addresses     Address[]
+  prescriptions Prescription[]
+  orders        Order[]
+  memberships   UserMembership[]
+  subscriptions Subscription[]
 }
 
 model Address {
-  id              String   @id @default(cuid())
-  userId          String
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  fullName        String
-  phone           String
-  addressLine1    String
-  addressLine2    String?
-  city            String
-  zoneId          String
-  zone            Zone     @relation(fields: [zoneId], references: [id])
-  isDefault       Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  orders          Order[]
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName     String
+  phone        String
+  addressLine1 String
+  addressLine2 String?
+  city         String
+  zoneId       String
+  zone         Zone     @relation(fields: [zoneId], references: [id])
+  isDefault    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  orders       Order[]
 }
 
 model Zone {
-  id              String    @id @default(cuid())
-  name            String    @unique
-  description     String?   // List of areas covered
-  deliveryCharge  Float     // Deprecated: use deliveryFee instead
-  deliveryFee     Int?      // Delivery fee in BDT
-  deliveryDays    String
-  isActive        Boolean   @default(true)
-  sortOrder       Int       @default(0)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  addresses       Address[]
-  orders          Order[]
+  id             String         @id @default(cuid())
+  name           String         @unique
+  description    String? // List of areas covered
+  deliveryCharge Float // Deprecated: use deliveryFee instead
+  deliveryFee    Int? // Delivery fee in BDT
+  deliveryDays   String
+  isActive       Boolean        @default(true)
+  sortOrder      Int            @default(0)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  addresses      Address[]
+  orders         Order[]
+  subscriptions  Subscription[]
 }
 
 model Category {
-  id                String     @id @default(cuid())
-  name              String     @unique
-  slug              String     @unique
-  description       String?
-  imageUrl          String?
-  parentCategoryId  String?
-  parentCategory    Category?  @relation("CategoryToSubCategory", fields: [parentCategoryId], references: [id], onDelete: SetNull)
-  subCategories     Category[] @relation("CategoryToSubCategory")
-  isActive          Boolean    @default(true)
-  sortOrder         Int        @default(0)
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
-  medicines         Medicine[]
+  id               String     @id @default(cuid())
+  name             String     @unique
+  slug             String     @unique
+  description      String?
+  imageUrl         String?
+  parentCategoryId String?
+  parentCategory   Category?  @relation("CategoryToSubCategory", fields: [parentCategoryId], references: [id], onDelete: SetNull)
+  subCategories    Category[] @relation("CategoryToSubCategory")
+  isActive         Boolean    @default(true)
+  sortOrder        Int        @default(0)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  medicines        Medicine[]
 }
 
 model Medicine {
-  id              String              @id @default(cuid())
-  name            String
-  slug            String              @unique
-  genericName     String?
-  brandName       String?
-  manufacturer    String              // Required manufacturer field
-  dosageForm      String?             // e.g., Tablet, Capsule, Syrup, Injection
-  packSize        String?             // e.g., "1 strip x 10 tablets"
-  description     String?
-  strength        String?
-  unit            String              @default("pcs")
-  
+  id           String  @id @default(cuid())
+  name         String
+  slug         String  @unique
+  genericName  String?
+  brandName    String?
+  manufacturer String // Required manufacturer field
+  dosageForm   String? // e.g., Tablet, Capsule, Syrup, Injection
+  packSize     String? // e.g., "1 strip x 10 tablets"
+  description  String?
+  strength     String?
+  unit         String  @default("pcs")
+
   // Pricing (new fields)
-  mrp             Float?              // Maximum Retail Price
-  sellingPrice    Float               // Actual selling price
-  price           Float               // Deprecated: use sellingPrice instead
-  discountPrice   Float?              // Deprecated: use mrp/sellingPrice instead
-  unitPrice       Float?              // Price per tablet/capsule
-  stripPrice      Float?              // Price per strip
-  tabletsPerStrip Int?                // Number of tablets per strip
-  
+  mrp             Float? // Maximum Retail Price
+  sellingPrice    Float // Actual selling price
+  price           Float // Deprecated: use sellingPrice instead
+  discountPrice   Float? // Deprecated: use mrp/sellingPrice instead
+  unitPrice       Float? // Price per tablet/capsule
+  stripPrice      Float? // Price per strip
+  tabletsPerStrip Int? // Number of tablets per strip
+
   // Stock
-  stockQuantity   Int                 @default(0)
-  minStockAlert   Int?                // Low stock alert threshold
-  inStock         Boolean             @default(true)
-  
+  stockQuantity Int     @default(0)
+  minStockAlert Int? // Low stock alert threshold
+  inStock       Boolean @default(true)
+
   // SEO Fields
-  seoTitle        String?
-  seoDescription  String?
-  seoKeywords     String?
-  canonicalUrl    String?
-  isFeatured      Boolean             @default(false)
-  
+  seoTitle       String?
+  seoDescription String?
+  seoKeywords    String?
+  canonicalUrl   String?
+  isFeatured     Boolean @default(false)
+
   // Media
-  imageUrl        String?
-  imagePath       String?             // Storage path for deletion
-  
+  imageUrl  String?
+  imagePath String? // Storage path for deletion
+
   // Additional Details
-  uses                  String?       // Common uses
-  sideEffects           String?       // Side effects
-  contraindications     String?       // Contraindications
-  storageInstructions   String?       // Storage instructions
-  expiryDate            DateTime?     // Expiry date
-  
+  uses                String? // Common uses
+  sideEffects         String? // Side effects
+  contraindications   String? // Contraindications
+  storageInstructions String? // Storage instructions
+  expiryDate          DateTime? // Expiry date
+
   // Relations & Status
-  categoryId      String
-  category        Category            @relation(fields: [categoryId], references: [id])
-  requiresPrescription Boolean         @default(false)
-  isActive        Boolean             @default(true)
-  deletedAt       DateTime?           // Soft delete timestamp
-  
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
-  orderItems      OrderItem[]
-  subscriptionItems SubscriptionItem[]
+  categoryId           String
+  category             Category  @relation(fields: [categoryId], references: [id])
+  requiresPrescription Boolean   @default(false)
+  isActive             Boolean   @default(true)
+  deletedAt            DateTime? // Soft delete timestamp
+
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  orderItems        OrderItem[]
   prescriptionItems PrescriptionItem[]
 }
 
 model Prescription {
-  id           String              @id @default(cuid())
-  userId       String
-  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name         String              // Customer full name
-  phone        String              // Normalized phone number
-  zoneId       String?             // Delivery zone
-  fileUrl      String              // Prescription file URL
-  fileType     String?             // File MIME type
-  status       String              @default("NEW") // NEW, REVIEWING, QUOTED, ORDERED, COMPLETED, CANCELLED
-  notes        String?             // Admin internal notes
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
-  items        PrescriptionItem[]  // Prescription items parsed by admin
-  order        Order?              // Linked order if converted
+  id        String             @id @default(cuid())
+  userId    String
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String // Customer full name
+  phone     String // Normalized phone number
+  zoneId    String? // Delivery zone
+  fileUrl   String // Prescription file URL
+  fileType  String? // File MIME type
+  status    String             @default("NEW") // NEW, REVIEWING, QUOTED, ORDERED, COMPLETED, CANCELLED
+  notes     String? // Admin internal notes
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  items     PrescriptionItem[] // Prescription items parsed by admin
+  order     Order? // Linked order if converted
 }
 
 model PrescriptionItem {
   id                   String       @id @default(cuid())
   prescriptionId       String
   prescription         Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
-  medicineId           String?      // Optional: mapped to actual Medicine
+  medicineId           String? // Optional: mapped to actual Medicine
   medicine             Medicine?    @relation(fields: [medicineId], references: [id], onDelete: SetNull)
-  medicineNameSnapshot String?      // Snapshot of medicine name at time of selection (for historical accuracy)
-  genericName          String       // Generic name from prescription
-  strength             String?      // e.g., "500mg"
-  quantity             Int          // Quantity prescribed
-  note                 String?      // Additional notes
+  medicineNameSnapshot String? // Snapshot of medicine name at time of selection (for historical accuracy)
+  genericName          String // Generic name from prescription
+  strength             String? // e.g., "500mg"
+  quantity             Int // Quantity prescribed
+  note                 String? // Additional notes
   createdAt            DateTime     @default(now())
   updatedAt            DateTime     @updatedAt
 }
 
 model Order {
-  id                        String        @id @default(cuid())
-  orderNumber               String        @unique
-  userId                    String
-  user                      User          @relation(fields: [userId], references: [id])
-  addressId                 String
-  address                   Address       @relation(fields: [addressId], references: [id])
-  zoneId                    String        // Required: delivery zone for this order
-  zone                      Zone          @relation(fields: [zoneId], references: [id])
-  prescriptionId            String?       @unique // Optional: linked prescription
-  prescription              Prescription? @relation(fields: [prescriptionId], references: [id], onDelete: SetNull)
-  status                    OrderStatus   @default(PENDING)
-  subtotal                  Float
-  discount                  Float         @default(0)
-  membershipDiscountAmount  Float?        // Membership discount applied
-  membershipPlanName        String?       // Membership plan name at time of order
-  deliveryCharge            Float
-  total                     Float
-  paymentMethod             PaymentMethod @default(COD)
-  paymentStatus             String        @default("PENDING")
-  notes                     String?
-  createdAt                 DateTime      @default(now())
-  updatedAt                 DateTime      @updatedAt
-  items                     OrderItem[]
+  id                       String        @id @default(cuid())
+  orderNumber              String        @unique
+  userId                   String
+  user                     User          @relation(fields: [userId], references: [id])
+  addressId                String
+  address                  Address       @relation(fields: [addressId], references: [id])
+  zoneId                   String // Required: delivery zone for this order
+  zone                     Zone          @relation(fields: [zoneId], references: [id])
+  prescriptionId           String?       @unique // Optional: linked prescription
+  prescription             Prescription? @relation(fields: [prescriptionId], references: [id], onDelete: SetNull)
+  status                   OrderStatus   @default(PENDING)
+  subtotal                 Float
+  discount                 Float         @default(0)
+  membershipDiscountAmount Float? // Membership discount applied
+  membershipPlanName       String? // Membership plan name at time of order
+  deliveryCharge           Float
+  total                    Float
+  paymentMethod            PaymentMethod @default(COD)
+  paymentStatus            String        @default("PENDING")
+  notes                    String?
+  createdAt                DateTime      @default(now())
+  updatedAt                DateTime      @updatedAt
+  items                    OrderItem[]
 }
 
 model OrderItem {
-  id          String   @id @default(cuid())
-  orderId     String
-  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  medicineId  String
-  medicine    Medicine @relation(fields: [medicineId], references: [id])
-  quantity    Int
-  price       Float
-  discount    Float    @default(0)
-  total       Float
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  medicineId String
+  medicine   Medicine @relation(fields: [medicineId], references: [id])
+  quantity   Int
+  price      Float
+  discount   Float    @default(0)
+  total      Float
+  createdAt  DateTime @default(now())
 }
 
 model MembershipPlan {
@@ -239,54 +239,50 @@ model MembershipPlan {
 }
 
 model UserMembership {
-  id          String         @id @default(cuid())
-  userId      String
-  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  planId      String
-  plan        MembershipPlan @relation(fields: [planId], references: [id])
-  startDate   DateTime
-  endDate     DateTime
-  isActive    Boolean        @default(true)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  id        String         @id @default(cuid())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId    String
+  plan      MembershipPlan @relation(fields: [planId], references: [id])
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
 }
 
 model SubscriptionPlan {
-  id            String         @id @default(cuid())
-  name          String         @unique
-  slug          String         @unique
-  description   String?
-  price         Float
-  durationDays  Int            @default(30)
-  imageUrl      String?
-  isActive      Boolean        @default(true)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  items         SubscriptionItem[]
-  subscriptions Subscription[]
-}
-
-model SubscriptionItem {
-  id          String           @id @default(cuid())
-  planId      String
-  plan        SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
-  medicineId  String
-  medicine    Medicine         @relation(fields: [medicineId], references: [id])
-  quantity    Int
-  createdAt   DateTime         @default(now())
+  id               Int            @id @default(autoincrement())
+  name             String
+  slug             String         @unique
+  shortDescription String? // Small text shown on cards
+  itemsSummary     String? // Human-readable text list of items included
+  itemsJson        Json? // Optional structured list for future use
+  priceMonthly     Int // Price per month in BDT
+  bannerImageUrl   String? // Banner/card image
+  isFeatured       Boolean        @default(false)
+  isActive         Boolean        @default(true)
+  sortOrder        Int? // For ordering in UI
+  subscriptions    Subscription[]
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 }
 
 model Subscription {
-  id              String           @id @default(cuid())
-  userId          String
-  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  planId          String
-  plan            SubscriptionPlan @relation(fields: [planId], references: [id])
-  startDate       DateTime
-  nextDeliveryDate DateTime
-  isActive        Boolean          @default(true)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  id             Int              @id @default(autoincrement())
+  userId         String
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId         Int
+  plan           SubscriptionPlan @relation(fields: [planId], references: [id])
+  pricePerPeriod Int
+  status         String // 'pending', 'active', 'paused', 'cancelled'
+  startDate      DateTime         @default(now())
+  nextDelivery   DateTime
+  address        String
+  zoneId         String?
+  zone           Zone?            @relation(fields: [zoneId], references: [id])
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 }
 
 model Banner {

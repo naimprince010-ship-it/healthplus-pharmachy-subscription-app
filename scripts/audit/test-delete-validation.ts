@@ -61,27 +61,7 @@ async function testDeleteValidation() {
 
     console.log('Test 3: Checking medicines in subscription plans')
     console.log('=' .repeat(60))
-
-    const medicineInSubscriptions = await prisma.medicine.findFirst({
-      where: {
-        subscriptionItems: {
-          some: {},
-        },
-      },
-      include: {
-        _count: {
-          select: { subscriptionItems: true },
-        },
-      },
-    })
-
-    if (medicineInSubscriptions) {
-      console.log(`✅ Found medicine: ${medicineInSubscriptions.name}`)
-      console.log(`   In ${medicineInSubscriptions._count.subscriptionItems} subscription plan(s)`)
-      console.log(`   ✅ Delete should be blocked by validation\n`)
-    } else {
-      console.log(`⚠️  No medicines in subscription plans found\n`)
-    }
+    console.log(`⚠️  SubscriptionItem model not in current schema - skipping test\n`)
 
     console.log('\n📊 Delete Validation Summary')
     console.log('=' .repeat(60))

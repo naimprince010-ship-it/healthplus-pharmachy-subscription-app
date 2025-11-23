@@ -21,7 +21,7 @@ export default async function SubscriptionsPage() {
         select: { name: true, phone: true },
       },
       plan: {
-        select: { name: true, price: true },
+        select: { name: true, priceMonthly: true },
       },
     },
   })
@@ -59,7 +59,7 @@ export default async function SubscriptionsPage() {
             </thead>
             <tbody className="divide-y divide-gray-200 bg-white">
               {subscriptions.map((subscription) => (
-                <tr key={subscription.id}>
+                <tr key={subscription.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => window.location.href = `/admin/subscriptions/${subscription.id}`}>
                   <td className="whitespace-nowrap px-6 py-4">
                     <div className="text-sm font-medium text-gray-900">{subscription.user.name}</div>
                     <div className="text-sm text-gray-500">{subscription.user.phone}</div>
@@ -68,20 +68,24 @@ export default async function SubscriptionsPage() {
                     {subscription.plan.name}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
-                    ৳{subscription.plan.price}
+                    ৳{subscription.pricePerPeriod}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                    {new Date(subscription.nextDeliveryDate).toLocaleDateString()}
+                    {new Date(subscription.nextDelivery).toLocaleDateString()}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm">
                     <span
                       className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                        subscription.isActive
+                        subscription.status === 'active'
                           ? 'bg-green-100 text-green-800'
+                          : subscription.status === 'pending'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : subscription.status === 'paused'
+                          ? 'bg-blue-100 text-blue-800'
                           : 'bg-gray-100 text-gray-800'
                       }`}
                     >
-                      {subscription.isActive ? 'Active' : 'Inactive'}
+                      {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
                     </span>
                   </td>
                 </tr>
