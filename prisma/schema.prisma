@@ -275,7 +275,9 @@ model Subscription {
   planId         Int
   plan           SubscriptionPlan @relation(fields: [planId], references: [id])
   pricePerPeriod Int
-  status         String // 'pending', 'active', 'paused', 'cancelled'
+  status         String           @default("pending") // 'pending', 'active', 'paused', 'cancelled'
+  paymentStatus  String           @default("unpaid") // 'unpaid', 'paid', 'refunded'
+  paymentMethod  String           @default("cod") // 'cod', 'bkash', 'online'
   startDate      DateTime         @default(now())
   nextDelivery   DateTime
   address        String

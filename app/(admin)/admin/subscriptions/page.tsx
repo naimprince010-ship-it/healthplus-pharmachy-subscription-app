@@ -84,6 +84,9 @@ export default async function SubscriptionsPage() {
                   Price
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  Payment
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                   Next Delivery
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
@@ -106,6 +109,24 @@ export default async function SubscriptionsPage() {
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
                     ৳{subscription.pricePerPeriod}
                   </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm">
+                    <div className="flex flex-col gap-1">
+                      <span
+                        className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+                          subscription.paymentStatus === 'paid'
+                            ? 'bg-green-100 text-green-800'
+                            : subscription.paymentStatus === 'unpaid'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}
+                      >
+                        {subscription.paymentStatus}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {subscription.paymentMethod}
+                      </span>
+                    </div>
+                  </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                     {subscription.nextDelivery ? new Date(subscription.nextDelivery).toLocaleDateString() : '-'}
                   </td>
@@ -117,7 +138,9 @@ export default async function SubscriptionsPage() {
                           : subscription.status === 'pending'
                           ? 'bg-yellow-100 text-yellow-800'
                           : subscription.status === 'paused'
-                          ? 'bg-blue-100 text-blue-800'
+                          ? 'bg-gray-100 text-gray-800'
+                          : subscription.status === 'cancelled'
+                          ? 'bg-red-100 text-red-800'
                           : 'bg-gray-100 text-gray-800'
                       }`}
                     >
