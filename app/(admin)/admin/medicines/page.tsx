@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Search, Filter, Edit, Trash2, AlertCircle } from 'lucide-react'
+import { Plus, Search, Filter, Edit, Trash2, AlertCircle, Upload } from 'lucide-react'
 
 interface Medicine {
   id: string
@@ -136,13 +136,22 @@ export default function MedicinesPage() {
             Manage your medicine inventory
           </p>
         </div>
-        <Link
-          href="/admin/medicines/new"
-          className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-700"
-        >
-          <Plus className="h-4 w-4" />
-          Add Medicine
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/admin/medicines/bulk-upload"
+            className="flex items-center gap-2 rounded-lg border border-teal-600 px-4 py-2 text-sm font-semibold text-teal-600 transition-colors hover:bg-teal-50"
+          >
+            <Upload className="h-4 w-4" />
+            Bulk Upload
+          </Link>
+          <Link
+            href="/admin/medicines/new"
+            className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-700"
+          >
+            <Plus className="h-4 w-4" />
+            Add Medicine
+          </Link>
+        </div>
       </div>
 
       <div className="space-y-4">
@@ -197,8 +206,8 @@ export default function MedicinesPage() {
                   className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <option value="all">All Status</option>
-                  <option value="true">Active</option>
-                  <option value="false">Inactive</option>
+                  <option value="true">Published (Active)</option>
+                  <option value="false">Unpublished (Inactive)</option>
                 </select>
               </div>
               <div className="flex items-end">
