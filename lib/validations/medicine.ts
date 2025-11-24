@@ -5,6 +5,17 @@
 import { z } from 'zod'
 
 /**
+ * Helper to convert empty/NaN values to undefined for optional numeric fields
+ */
+const optionalNumber = (schema: z.ZodNumber) =>
+  z.preprocess((val) => {
+    if (val === '' || val === null || val === undefined || Number.isNaN(val)) {
+      return undefined
+    }
+    return Number(val)
+  }, schema.optional())
+
+/**
  * Base medicine schema for creation
  */
 export const createMedicineSchema = z.object({
@@ -19,14 +30,14 @@ export const createMedicineSchema = z.object({
   
   categoryId: z.string().min(1, 'Category is required'),
   
-  mrp: z.number().positive('MRP must be positive').optional(),
-  sellingPrice: z.number().positive('Selling price must be positive').optional(),
-  unitPrice: z.number().positive('Unit price must be positive').optional(),
-  stripPrice: z.number().positive('Strip price must be positive').optional(),
-  tabletsPerStrip: z.number().int().positive('Tablets per strip must be positive').optional(),
+  mrp: optionalNumber(z.number().positive('MRP must be positive')),
+  sellingPrice: optionalNumber(z.number().positive('Selling price must be positive')),
+  unitPrice: optionalNumber(z.number().positive('Unit price must be positive')),
+  stripPrice: optionalNumber(z.number().positive('Strip price must be positive')),
+  tabletsPerStrip: optionalNumber(z.number().int().positive('Tablets per strip must be positive')),
   
-  stockQuantity: z.number().int().nonnegative('Stock cannot be negative').optional().default(0),
-  minStockAlert: z.number().int().positive().optional(),
+  stockQuantity: optionalNumber(z.number().int().nonnegative('Stock cannot be negative')),
+  minStockAlert: optionalNumber(z.number().int().positive()),
   
   seoTitle: z.string().max(200).optional(),
   seoDescription: z.string().max(500).optional(),
