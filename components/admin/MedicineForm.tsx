@@ -636,7 +636,7 @@ export function MedicineForm({ mode, medicineId, initialData }: MedicineFormProp
         </div>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form noValidate onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="rounded-lg border border-gray-200 bg-white p-6">
           <Tabs tabs={tabs} defaultTab="basic" />
         </div>
