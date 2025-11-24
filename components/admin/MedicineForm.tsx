@@ -613,7 +613,7 @@ export function MedicineForm({ mode, medicineId, initialData }: MedicineFormProp
             path={imagePath}
             onChange={(url, path) => {
               setImageUrl(url)
-              setImagePath(path)
+              setImagePath(path || '')
             }}
             medicineId={medicineId}
           />

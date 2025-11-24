@@ -5,11 +5,13 @@ import { useState } from 'react'
 interface ImageUploadProps {
   value?: string
   path?: string
-  onChange: (url: string, path: string) => void
+  onChange: (url: string, path?: string) => void
   medicineId?: string
+  bannerId?: string
+  folder?: 'medicines' | 'banners'
 }
 
-export function ImageUpload({ value, path, onChange, medicineId }: ImageUploadProps) {
+export function ImageUpload({ value, path, onChange, medicineId, bannerId, folder = 'medicines' }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -17,8 +19,9 @@ export function ImageUpload({ value, path, onChange, medicineId }: ImageUploadPr
     const file = e.target.files?.[0]
     if (!file) return
 
-    if (file.size > 1024 * 1024) {
-      setError('Image size must be less than 1MB')
+    const maxSize = folder === 'banners' ? 2 * 1024 * 1024 : 1024 * 1024
+    if (file.size > maxSize) {
+      setError(`Image size must be less than ${folder === 'banners' ? '2MB' : '1MB'}`)
       return
     }
 
@@ -36,8 +39,15 @@ export function ImageUpload({ value, path, onChange, medicineId }: ImageUploadPr
       if (medicineId) {
         formData.append('medicineId', medicineId)
       }
+      if (bannerId) {
+        formData.append('bannerId', bannerId)
+      }
 
-      const response = await fetch('/api/admin/uploads/medicine-image', {
+      const endpoint = folder === 'banners' 
+        ? '/api/admin/uploads/banner-image'
+        : '/api/admin/uploads/medicine-image'
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         body: formData,
       })
@@ -60,7 +70,11 @@ export function ImageUpload({ value, path, onChange, medicineId }: ImageUploadPr
     if (!path) return
 
     try {
-      await fetch(`/api/admin/uploads/medicine-image?path=${encodeURIComponent(path)}`, {
+      const endpoint = folder === 'banners'
+        ? '/api/admin/uploads/banner-image'
+        : '/api/admin/uploads/medicine-image'
+      
+      await fetch(`${endpoint}?path=${encodeURIComponent(path)}`, {
         method: 'DELETE',
       })
       onChange('', '')
