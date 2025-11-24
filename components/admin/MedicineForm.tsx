@@ -66,6 +66,12 @@ export function MedicineForm({ mode, medicineId, initialData }: MedicineFormProp
   }, [])
 
   useEffect(() => {
+    if (mode === 'edit' && initialData?.categoryId && categories.length > 0) {
+      setValue('categoryId', initialData.categoryId, { shouldValidate: false })
+    }
+  }, [mode, initialData?.categoryId, categories.length, setValue])
+
+  useEffect(() => {
     if (packSize && !tabletsPerStrip) {
       const parsed = parseTabletsFromPackSize(packSize)
       if (parsed) {
