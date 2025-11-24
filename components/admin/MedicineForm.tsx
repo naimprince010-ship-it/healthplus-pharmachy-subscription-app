@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { ArrowLeft, Save } from 'lucide-react'
 import { useForm, type DefaultValues } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { createMedicineSchema, type CreateMedicineInput } from '@/lib/validations/medicine'
+import { createMedicineSchema, updateMedicineSchema, type CreateMedicineInput } from '@/lib/validations/medicine'
 import { Tabs } from '@/components/ui/Tabs'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { ImageUpload } from '@/components/admin/ImageUpload'
@@ -45,8 +45,9 @@ export function MedicineForm({ mode, medicineId, initialData }: MedicineFormProp
     watch,
     setValue,
   } = useForm<CreateMedicineInput>({
-    resolver: zodResolver(createMedicineSchema),
+    resolver: zodResolver(mode === 'edit' ? updateMedicineSchema : createMedicineSchema),
     defaultValues: defaults,
+    shouldUnregister: false,
   })
 
   const unitPrice = watch('unitPrice')
