@@ -288,14 +288,24 @@ model Subscription {
 }
 
 model Banner {
-  id          String         @id @default(cuid())
-  title       String
-  description String?
-  imageUrl    String
-  link        String?
-  location    BannerLocation @default(HOME_HERO)
-  order       Int            @default(0)
-  isActive    Boolean        @default(true)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  id               String         @id @default(cuid())
+  title            String
+  subtitle         String?
+  description      String?
+  imageUrl         String // Legacy field, kept for backward compatibility
+  imageDesktopUrl  String? // Desktop-specific image
+  imageMobileUrl   String? // Mobile-specific image
+  link             String? // Legacy field, kept for backward compatibility
+  ctaLabel         String? // Call-to-action button label
+  ctaUrl           String? // Call-to-action URL
+  bgColor          String? // Background color
+  textColor        String? // Text color
+  location         BannerLocation @default(HOME_HERO) // Treated as locationCode
+  order            Int            @default(0)
+  isActive         Boolean        @default(true)
+  startAt          DateTime? // Schedule start date/time
+  endAt            DateTime? // Schedule end date/time
+  visibilityDevice String         @default("all") // 'all' | 'desktop' | 'mobile'
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 }

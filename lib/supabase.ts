@@ -261,3 +261,103 @@ export async function deletePrescriptionFile(path: string): Promise<void> {
     throw new Error(`Delete failed: ${error.message}`)
   }
 }
+
+/**
+ * Generic image validation function
+ */
+export function validateImage(file: File): { valid: boolean; error?: string } {
+  const maxSize = 2 * 1024 * 1024 // 2MB for banners
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png']
+
+  if (file.size > maxSize) {
+    return { valid: false, error: 'Image size must be less than 2MB' }
+  }
+
+  if (!allowedTypes.includes(file.type)) {
+    return { valid: false, error: 'Only JPG and PNG images are allowed' }
+  }
+
+  return { valid: true }
+}
+
+/**
+ * Generic upload function to Supabase Storage
+ * Can be used for banners, medicines, etc.
+ */
+export async function uploadToSupabase(
+  file: File,
+  folder: string,
+  itemId?: string
+): Promise<{ url: string; path: string; mimeType: string; size: number }> {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL === 'https://placeholder.supabase.co') {
+    throw new Error('NEXT_PUBLIC_SUPABASE_URL is not configured in production environment')
+  }
+  
+  if (!supabaseServiceRoleKey) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured in production environment')
+  }
+
+  const bucket = process.env.SUPABASE_MEDICINE_BUCKET || 'medicine-images'
+  
+  try {
+    const { data: buckets } = await supabaseAdmin.storage.listBuckets()
+    const bucketExists = buckets?.some((b) => b.name === bucket)
+    
+    if (!bucketExists) {
+      await supabaseAdmin.storage.createBucket(bucket, {
+        public: true,
+        fileSizeLimit: 2 * 1024 * 1024, // 2MB
+        allowedMimeTypes: ['image/jpeg', 'image/png'],
+      })
+    }
+  } catch (error) {
+    console.error('Bucket check/create error:', error)
+  }
+
+  const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+  const uuid = `${Date.now()}-${Math.random().toString(36).substring(7)}`
+  const fileName = `${uuid}.${fileExt}`
+  const filePath = itemId 
+    ? `${folder}/${itemId}/${fileName}`
+    : `${folder}/${fileName}`
+
+  const { data, error } = await supabaseAdmin.storage
+    .from(bucket)
+    .upload(filePath, file, {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: file.type,
+    })
+
+  if (error) {
+    throw new Error(`Upload failed: ${error.message}`)
+  }
+
+  const { data: urlData } = supabaseAdmin.storage
+    .from(bucket)
+    .getPublicUrl(data.path)
+
+  return {
+    url: urlData.publicUrl,
+    path: data.path,
+    mimeType: file.type,
+    size: file.size,
+  }
+}
+
+/**
+ * Generic delete function from Supabase Storage
+ */
+export async function deleteFromSupabase(path: string): Promise<void> {
+  if (!supabaseServiceRoleKey) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured')
+  }
+
+  const bucket = process.env.SUPABASE_MEDICINE_BUCKET || 'medicine-images'
+
+  const { error } = await supabaseAdmin.storage.from(bucket).remove([path])
+
+  if (error) {
+    throw new Error(`Delete failed: ${error.message}`)
+  }
+}

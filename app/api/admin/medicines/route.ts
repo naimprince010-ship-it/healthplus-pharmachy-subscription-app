@@ -206,7 +206,7 @@ export async function POST(request: NextRequest) {
         requiresPrescription: data.requiresPrescription,
         isFeatured: data.isFeatured,
         isActive: data.isActive,
-        inStock: data.stockQuantity > 0,
+        inStock: data.stockQuantity ? data.stockQuantity > 0 : false,
       },
       include: {
         category: {
