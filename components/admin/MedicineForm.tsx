@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Save } from 'lucide-react'
-import { useForm, type DefaultValues } from 'react-hook-form'
+import { useForm, type DefaultValues, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { createMedicineSchema, updateMedicineSchema, type CreateMedicineInput } from '@/lib/validations/medicine'
+import { createMedicineSchema, updateMedicineSchema, type CreateMedicineInput, type UpdateMedicineInput } from '@/lib/validations/medicine'
 import { Tabs } from '@/components/ui/Tabs'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { ImageUpload } from '@/components/admin/ImageUpload'
@@ -31,6 +31,8 @@ export function MedicineForm({ mode, medicineId, initialData }: MedicineFormProp
   const [imageUrl, setImageUrl] = useState(initialData?.imageUrl || '')
   const [imagePath, setImagePath] = useState(initialData?.imagePath || '')
 
+  type FormValues = CreateMedicineInput & { id?: string }
+
   const defaults: DefaultValues<CreateMedicineInput> = (initialData ?? {
     isActive: true,
     requiresPrescription: false,
@@ -38,15 +40,20 @@ export function MedicineForm({ mode, medicineId, initialData }: MedicineFormProp
     stockQuantity: 0,
   }) as DefaultValues<CreateMedicineInput>
 
+  const resolver: Resolver<FormValues> =
+    mode === 'edit'
+      ? (zodResolver(updateMedicineSchema) as unknown as Resolver<FormValues>)
+      : (zodResolver(createMedicineSchema) as unknown as Resolver<FormValues>)
+
   const {
     register,
     handleSubmit,
     formState: { errors },
     watch,
     setValue,
-  } = useForm<CreateMedicineInput>({
-    resolver: zodResolver(mode === 'edit' ? updateMedicineSchema : createMedicineSchema),
-    defaultValues: defaults,
+  } = useForm<FormValues>({
+    resolver,
+    defaultValues: defaults as Partial<FormValues>,
     shouldUnregister: false,
   })
 
@@ -68,7 +75,7 @@ export function MedicineForm({ mode, medicineId, initialData }: MedicineFormProp
   }, [packSize, tabletsPerStrip, setValue])
 
   useEffect(() => {
-    if (unitPrice && tabletsPerStrip) {
+    if (typeof unitPrice === 'number' && typeof tabletsPerStrip === 'number') {
       const computed = computeStripPrice(unitPrice, tabletsPerStrip)
       if (computed) {
         setValue('stripPrice', computed)
