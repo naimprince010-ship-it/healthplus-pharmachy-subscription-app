@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Upload, Download, AlertCircle, CheckCircle, ArrowLeft } from 'lucide-react'
+import { Upload, Download, CheckCircle, ArrowLeft } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface ImportError {
@@ -19,7 +19,6 @@ interface ImportSummary {
 }
 
 export default function BulkUploadPage() {
-  const router = useRouter()
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [summary, setSummary] = useState<ImportSummary | null>(null)
@@ -52,7 +51,7 @@ export default function BulkUploadPage() {
       document.body.removeChild(a)
 
       toast.success('Template downloaded successfully')
-    } catch (error) {
+    } catch {
       toast.error('Failed to download template')
     }
   }

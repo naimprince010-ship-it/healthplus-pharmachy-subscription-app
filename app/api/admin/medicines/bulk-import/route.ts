@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
         trim: true,
         relax_column_count: true,
       })
-    } catch (error) {
+    } catch {
       return NextResponse.json(
         { error: 'Invalid CSV format' },
         { status: 400 }
