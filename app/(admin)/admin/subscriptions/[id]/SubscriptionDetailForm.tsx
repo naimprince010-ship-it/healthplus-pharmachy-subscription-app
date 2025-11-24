@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
 import type { Subscription, SubscriptionPlan, Zone } from '@prisma/client'
 
 interface SubscriptionDetailFormProps {
@@ -14,26 +15,26 @@ interface SubscriptionDetailFormProps {
 export function SubscriptionDetailForm({ subscription }: SubscriptionDetailFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
 
   const [formData, setFormData] = useState({
     status: subscription.status,
+    paymentStatus: subscription.paymentStatus,
+    paymentMethod: subscription.paymentMethod,
     nextDelivery: new Date(subscription.nextDelivery).toISOString().split('T')[0],
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    setError(null)
-    setSuccess(false)
 
     try {
       const response = await fetch(`/api/admin/subscriptions/${subscription.id}`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           status: formData.status,
+          paymentStatus: formData.paymentStatus,
+          paymentMethod: formData.paymentMethod,
           nextDelivery: new Date(formData.nextDelivery).toISOString(),
         }),
       })
@@ -44,11 +45,10 @@ export function SubscriptionDetailForm({ subscription }: SubscriptionDetailFormP
         throw new Error(data.error || 'Failed to update subscription')
       }
 
-      setSuccess(true)
+      toast.success('Subscription updated successfully!')
       router.refresh()
-      setTimeout(() => setSuccess(false), 3000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
+      toast.error(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setLoading(false)
     }
@@ -56,46 +56,76 @@ export function SubscriptionDetailForm({ subscription }: SubscriptionDetailFormP
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {error && (
-        <div className="rounded-lg bg-red-50 p-4">
-          <p className="text-sm text-red-800">{error}</p>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div>
+          <label htmlFor="status" className="block text-sm font-medium text-gray-700">
+            Subscription Status
+          </label>
+          <select
+            id="status"
+            value={formData.status}
+            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+            className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:ring-teal-500"
+          >
+            <option value="pending">Pending</option>
+            <option value="active">Active</option>
+            <option value="paused">Paused</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+          <p className="mt-1 text-xs text-gray-500">
+            Set to &quot;active&quot; to approve subscription
+          </p>
         </div>
-      )}
 
-      {success && (
-        <div className="rounded-lg bg-green-50 p-4">
-          <p className="text-sm text-green-800">Subscription updated successfully!</p>
+        <div>
+          <label htmlFor="paymentStatus" className="block text-sm font-medium text-gray-700">
+            Payment Status
+          </label>
+          <select
+            id="paymentStatus"
+            value={formData.paymentStatus}
+            onChange={(e) => setFormData({ ...formData, paymentStatus: e.target.value })}
+            className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:ring-teal-500"
+          >
+            <option value="unpaid">Unpaid</option>
+            <option value="paid">Paid</option>
+            <option value="refunded">Refunded</option>
+          </select>
+          <p className="mt-1 text-xs text-gray-500">
+            Mark as &quot;paid&quot; when payment is received
+          </p>
         </div>
-      )}
-
-      <div>
-        <label htmlFor="status" className="block text-sm font-medium text-gray-700">
-          Status
-        </label>
-        <select
-          id="status"
-          value={formData.status}
-          onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-          className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:ring-teal-500"
-        >
-          <option value="pending">Pending</option>
-          <option value="active">Active</option>
-          <option value="paused">Paused</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
       </div>
 
-      <div>
-        <label htmlFor="nextDelivery" className="block text-sm font-medium text-gray-700">
-          Next Delivery Date
-        </label>
-        <input
-          type="date"
-          id="nextDelivery"
-          value={formData.nextDelivery}
-          onChange={(e) => setFormData({ ...formData, nextDelivery: e.target.value })}
-          className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:ring-teal-500"
-        />
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div>
+          <label htmlFor="paymentMethod" className="block text-sm font-medium text-gray-700">
+            Payment Method
+          </label>
+          <select
+            id="paymentMethod"
+            value={formData.paymentMethod}
+            onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
+            className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:ring-teal-500"
+          >
+            <option value="cod">Cash on Delivery (COD)</option>
+            <option value="bkash">bKash</option>
+            <option value="online">Online Payment</option>
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="nextDelivery" className="block text-sm font-medium text-gray-700">
+            Next Delivery Date
+          </label>
+          <input
+            type="date"
+            id="nextDelivery"
+            value={formData.nextDelivery}
+            onChange={(e) => setFormData({ ...formData, nextDelivery: e.target.value })}
+            className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:ring-teal-500"
+          />
+        </div>
       </div>
 
       <button

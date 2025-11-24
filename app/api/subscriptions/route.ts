@@ -70,6 +70,8 @@ export async function POST(request: NextRequest) {
         planId: plan.id,
         pricePerPeriod: plan.priceMonthly,
         status: 'pending',
+        paymentStatus: 'unpaid',
+        paymentMethod: body.paymentMethod || 'cod',
         startDate,
         nextDelivery,
         address,
