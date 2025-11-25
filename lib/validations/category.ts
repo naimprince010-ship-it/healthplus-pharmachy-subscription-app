@@ -9,6 +9,9 @@ export const categorySchema = z.object({
   parentCategoryId: z.string().optional().nullable(),
   isActive: z.boolean().default(true),
   sortOrder: z.number().int().min(0).default(0),
+  showInSidebar: z.boolean().default(false),
+  sidebarOrder: z.coerce.number().int().min(0).default(0),
+  sidebarIconUrl: z.string().trim().optional().nullable(),
 })
 
 export const createCategorySchema = categorySchema

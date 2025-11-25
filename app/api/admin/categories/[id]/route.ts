@@ -145,6 +145,9 @@ export async function PUT(
       isActive?: boolean
       parentCategoryId?: string | null
       sortOrder?: number
+      showInSidebar?: boolean
+      sidebarOrder?: number
+      sidebarIconUrl?: string | null
     } = {}
     if (validatedData.name !== undefined) updateData.name = validatedData.name
     if (validatedData.slug !== undefined) updateData.slug = validatedData.slug
@@ -153,6 +156,9 @@ export async function PUT(
     if (validatedData.isActive !== undefined) updateData.isActive = validatedData.isActive
     if (validatedData.parentCategoryId !== undefined) updateData.parentCategoryId = validatedData.parentCategoryId
     if (validatedData.sortOrder !== undefined) updateData.sortOrder = validatedData.sortOrder
+    if (validatedData.showInSidebar !== undefined) updateData.showInSidebar = validatedData.showInSidebar
+    if (validatedData.sidebarOrder !== undefined) updateData.sidebarOrder = validatedData.sidebarOrder
+    if (validatedData.sidebarIconUrl !== undefined) updateData.sidebarIconUrl = validatedData.sidebarIconUrl
 
     const category = await prisma.category.update({
       where: { id },
