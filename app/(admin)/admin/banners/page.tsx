@@ -3,8 +3,9 @@ import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import { unstable_noStore as noStore } from 'next/cache'
 import Link from 'next/link'
-import { Plus, Edit, Trash2 } from 'lucide-react'
+import { Plus, Edit } from 'lucide-react'
 import { BANNER_LOCATION_LABELS, DEVICE_LABELS } from '@/lib/banner-constants'
+import { BannerFilters } from '@/components/admin/BannerFilters'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,10 +35,22 @@ export default async function BannersPage({
     where.isActive = isActiveFilter === 'true'
   }
 
-  const banners = await prisma.banner.findMany({
-    where,
-    orderBy: [{ location: 'asc' }, { order: 'asc' }],
-  })
+  let banners: any[] = []
+  let error: string | null = null
+
+  try {
+    banners = await prisma.banner.findMany({
+      where,
+      orderBy: [{ location: 'asc' }, { order: 'asc' }],
+    })
+  } catch (err: any) {
+    console.error('Error fetching banners:', err)
+    error = err.message || 'An error occurred while fetching banners'
+    
+    if (error && error.includes('column') && error.includes('does not exist')) {
+      error = 'Database migration required: Please run BANNER_CMS_MIGRATION.sql on your database before using the Banner CMS features.'
+    }
+  }
 
   const formatSchedule = (startAt: Date | null, endAt: Date | null) => {
     if (!startAt && !endAt) return 'Always'
@@ -66,51 +79,17 @@ export default async function BannersPage({
         </div>
 
         {/* Filters */}
-        <div className="mb-6 flex gap-4 rounded-lg bg-white p-4 shadow">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Location
-            </label>
-            <select
-              value={locationFilter}
-              onChange={(e) => {
-                const url = new URL(window.location.href)
-                url.searchParams.set('location', e.target.value)
-                window.location.href = url.toString()
-              }}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-            >
-              <option value="all">All Locations</option>
-              <option value="HOME_HERO">Home Hero</option>
-              <option value="HOME_MID">Home Mid Section</option>
-              <option value="CATEGORY_TOP">Category Top</option>
-            </select>
-          </div>
+        <BannerFilters />
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Status
-            </label>
-            <select
-              value={isActiveFilter}
-              onChange={(e) => {
-                const url = new URL(window.location.href)
-                url.searchParams.set('isActive', e.target.value)
-                window.location.href = url.toString()
-              }}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-            >
-              <option value="all">All Status</option>
-              <option value="true">Active</option>
-              <option value="false">Inactive</option>
-            </select>
+        {error && (
+          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4">
+            <h3 className="font-semibold text-red-800 mb-2">Error Loading Banners</h3>
+            <p className="text-sm text-red-700">{error}</p>
           </div>
+        )}
 
-          <div className="flex items-end">
-            <div className="text-sm text-gray-600">
-              Total: {banners.length} banners
-            </div>
-          </div>
+        <div className="mb-4 text-sm text-gray-600">
+          Total: {banners.length} banners
         </div>
 
         <div className="overflow-hidden rounded-lg bg-white shadow">
