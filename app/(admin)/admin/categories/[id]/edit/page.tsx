@@ -26,6 +26,9 @@ export default async function EditCategoryPage({
       isActive: true,
       parentCategoryId: true,
       sortOrder: true,
+      showInSidebar: true,
+      sidebarOrder: true,
+      sidebarIconUrl: true,
     },
   })
 
@@ -54,6 +57,9 @@ export default async function EditCategoryPage({
     isActive: category.isActive,
     parentCategoryId: category.parentCategoryId ?? null,
     sortOrder: category.sortOrder ?? 0,
+    showInSidebar: category.showInSidebar ?? false,
+    sidebarOrder: category.sidebarOrder ?? 0,
+    sidebarIconUrl: category.sidebarIconUrl ?? null,
   }
 
   return (
