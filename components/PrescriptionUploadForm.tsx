@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Upload } from 'lucide-react'
+import { trackPrescriptionUpload } from '@/lib/trackEvent'
 
 export default function PrescriptionUploadForm() {
   const [loading, setLoading] = useState(false)
@@ -66,6 +67,8 @@ export default function PrescriptionUploadForm() {
       if (!response.ok) {
         throw new Error(data.error || 'Upload failed')
       }
+
+      trackPrescriptionUpload(data.prescription?.id)
 
       try {
         form.reset()

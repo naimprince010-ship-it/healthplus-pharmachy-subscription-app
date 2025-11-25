@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import type { SubscriptionPlan, Zone } from '@prisma/client'
+import { trackSubscribeStarted, trackSubscribeSuccess } from '@/lib/trackEvent'
 
 interface SubscriptionFormProps {
   plan: SubscriptionPlan
@@ -21,6 +22,10 @@ export function SubscriptionForm({ plan, zones }: SubscriptionFormProps) {
     address: '',
     zoneId: '',
   })
+
+  useEffect(() => {
+    trackSubscribeStarted(plan.name, plan.priceMonthly)
+  }, [plan.name, plan.priceMonthly])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -42,6 +47,8 @@ export function SubscriptionForm({ plan, zones }: SubscriptionFormProps) {
       if (!response.ok) {
         throw new Error(data.error || 'Failed to create subscription')
       }
+
+      trackSubscribeSuccess(plan.name, plan.priceMonthly, data.subscription.id)
 
       setSuccess(true)
       setTimeout(() => {
