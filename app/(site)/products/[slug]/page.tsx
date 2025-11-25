@@ -3,9 +3,38 @@ import { prisma } from '@/lib/prisma'
 import { AddToCartButton } from '@/components/AddToCartButton'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
+import { Metadata } from 'next'
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>
+}
+
+export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
+  const { slug } = await params
+  
+  const product = await prisma.product.findUnique({
+    where: { slug },
+    select: {
+      name: true,
+      canonicalUrl: true,
+      seoTitle: true,
+      seoDescription: true,
+    },
+  })
+
+  if (!product) {
+    return {}
+  }
+
+  const canonicalUrl = product.canonicalUrl || `/products/${slug}`
+
+  return {
+    title: product.seoTitle || product.name,
+    description: product.seoDescription || undefined,
+    alternates: {
+      canonical: canonicalUrl,
+    },
+  }
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
