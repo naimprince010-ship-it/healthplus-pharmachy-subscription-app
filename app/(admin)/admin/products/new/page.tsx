@@ -18,7 +18,7 @@ export default function NewProductPage() {
   const [error, setError] = useState('')
 
   const [formData, setFormData] = useState({
-    type: 'GENERAL' as 'MEDICINE' | 'GENERAL',
+    type: 'GENERAL' as const,
     name: '',
     brandName: '',
     description: '',
@@ -147,6 +147,9 @@ export default function NewProductPage() {
           <p className="mt-2 text-sm text-gray-600">
             Create a new general product (skin care, baby care, devices, cosmetics, etc.)
           </p>
+          <p className="mt-1 text-sm text-amber-600">
+            💊 For medicines, please use <Link href="/admin/medicines" className="font-semibold underline">Admin → Medicines</Link>
+          </p>
         </div>
       </div>
 
@@ -160,21 +163,6 @@ export default function NewProductPage() {
         <div className="rounded-lg border border-gray-200 bg-white p-6">
           <h2 className="mb-4 text-lg font-semibold text-gray-900">Basic Information</h2>
           <div className="grid gap-6 md:grid-cols-2">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Product Type <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={formData.type}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value as 'MEDICINE' | 'GENERAL' })}
-                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                required
-              >
-                <option value="GENERAL">General Product</option>
-                <option value="MEDICINE">Medicine</option>
-              </select>
-            </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Product Name <span className="text-red-500">*</span>

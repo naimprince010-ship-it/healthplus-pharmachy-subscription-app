@@ -20,7 +20,7 @@ const productListQuerySchema = z.object({
 })
 
 const createProductSchema = z.object({
-  type: z.enum(['MEDICINE', 'GENERAL']),
+  type: z.enum(['GENERAL']).default('GENERAL'),
   name: z.string().min(1),
   slug: z.string().optional(),
   description: z.string().optional(),
@@ -188,7 +188,7 @@ export async function POST(request: NextRequest) {
 
     const product = await prisma.product.create({
       data: {
-        type: data.type,
+        type: 'GENERAL',
         name: data.name,
         slug,
         description: data.description,
