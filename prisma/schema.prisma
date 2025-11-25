@@ -31,6 +31,11 @@ enum BannerLocation {
   CATEGORY_TOP
 }
 
+enum ProductType {
+  MEDICINE
+  GENERAL
+}
+
 model User {
   id            String           @id @default(cuid())
   name          String
@@ -94,12 +99,91 @@ model Category {
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
   medicines        Medicine[]
+  products         Product[]
+}
+
+model Product {
+  id          String      @id @default(cuid())
+  type        ProductType
+  name        String
+  slug        String      @unique
+  description String?
+
+  // Media
+  imageUrl  String?
+  imagePath String? // Storage path for deletion
+
+  // Pricing
+  mrp          Float? // Maximum Retail Price
+  sellingPrice Float // Actual selling price
+
+  // Stock
+  stockQuantity Int     @default(0)
+  minStockAlert Int? // Low stock alert threshold
+  inStock       Boolean @default(true)
+
+  // General Product Fields
+  brandName    String? // Brand name (optional for medicines, common for general products)
+  sizeLabel    String? // e.g., "50ml", "100g", "10 pcs", "1 device"
+  unit         String  @default("pcs") // ml / g / pcs / pack / kit
+  variantLabel String? // e.g., "Aloe Vera", "Lemon", "Red", "XL"
+  keyFeatures  String? // Short text / bullet style features
+  specSummary  String? // For devices – simple text field for main specs
+
+  // SEO Fields
+  seoTitle       String?
+  seoDescription String?
+  seoKeywords    String?
+  canonicalUrl   String?
+  isFeatured     Boolean @default(false)
+
+  // Membership discount override
+  excludeFromMembershipDiscount Boolean @default(false)
+
+  // Relations & Status
+  categoryId String
+  category   Category  @relation(fields: [categoryId], references: [id])
+  isActive   Boolean   @default(true)
+  deletedAt  DateTime? // Soft delete timestamp
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  medicine   Medicine? // 1:1 relation for medicine-specific fields
+  variants   ProductVariant[]
+  orderItems OrderItem[]
+}
+
+model ProductVariant {
+  id            String   @id @default(cuid())
+  productId     String
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantName   String // e.g., "50ml", "100ml - Lemon"
+  sizeLabel     String? // e.g., "50ml", "100g"
+  sku           String? // SKU / Barcode
+  mrp           Float? // Variant-specific MRP
+  sellingPrice  Float // Variant-specific selling price
+  stockQuantity Int      @default(0)
+  inStock       Boolean  @default(true)
+  isActive      Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([productId, variantName])
 }
 
 model Medicine {
-  id           String  @id @default(cuid())
-  name         String
-  slug         String  @unique
+  id   String @id @default(cuid())
+  name String
+  slug String @unique
+
+  // Product system integration (optional during Phase 1, will be populated during migration)
+  productId String?  @unique
+  product   Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  // Medicine-specific fields
   genericName  String?
   brandName    String?
   manufacturer String // Required manufacturer field
@@ -213,16 +297,27 @@ model Order {
 }
 
 model OrderItem {
-  id         String   @id @default(cuid())
-  orderId    String
-  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  medicineId String
-  medicine   Medicine @relation(fields: [medicineId], references: [id])
-  quantity   Int
-  price      Float
-  discount   Float    @default(0)
-  total      Float
-  createdAt  DateTime @default(now())
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  // Product reference (new, will be used after migration in Phase 2)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id])
+
+  // Medicine reference (legacy, keep for backward compatibility during Phase 1)
+  medicineId String?
+  medicine   Medicine? @relation(fields: [medicineId], references: [id])
+
+  // Snapshot fields for historical accuracy (will be populated in Phase 2)
+  productName String? // Product name at time of order
+  productType String? // MEDICINE or GENERAL
+
+  quantity  Int
+  price     Float
+  discount  Float    @default(0)
+  total     Float
+  createdAt DateTime @default(now())
 }
 
 model MembershipPlan {
