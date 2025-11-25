@@ -33,6 +33,7 @@ export default function NewProductPage() {
     seoTitle: '',
     seoDescription: '',
     seoKeywords: '',
+    canonicalUrl: '',
     isFeatured: false,
     isActive: true,
     excludeFromMembershipDiscount: false,
@@ -406,6 +407,22 @@ export default function NewProductPage() {
                 onChange={(e) => setFormData({ ...formData, seoKeywords: e.target.value })}
                 className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Canonical URL
+              </label>
+              <input
+                type="text"
+                value={formData.canonicalUrl}
+                onChange={(e) => setFormData({ ...formData, canonicalUrl: e.target.value })}
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                placeholder="Leave empty to use /products/[slug]"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Optional. If empty, will default to /products/[slug]
+              </p>
             </div>
           </div>
         </div>
