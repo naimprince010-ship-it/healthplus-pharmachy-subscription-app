@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { Shield, Package, Heart, Baby, Activity, Users } from 'lucide-react'
 import PrescriptionUploadForm from '@/components/PrescriptionUploadForm'
+import { SectionSlider } from '@/components/SectionSlider'
+import { buildProductWhereClause } from '@/lib/homeSections'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -28,9 +30,48 @@ async function getMembershipPlan() {
   }
 }
 
+async function getHomeSections() {
+  try {
+    const { prisma } = await import('@/lib/prisma')
+    const sections = await prisma.homeSection.findMany({
+      where: { isActive: true },
+      orderBy: { sortOrder: 'asc' },
+    })
+
+    const sectionsWithProducts = await Promise.all(
+      sections.map(async (section) => {
+        const whereClause = buildProductWhereClause(section)
+        const products = await prisma.product.findMany({
+          where: whereClause,
+          include: {
+            category: true,
+          },
+          take: section.maxProducts,
+        })
+
+        return {
+          section: {
+            id: section.id,
+            title: section.title,
+            slug: section.slug,
+            badgeText: section.badgeText,
+            bgColor: section.bgColor,
+          },
+          products,
+        }
+      })
+    )
+
+    return sectionsWithProducts.filter((s) => s.products.length > 0)
+  } catch {
+    return []
+  }
+}
+
 export default async function HomePage() {
   const subscriptionPlans = await getSubscriptionPlans()
   const membershipPlan = await getMembershipPlan()
+  const homeSections = await getHomeSections()
 
   return (
     <div className="bg-white">
@@ -67,6 +108,11 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Home Sections */}
+      {homeSections.map(({ section, products }) => (
+        <SectionSlider key={section.id} section={section} products={products} />
+      ))}
 
       {/* Membership Card */}
       {membershipPlan && (
