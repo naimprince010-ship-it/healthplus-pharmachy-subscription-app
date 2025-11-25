@@ -12,7 +12,10 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "HealthPlus - Subscription Pharmacy & E-Commerce",
   description: "Affordable medicine subscriptions with 100 BDT membership and 10% discount on all medicines. Monthly plans for BP, Diabetes, Baby Care, and Family Pack.",
   keywords: "pharmacy, medicine, subscription, healthcare, Bangladesh, online pharmacy, medicine delivery",
@@ -22,11 +25,15 @@ export const metadata: Metadata = {
     description: "Affordable medicine subscriptions with 100 BDT membership and 10% discount on all medicines.",
     type: "website",
     locale: "en_BD",
+    url: siteUrl,
   },
   twitter: {
     card: "summary_large_image",
     title: "HealthPlus - Subscription Pharmacy & E-Commerce",
     description: "Affordable medicine subscriptions with 100 BDT membership and 10% discount on all medicines.",
+  },
+  alternates: {
+    canonical: '/',
   },
 };
 
@@ -37,9 +44,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head>
-        <link rel="canonical" href="https://healthplus.com" />
-      </head>
       <body className={`${inter.variable} font-sans antialiased`}>
         <SessionProvider>
           <CartProvider>
