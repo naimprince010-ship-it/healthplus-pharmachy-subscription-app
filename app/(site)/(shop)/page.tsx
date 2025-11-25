@@ -3,7 +3,6 @@ import { Shield, Package, Heart, Baby, Activity, Users } from 'lucide-react'
 import PrescriptionUploadForm from '@/components/PrescriptionUploadForm'
 import { SectionSlider } from '@/components/SectionSlider'
 import { buildProductWhereClause } from '@/lib/homeSections'
-import LeftCategorySidebar from '@/components/LeftCategorySidebar'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -110,20 +109,11 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Main Content with Sidebar */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex gap-8">
-          {/* Left Sidebar */}
-          <LeftCategorySidebar />
-
-          {/* Main Content */}
-          <div className="flex-1">
-            {/* Home Sections */}
-            {homeSections.map(({ section, products }) => (
-              <SectionSlider key={section.id} section={section} products={products} />
-            ))}
-          </div>
-        </div>
+      {/* Home Sections */}
+      <div className="space-y-8">
+        {homeSections.map(({ section, products }) => (
+          <SectionSlider key={section.id} section={section} products={products} />
+        ))}
       </div>
 
       {/* Membership Card */}
