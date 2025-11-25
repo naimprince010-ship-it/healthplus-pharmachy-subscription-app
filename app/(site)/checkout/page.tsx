@@ -34,7 +34,7 @@ export default function CheckoutPage() {
     }
 
     const ga4Items: GA4Item[] = items.map((item) => ({
-      item_id: item.medicineId,
+      item_id: item.medicineId || item.productId || '',
       item_name: item.name,
       price: item.price,
       quantity: item.quantity,
@@ -72,6 +72,7 @@ export default function CheckoutPage() {
           zoneId: selectedZone,
           items: items.map((item) => ({
             medicineId: item.medicineId,
+            productId: item.productId,
             quantity: item.quantity,
             price: item.price,
           })),
@@ -89,7 +90,7 @@ export default function CheckoutPage() {
       }
 
       const ga4Items: GA4Item[] = items.map((item) => ({
-        item_id: item.medicineId,
+        item_id: item.medicineId || item.productId || '',
         item_name: item.name,
         price: item.price,
         quantity: item.quantity,
@@ -174,7 +175,7 @@ export default function CheckoutPage() {
 
             <div className="mt-4 space-y-3">
               {items.map((item) => (
-                <div key={item.medicineId} className="flex justify-between text-sm">
+                <div key={item.medicineId || item.productId} className="flex justify-between text-sm">
                   <span className="text-gray-600">
                     {item.name} x {item.quantity}
                   </span>

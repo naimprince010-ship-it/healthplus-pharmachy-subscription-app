@@ -4,18 +4,20 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 
 export interface CartItem {
   id: string
-  medicineId: string
+  medicineId?: string
+  productId?: string
   name: string
   price: number
   quantity: number
   image?: string
+  type: 'MEDICINE' | 'PRODUCT'
 }
 
 interface CartContextType {
   items: CartItem[]
   addItem: (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => void
-  removeItem: (medicineId: string) => void
-  updateQuantity: (medicineId: string, quantity: number) => void
+  removeItem: (itemId: string) => void
+  updateQuantity: (itemId: string, quantity: number) => void
   clearCart: () => void
   total: number
   itemCount: number
@@ -43,10 +45,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
     setItems((prevItems) => {
-      const existingItem = prevItems.find((i) => i.medicineId === item.medicineId)
+      const itemKey = item.medicineId || item.productId
+      const existingItem = prevItems.find((i) => 
+        (i.medicineId && i.medicineId === item.medicineId) || 
+        (i.productId && i.productId === item.productId)
+      )
       if (existingItem) {
         return prevItems.map((i) =>
-          i.medicineId === item.medicineId
+          ((i.medicineId && i.medicineId === item.medicineId) || 
+           (i.productId && i.productId === item.productId))
             ? { ...i, quantity: i.quantity + (item.quantity || 1) }
             : i
         )
@@ -55,18 +62,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
     })
   }
 
-  const removeItem = (medicineId: string) => {
-    setItems((prevItems) => prevItems.filter((i) => i.medicineId !== medicineId))
+  const removeItem = (itemId: string) => {
+    setItems((prevItems) => prevItems.filter((i) => 
+      i.medicineId !== itemId && i.productId !== itemId
+    ))
   }
 
-  const updateQuantity = (medicineId: string, quantity: number) => {
+  const updateQuantity = (itemId: string, quantity: number) => {
     if (quantity <= 0) {
-      removeItem(medicineId)
+      removeItem(itemId)
       return
     }
     setItems((prevItems) =>
       prevItems.map((i) =>
-        i.medicineId === medicineId ? { ...i, quantity } : i
+        (i.medicineId === itemId || i.productId === itemId) ? { ...i, quantity } : i
       )
     )
   }
