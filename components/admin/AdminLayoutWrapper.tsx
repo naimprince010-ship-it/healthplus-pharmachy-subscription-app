@@ -6,9 +6,10 @@ import { AdminHeader } from './AdminHeader'
 
 interface AdminLayoutWrapperProps {
   userName?: string
+  children: React.ReactNode
 }
 
-export function AdminLayoutWrapper({ userName }: AdminLayoutWrapperProps) {
+export function AdminLayoutWrapper({ userName, children }: AdminLayoutWrapperProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
@@ -28,6 +29,9 @@ export function AdminLayoutWrapper({ userName }: AdminLayoutWrapperProps) {
       
       <div className="flex-1 flex flex-col min-w-0">
         <AdminHeader onMenuClick={() => setSidebarOpen(true)} userName={userName} />
+        <main className="flex-1 p-4 md:p-6">
+          {children}
+        </main>
       </div>
     </>
   )

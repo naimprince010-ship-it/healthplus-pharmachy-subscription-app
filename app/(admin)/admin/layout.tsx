@@ -15,10 +15,9 @@ export default async function AdminLayout({
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      <AdminLayoutWrapper userName={session.user.name ?? undefined} />
-      <main className="flex-1 p-4 md:p-6">
+      <AdminLayoutWrapper userName={session.user.name ?? undefined}>
         {children}
-      </main>
+      </AdminLayoutWrapper>
     </div>
   )
 }
