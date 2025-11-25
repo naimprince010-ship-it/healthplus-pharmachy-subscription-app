@@ -7,13 +7,18 @@ export default function ShopLayout({
 }) {
   return (
     <div className="bg-white">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="py-6 lg:flex lg:items-start lg:gap-8">
-          {/* Left Sidebar - Desktop only */}
-          <LeftCategorySidebar />
-          
-          {/* Main Content */}
-          <div className="flex-1 min-w-0">
+      {/* Full-bleed grid: sidebar flush to viewport, content in container */}
+      <div className="lg:grid lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-4">
+        {/* Left Sidebar - Desktop only, sticky positioned, flush to viewport */}
+        <aside className="hidden lg:block">
+          <div className="sticky top-16 w-[260px]">
+            <LeftCategorySidebar />
+          </div>
+        </aside>
+        
+        {/* Main Content - wrapped in container, no horizontal padding at lg */}
+        <div className="min-w-0">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-0">
             {children}
           </div>
         </div>
