@@ -74,11 +74,10 @@ export default async function HomePage() {
   const homeSections = await getHomeSections()
 
   return (
-    <div className="bg-white">
+    <>
       {/* Hero Section with Prescription Upload */}
-      <section className="bg-gradient-to-br from-teal-50 to-white py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-12 lg:grid-cols-2">
+      <section className="bg-gradient-to-br from-teal-50 to-white py-16 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
+        <div className="grid gap-12 lg:grid-cols-2">
             <div className="flex flex-col justify-center">
               <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
                 Your Trusted Partner for{' '}
@@ -106,11 +105,10 @@ export default async function HomePage() {
             {/* Prescription Upload Form */}
             <PrescriptionUploadForm />
           </div>
-        </div>
       </section>
 
       {/* Home Sections */}
-      <div className="space-y-8">
+      <div className="space-y-8 py-8">
         {homeSections.map(({ section, products }) => (
           <SectionSlider key={section.id} section={section} products={products} />
         ))}
@@ -119,8 +117,7 @@ export default async function HomePage() {
       {/* Membership Card */}
       {membershipPlan && (
         <section className="py-16">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="rounded-2xl bg-gradient-to-r from-teal-600 to-teal-700 p-8 text-white shadow-xl md:p-12">
+          <div className="rounded-2xl bg-gradient-to-r from-teal-600 to-teal-700 p-8 text-white shadow-xl md:p-12">
               <div className="grid gap-8 lg:grid-cols-2">
                 <div>
                   <div className="mb-4 inline-flex items-center rounded-full bg-white/20 px-4 py-2 text-sm font-semibold">
@@ -166,13 +163,11 @@ export default async function HomePage() {
                 </div>
               </div>
             </div>
-          </div>
         </section>
       )}
 
       {/* Subscription Plans */}
-      <section className="bg-gray-50 py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="bg-gray-50 py-16 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h2 className="text-3xl font-bold text-gray-900">Monthly Subscription Plans</h2>
             <p className="mt-4 text-lg text-gray-600">
@@ -207,12 +202,10 @@ export default async function HomePage() {
               </div>
             ))}
           </div>
-        </div>
       </section>
 
       {/* Trust Badges */}
       <section className="py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-8 md:grid-cols-3">
             <div className="text-center">
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-teal-100">
@@ -236,8 +229,7 @@ export default async function HomePage() {
               <p className="mt-2 text-sm text-gray-600">Our pharmacists are here to help you 24/7</p>
             </div>
           </div>
-        </div>
       </section>
-    </div>
+    </>
   )
 }

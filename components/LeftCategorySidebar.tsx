@@ -38,8 +38,8 @@ export default function LeftCategorySidebar() {
   }
 
   return (
-    <div className="hidden lg:block w-64 flex-shrink-0">
-      <div className="sticky top-20 rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
+    <div className="w-full">
+      <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
         {/* FLASH SALE Row */}
         <Link
           href="/flash-sale"
