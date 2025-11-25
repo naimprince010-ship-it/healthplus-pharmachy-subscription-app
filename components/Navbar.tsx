@@ -3,14 +3,21 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { ShoppingCart, User, Menu, X } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { UserMenu } from './UserMenu'
+import { useCart } from '@/contexts/CartContext'
 
 export function Navbar() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { data: session } = useSession()
+  const { itemCount } = useCart()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const isActive = (path: string) => pathname === path
 
@@ -69,11 +76,17 @@ export function Navbar() {
             <Link
               href="/cart"
               className="relative text-gray-700 transition-colors hover:text-teal-600"
+              aria-label={`Cart${mounted && itemCount > 0 ? ` (${itemCount} items)` : ''}`}
             >
               <ShoppingCart className="h-5 w-5" />
-              <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-teal-600 text-xs text-white">
-                0
-              </span>
+              {mounted && itemCount > 0 && (
+                <span 
+                  className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-teal-600 text-xs text-white"
+                  aria-live="polite"
+                >
+                  {itemCount}
+                </span>
+              )}
             </Link>
             {session ? (
               <UserMenu variant="navbar" />
