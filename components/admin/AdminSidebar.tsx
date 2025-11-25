@@ -16,6 +16,7 @@ import {
   MapPin,
   X,
   PackageCheck,
+  Box,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -28,6 +29,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
   { label: 'Medicines', href: '/admin/medicines', icon: Package },
+  { label: 'Products', href: '/admin/products', icon: Box },
   { label: 'Categories', href: '/admin/categories', icon: FolderTree },
   { label: 'Orders', href: '/admin/orders', icon: ShoppingBag },
   { label: 'Subscriptions', href: '/admin/subscriptions', icon: Calendar },
