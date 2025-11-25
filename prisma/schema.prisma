@@ -86,20 +86,21 @@ model Zone {
 }
 
 model Category {
-  id               String     @id @default(cuid())
-  name             String     @unique
-  slug             String     @unique
+  id               String        @id @default(cuid())
+  name             String        @unique
+  slug             String        @unique
   description      String?
   imageUrl         String?
   parentCategoryId String?
-  parentCategory   Category?  @relation("CategoryToSubCategory", fields: [parentCategoryId], references: [id], onDelete: SetNull)
-  subCategories    Category[] @relation("CategoryToSubCategory")
-  isActive         Boolean    @default(true)
-  sortOrder        Int        @default(0)
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
+  parentCategory   Category?     @relation("CategoryToSubCategory", fields: [parentCategoryId], references: [id], onDelete: SetNull)
+  subCategories    Category[]    @relation("CategoryToSubCategory")
+  isActive         Boolean       @default(true)
+  sortOrder        Int           @default(0)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
   medicines        Medicine[]
   products         Product[]
+  homeSections     HomeSection[]
 }
 
 model Product {
@@ -403,4 +404,25 @@ model Banner {
   visibilityDevice String         @default("all") // 'all' | 'desktop' | 'mobile'
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
+}
+
+model HomeSection {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  filterType  String // 'category' | 'brand' | 'manual'
+  categoryId  String?
+  brandName   String?
+  productIds  Json? // string[] of Product.id
+  maxProducts Int       @default(10)
+  bgColor     String?
+  badgeText   String?
+  sortOrder   Int       @default(0)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  category    Category? @relation(fields: [categoryId], references: [id])
+
+  @@index([sortOrder])
+  @@index([isActive, sortOrder])
 }
