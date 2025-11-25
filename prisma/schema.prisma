@@ -175,39 +175,67 @@ model ProductVariant {
 }
 
 model Medicine {
-  id        String  @id @default(cuid())
-  productId String  @unique // Link to Product base
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id   String @id @default(cuid())
+  name String
+  slug String @unique
+
+  // Product system integration (optional during Phase 1, will be populated during migration)
+  productId String?  @unique
+  product   Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   // Medicine-specific fields
   genericName  String?
+  brandName    String?
   manufacturer String // Required manufacturer field
   dosageForm   String? // e.g., Tablet, Capsule, Syrup, Injection
   packSize     String? // e.g., "1 strip x 10 tablets"
+  description  String?
   strength     String?
+  unit         String  @default("pcs")
 
-  // Deprecated pricing fields (moved to Product)
-  price           Float? // Deprecated: use Product.sellingPrice instead
-  discountPrice   Float? // Deprecated: use Product.mrp/sellingPrice instead
+  // Pricing (new fields)
+  mrp             Float? // Maximum Retail Price
+  sellingPrice    Float // Actual selling price
+  price           Float // Deprecated: use sellingPrice instead
+  discountPrice   Float? // Deprecated: use mrp/sellingPrice instead
   unitPrice       Float? // Price per tablet/capsule
   stripPrice      Float? // Price per strip
   tabletsPerStrip Int? // Number of tablets per strip
 
-  // Medicine-specific details
-  uses                 String? // Common uses
-  sideEffects          String? // Side effects
-  contraindications    String? // Contraindications
-  storageInstructions  String? // Storage instructions
-  expiryDate           DateTime? // Expiry date
+  // Stock
+  stockQuantity Int     @default(0)
+  minStockAlert Int? // Low stock alert threshold
+  inStock       Boolean @default(true)
+
+  // SEO Fields
+  seoTitle       String?
+  seoDescription String?
+  seoKeywords    String?
+  canonicalUrl   String?
+  isFeatured     Boolean @default(false)
+
+  // Media
+  imageUrl  String?
+  imagePath String? // Storage path for deletion
+
+  // Additional Details
+  uses                String? // Common uses
+  sideEffects         String? // Side effects
+  contraindications   String? // Contraindications
+  storageInstructions String? // Storage instructions
+  expiryDate          DateTime? // Expiry date
+
+  // Relations & Status
+  categoryId           String
+  category             Category  @relation(fields: [categoryId], references: [id])
   requiresPrescription Boolean   @default(false)
+  isActive             Boolean   @default(true)
+  deletedAt            DateTime? // Soft delete timestamp
 
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
+  orderItems        OrderItem[]
   prescriptionItems PrescriptionItem[]
-
-  // Note: orderItems now reference Product directly
-  category   Category? @relation(fields: [categoryId], references: [id])
-  categoryId String?
 }
 
 model Prescription {
@@ -273,14 +301,15 @@ model OrderItem {
   orderId String
   order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
-  // Product reference (new, preferred)
+  // Product reference (new, will be used after migration in Phase 2)
   productId String?
   product   Product? @relation(fields: [productId], references: [id])
 
-  // Legacy medicine reference (for backward compatibility during migration)
+  // Medicine reference (legacy, keep for backward compatibility during Phase 1)
   medicineId String?
+  medicine   Medicine? @relation(fields: [medicineId], references: [id])
 
-  // Snapshot fields for historical accuracy
+  // Snapshot fields for historical accuracy (will be populated in Phase 2)
   productName String? // Product name at time of order
   productType String? // MEDICINE or GENERAL
 
