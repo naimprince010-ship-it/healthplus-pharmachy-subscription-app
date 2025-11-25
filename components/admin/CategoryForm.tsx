@@ -14,6 +14,9 @@ interface Category {
   parentCategoryId?: string | null
   isActive: boolean
   sortOrder?: number
+  showInSidebar?: boolean
+  sidebarOrder?: number
+  sidebarIconUrl?: string | null
 }
 
 interface CategoryOption {
@@ -39,6 +42,9 @@ export default function CategoryForm({ category, categories }: CategoryFormProps
     parentCategoryId: category?.parentCategoryId || '',
     isActive: category?.isActive ?? true,
     sortOrder: category?.sortOrder ?? 0,
+    showInSidebar: category?.showInSidebar ?? false,
+    sidebarOrder: category?.sidebarOrder ?? 0,
+    sidebarIconUrl: category?.sidebarIconUrl || '',
   })
 
   const generateSlug = (name: string) => {
@@ -77,6 +83,7 @@ export default function CategoryForm({ category, categories }: CategoryFormProps
           parentCategoryId: formData.parentCategoryId || null,
           description: formData.description || null,
           imageUrl: formData.imageUrl || null,
+          sidebarIconUrl: formData.sidebarIconUrl || null,
         }),
       })
 
@@ -230,6 +237,61 @@ export default function CategoryForm({ category, categories }: CategoryFormProps
           <label htmlFor="isActive" className="text-sm font-medium text-gray-700">
             Active
           </label>
+        </div>
+
+        {/* Sidebar Settings */}
+        <div className="space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+          <h3 className="text-sm font-semibold text-gray-900">Left Sidebar Settings</h3>
+          
+          {/* Show in Sidebar */}
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="showInSidebar"
+              checked={formData.showInSidebar}
+              onChange={(e) => setFormData({ ...formData, showInSidebar: e.target.checked })}
+              className="h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+            />
+            <label htmlFor="showInSidebar" className="text-sm font-medium text-gray-700">
+              Show in left sidebar
+            </label>
+          </div>
+
+          {/* Sidebar Order */}
+          <div>
+            <label htmlFor="sidebarOrder" className="block text-sm font-medium text-gray-700">
+              Sidebar order
+            </label>
+            <input
+              type="number"
+              id="sidebarOrder"
+              value={formData.sidebarOrder}
+              onChange={(e) => setFormData({ ...formData, sidebarOrder: parseInt(e.target.value) || 0 })}
+              min="0"
+              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Lower numbers appear first in the sidebar
+            </p>
+          </div>
+
+          {/* Sidebar Icon URL */}
+          <div>
+            <label htmlFor="sidebarIconUrl" className="block text-sm font-medium text-gray-700">
+              Sidebar icon URL
+            </label>
+            <input
+              type="url"
+              id="sidebarIconUrl"
+              value={formData.sidebarIconUrl}
+              onChange={(e) => setFormData({ ...formData, sidebarIconUrl: e.target.value })}
+              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+              placeholder="https://example.com/icon.png"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Small round icon for the sidebar (optional)
+            </p>
+          </div>
         </div>
 
         {/* Submit Buttons */}

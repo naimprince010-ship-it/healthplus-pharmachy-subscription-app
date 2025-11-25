@@ -96,6 +96,9 @@ model Category {
   subCategories    Category[]    @relation("CategoryToSubCategory")
   isActive         Boolean       @default(true)
   sortOrder        Int           @default(0)
+  showInSidebar    Boolean       @default(false)
+  sidebarOrder     Int           @default(0)
+  sidebarIconUrl   String?
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
   medicines        Medicine[]
