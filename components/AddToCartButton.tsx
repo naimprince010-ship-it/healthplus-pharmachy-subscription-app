@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { ShoppingCart } from 'lucide-react'
 import { useCart } from '@/contexts/CartContext'
 import { Tooltip } from '@/components/ui/Tooltip'
+import { trackAddToCart } from '@/lib/trackEvent'
 
 interface AddToCartButtonProps {
   medicineId: string
@@ -13,6 +14,7 @@ interface AddToCartButtonProps {
   requiresPrescription?: boolean
   stockQuantity?: number
   className?: string
+  category?: string
 }
 
 export function AddToCartButton({
@@ -23,6 +25,7 @@ export function AddToCartButton({
   requiresPrescription = false,
   stockQuantity = 0,
   className = '',
+  category,
 }: AddToCartButtonProps) {
   const { addItem } = useCart()
   const [isAdding, setIsAdding] = useState(false)
@@ -42,6 +45,14 @@ export function AddToCartButton({
       name,
       price,
       image,
+    })
+
+    trackAddToCart({
+      item_id: medicineId,
+      item_name: name,
+      item_category: category,
+      price,
+      quantity: 1,
     })
 
     setTimeout(() => setIsAdding(false), 1000)

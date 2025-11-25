@@ -1,11 +1,11 @@
 'use client'
 
 import { MessageCircle } from 'lucide-react'
-import { trackWhatsAppClick } from './Tracking'
+import { trackWhatsAppClick } from '@/lib/trackEvent'
 
 export function WhatsAppButton() {
   const handleClick = () => {
-    trackWhatsAppClick()
+    trackWhatsAppClick('floating_button')
     const phone = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '8801XXXXXXXXX'
     const message = encodeURIComponent('Hello! I need help with HealthPlus.')
     window.open(`https://wa.me/${phone}?text=${message}`, '_blank')

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { useCart } from '@/contexts/CartContext'
+import { trackBeginCheckout, trackPurchase, type GA4Item } from '@/lib/trackEvent'
 
 interface Zone {
   id: string
@@ -32,6 +33,14 @@ export default function CheckoutPage() {
       return
     }
 
+    const ga4Items: GA4Item[] = items.map((item) => ({
+      item_id: item.medicineId,
+      item_name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+    }))
+    trackBeginCheckout(ga4Items, total)
+
     fetch('/api/zones')
       .then((res) => res.json())
       .then((data) => {
@@ -40,7 +49,7 @@ export default function CheckoutPage() {
         }
       })
       .catch((err) => console.error('Failed to fetch zones:', err))
-  }, [session, items, router])
+  }, [session, items, router, total])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -78,6 +87,20 @@ export default function CheckoutPage() {
         setIsLoading(false)
         return
       }
+
+      const ga4Items: GA4Item[] = items.map((item) => ({
+        item_id: item.medicineId,
+        item_name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+      }))
+
+      trackPurchase({
+        transaction_id: data.order.id,
+        value: grandTotal,
+        shipping: deliveryCharge,
+        items: ga4Items,
+      })
 
       clearCart()
       router.push(`/orders/${data.order.id}`)
