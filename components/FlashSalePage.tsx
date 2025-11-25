@@ -71,10 +71,24 @@ export default function FlashSalePage() {
   const fetchFlashSaleProducts = async () => {
     try {
       const response = await fetch('/api/flash-sale')
+      
+      if (!response.ok) {
+        console.error('API error:', response.status, response.statusText)
+        setData({ products: [], count: 0 })
+        return
+      }
+      
       const result = await response.json()
-      setData(result)
+      
+      if (result && Array.isArray(result.products)) {
+        setData(result)
+      } else {
+        console.error('Invalid API response structure:', result)
+        setData({ products: [], count: 0 })
+      }
     } catch (error) {
       console.error('Error fetching flash sale products:', error)
+      setData({ products: [], count: 0 })
     } finally {
       setLoading(false)
     }
