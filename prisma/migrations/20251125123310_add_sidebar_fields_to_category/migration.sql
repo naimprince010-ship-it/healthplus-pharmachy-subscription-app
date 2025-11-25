@@ -1,0 +1,3 @@
+ALTER TABLE "Category" ADD COLUMN "showInSidebar" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN "sidebarOrder" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN "sidebarIconUrl" TEXT;
