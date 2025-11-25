@@ -7,17 +7,18 @@ export default function ShopLayout({
 }) {
   return (
     <div className="bg-white">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="lg:grid lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-6">
-          {/* Left Sidebar - Desktop only, sticky positioned */}
-          <div className="hidden lg:block">
-            <div className="sticky top-20 w-full">
-              <LeftCategorySidebar />
-            </div>
+      {/* Full-bleed grid: sidebar flush to viewport, content in container */}
+      <div className="lg:grid lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-6">
+        {/* Left Sidebar - Desktop only, sticky positioned, flush to viewport */}
+        <aside className="hidden lg:block">
+          <div className="sticky top-16 w-[260px]">
+            <LeftCategorySidebar />
           </div>
-          
-          {/* Main Content */}
-          <div className="min-w-0">
+        </aside>
+        
+        {/* Main Content - wrapped in container */}
+        <div className="min-w-0">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             {children}
           </div>
         </div>
