@@ -246,6 +246,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           <p className="mt-2 text-sm text-gray-600">
             Update product information
           </p>
+          <p className="mt-1 text-sm text-amber-600">
+            💊 For medicines, please use <Link href="/admin/medicines" className="font-semibold underline">Admin → Medicines</Link>
+          </p>
         </div>
       </div>
 
