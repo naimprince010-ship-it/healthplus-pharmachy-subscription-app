@@ -7,7 +7,8 @@ import { Tooltip } from '@/components/ui/Tooltip'
 import { trackAddToCart } from '@/lib/trackEvent'
 
 interface AddToCartButtonProps {
-  medicineId: string
+  medicineId?: string
+  productId?: string
   name: string
   price: number
   image?: string
@@ -15,10 +16,12 @@ interface AddToCartButtonProps {
   stockQuantity?: number
   className?: string
   category?: string
+  type?: 'MEDICINE' | 'PRODUCT'
 }
 
 export function AddToCartButton({
   medicineId,
+  productId,
   name,
   price,
   image,
@@ -26,6 +29,7 @@ export function AddToCartButton({
   stockQuantity = 0,
   className = '',
   category,
+  type = 'MEDICINE',
 }: AddToCartButtonProps) {
   const { addItem } = useCart()
   const [isAdding, setIsAdding] = useState(false)
@@ -38,17 +42,25 @@ export function AddToCartButton({
       return
     }
 
+    const itemId = medicineId || productId
+    if (!itemId) {
+      console.error('No medicineId or productId provided')
+      return
+    }
+
     setIsAdding(true)
     addItem({
-      id: medicineId,
+      id: itemId,
       medicineId,
+      productId,
       name,
       price,
       image,
+      type,
     })
 
     trackAddToCart({
-      item_id: medicineId,
+      item_id: itemId,
       item_name: name,
       item_category: category,
       price,

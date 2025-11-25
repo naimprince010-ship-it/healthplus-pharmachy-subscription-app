@@ -44,48 +44,51 @@ export default function CartPage() {
         <div className="mt-8 grid gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <div className="space-y-4">
-              {items.map((item) => (
-                <div key={item.medicineId} className="rounded-lg bg-white p-6 shadow">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900">{item.name}</h3>
-                      <p className="mt-1 text-sm text-gray-600">৳{item.price} per unit</p>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => updateQuantity(item.medicineId, item.quantity - 1)}
-                          className="rounded-md bg-gray-100 p-1 hover:bg-gray-200"
-                          aria-label="Decrease quantity"
-                        >
-                          <Minus className="h-4 w-4" />
-                        </button>
-                        <span className="w-12 text-center font-semibold">{item.quantity}</span>
-                        <button
-                          onClick={() => updateQuantity(item.medicineId, item.quantity + 1)}
-                          className="rounded-md bg-gray-100 p-1 hover:bg-gray-200"
-                          aria-label="Increase quantity"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </button>
+              {items.map((item) => {
+                const itemId = item.medicineId || item.productId || ''
+                return (
+                  <div key={itemId} className="rounded-lg bg-white p-6 shadow">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-gray-900">{item.name}</h3>
+                        <p className="mt-1 text-sm text-gray-600">৳{item.price} per unit</p>
                       </div>
 
-                      <div className="w-24 text-right">
-                        <p className="font-semibold text-gray-900">৳{item.price * item.quantity}</p>
-                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => updateQuantity(itemId, item.quantity - 1)}
+                            className="rounded-md bg-gray-100 p-1 hover:bg-gray-200"
+                            aria-label="Decrease quantity"
+                          >
+                            <Minus className="h-4 w-4" />
+                          </button>
+                          <span className="w-12 text-center font-semibold">{item.quantity}</span>
+                          <button
+                            onClick={() => updateQuantity(itemId, item.quantity + 1)}
+                            className="rounded-md bg-gray-100 p-1 hover:bg-gray-200"
+                            aria-label="Increase quantity"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </button>
+                        </div>
 
-                      <button
-                        onClick={() => removeItem(item.medicineId)}
-                        className="text-red-600 hover:text-red-700"
-                        aria-label="Remove item"
-                      >
-                        <Trash2 className="h-5 w-5" />
-                      </button>
+                        <div className="w-24 text-right">
+                          <p className="font-semibold text-gray-900">৳{item.price * item.quantity}</p>
+                        </div>
+
+                        <button
+                          onClick={() => removeItem(itemId)}
+                          className="text-red-600 hover:text-red-700"
+                          aria-label="Remove item"
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
 

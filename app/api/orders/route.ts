@@ -12,9 +12,12 @@ const createOrderSchema = z.object({
   zoneId: z.string().optional(),
   items: z.array(
     z.object({
-      medicineId: z.string(),
+      medicineId: z.string().optional(),
+      productId: z.string().optional(),
       quantity: z.number().int().positive(),
       price: z.number().positive(),
+    }).refine((data) => data.medicineId || data.productId, {
+      message: 'Either medicineId or productId must be provided',
     })
   ).min(1),
   paymentMethod: z.enum(['COD', 'ONLINE']),
@@ -96,13 +99,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Address or zone required' }, { status: 400 })
     }
 
-    const medicineIds = items.map(item => item.medicineId)
-    const medicines = await prisma.medicine.findMany({
-      where: { id: { in: medicineIds } },
-    })
+    const medicineIds = items.filter(item => item.medicineId).map(item => item.medicineId!)
+    const productIds = items.filter(item => item.productId).map(item => item.productId!)
+    
+    const [medicines, products] = await Promise.all([
+      medicineIds.length > 0 ? prisma.medicine.findMany({
+        where: { id: { in: medicineIds } },
+      }) : Promise.resolve([]),
+      productIds.length > 0 ? prisma.product.findMany({
+        where: { id: { in: productIds } },
+      }) : Promise.resolve([]),
+    ])
 
-    if (medicines.length !== items.length) {
-      return NextResponse.json({ error: 'Some medicines not found' }, { status: 400 })
+    if (medicines.length !== medicineIds.length || products.length !== productIds.length) {
+      return NextResponse.json({ error: 'Some items not found' }, { status: 400 })
     }
 
     const membership = await prisma.userMembership.findFirst({
@@ -117,10 +127,18 @@ export async function POST(request: NextRequest) {
     })
 
     const subtotal = items.reduce((sum, item) => {
-      const medicine = medicines.find(m => m.id === item.medicineId)
-      if (!medicine) return sum
-      const price = medicine.discountPrice || medicine.price
-      return sum + price * item.quantity
+      if (item.medicineId) {
+        const medicine = medicines.find(m => m.id === item.medicineId)
+        if (!medicine) return sum
+        const price = medicine.discountPrice || medicine.price
+        return sum + price * item.quantity
+      } else if (item.productId) {
+        const product = products.find(p => p.id === item.productId)
+        if (!product) return sum
+        const price = product.sellingPrice
+        return sum + price * item.quantity
+      }
+      return sum
     }, 0)
     
     const discount = membership ? subtotal * (membership.plan.discountPercent / 100) : 0
@@ -146,14 +164,26 @@ export async function POST(request: NextRequest) {
         notes,
         items: {
           create: items.map((item) => {
-            const medicine = medicines.find(m => m.id === item.medicineId)!
-            const price = medicine.discountPrice || medicine.price
-            return {
-              medicineId: item.medicineId,
-              quantity: item.quantity,
-              price,
-              discount: 0,
-              total: price * item.quantity,
+            if (item.medicineId) {
+              const medicine = medicines.find(m => m.id === item.medicineId)!
+              const price = medicine.discountPrice || medicine.price
+              return {
+                medicineId: item.medicineId,
+                quantity: item.quantity,
+                price,
+                discount: 0,
+                total: price * item.quantity,
+              }
+            } else {
+              const product = products.find(p => p.id === item.productId)!
+              const price = product.sellingPrice
+              return {
+                productId: item.productId,
+                quantity: item.quantity,
+                price,
+                discount: 0,
+                total: price * item.quantity,
+              }
             }
           }),
         },
@@ -162,6 +192,7 @@ export async function POST(request: NextRequest) {
         items: {
           include: {
             medicine: true,
+            product: true,
           },
         },
         user: {
@@ -209,6 +240,7 @@ export async function GET() {
         items: {
           include: {
             medicine: true,
+            product: true,
           },
         },
       },
