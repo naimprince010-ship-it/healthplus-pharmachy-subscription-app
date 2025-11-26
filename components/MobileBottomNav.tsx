@@ -11,7 +11,7 @@ export function MobileBottomNav() {
 
   const navItems = [
     { href: '/', label: 'Home', icon: Home },
-    { href: '/products', label: 'Shop', icon: Package },
+    { href: '/medicines', label: 'Shop', icon: Package },
     { href: '/subscriptions', label: 'Plans', icon: Calendar },
     { href: '/cart', label: 'Cart', icon: ShoppingCart, badge: itemCount },
     { href: '/dashboard', label: 'Profile', icon: User },
