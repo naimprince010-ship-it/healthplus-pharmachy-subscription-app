@@ -10,30 +10,29 @@ interface ProductPageProps {
 }
 
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
-  const { slug } = await params
-  
-  const product = await prisma.product.findUnique({
-    where: { slug },
-    select: {
-      name: true,
-      canonicalUrl: true,
-      seoTitle: true,
-      seoDescription: true,
-    },
-  })
+  try {
+    const { slug } = await params
+    
+    const product = await prisma.product.findUnique({
+      where: { slug },
+      select: {
+        name: true,
+      },
+    })
 
-  if (!product) {
+    if (!product) {
+      return {}
+    }
+
+    return {
+      title: product.name,
+      alternates: {
+        canonical: `/products/${slug}`,
+      },
+    }
+  } catch (error) {
+    console.error('Error generating metadata:', error)
     return {}
-  }
-
-  const canonicalUrl = product.canonicalUrl || `/products/${slug}`
-
-  return {
-    title: product.seoTitle || product.name,
-    description: product.seoDescription || undefined,
-    alternates: {
-      canonical: canonicalUrl,
-    },
   }
 }
 
@@ -84,14 +83,16 @@ export default async function ProductPage({ params }: ProductPageProps) {
           </div>
 
           <div>
-            <div className="mb-4">
-              <Link
-                href={`/medicines?categoryId=${product.category.id}`}
-                className="text-sm text-teal-600 hover:text-teal-700"
-              >
-                {product.category.name}
-              </Link>
-            </div>
+            {product.category && (
+              <div className="mb-4">
+                <Link
+                  href={`/products?categoryId=${product.category.id}`}
+                  className="text-sm text-teal-600 hover:text-teal-700"
+                >
+                  {product.category.name}
+                </Link>
+              </div>
+            )}
 
             <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
 
@@ -105,15 +106,15 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
             <div className="mt-6 flex items-baseline gap-3">
               <span className="text-3xl font-bold text-gray-900">
-                ৳{product.sellingPrice}
+                ৳{product.sellingPrice.toFixed(2)}
               </span>
               {product.mrp && product.mrp > product.sellingPrice && (
                 <>
                   <span className="text-xl text-gray-500 line-through">
-                    ৳{product.mrp}
+                    ৳{product.mrp.toFixed(2)}
                   </span>
                   <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-800">
-                    Save ৳{product.mrp - product.sellingPrice}
+                    Save ৳{(product.mrp - product.sellingPrice).toFixed(2)}
                   </span>
                 </>
               )}
@@ -126,7 +127,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 price={product.sellingPrice}
                 image={product.imageUrl || undefined}
                 stockQuantity={product.stockQuantity}
-                category={product.category.name}
+                category={product.category?.name ?? 'General'}
                 type="PRODUCT"
                 className="px-8 py-3"
               />
@@ -151,7 +152,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               <div className="mt-8">
                 <h2 className="text-xl font-bold text-gray-900">Key Features</h2>
                 <div className="mt-4 space-y-2">
-                  {product.keyFeatures.split('\n').filter(f => f.trim()).map((feature, index) => (
+                  {(product.keyFeatures?.split('\n') ?? []).filter(f => f.trim()).map((feature, index) => (
                     <div key={index} className="flex items-start gap-2">
                       <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-teal-600" />
                       <span className="text-gray-600">{feature}</span>
@@ -175,7 +176,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               <dl className="mt-4 space-y-3 text-sm">
                 <div className="flex justify-between">
                   <dt className="text-gray-600">Category</dt>
-                  <dd className="font-medium text-gray-900">{product.category.name}</dd>
+                  <dd className="font-medium text-gray-900">{product.category?.name ?? 'Uncategorized'}</dd>
                 </div>
                 {product.brandName && (
                   <div className="flex justify-between">
