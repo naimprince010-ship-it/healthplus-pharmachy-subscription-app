@@ -44,6 +44,7 @@ export async function GET(request: NextRequest) {
     const query = queryResult.data
     const skip = (query.page - 1) * query.limit
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const productWhere: any = {
       deletedAt: null,
       isActive: true,
@@ -96,14 +97,16 @@ export async function GET(request: NextRequest) {
       }),
     ])
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let medicineRecords: any[] = []
     let medicineCount = 0
 
     if (query.type === 'all' || query.type === 'MEDICINE') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const medicineWhere: any = {
         deletedAt: null,
         isActive: true,
-        productId: null, // Only medicines not yet migrated to Product table
+        productId: null,
       }
 
       if (query.search) {
@@ -180,6 +183,7 @@ export async function GET(request: NextRequest) {
 
     const paginatedItems = allItems.slice(skip, skip + query.limit)
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const products = paginatedItems.map(({ _source, ...item }: any) => ({
       ...item,
       href: _source === 'medicine' ? `/medicines/${item.slug}` : `/products/${item.slug}`,
