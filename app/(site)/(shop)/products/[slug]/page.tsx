@@ -84,14 +84,16 @@ export default async function ProductPage({ params }: ProductPageProps) {
           </div>
 
           <div>
-            <div className="mb-4">
-              <Link
-                href={`/products?categoryId=${product.category.id}`}
-                className="text-sm text-teal-600 hover:text-teal-700"
-              >
-                {product.category.name}
-              </Link>
-            </div>
+            {product.category && (
+              <div className="mb-4">
+                <Link
+                  href={`/products?categoryId=${product.category.id}`}
+                  className="text-sm text-teal-600 hover:text-teal-700"
+                >
+                  {product.category.name}
+                </Link>
+              </div>
+            )}
 
             <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
 
@@ -126,7 +128,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 price={product.sellingPrice}
                 image={product.imageUrl || undefined}
                 stockQuantity={product.stockQuantity}
-                category={product.category.name}
+                category={product.category?.name ?? 'General'}
                 type="PRODUCT"
                 className="px-8 py-3"
               />
@@ -175,7 +177,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               <dl className="mt-4 space-y-3 text-sm">
                 <div className="flex justify-between">
                   <dt className="text-gray-600">Category</dt>
-                  <dd className="font-medium text-gray-900">{product.category.name}</dd>
+                  <dd className="font-medium text-gray-900">{product.category?.name ?? 'Uncategorized'}</dd>
                 </div>
                 {product.brandName && (
                   <div className="flex justify-between">
