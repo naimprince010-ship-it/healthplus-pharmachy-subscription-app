@@ -8,6 +8,7 @@ import { ArrowLeft, Upload, X } from 'lucide-react'
 interface Category {
   id: string
   name: string
+  isMedicineCategory?: boolean
 }
 
 interface Product {
@@ -51,7 +52,6 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   const [error, setError] = useState('')
 
   const [formData, setFormData] = useState({
-    type: 'GENERAL' as 'MEDICINE' | 'GENERAL',
     name: '',
     slug: '',
     brandName: '',
@@ -97,7 +97,6 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       if (res.ok) {
         const product: Product = data.product
         setFormData({
-          type: product.type,
           name: product.name,
           slug: product.slug,
           brandName: product.brandName || '',
@@ -349,6 +348,20 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   </option>
                 ))}
               </select>
+              {formData.categoryId && (
+                <div className="mt-2">
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                    categories.find(c => c.id === formData.categoryId)?.isMedicineCategory
+                      ? 'bg-blue-100 text-blue-800'
+                      : 'bg-green-100 text-green-800'
+                  }`}>
+                    Type: {categories.find(c => c.id === formData.categoryId)?.isMedicineCategory ? 'Medicine' : 'General Product'}
+                  </span>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Product type is automatically set based on category
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="md:col-span-2">
