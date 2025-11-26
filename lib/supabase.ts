@@ -86,6 +86,56 @@ export function validatePrescriptionFile(file: File): { valid: boolean; error?: 
 }
 
 /**
+ * Ensure Supabase bucket is configured with correct settings
+ * This will create the bucket if it doesn't exist, or update it if it does
+ */
+async function ensureBucketConfigured(
+  bucket: string,
+  allowedMimeTypes: string[],
+  fileSizeLimit: number,
+  isPublic: boolean = true
+): Promise<void> {
+  try {
+    const { data: buckets, error: listError } = await supabaseAdmin.storage.listBuckets()
+    
+    if (listError) {
+      console.error('Failed to list buckets:', listError)
+      return
+    }
+
+    const bucketExists = buckets?.some((b) => b.name === bucket)
+
+    if (!bucketExists) {
+      const { error: createError } = await supabaseAdmin.storage.createBucket(bucket, {
+        public: isPublic,
+        fileSizeLimit,
+        allowedMimeTypes,
+      })
+      
+      if (createError) {
+        console.error(`Failed to create bucket ${bucket}:`, createError)
+      } else {
+        console.log(`Created bucket ${bucket} with MIME types:`, allowedMimeTypes)
+      }
+    } else {
+      const { error: updateError } = await supabaseAdmin.storage.updateBucket(bucket, {
+        public: isPublic,
+        fileSizeLimit,
+        allowedMimeTypes,
+      })
+      
+      if (updateError) {
+        console.error(`Failed to update bucket ${bucket}:`, updateError)
+      } else {
+        console.log(`Updated bucket ${bucket} with MIME types:`, allowedMimeTypes)
+      }
+    }
+  } catch (error) {
+    console.error('Bucket configuration error:', error)
+  }
+}
+
+/**
  * Validate medicine image file
  */
 export function validateMedicineImage(file: File): { valid: boolean; error?: string } {
@@ -121,20 +171,12 @@ export async function uploadMedicineImage(
 
   const bucket = process.env.SUPABASE_MEDICINE_BUCKET || 'medicine-images'
   
-  try {
-    const { data: buckets } = await supabaseAdmin.storage.listBuckets()
-    const bucketExists = buckets?.some((b) => b.name === bucket)
-    
-    if (!bucketExists) {
-      await supabaseAdmin.storage.createBucket(bucket, {
-        public: true,
-        fileSizeLimit: 1024 * 1024, // 1MB
-        allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
-      })
-    }
-  } catch (error) {
-    console.error('Bucket check/create error:', error)
-  }
+  await ensureBucketConfigured(
+    bucket,
+    ['image/jpeg', 'image/png', 'image/webp'],
+    1024 * 1024, // 1MB
+    true
+  )
 
   const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg'
   const uuid = `${Date.now()}-${Math.random().toString(36).substring(7)}`
@@ -299,20 +341,12 @@ export async function uploadToSupabase(
 
   const bucket = process.env.SUPABASE_MEDICINE_BUCKET || 'medicine-images'
   
-  try {
-    const { data: buckets } = await supabaseAdmin.storage.listBuckets()
-    const bucketExists = buckets?.some((b) => b.name === bucket)
-    
-    if (!bucketExists) {
-      await supabaseAdmin.storage.createBucket(bucket, {
-        public: true,
-        fileSizeLimit: 2 * 1024 * 1024, // 2MB
-        allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
-      })
-    }
-  } catch (error) {
-    console.error('Bucket check/create error:', error)
-  }
+  await ensureBucketConfigured(
+    bucket,
+    ['image/jpeg', 'image/png', 'image/webp'],
+    2 * 1024 * 1024, // 2MB
+    true
+  )
 
   const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg'
   const uuid = `${Date.now()}-${Math.random().toString(36).substring(7)}`
