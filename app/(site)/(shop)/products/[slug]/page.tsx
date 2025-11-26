@@ -86,7 +86,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           <div>
             <div className="mb-4">
               <Link
-                href={`/medicines?categoryId=${product.category.id}`}
+                href={`/products?categoryId=${product.category.id}`}
                 className="text-sm text-teal-600 hover:text-teal-700"
               >
                 {product.category.name}
@@ -105,15 +105,15 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
             <div className="mt-6 flex items-baseline gap-3">
               <span className="text-3xl font-bold text-gray-900">
-                ৳{product.sellingPrice}
+                ৳{product.sellingPrice.toFixed(2)}
               </span>
               {product.mrp && product.mrp > product.sellingPrice && (
                 <>
                   <span className="text-xl text-gray-500 line-through">
-                    ৳{product.mrp}
+                    ৳{product.mrp.toFixed(2)}
                   </span>
                   <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-800">
-                    Save ৳{product.mrp - product.sellingPrice}
+                    Save ৳{(product.mrp - product.sellingPrice).toFixed(2)}
                   </span>
                 </>
               )}
