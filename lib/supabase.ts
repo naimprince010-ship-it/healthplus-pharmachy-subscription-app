@@ -90,14 +90,14 @@ export function validatePrescriptionFile(file: File): { valid: boolean; error?: 
  */
 export function validateMedicineImage(file: File): { valid: boolean; error?: string } {
   const maxSize = 1 * 1024 * 1024 // 1MB
-  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png']
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
 
   if (file.size > maxSize) {
     return { valid: false, error: 'Image size must be less than 1MB' }
   }
 
   if (!allowedTypes.includes(file.type)) {
-    return { valid: false, error: 'Only JPG and PNG images are allowed' }
+    return { valid: false, error: 'Only JPG, PNG, and WebP images are allowed' }
   }
 
   return { valid: true }
@@ -129,7 +129,7 @@ export async function uploadMedicineImage(
       await supabaseAdmin.storage.createBucket(bucket, {
         public: true,
         fileSizeLimit: 1024 * 1024, // 1MB
-        allowedMimeTypes: ['image/jpeg', 'image/png'],
+        allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
       })
     }
   } catch (error) {
@@ -267,14 +267,14 @@ export async function deletePrescriptionFile(path: string): Promise<void> {
  */
 export function validateImage(file: File): { valid: boolean; error?: string } {
   const maxSize = 2 * 1024 * 1024 // 2MB for banners
-  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png']
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
 
   if (file.size > maxSize) {
     return { valid: false, error: 'Image size must be less than 2MB' }
   }
 
   if (!allowedTypes.includes(file.type)) {
-    return { valid: false, error: 'Only JPG and PNG images are allowed' }
+    return { valid: false, error: 'Only JPG, PNG, and WebP images are allowed' }
   }
 
   return { valid: true }
@@ -307,7 +307,7 @@ export async function uploadToSupabase(
       await supabaseAdmin.storage.createBucket(bucket, {
         public: true,
         fileSizeLimit: 2 * 1024 * 1024, // 2MB
-        allowedMimeTypes: ['image/jpeg', 'image/png'],
+        allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
       })
     }
   } catch (error) {

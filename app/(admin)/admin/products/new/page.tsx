@@ -349,7 +349,7 @@ export default function NewProductPage() {
                   {uploading ? 'Uploading...' : 'Upload Image'}
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
                     onChange={handleImageUpload}
                     className="hidden"
                     disabled={uploading}
