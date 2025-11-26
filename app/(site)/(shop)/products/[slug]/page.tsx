@@ -1,9 +1,11 @@
 import { notFound } from 'next/navigation'
-import { prisma } from '@/lib/prisma'
 import { AddToCartButton } from '@/components/AddToCartButton'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Metadata } from 'next'
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>
@@ -12,6 +14,7 @@ interface ProductPageProps {
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   try {
     const { slug } = await params
+    const { prisma } = await import('@/lib/prisma')
     
     const product = await prisma.product.findUnique({
       where: { slug },
@@ -38,6 +41,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params
+  const { prisma } = await import('@/lib/prisma')
 
   const product = await prisma.product.findUnique({
     where: { slug },
@@ -55,6 +59,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
   if (!product || !product.isActive) {
     notFound()
   }
+
+  const sellingPrice = Number(product.sellingPrice)
+  const mrp = product.mrp ? Number(product.mrp) : null
+  const stockQuantity = Number(product.stockQuantity)
 
   return (
     <div className="bg-gray-50 py-16">
@@ -106,15 +114,15 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
             <div className="mt-6 flex items-baseline gap-3">
               <span className="text-3xl font-bold text-gray-900">
-                ৳{product.sellingPrice.toFixed(2)}
+                ৳{sellingPrice.toFixed(2)}
               </span>
-              {product.mrp && product.mrp > product.sellingPrice && (
+              {mrp && mrp > sellingPrice && (
                 <>
                   <span className="text-xl text-gray-500 line-through">
-                    ৳{product.mrp.toFixed(2)}
+                    ৳{mrp.toFixed(2)}
                   </span>
                   <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-800">
-                    Save ৳{(product.mrp - product.sellingPrice).toFixed(2)}
+                    Save ৳{(mrp - sellingPrice).toFixed(2)}
                   </span>
                 </>
               )}
@@ -124,18 +132,18 @@ export default async function ProductPage({ params }: ProductPageProps) {
               <AddToCartButton
                 productId={product.id}
                 name={product.name}
-                price={product.sellingPrice}
+                price={sellingPrice}
                 image={product.imageUrl || undefined}
-                stockQuantity={product.stockQuantity}
+                stockQuantity={stockQuantity}
                 category={product.category?.name ?? 'General'}
                 type="PRODUCT"
                 className="px-8 py-3"
               />
             </div>
 
-            {product.stockQuantity > 0 && product.stockQuantity < 10 && (
+            {stockQuantity > 0 && stockQuantity < 10 && (
               <p className="mt-4 text-sm text-orange-600">
-                Only {product.stockQuantity} left in stock!
+                Only {stockQuantity} left in stock!
               </p>
             )}
 
@@ -192,8 +200,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 )}
                 <div className="flex justify-between">
                   <dt className="text-gray-600">Availability</dt>
-                  <dd className={`font-medium ${product.stockQuantity > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {product.stockQuantity > 0 ? 'In Stock' : 'Out of Stock'}
+                  <dd className={`font-medium ${stockQuantity > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {stockQuantity > 0 ? 'In Stock' : 'Out of Stock'}
                   </dd>
                 </div>
               </dl>
