@@ -5,6 +5,26 @@ import { z } from 'zod'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
+async function getCategoryWithDescendants(categoryId: string): Promise<string[]> {
+  const categoryIds = [categoryId]
+  const queue = [categoryId]
+  
+  while (queue.length > 0) {
+    const currentId = queue.shift()!
+    const children = await prisma.category.findMany({
+      where: { parentCategoryId: currentId },
+      select: { id: true },
+    })
+    
+    for (const child of children) {
+      categoryIds.push(child.id)
+      queue.push(child.id)
+    }
+  }
+  
+  return categoryIds
+}
+
 const productListQuerySchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20),
@@ -65,7 +85,8 @@ export async function GET(request: NextRequest) {
     }
 
     if (query.categoryId) {
-      productWhere.categoryId = query.categoryId
+      const categoryIds = await getCategoryWithDescendants(query.categoryId)
+      productWhere.categoryId = { in: categoryIds }
     }
 
     const [productCount, productRecords] = await Promise.all([
@@ -118,7 +139,8 @@ export async function GET(request: NextRequest) {
       }
 
       if (query.categoryId) {
-        medicineWhere.categoryId = query.categoryId
+        const categoryIds = await getCategoryWithDescendants(query.categoryId)
+        medicineWhere.categoryId = { in: categoryIds }
       }
 
       const [mCount, mRecords] = await Promise.all([
