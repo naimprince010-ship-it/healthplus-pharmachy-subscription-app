@@ -36,7 +36,9 @@ const createProductSchema = z.object({
   seoTitle: z.string().optional(),
   seoDescription: z.string().optional(),
   seoKeywords: z.string().optional(),
-  canonicalUrl: z.string().url().optional(),
+  canonicalUrl: z.string().optional().refine((val) => !val || val.startsWith('http://') || val.startsWith('https://') || val.startsWith('/'), {
+    message: 'Canonical URL must be a valid URL or path starting with /',
+  }),
   isFeatured: z.boolean().default(false),
   isActive: z.boolean().default(true),
   excludeFromMembershipDiscount: z.boolean().default(false),
