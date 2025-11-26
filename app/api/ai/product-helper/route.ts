@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { openai, defaultModel, isOpenAIConfigured } from '@/lib/openai'
+import { getOpenAIClient, defaultModel, isOpenAIConfigured } from '@/lib/openai'
 import { requireAdmin } from '@/lib/requireAdmin'
 
 export const runtime = 'nodejs'
@@ -85,6 +85,7 @@ Return ONLY the JSON object, no additional text.`
 
     let completion
     try {
+      const openai = getOpenAIClient()
       completion = await openai.chat.completions.create({
         model: defaultModel,
         messages: [
@@ -127,6 +128,7 @@ Return ONLY the JSON object, no additional text.`
       console.error('AI response validation failed:', validatedResponse.error)
       
       try {
+        const openai = getOpenAIClient()
         const retryCompletion = await openai.chat.completions.create({
           model: defaultModel,
           messages: [

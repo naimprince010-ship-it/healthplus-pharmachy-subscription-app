@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { openai, defaultModel, isOpenAIConfigured } from '@/lib/openai'
+import { getOpenAIClient, defaultModel, isOpenAIConfigured } from '@/lib/openai'
 import { requireAdmin } from '@/lib/requireAdmin'
 
 export const runtime = 'nodejs'
@@ -74,6 +74,7 @@ You can assist with:
 
     let completion
     try {
+      const openai = getOpenAIClient()
       completion = await openai.chat.completions.create({
         model: defaultModel,
         messages: allMessages,
