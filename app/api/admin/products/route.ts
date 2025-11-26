@@ -176,6 +176,20 @@ export async function POST(request: NextRequest) {
 
     const data = validationResult.data
 
+    const category = await prisma.category.findUnique({
+      where: { id: data.categoryId },
+      select: { isMedicineCategory: true },
+    })
+
+    if (!category) {
+      return NextResponse.json(
+        { error: 'Category not found' },
+        { status: 400 }
+      )
+    }
+
+    const productType: ProductType = category.isMedicineCategory ? 'MEDICINE' : 'GENERAL'
+
     let slug = data.slug
     if (!slug) {
       slug = data.name
@@ -194,7 +208,7 @@ export async function POST(request: NextRequest) {
 
     const product = await prisma.product.create({
       data: {
-        type: 'GENERAL',
+        type: productType,
         name: data.name,
         slug,
         description: data.description,

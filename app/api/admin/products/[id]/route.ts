@@ -130,6 +130,22 @@ export async function PATCH(
     }
 
     const updateData: any = { ...data }
+    
+    if (data.categoryId && data.categoryId !== existingProduct.categoryId) {
+      const category = await prisma.category.findUnique({
+        where: { id: data.categoryId },
+        select: { isMedicineCategory: true },
+      })
+      
+      if (!category) {
+        return NextResponse.json(
+          { error: 'Category not found' },
+          { status: 400 }
+        )
+      }
+      
+      updateData.type = category.isMedicineCategory ? 'MEDICINE' : 'GENERAL'
+    }
     if (data.stockQuantity !== undefined) {
       updateData.inStock = data.stockQuantity > 0
     }
