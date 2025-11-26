@@ -152,7 +152,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               <div className="mt-8">
                 <h2 className="text-xl font-bold text-gray-900">Key Features</h2>
                 <div className="mt-4 space-y-2">
-                  {product.keyFeatures.split('\n').filter(f => f.trim()).map((feature, index) => (
+                  {(product.keyFeatures?.split('\n') ?? []).filter(f => f.trim()).map((feature, index) => (
                     <div key={index} className="flex items-start gap-2">
                       <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-teal-600" />
                       <span className="text-gray-600">{feature}</span>
