@@ -44,6 +44,10 @@ const createProductSchema = z.object({
   variantLabel: z.string().optional(),
   keyFeatures: z.string().optional(),
   specSummary: z.string().optional(),
+  isFlashSale: z.boolean().default(false),
+  flashSalePrice: z.number().positive().optional(),
+  flashSaleStart: z.string().datetime().optional(),
+  flashSaleEnd: z.string().datetime().optional(),
 })
 
 /**
@@ -213,6 +217,10 @@ export async function POST(request: NextRequest) {
         variantLabel: data.variantLabel,
         keyFeatures: data.keyFeatures,
         specSummary: data.specSummary,
+        isFlashSale: data.isFlashSale,
+        flashSalePrice: data.flashSalePrice,
+        flashSaleStart: data.flashSaleStart ? new Date(data.flashSaleStart) : null,
+        flashSaleEnd: data.flashSaleEnd ? new Date(data.flashSaleEnd) : null,
       },
       include: {
         category: {

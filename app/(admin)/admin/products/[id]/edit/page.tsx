@@ -35,6 +35,10 @@ interface Product {
   sizeLabel: string | null
   keyFeatures: string | null
   specSummary: string | null
+  isFlashSale: boolean
+  flashSalePrice: number | null
+  flashSaleStart: Date | null
+  flashSaleEnd: Date | null
 }
 
 export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
@@ -70,6 +74,10 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     sizeLabel: '',
     keyFeatures: '',
     specSummary: '',
+    isFlashSale: false,
+    flashSalePrice: '',
+    flashSaleStart: '',
+    flashSaleEnd: '',
   })
 
   useEffect(() => {
@@ -112,6 +120,10 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           sizeLabel: product.sizeLabel || '',
           keyFeatures: product.keyFeatures || '',
           specSummary: product.specSummary || '',
+          isFlashSale: product.isFlashSale,
+          flashSalePrice: product.flashSalePrice?.toString() || '',
+          flashSaleStart: product.flashSaleStart ? new Date(product.flashSaleStart).toISOString().slice(0, 16) : '',
+          flashSaleEnd: product.flashSaleEnd ? new Date(product.flashSaleEnd).toISOString().slice(0, 16) : '',
         })
       } else {
         setError('Product not found')
@@ -205,6 +217,10 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         sizeLabel: formData.sizeLabel || undefined,
         keyFeatures: formData.keyFeatures || undefined,
         specSummary: formData.specSummary || undefined,
+        isFlashSale: formData.isFlashSale,
+        flashSalePrice: formData.flashSalePrice ? parseFloat(formData.flashSalePrice) : undefined,
+        flashSaleStart: formData.flashSaleStart ? new Date(formData.flashSaleStart).toISOString() : undefined,
+        flashSaleEnd: formData.flashSaleEnd ? new Date(formData.flashSaleEnd).toISOString() : undefined,
       }
 
       const res = await fetch(`/api/admin/products/${productId}`, {
@@ -586,6 +602,74 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
               />
               <span className="text-sm text-gray-700">Exclude from Membership Discount</span>
             </label>
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-gray-200 bg-white p-6">
+          <h2 className="mb-4 text-lg font-semibold text-gray-900">⚡ Flash Sale Settings</h2>
+          <div className="space-y-4">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={formData.isFlashSale}
+                onChange={(e) => setFormData({ ...formData, isFlashSale: e.target.checked })}
+                className="h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+              />
+              <span className="text-sm font-medium text-gray-700">Enable Flash Sale</span>
+            </label>
+
+            {formData.isFlashSale && (
+              <div className="grid gap-4 md:grid-cols-3 pl-6 border-l-2 border-teal-200">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Flash Sale Price <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.flashSalePrice}
+                    onChange={(e) => setFormData({ ...formData, flashSalePrice: e.target.value })}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    required={formData.isFlashSale}
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Must be less than selling price (৳{formData.sellingPrice || '0'})
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Start Date & Time <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={formData.flashSaleStart}
+                    onChange={(e) => setFormData({ ...formData, flashSaleStart: e.target.value })}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    required={formData.isFlashSale}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    End Date & Time <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={formData.flashSaleEnd}
+                    onChange={(e) => setFormData({ ...formData, flashSaleEnd: e.target.value })}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    required={formData.isFlashSale}
+                  />
+                </div>
+
+                <div className="md:col-span-3 bg-teal-50 border border-teal-200 rounded-lg p-3">
+                  <p className="text-sm text-teal-800">
+                    💡 <strong>Tip:</strong> Flash sale products will appear on the <a href="/flash-sale" target="_blank" className="underline font-semibold">/flash-sale</a> page with countdown timer and discount badges.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
