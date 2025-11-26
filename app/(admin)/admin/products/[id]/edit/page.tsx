@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Upload, X } from 'lucide-react'
+import { ArrowLeft, Upload, X, Sparkles } from 'lucide-react'
 
 interface Category {
   id: string
@@ -50,6 +50,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState('')
+  const [aiLanguage, setAiLanguage] = useState<'en' | 'bn'>('en')
 
   const [formData, setFormData] = useState({
     name: '',
@@ -186,6 +189,50 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       imageUrl: '',
       imagePath: '',
     }))
+  }
+
+  const handleAIGenerate = async () => {
+    if (!formData.name) {
+      setAiError('Please enter a product name first')
+      return
+    }
+
+    setAiLoading(true)
+    setAiError('')
+
+    try {
+      const res = await fetch('/api/ai/product-helper', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productName: formData.name,
+          brandName: formData.brandName || undefined,
+          category: categories.find(c => c.id === formData.categoryId)?.name || undefined,
+          language: aiLanguage,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        setFormData(prev => ({
+          ...prev,
+          description: data.description || prev.description,
+          keyFeatures: data.keyFeatures?.join('\n') || prev.keyFeatures,
+          specSummary: data.specsSummary || prev.specSummary,
+          seoTitle: data.seoTitle || prev.seoTitle,
+          seoDescription: data.seoDescription || prev.seoDescription,
+          seoKeywords: data.seoKeywords?.join(', ') || prev.seoKeywords,
+        }))
+        setAiError('')
+      } else {
+        setAiError(data.error || 'AI generation failed')
+      }
+    } catch (error) {
+      setAiError('AI generation failed. Please try again.')
+    } finally {
+      setAiLoading(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -361,6 +408,82 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 rows={4}
                 className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
               />
+            </div>
+          </div>
+        </div>
+
+        {/* AI Assistant Section */}
+        <div className="rounded-lg border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50 p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-purple-600" />
+            <h2 className="text-lg font-semibold text-gray-900">AI Assistant</h2>
+            <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+              Beta
+            </span>
+          </div>
+          
+          <p className="mb-4 text-sm text-gray-600">
+            Let AI regenerate product descriptions, features, specifications, and SEO content.
+          </p>
+
+          {aiError && (
+            <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+              {aiError}
+            </div>
+          )}
+
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Language
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setAiLanguage('en')}
+                    className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                      aiLanguage === 'en'
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    English
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAiLanguage('bn')}
+                    className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                      aiLanguage === 'bn'
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    বাংলা (Bangla)
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Regenerate Content
+                </label>
+                <button
+                  type="button"
+                  onClick={handleAIGenerate}
+                  disabled={aiLoading || !formData.name}
+                  className="flex items-center gap-2 rounded-lg bg-purple-600 px-6 py-2 text-sm font-semibold text-white transition-colors hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  {aiLoading ? 'Generating...' : 'Regenerate with AI'}
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-lg bg-purple-100 p-3">
+              <p className="text-xs text-purple-800">
+                <strong>💡 Tip:</strong> Click &quot;Regenerate with AI&quot; to update Description, Key Features, Specifications, and SEO fields based on current product name and category.
+              </p>
             </div>
           </div>
         </div>
