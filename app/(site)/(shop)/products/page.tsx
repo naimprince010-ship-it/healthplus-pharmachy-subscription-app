@@ -36,11 +36,13 @@ function ProductsContent() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState(searchParams.get('search') || '')
   const [categoryFilter, setCategoryFilter] = useState(searchParams.get('categoryId') || '')
+  const [typeFilter, setTypeFilter] = useState(searchParams.get('type') || 'all')
   const [showFilters, setShowFilters] = useState(false)
 
   useEffect(() => {
     setSearch(searchParams.get('search') || '')
     setCategoryFilter(searchParams.get('categoryId') || '')
+    setTypeFilter(searchParams.get('type') || 'all')
   }, [searchParams])
 
   useEffect(() => {
@@ -52,7 +54,7 @@ function ProductsContent() {
     setLoading(true)
     try {
       const params = new URLSearchParams()
-      params.set('type', 'GENERAL')
+      if (typeFilter && typeFilter !== 'all') params.set('type', typeFilter)
       if (search) params.set('search', search)
       if (categoryFilter) params.set('categoryId', categoryFilter)
 
@@ -88,6 +90,7 @@ function ProductsContent() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     const params = new URLSearchParams()
+    if (typeFilter && typeFilter !== 'all') params.set('type', typeFilter)
     if (search) params.set('search', search)
     if (categoryFilter) params.set('categoryId', categoryFilter)
     window.location.href = `/products?${params}`
@@ -98,6 +101,20 @@ function ProductsContent() {
     [categories, categoryFilter]
   )
 
+  const getPageTitle = () => {
+    if (currentCategory) return currentCategory.name
+    if (typeFilter === 'MEDICINE') return 'Medicines'
+    if (typeFilter === 'GENERAL') return 'General Products'
+    return 'Shop All Products'
+  }
+
+  const getPageDescription = () => {
+    if (currentCategory) return `Browse ${currentCategory.name}`
+    if (typeFilter === 'MEDICINE') return 'Browse medicines and healthcare products'
+    if (typeFilter === 'GENERAL') return 'Browse skin care, baby care, devices, cosmetics, and more'
+    return 'Browse our complete catalog of medicines and general products'
+  }
+
   return (
     <div className="bg-gray-50 py-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -105,24 +122,75 @@ function ProductsContent() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
-                {currentCategory ? currentCategory.name : 'General Products'}
+                {getPageTitle()}
               </h1>
               <p className="mt-2 text-gray-600">
-                {currentCategory 
-                  ? `Browse ${currentCategory.name} products` 
-                  : 'Browse our collection of skin care, baby care, devices, cosmetics, and more'}
+                {getPageDescription()}
               </p>
             </div>
-            {currentCategory && (
+            {(currentCategory || typeFilter !== 'all') && (
               <Link
                 href="/products"
                 className="flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
               >
                 <X className="h-4 w-4" />
-                Clear filter
+                Clear filters
               </Link>
             )}
           </div>
+        </div>
+
+        <div className="mb-6 flex gap-2 border-b border-gray-200">
+          <button
+            onClick={() => {
+              setTypeFilter('all')
+              const params = new URLSearchParams()
+              if (search) params.set('search', search)
+              if (categoryFilter) params.set('categoryId', categoryFilter)
+              window.location.href = `/products?${params}`
+            }}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              typeFilter === 'all'
+                ? 'border-b-2 border-teal-600 text-teal-600'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            All
+          </button>
+          <button
+            onClick={() => {
+              setTypeFilter('MEDICINE')
+              const params = new URLSearchParams()
+              params.set('type', 'MEDICINE')
+              if (search) params.set('search', search)
+              if (categoryFilter) params.set('categoryId', categoryFilter)
+              window.location.href = `/products?${params}`
+            }}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              typeFilter === 'MEDICINE'
+                ? 'border-b-2 border-teal-600 text-teal-600'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Medicines
+          </button>
+          <button
+            onClick={() => {
+              setTypeFilter('GENERAL')
+              const params = new URLSearchParams()
+              params.set('type', 'GENERAL')
+              if (search) params.set('search', search)
+              if (categoryFilter) params.set('categoryId', categoryFilter)
+              window.location.href = `/products?${params}`
+            }}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              typeFilter === 'GENERAL'
+                ? 'border-b-2 border-teal-600 text-teal-600'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Other Products
+          </button>
         </div>
 
         <form onSubmit={handleSearch} className="mb-8 space-y-4">

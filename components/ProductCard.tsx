@@ -17,12 +17,22 @@ interface ProductCardProps {
     name: string
     slug: string
   }
+  href?: string
+  cartInfo?: {
+    kind: 'medicine' | 'product'
+    medicineId?: string
+    productId?: string
+  }
 }
 
 export function ProductCard({ product }: { product: ProductCardProps }) {
+  const href = product.href || `/products/${product.slug}`
+  const medicineId = product.cartInfo?.kind === 'medicine' ? product.cartInfo.medicineId : undefined
+  const productId = product.cartInfo?.kind === 'product' ? product.cartInfo.productId : product.id
+
   return (
     <Link
-      href={`/products/${product.slug}`}
+      href={href}
       className="group rounded-lg border border-gray-200 bg-white p-4 transition-shadow hover:shadow-lg"
     >
       <div className="aspect-square overflow-hidden rounded-lg bg-gray-100">
@@ -65,13 +75,14 @@ export function ProductCard({ product }: { product: ProductCardProps }) {
         </div>
         <div className="mt-4" onClick={(e) => e.preventDefault()}>
           <AddToCartButton
-            productId={product.id}
+            medicineId={medicineId}
+            productId={productId}
             name={product.name}
             price={product.sellingPrice}
             image={product.imageUrl || undefined}
             stockQuantity={product.stockQuantity}
             category={product.category.name}
-            type="PRODUCT"
+            type={product.type === 'MEDICINE' ? 'MEDICINE' : 'PRODUCT'}
             className="w-full"
           />
         </div>
