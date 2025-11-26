@@ -13,6 +13,7 @@ interface Category {
   imageUrl?: string | null
   parentCategoryId?: string | null
   isActive: boolean
+  isMedicineCategory?: boolean
   sortOrder?: number
   showInSidebar?: boolean
   sidebarOrder?: number
@@ -41,6 +42,7 @@ export default function CategoryForm({ category, categories }: CategoryFormProps
     imageUrl: category?.imageUrl || '',
     parentCategoryId: category?.parentCategoryId || '',
     isActive: category?.isActive ?? true,
+    isMedicineCategory: category?.isMedicineCategory ?? false,
     sortOrder: category?.sortOrder ?? 0,
     showInSidebar: category?.showInSidebar ?? false,
     sidebarOrder: category?.sidebarOrder ?? 0,
@@ -237,6 +239,26 @@ export default function CategoryForm({ category, categories }: CategoryFormProps
           <label htmlFor="isActive" className="text-sm font-medium text-gray-700">
             Active
           </label>
+        </div>
+
+        {/* Medicine Category Toggle */}
+        <div className="space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-4">
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="isMedicineCategory"
+              checked={formData.isMedicineCategory}
+              onChange={(e) => setFormData({ ...formData, isMedicineCategory: e.target.checked })}
+              className="h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+            />
+            <label htmlFor="isMedicineCategory" className="text-sm font-medium text-gray-700">
+              Medicine Category
+            </label>
+          </div>
+          <p className="text-xs text-gray-500">
+            When enabled, products in this category will automatically be set as medicines (requiring prescriptions, etc.). 
+            Leave unchecked for general products like baby care, cosmetics, devices, etc.
+          </p>
         </div>
 
         {/* Sidebar Settings */}

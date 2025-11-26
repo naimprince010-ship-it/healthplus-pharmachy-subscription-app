@@ -36,13 +36,11 @@ function ProductsContent() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState(searchParams.get('search') || '')
   const [categoryFilter, setCategoryFilter] = useState(searchParams.get('categoryId') || '')
-  const [typeFilter, setTypeFilter] = useState(searchParams.get('type') || 'all')
   const [showFilters, setShowFilters] = useState(false)
 
   useEffect(() => {
     setSearch(searchParams.get('search') || '')
     setCategoryFilter(searchParams.get('categoryId') || '')
-    setTypeFilter(searchParams.get('type') || 'all')
   }, [searchParams])
 
   useEffect(() => {
@@ -54,7 +52,7 @@ function ProductsContent() {
     setLoading(true)
     try {
       const params = new URLSearchParams()
-      if (typeFilter && typeFilter !== 'all') params.set('type', typeFilter)
+      params.set('type', 'all')
       if (search) params.set('search', search)
       if (categoryFilter) params.set('categoryId', categoryFilter)
 
@@ -90,7 +88,6 @@ function ProductsContent() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     const params = new URLSearchParams()
-    if (typeFilter && typeFilter !== 'all') params.set('type', typeFilter)
     if (search) params.set('search', search)
     if (categoryFilter) params.set('categoryId', categoryFilter)
     window.location.href = `/products?${params}`
@@ -103,15 +100,11 @@ function ProductsContent() {
 
   const getPageTitle = () => {
     if (currentCategory) return currentCategory.name
-    if (typeFilter === 'MEDICINE') return 'Medicines'
-    if (typeFilter === 'GENERAL') return 'General Products'
     return 'Shop All Products'
   }
 
   const getPageDescription = () => {
     if (currentCategory) return `Browse ${currentCategory.name}`
-    if (typeFilter === 'MEDICINE') return 'Browse medicines and healthcare products'
-    if (typeFilter === 'GENERAL') return 'Browse skin care, baby care, devices, cosmetics, and more'
     return 'Browse our complete catalog of medicines and general products'
   }
 
@@ -128,7 +121,7 @@ function ProductsContent() {
                 {getPageDescription()}
               </p>
             </div>
-            {(currentCategory || typeFilter !== 'all') && (
+            {currentCategory && (
               <Link
                 href="/products"
                 className="flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
@@ -140,57 +133,41 @@ function ProductsContent() {
           </div>
         </div>
 
-        <div className="mb-6 flex gap-2 border-b border-gray-200">
-          <button
-            onClick={() => {
-              setTypeFilter('all')
-              const params = new URLSearchParams()
-              if (search) params.set('search', search)
-              if (categoryFilter) params.set('categoryId', categoryFilter)
-              window.location.href = `/products?${params}`
-            }}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              typeFilter === 'all'
-                ? 'border-b-2 border-teal-600 text-teal-600'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            All
-          </button>
-          <button
-            onClick={() => {
-              setTypeFilter('MEDICINE')
-              const params = new URLSearchParams()
-              params.set('type', 'MEDICINE')
-              if (search) params.set('search', search)
-              if (categoryFilter) params.set('categoryId', categoryFilter)
-              window.location.href = `/products?${params}`
-            }}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              typeFilter === 'MEDICINE'
-                ? 'border-b-2 border-teal-600 text-teal-600'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Medicines
-          </button>
-          <button
-            onClick={() => {
-              setTypeFilter('GENERAL')
-              const params = new URLSearchParams()
-              params.set('type', 'GENERAL')
-              if (search) params.set('search', search)
-              if (categoryFilter) params.set('categoryId', categoryFilter)
-              window.location.href = `/products?${params}`
-            }}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              typeFilter === 'GENERAL'
-                ? 'border-b-2 border-teal-600 text-teal-600'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Other Products
-          </button>
+        <div className="mb-6 overflow-x-auto">
+          <div className="flex gap-2 pb-2 md:hidden">
+            <button
+              onClick={() => {
+                setCategoryFilter('')
+                window.location.href = '/products'
+              }}
+              className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                !categoryFilter
+                  ? 'bg-teal-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              All
+            </button>
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => {
+                  setCategoryFilter(cat.id)
+                  const params = new URLSearchParams()
+                  params.set('categoryId', cat.id)
+                  if (search) params.set('search', search)
+                  window.location.href = `/products?${params}`
+                }}
+                className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                  categoryFilter === cat.id
+                    ? 'bg-teal-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
         </div>
 
         <form onSubmit={handleSearch} className="mb-8 space-y-4">

@@ -112,6 +112,7 @@ export async function POST(request: NextRequest) {
         parentCategoryId: validatedData.parentCategoryId || null,
         sortOrder: validatedData.sortOrder ?? 0,
         isActive: validatedData.isActive ?? true,
+        isMedicineCategory: validatedData.isMedicineCategory ?? false,
         showInSidebar: validatedData.showInSidebar ?? false,
         sidebarOrder: validatedData.sidebarOrder ?? 0,
         sidebarIconUrl: validatedData.sidebarIconUrl || null,

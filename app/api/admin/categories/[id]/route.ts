@@ -143,6 +143,7 @@ export async function PUT(
       description?: string | null
       imageUrl?: string | null
       isActive?: boolean
+      isMedicineCategory?: boolean
       parentCategoryId?: string | null
       sortOrder?: number
       showInSidebar?: boolean
@@ -154,6 +155,7 @@ export async function PUT(
     if (validatedData.description !== undefined) updateData.description = validatedData.description
     if (validatedData.imageUrl !== undefined) updateData.imageUrl = validatedData.imageUrl
     if (validatedData.isActive !== undefined) updateData.isActive = validatedData.isActive
+    if (validatedData.isMedicineCategory !== undefined) updateData.isMedicineCategory = validatedData.isMedicineCategory
     if (validatedData.parentCategoryId !== undefined) updateData.parentCategoryId = validatedData.parentCategoryId
     if (validatedData.sortOrder !== undefined) updateData.sortOrder = validatedData.sortOrder
     if (validatedData.showInSidebar !== undefined) updateData.showInSidebar = validatedData.showInSidebar

@@ -8,6 +8,7 @@ export const categorySchema = z.object({
   imageUrl: z.string().url('Invalid image URL').optional().nullable(),
   parentCategoryId: z.string().optional().nullable(),
   isActive: z.boolean().default(true),
+  isMedicineCategory: z.boolean().default(false),
   sortOrder: z.number().int().min(0).default(0),
   showInSidebar: z.boolean().default(false),
   sidebarOrder: z.coerce.number().int().min(0).default(0),
