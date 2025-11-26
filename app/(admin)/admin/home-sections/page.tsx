@@ -1,22 +1,69 @@
-import { Suspense } from 'react'
+'use client'
+
+import { Suspense, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Plus, Edit, Trash2 } from 'lucide-react'
-import { prisma } from '@/lib/prisma'
 
-async function getHomeSections() {
-  const sections = await prisma.homeSection.findMany({
-    include: {
-      category: true,
-    },
-    orderBy: {
-      sortOrder: 'asc',
-    },
-  })
-  return sections
+interface HomeSection {
+  id: string
+  title: string
+  slug: string
+  filterType: string
+  categoryId: string | null
+  brandName: string | null
+  productIds: any
+  maxProducts: number
+  bgColor: string | null
+  badgeText: string | null
+  sortOrder: number
+  isActive: boolean
+  createdAt: Date
+  updatedAt: Date
+  category: {
+    id: string
+    name: string
+  } | null
 }
 
-async function HomeSectionsContent() {
-  const sections = await getHomeSections()
+function HomeSectionsContent() {
+  const [sections, setSections] = useState<HomeSection[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchSections()
+  }, [])
+
+  async function fetchSections() {
+    try {
+      const response = await fetch('/api/admin/home-sections')
+      const data = await response.json()
+      setSections(data.sections || [])
+    } catch (error) {
+      console.error('Failed to fetch sections:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm('Are you sure you want to delete this section?')) {
+      return
+    }
+
+    try {
+      await fetch(`/api/admin/home-sections/${id}`, {
+        method: 'DELETE',
+      })
+      fetchSections()
+    } catch (error) {
+      console.error('Failed to delete section:', error)
+      alert('Failed to delete section')
+    }
+  }
+
+  if (loading) {
+    return <div>Loading...</div>
+  }
 
   return (
     <div className="space-y-6">
@@ -114,14 +161,7 @@ async function HomeSectionsContent() {
                           <Edit className="h-4 w-4" />
                         </Link>
                         <button
-                          onClick={async () => {
-                            if (confirm('Are you sure you want to delete this section?')) {
-                              await fetch(`/api/admin/home-sections/${section.id}`, {
-                                method: 'DELETE',
-                              })
-                              window.location.reload()
-                            }
-                          }}
+                          onClick={() => handleDelete(section.id)}
                           className="rounded p-1 text-red-600 hover:bg-red-50"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -140,9 +180,5 @@ async function HomeSectionsContent() {
 }
 
 export default function HomeSectionsPage() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <HomeSectionsContent />
-    </Suspense>
-  )
+  return <HomeSectionsContent />
 }
