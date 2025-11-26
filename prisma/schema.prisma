@@ -126,6 +126,12 @@ model Product {
   minStockAlert Int? // Low stock alert threshold
   inStock       Boolean @default(true)
 
+  // Flash Sale Fields
+  isFlashSale      Boolean   @default(false)
+  flashSalePrice   Float?
+  flashSaleStart   DateTime?
+  flashSaleEnd     DateTime?
+
   // General Product Fields
   brandName    String? // Brand name (optional for medicines, common for general products)
   sizeLabel    String? // e.g., "50ml", "100g", "10 pcs", "1 device"
