@@ -1,9 +1,11 @@
 import { notFound } from 'next/navigation'
-import { prisma } from '@/lib/prisma'
 import { AddToCartButton } from '@/components/AddToCartButton'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Metadata } from 'next'
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>
@@ -12,6 +14,7 @@ interface ProductPageProps {
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   try {
     const { slug } = await params
+    const { prisma } = await import('@/lib/prisma')
     
     const product = await prisma.product.findUnique({
       where: { slug },
@@ -38,6 +41,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params
+  const { prisma } = await import('@/lib/prisma')
 
   const product = await prisma.product.findUnique({
     where: { slug },
