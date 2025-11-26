@@ -282,15 +282,35 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           <div className="grid gap-6 md:grid-cols-2">
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Product Type
+                Category <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
-                value={formData.type}
-                disabled
-                className="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-gray-500"
-              />
-              <p className="mt-1 text-xs text-gray-500">Product type cannot be changed</p>
+              <select
+                value={formData.categoryId}
+                onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                required
+              >
+                <option value="">Select a category</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+              {formData.categoryId && (
+                <div className="mt-2">
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                    categories.find(c => c.id === formData.categoryId)?.isMedicineCategory
+                      ? 'bg-blue-100 text-blue-800'
+                      : 'bg-green-100 text-green-800'
+                  }`}>
+                    Type: {categories.find(c => c.id === formData.categoryId)?.isMedicineCategory ? 'Medicine' : 'General Product'}
+                  </span>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Product type is automatically set based on category
+                  </p>
+                </div>
+              )}
             </div>
 
             <div>
@@ -329,39 +349,6 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 onChange={(e) => setFormData({ ...formData, brandName: e.target.value })}
                 className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
               />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Category <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={formData.categoryId}
-                onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                required
-              >
-                <option value="">Select Category</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-              {formData.categoryId && (
-                <div className="mt-2">
-                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                    categories.find(c => c.id === formData.categoryId)?.isMedicineCategory
-                      ? 'bg-blue-100 text-blue-800'
-                      : 'bg-green-100 text-green-800'
-                  }`}>
-                    Type: {categories.find(c => c.id === formData.categoryId)?.isMedicineCategory ? 'Medicine' : 'General Product'}
-                  </span>
-                  <p className="mt-1 text-xs text-gray-500">
-                    Product type is automatically set based on category
-                  </p>
-                </div>
-              )}
             </div>
 
             <div className="md:col-span-2">
