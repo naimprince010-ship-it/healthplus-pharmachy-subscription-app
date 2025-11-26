@@ -10,30 +10,29 @@ interface ProductPageProps {
 }
 
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
-  const { slug } = await params
-  
-  const product = await prisma.product.findUnique({
-    where: { slug },
-    select: {
-      name: true,
-      canonicalUrl: true,
-      seoTitle: true,
-      seoDescription: true,
-    },
-  })
+  try {
+    const { slug } = await params
+    
+    const product = await prisma.product.findUnique({
+      where: { slug },
+      select: {
+        name: true,
+      },
+    })
 
-  if (!product) {
+    if (!product) {
+      return {}
+    }
+
+    return {
+      title: product.name,
+      alternates: {
+        canonical: `/products/${slug}`,
+      },
+    }
+  } catch (error) {
+    console.error('Error generating metadata:', error)
     return {}
-  }
-
-  const canonicalUrl = product.canonicalUrl || `/products/${slug}`
-
-  return {
-    title: product.seoTitle || product.name,
-    description: product.seoDescription || undefined,
-    alternates: {
-      canonical: canonicalUrl,
-    },
   }
 }
 
