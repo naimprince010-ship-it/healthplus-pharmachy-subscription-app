@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { ChevronRight, Zap } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
@@ -12,6 +13,7 @@ interface SidebarCategory {
 }
 
 export default function LeftCategorySidebar() {
+  const pathname = usePathname()
   const [categories, setCategories] = useState<SidebarCategory[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -61,12 +63,15 @@ export default function LeftCategorySidebar() {
 
         {/* Category List */}
         <div className="divide-y divide-gray-100">
-          {categories.map((category) => (
-            <Link
-              key={category.id}
-              href={`/medicines?categoryId=${category.id}`}
-              className="flex items-center justify-between px-4 py-3 transition-all hover:bg-gray-50 hover:shadow-sm"
-            >
+          {categories.map((category) => {
+            const basePath = pathname?.startsWith('/products') ? '/products' : '/medicines'
+            
+            return (
+              <Link
+                key={category.id}
+                href={`${basePath}?categoryId=${category.id}`}
+                className="flex items-center justify-between px-4 py-3 transition-all hover:bg-gray-50 hover:shadow-sm"
+              >
               <div className="flex items-center gap-3">
                 {category.sidebarIconUrl ? (
                   <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-gray-100">
@@ -89,7 +94,8 @@ export default function LeftCategorySidebar() {
               </div>
               <ChevronRight className="h-4 w-4 text-gray-400" />
             </Link>
-          ))}
+            )
+          })}
         </div>
       </div>
     </div>

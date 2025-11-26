@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useMemo, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Search, Filter } from 'lucide-react'
+import Link from 'next/link'
+import { Search, Filter, X } from 'lucide-react'
 import { ProductCard } from '@/components/ProductCard'
 
 interface Product {
@@ -36,6 +37,11 @@ function ProductsContent() {
   const [search, setSearch] = useState(searchParams.get('search') || '')
   const [categoryFilter, setCategoryFilter] = useState(searchParams.get('categoryId') || '')
   const [showFilters, setShowFilters] = useState(false)
+
+  useEffect(() => {
+    setSearch(searchParams.get('search') || '')
+    setCategoryFilter(searchParams.get('categoryId') || '')
+  }, [searchParams])
 
   useEffect(() => {
     fetchProducts()
@@ -87,14 +93,36 @@ function ProductsContent() {
     window.location.href = `/products?${params}`
   }
 
+  const currentCategory = useMemo(
+    () => categories.find(c => c.id === categoryFilter) || null,
+    [categories, categoryFilter]
+  )
+
   return (
     <div className="bg-gray-50 py-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">General Products</h1>
-          <p className="mt-2 text-gray-600">
-            Browse our collection of skin care, baby care, devices, cosmetics, and more
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                {currentCategory ? currentCategory.name : 'General Products'}
+              </h1>
+              <p className="mt-2 text-gray-600">
+                {currentCategory 
+                  ? `Browse ${currentCategory.name} products` 
+                  : 'Browse our collection of skin care, baby care, devices, cosmetics, and more'}
+              </p>
+            </div>
+            {currentCategory && (
+              <Link
+                href="/products"
+                className="flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+              >
+                <X className="h-4 w-4" />
+                Clear filter
+              </Link>
+            )}
+          </div>
         </div>
 
         <form onSubmit={handleSearch} className="mb-8 space-y-4">
@@ -105,7 +133,7 @@ function ProductsContent() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search products..."
+                placeholder={`Search ${currentCategory ? currentCategory.name : 'products'}...`}
                 className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
               />
             </div>
