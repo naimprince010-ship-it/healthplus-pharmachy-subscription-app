@@ -30,6 +30,10 @@ const updateProductSchema = z.object({
   variantLabel: z.string().optional(),
   keyFeatures: z.string().optional(),
   specSummary: z.string().optional(),
+  isFlashSale: z.boolean().optional(),
+  flashSalePrice: z.number().positive().optional(),
+  flashSaleStart: z.string().datetime().optional(),
+  flashSaleEnd: z.string().datetime().optional(),
 })
 
 /**
@@ -128,6 +132,12 @@ export async function PATCH(
     const updateData: any = { ...data }
     if (data.stockQuantity !== undefined) {
       updateData.inStock = data.stockQuantity > 0
+    }
+    if (data.flashSaleStart !== undefined) {
+      updateData.flashSaleStart = data.flashSaleStart ? new Date(data.flashSaleStart) : null
+    }
+    if (data.flashSaleEnd !== undefined) {
+      updateData.flashSaleEnd = data.flashSaleEnd ? new Date(data.flashSaleEnd) : null
     }
 
     const product = await prisma.product.update({
