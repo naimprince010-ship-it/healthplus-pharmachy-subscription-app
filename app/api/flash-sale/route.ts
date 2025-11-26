@@ -20,7 +20,15 @@ export async function GET(request: NextRequest) {
           not: null,
         },
       },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        imageUrl: true,
+        sellingPrice: true,
+        flashSalePrice: true,
+        flashSaleEnd: true,
+        stockQuantity: true,
         category: {
           select: {
             id: true,

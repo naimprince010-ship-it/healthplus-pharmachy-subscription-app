@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ShoppingCart, Clock, Zap } from 'lucide-react'
+import { Clock, Zap } from 'lucide-react'
+import { AddToCartButton } from '@/components/AddToCartButton'
 
 interface Product {
   id: string
@@ -14,6 +15,7 @@ interface Product {
   flashSalePrice: number | null
   flashSaleEnd: string
   discountPercentage: number
+  stockQuantity: number
   category: {
     id: string
     name: string
@@ -94,24 +96,6 @@ export default function FlashSalePage() {
     }
   }
 
-  const handleAddToCart = async (productId: string) => {
-    try {
-      const response = await fetch('/api/cart', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId, quantity: 1 }),
-      })
-
-      if (response.ok) {
-        alert('Product added to cart!')
-      } else {
-        alert('Failed to add product to cart')
-      }
-    } catch (error) {
-      console.error('Error adding to cart:', error)
-      alert('Failed to add product to cart')
-    }
-  }
 
   if (loading) {
     return (
@@ -250,13 +234,16 @@ export default function FlashSalePage() {
                 </div>
 
                 {/* Add to Cart Button */}
-                <button
-                  onClick={() => handleAddToCart(product.id)}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-700"
-                >
-                  <ShoppingCart className="h-4 w-4" />
-                  Add to Cart
-                </button>
+                <AddToCartButton
+                  productId={product.id}
+                  name={product.name}
+                  price={product.flashSalePrice ?? product.sellingPrice}
+                  image={product.imageUrl ?? undefined}
+                  stockQuantity={product.stockQuantity}
+                  category={product.category?.name ?? 'General'}
+                  type="PRODUCT"
+                  className="w-full"
+                />
               </div>
             </div>
           ))}
