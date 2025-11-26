@@ -49,13 +49,14 @@ function ProductsContent() {
       params.set('type', 'GENERAL')
       if (search) params.set('search', search)
       if (categoryFilter) params.set('categoryId', categoryFilter)
-      params.set('isActive', 'true')
 
-      const res = await fetch(`/api/admin/products?${params}`)
+      const res = await fetch(`/api/products?${params}`)
       const data = await res.json()
 
       if (res.ok) {
         setProducts(data.products || [])
+      } else {
+        console.error('Failed to fetch products:', data.error)
       }
     } catch (error) {
       console.error('Failed to fetch products:', error)
@@ -66,10 +67,12 @@ function ProductsContent() {
 
   const fetchCategories = async () => {
     try {
-      const res = await fetch('/api/admin/categories')
+      const res = await fetch('/api/categories')
       const data = await res.json()
       if (res.ok) {
         setCategories(data.categories || [])
+      } else {
+        console.error('Failed to fetch categories:', data.error)
       }
     } catch (error) {
       console.error('Failed to fetch categories:', error)
