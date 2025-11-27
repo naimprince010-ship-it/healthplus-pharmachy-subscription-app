@@ -1,7 +1,7 @@
 import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
-import { WhatsAppButton } from "@/components/WhatsAppButton";
-import { MobileBottomNav } from "@/components/MobileBottomNav";
+import { SiteFooter } from "@/components/SiteFooter";
+import { SiteWhatsAppButton } from "@/components/SiteWhatsAppButton";
+import { SiteMobileNav } from "@/components/SiteMobileNav";
 
 export default function SiteLayout({
   children,
@@ -12,9 +12,9 @@ export default function SiteLayout({
     <>
       <Navbar />
       <main className="min-h-screen">{children}</main>
-      <Footer />
-      <WhatsAppButton />
-      <MobileBottomNav />
+      <SiteFooter />
+      <SiteWhatsAppButton />
+      <SiteMobileNav />
     </>
   );
 }
