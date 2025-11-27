@@ -25,8 +25,8 @@ export function ImageUpload({ value, path, onChange, medicineId, bannerId, folde
       return
     }
 
-    if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
-      setError('Only JPG and PNG images are allowed')
+    if (!['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type)) {
+      setError('Only JPG, PNG, and WebP images are allowed')
       return
     }
 
@@ -111,7 +111,7 @@ export function ImageUpload({ value, path, onChange, medicineId, bannerId, folde
         </label>
         <input
           type="file"
-          accept="image/jpeg,image/jpg,image/png"
+          accept="image/jpeg,image/jpg,image/png,image/webp"
           onChange={handleFileChange}
           disabled={uploading}
           className="block w-full text-sm text-gray-500
@@ -123,7 +123,7 @@ export function ImageUpload({ value, path, onChange, medicineId, bannerId, folde
             disabled:opacity-50 disabled:cursor-not-allowed"
         />
         <p className="mt-1 text-xs text-gray-500">
-          JPG or PNG, max 1MB
+          JPG, PNG, or WebP, max 1MB
         </p>
       </div>
 
