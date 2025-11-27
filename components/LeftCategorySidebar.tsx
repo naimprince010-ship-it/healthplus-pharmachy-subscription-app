@@ -10,6 +10,7 @@ interface SidebarCategory {
   name: string
   slug: string
   sidebarIconUrl: string | null
+  sidebarLinkUrl: string | null
 }
 
 export default function LeftCategorySidebar() {
@@ -64,12 +65,14 @@ export default function LeftCategorySidebar() {
         {/* Category List */}
         <div className="divide-y divide-gray-100">
           {categories.map((category) => {
+            // Use custom sidebarLinkUrl if set, otherwise default to category filter
             const basePath = pathname?.startsWith('/products') ? '/products' : '/medicines'
+            const href = category.sidebarLinkUrl || `${basePath}?categoryId=${category.id}`
             
             return (
               <Link
                 key={category.id}
-                href={`${basePath}?categoryId=${category.id}`}
+                href={href}
                 className="flex items-center justify-between px-4 py-3 transition-all hover:bg-gray-50 hover:shadow-sm"
               >
               <div className="flex items-center gap-3">

@@ -18,6 +18,7 @@ interface Category {
   showInSidebar?: boolean
   sidebarOrder?: number
   sidebarIconUrl?: string | null
+  sidebarLinkUrl?: string | null
 }
 
 interface CategoryOption {
@@ -47,6 +48,7 @@ export default function CategoryForm({ category, categories }: CategoryFormProps
     showInSidebar: category?.showInSidebar ?? false,
     sidebarOrder: category?.sidebarOrder ?? 0,
     sidebarIconUrl: category?.sidebarIconUrl || '',
+    sidebarLinkUrl: category?.sidebarLinkUrl || '',
   })
 
   const generateSlug = (name: string) => {
@@ -86,6 +88,7 @@ export default function CategoryForm({ category, categories }: CategoryFormProps
           description: formData.description || null,
           imageUrl: formData.imageUrl || null,
           sidebarIconUrl: formData.sidebarIconUrl || null,
+          sidebarLinkUrl: formData.sidebarLinkUrl || null,
         }),
       })
 
@@ -312,6 +315,24 @@ export default function CategoryForm({ category, categories }: CategoryFormProps
             />
             <p className="mt-1 text-xs text-gray-500">
               Small round icon for the sidebar (optional)
+            </p>
+          </div>
+
+          {/* Sidebar Link URL */}
+          <div>
+            <label htmlFor="sidebarLinkUrl" className="block text-sm font-medium text-gray-700">
+              Custom sidebar link URL
+            </label>
+            <input
+              type="text"
+              id="sidebarLinkUrl"
+              value={formData.sidebarLinkUrl}
+              onChange={(e) => setFormData({ ...formData, sidebarLinkUrl: e.target.value })}
+              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+              placeholder="/sections/women-s-choice"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Custom link URL for sidebar (e.g., /sections/women-s-choice). Leave empty to use default category filter.
             </p>
           </div>
         </div>
