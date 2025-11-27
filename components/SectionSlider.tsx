@@ -40,14 +40,14 @@ export function SectionSlider({ section, products }: SectionSliderProps) {
   const bgStyle = section.bgColor ? { backgroundColor: section.bgColor } : {}
 
   return (
-    <section className="py-8" style={bgStyle}>
+    <section className="py-6" style={bgStyle}>
       <div className="container mx-auto px-4">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-4 flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-xl font-bold text-gray-900 lg:text-2xl">
               {section.title}
               {section.badgeText && (
-                <span className="ml-3 inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">
+                <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 lg:ml-3 lg:px-3 lg:py-1 lg:text-sm">
                   {section.badgeText}
                 </span>
               )}
@@ -61,29 +61,13 @@ export function SectionSlider({ section, products }: SectionSliderProps) {
           </Link>
         </div>
 
-        <div className="relative">
-          <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory">
-            {products.map((product) => (
-              <div
-                key={product.id}
-                className="w-64 flex-shrink-0 snap-start"
-              >
-                <ProductCard product={product} />
-              </div>
-            ))}
-          </div>
+        {/* Grid layout for products - responsive columns like MedEasy */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          {products.slice(0, 10).map((product) => (
+            <ProductCard key={product.id} product={product} variant="compact" />
+          ))}
         </div>
       </div>
-
-      <style jsx>{`
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-      `}</style>
     </section>
   )
 }
