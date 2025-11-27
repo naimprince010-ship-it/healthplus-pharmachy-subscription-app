@@ -40,9 +40,9 @@ export function SectionSlider({ section, products }: SectionSliderProps) {
   const bgStyle = section.bgColor ? { backgroundColor: section.bgColor } : {}
 
   return (
-    <section className="py-6" style={bgStyle}>
-      <div className="container mx-auto px-4">
-        <div className="mb-4 flex items-center justify-between">
+    <section className="py-4" style={bgStyle}>
+      <div className="px-4">
+        <div className="mb-3 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold text-gray-900 lg:text-2xl">
               {section.title}
@@ -55,16 +55,16 @@ export function SectionSlider({ section, products }: SectionSliderProps) {
           </div>
           <Link
             href={`/sections/${section.slug}`}
-            className="text-sm font-medium text-blue-600 hover:text-blue-700"
+            className="text-sm font-medium text-green-600 hover:text-green-700"
           >
-            See all →
+            সবগুলো দেখুন
           </Link>
         </div>
 
-        {/* Horizontal scroll layout like MedEasy - no empty space even with few products */}
-        <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+        {/* MedEasy-style horizontal scroll - products in single row, scrollable */}
+        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
           {products.slice(0, 15).map((product) => (
-            <div key={product.id} className="w-[180px] flex-shrink-0 lg:w-[200px]">
+            <div key={product.id} className="w-[160px] flex-shrink-0 sm:w-[180px] lg:w-[200px]">
               <ProductCard product={product} variant="compact" />
             </div>
           ))}
