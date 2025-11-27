@@ -6,12 +6,12 @@ import Link from 'next/link'
 import { ArrowLeft, Save, Search } from 'lucide-react'
 import { useForm, type DefaultValues, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { createHomeSectionSchema, updateHomeSectionSchema, type CreateHomeSectionInput } from '@/lib/validations/homeSection'
+import { baseHomeSectionSchema, type BaseHomeSectionInput } from '@/lib/validations/homeSection'
 
 interface HomeSectionFormProps {
   mode: 'create' | 'edit'
   sectionId?: string
-  initialData?: Partial<CreateHomeSectionInput>
+  initialData?: Partial<BaseHomeSectionInput>
 }
 
 export function HomeSectionForm({ mode, sectionId, initialData }: HomeSectionFormProps) {
@@ -24,19 +24,18 @@ export function HomeSectionForm({ mode, sectionId, initialData }: HomeSectionFor
   const [searchResults, setSearchResults] = useState<any[]>([])
   const [selectedProducts, setSelectedProducts] = useState<any[]>([])
 
-  type FormValues = CreateHomeSectionInput & { id?: string }
+  type FormValues = BaseHomeSectionInput
 
-  const defaults: DefaultValues<CreateHomeSectionInput> = (initialData ?? {
+  const defaults: DefaultValues<BaseHomeSectionInput> = (initialData ?? {
     isActive: true,
     sortOrder: 0,
     maxProducts: 10,
     filterType: 'category',
-  }) as DefaultValues<CreateHomeSectionInput>
+  }) as DefaultValues<BaseHomeSectionInput>
 
-  const resolver: Resolver<FormValues> =
-    mode === 'edit'
-      ? (zodResolver(updateHomeSectionSchema) as unknown as Resolver<FormValues>)
-      : (zodResolver(createHomeSectionSchema) as unknown as Resolver<FormValues>)
+  // Use baseHomeSectionSchema for form validation (doesn't require id)
+  // The API route will add id for update validation
+  const resolver: Resolver<FormValues> = zodResolver(baseHomeSectionSchema) as unknown as Resolver<FormValues>
 
   const {
     register,
@@ -120,7 +119,7 @@ export function HomeSectionForm({ mode, sectionId, initialData }: HomeSectionFor
       .replace(/^-+|-+$/g, '')
   }
 
-  const onSubmit = async (data: CreateHomeSectionInput) => {
+  const onSubmit = async (data: BaseHomeSectionInput) => {
     setLoading(true)
     setError(null)
 
