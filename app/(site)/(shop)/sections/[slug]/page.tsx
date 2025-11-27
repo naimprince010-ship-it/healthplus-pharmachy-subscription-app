@@ -82,9 +82,18 @@ export default async function SectionDetailsPage({ params, searchParams }: PageP
         ) : (
           <>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
+              {products.map((product) => {
+                // Ensure product has a valid category for ProductCard
+                const productWithCategory = {
+                  ...product,
+                  category: product.category || {
+                    id: 'uncategorized',
+                    name: 'Uncategorized',
+                    slug: 'uncategorized'
+                  }
+                }
+                return <ProductCard key={product.id} product={productWithCategory} />
+              })}
             </div>
 
             {totalPages > 1 && (
