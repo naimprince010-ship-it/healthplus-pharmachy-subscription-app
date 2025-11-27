@@ -81,13 +81,18 @@ export function SectionSlider({ section, products }: SectionSliderProps) {
 
   const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => {
     if (!scrollContainerRef.current) return
-    if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
-      event.preventDefault()
-      scrollContainerRef.current.scrollBy({
-        left: event.deltaY,
-        behavior: 'auto'
-      })
-    }
+    
+    const delta = Math.abs(event.deltaY) > Math.abs(event.deltaX)
+      ? event.deltaY
+      : event.deltaX
+    
+    if (delta === 0) return
+    
+    event.preventDefault()
+    scrollContainerRef.current.scrollBy({
+      left: delta,
+      behavior: 'auto'
+    })
   }
 
   return (
