@@ -71,9 +71,10 @@ export const createMedicineSchema = z.object({
 
 /**
  * Schema for updating a medicine (all fields optional except validation rules)
+ * Note: id is optional here because the API route already has the medicine ID in the URL
  */
 export const updateMedicineSchema = createMedicineSchema.partial().extend({
-  id: z.string().min(1, 'Medicine ID is required'),
+  id: z.string().optional(),
 }).refine(
   (data) => {
     if (data.mrp !== undefined && data.sellingPrice !== undefined && data.sellingPrice > data.mrp) {
