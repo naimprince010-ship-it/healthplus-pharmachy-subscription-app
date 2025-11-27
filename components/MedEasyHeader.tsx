@@ -2,10 +2,20 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ShoppingCart, User, Search, X, ChevronDown } from 'lucide-react'
-import { useState, useEffect, useRef } from 'react'
+import { ShoppingCart, User, Search, X, ChevronDown, Loader2 } from 'lucide-react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useCart } from '@/contexts/CartContext'
+
+interface SearchSuggestion {
+  id: string
+  name: string
+  imageUrl: string | null
+  price: number
+  manufacturer: string | null
+  slug: string
+  href: string
+}
 
 export function MedEasyHeader() {
   const router = useRouter()
@@ -13,22 +23,78 @@ export function MedEasyHeader() {
   const { itemCount } = useCart()
   const [mounted, setMounted] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedQuery, setDebouncedQuery] = useState('')
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
+  const searchContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
+  // Debounce search query (300ms)
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      setDebouncedQuery(searchQuery.trim())
+    }, 300)
+    return () => clearTimeout(handle)
+  }, [searchQuery])
+
+  // Fetch suggestions when debounced query changes
+  useEffect(() => {
+    if (!debouncedQuery || debouncedQuery.length < 2) {
+      setSuggestions([])
+      setShowSuggestions(false)
+      return
+    }
+
+    let cancelled = false
+
+    const fetchSuggestions = async () => {
+      setIsLoadingSuggestions(true)
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(debouncedQuery)}&limit=10`)
+        const data = await res.json()
+        if (!cancelled) {
+          setSuggestions(data.items ?? [])
+          setShowSuggestions(true)
+        }
+      } catch {
+        if (!cancelled) {
+          setSuggestions([])
+        }
+      } finally {
+        if (!cancelled) setIsLoadingSuggestions(false)
+      }
+    }
+
+    fetchSuggestions()
+    return () => { cancelled = true }
+  }, [debouncedQuery])
+
+  // Handle click outside to close dropdowns
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setUserMenuOpen(false)
       }
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false)
+      }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Handle ESC key to close suggestions
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      setShowSuggestions(false)
+    }
   }, [])
 
   const handleSearch = (e: React.FormEvent) => {
@@ -36,7 +102,16 @@ export function MedEasyHeader() {
     if (searchQuery.trim()) {
       router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`)
       setMobileSearchOpen(false)
+      setShowSuggestions(false)
+      setSearchQuery('')
     }
+  }
+
+  const handleSuggestionClick = (suggestion: SearchSuggestion) => {
+    router.push(suggestion.href)
+    setShowSuggestions(false)
+    setMobileSearchOpen(false)
+    setSearchQuery('')
   }
 
   const profileHref = !session 
@@ -59,12 +134,14 @@ export function MedEasyHeader() {
             </Link>
 
             {/* Desktop Search Bar */}
-            <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-xl mx-4">
-              <div className="relative w-full">
+            <div className="hidden md:flex flex-1 max-w-xl mx-4" ref={searchContainerRef}>
+              <form onSubmit={handleSearch} className="relative w-full">
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
                   placeholder="Search medicines & products..."
                   className="w-full rounded-full border-0 bg-white py-2.5 pl-5 pr-12 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/50"
                 />
@@ -74,8 +151,52 @@ export function MedEasyHeader() {
                 >
                   <Search className="h-4 w-4" />
                 </button>
-              </div>
-            </form>
+
+                {/* Desktop Search Suggestions Dropdown */}
+                {showSuggestions && (
+                  <div className="absolute left-0 right-0 top-full mt-2 rounded-lg bg-white shadow-lg ring-1 ring-black/5 overflow-hidden z-50">
+                    {isLoadingSuggestions ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+                        <span className="ml-2 text-sm text-gray-500">Searching...</span>
+                      </div>
+                    ) : suggestions.length > 0 ? (
+                      <div className="max-h-80 overflow-y-auto">
+                        {suggestions.map((item) => (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => handleSuggestionClick(item)}
+                            className="flex w-full items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+                          >
+                            <div className="h-12 w-12 flex-shrink-0 rounded-lg bg-gray-100 overflow-hidden">
+                              {item.imageUrl ? (
+                                <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />
+                              ) : (
+                                <div className="flex h-full w-full items-center justify-center text-gray-400 text-xs">No img</div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
+                              {item.manufacturer && (
+                                <p className="text-xs text-gray-500 truncate">{item.manufacturer}</p>
+                              )}
+                            </div>
+                            <div className="flex-shrink-0 text-sm font-semibold text-teal-600">
+                              ৳{item.price}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    ) : debouncedQuery.length >= 2 ? (
+                      <div className="py-4 text-center text-sm text-gray-500">
+                        No products found
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+              </form>
+            </div>
 
             {/* Right Side Actions */}
             <div className="flex items-center gap-2 sm:gap-4">
@@ -188,10 +309,13 @@ export function MedEasyHeader() {
 
       {/* Mobile Search Modal */}
       {mobileSearchOpen && (
-        <div className="fixed inset-0 z-[60] bg-white md:hidden">
-          <div className="flex h-14 items-center gap-2 border-b px-4">
+        <div className="fixed inset-0 z-[60] bg-white md:hidden flex flex-col">
+          <div className="flex h-14 items-center gap-2 border-b px-4 flex-shrink-0">
             <button
-              onClick={() => setMobileSearchOpen(false)}
+              onClick={() => {
+                setMobileSearchOpen(false)
+                setShowSuggestions(false)
+              }}
               className="rounded-full p-2 text-gray-600 hover:bg-gray-100"
             >
               <X className="h-5 w-5" />
@@ -201,6 +325,7 @@ export function MedEasyHeader() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
                 placeholder="Search medicines & products..."
                 className="w-full border-0 bg-transparent py-2 text-gray-900 placeholder-gray-500 focus:outline-none"
                 autoFocus
@@ -214,8 +339,51 @@ export function MedEasyHeader() {
               <Search className="h-4 w-4" />
             </button>
           </div>
-          <div className="p-4">
-            <p className="text-sm text-gray-500">Search for medicines, health products, and more...</p>
+          
+          {/* Mobile Search Suggestions */}
+          <div className="flex-1 overflow-y-auto">
+            {isLoadingSuggestions ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                <span className="ml-2 text-sm text-gray-500">Searching...</span>
+              </div>
+            ) : suggestions.length > 0 ? (
+              <div>
+                {suggestions.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => handleSuggestionClick(item)}
+                    className="flex w-full items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left border-b border-gray-100"
+                  >
+                    <div className="h-14 w-14 flex-shrink-0 rounded-lg bg-gray-100 overflow-hidden">
+                      {item.imageUrl ? (
+                        <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-gray-400 text-xs">No img</div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 line-clamp-2">{item.name}</p>
+                      {item.manufacturer && (
+                        <p className="text-xs text-gray-500 truncate mt-0.5">{item.manufacturer}</p>
+                      )}
+                    </div>
+                    <div className="flex-shrink-0 text-sm font-semibold text-teal-600">
+                      ৳{item.price}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : debouncedQuery.length >= 2 ? (
+              <div className="py-8 text-center text-sm text-gray-500">
+                No products found
+              </div>
+            ) : (
+              <div className="p-4">
+                <p className="text-sm text-gray-500">Search for medicines, health products, and more...</p>
+              </div>
+            )}
           </div>
         </div>
       )}
