@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
-export const createHomeSectionSchema = z.object({
+// Base schema for form validation (used by HomeSectionForm for both create and edit)
+export const baseHomeSectionSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   slug: z.string().min(1, 'Slug is required'),
   filterType: z.enum(['category', 'brand', 'manual']),
@@ -14,9 +15,13 @@ export const createHomeSectionSchema = z.object({
   isActive: z.boolean().default(true),
 })
 
-export const updateHomeSectionSchema = createHomeSectionSchema.extend({
+// For API route validation (create doesn't need id, update does)
+export const createHomeSectionSchema = baseHomeSectionSchema
+
+export const updateHomeSectionSchema = baseHomeSectionSchema.extend({
   id: z.string(),
 })
 
+export type BaseHomeSectionInput = z.infer<typeof baseHomeSectionSchema>
 export type CreateHomeSectionInput = z.infer<typeof createHomeSectionSchema>
 export type UpdateHomeSectionInput = z.infer<typeof updateHomeSectionSchema>
