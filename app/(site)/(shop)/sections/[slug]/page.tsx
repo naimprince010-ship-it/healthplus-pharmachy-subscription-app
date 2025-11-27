@@ -9,39 +9,45 @@ interface PageProps {
 }
 
 async function getSectionWithProducts(slug: string, page: number = 1) {
-  const section = await prisma.homeSection.findFirst({
-    where: { slug, isActive: true },
-  })
+  try {
+    const section = await prisma.homeSection.findFirst({
+      where: { slug, isActive: true },
+    })
 
-  if (!section) {
-    return null
-  }
+    if (!section) {
+      return null
+    }
 
-  const pageSize = 24
-  const skip = (page - 1) * pageSize
+    const pageSize = 24
+    const skip = (page - 1) * pageSize
 
-  const whereClause = buildProductWhereClause(section)
-  
-  const [products, totalCount] = await Promise.all([
-    prisma.product.findMany({
-      where: whereClause,
-      include: {
-        category: true,
-      },
-      skip,
-      take: pageSize,
-    }),
-    prisma.product.count({
-      where: whereClause,
-    }),
-  ])
+    const whereClause = buildProductWhereClause(section)
+    
+    const [products, totalCount] = await Promise.all([
+      prisma.product.findMany({
+        where: whereClause,
+        include: {
+          category: true,
+        },
+        skip,
+        take: pageSize,
+      }),
+      prisma.product.count({
+        where: whereClause,
+      }),
+    ])
 
-  return {
-    section,
-    products,
-    totalCount,
-    totalPages: Math.ceil(totalCount / pageSize),
-    currentPage: page,
+    return {
+      section,
+      products,
+      totalCount,
+      totalPages: Math.ceil(totalCount / pageSize),
+      currentPage: page,
+    }
+  } catch (err: unknown) {
+    const error = err as { code?: string; message?: string }
+    console.error('SECTIONS_PAGE_ERROR', err)
+    throw new Error(`SECTIONS_PAGE_ERROR: ${error?.code ?? ''} ${error?.message ?? ''}`)
   }
 }
 
