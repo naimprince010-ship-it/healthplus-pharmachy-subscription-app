@@ -86,7 +86,7 @@ export function HomeSectionForm({ mode, sectionId, initialData }: HomeSectionFor
     }
 
     try {
-      const res = await fetch(`/api/admin/products?search=${encodeURIComponent(query)}&limit=10`)
+      const res = await fetch(`/api/admin/products?search=${encodeURIComponent(query)}&limit=10&type=all`)
       const data = await res.json()
       if (res.ok) {
         setSearchResults(data.products || [])
