@@ -7,8 +7,8 @@ export default function ShopLayout({
 }) {
   return (
     <div className="bg-white">
-      {/* Centered container that wraps both sidebar and content - they zoom together as a unit */}
-      <div className="mx-auto max-w-7xl lg:grid lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-4">
+      {/* Full-width grid that wraps both sidebar and content - they zoom together as a unit */}
+      <div className="w-full lg:grid lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-4">
         {/* Left Sidebar - Desktop only, sticky positioned */}
         <aside className="hidden lg:block">
           <div className="sticky top-16 w-[260px]">
