@@ -61,10 +61,10 @@ export function SectionSlider({ section, products }: SectionSliderProps) {
           </Link>
         </div>
 
-        {/* MedEasy-style horizontal scroll - cards scale with viewport, larger max for big screens */}
+        {/* MedEasy-style horizontal scroll - smaller cards to show 6-7 products per row on large screens */}
         <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
           {products.slice(0, 15).map((product) => (
-            <div key={product.id} className="flex-shrink-0" style={{ width: 'clamp(200px, 28vw, 400px)' }}>
+            <div key={product.id} className="flex-shrink-0" style={{ width: 'clamp(170px, 16vw, 230px)' }}>
               <ProductCard product={product} variant="compact" />
             </div>
           ))}
