@@ -40,9 +40,9 @@ export function SectionSlider({ section, products }: SectionSliderProps) {
   const bgStyle = section.bgColor ? { backgroundColor: section.bgColor } : {}
 
   return (
-    <section className="py-6" style={bgStyle}>
+    <section className="pt-2 pb-3" style={bgStyle}>
       <div className="container mx-auto px-4">
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-2 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold text-gray-900 lg:text-2xl">
               {section.title}
