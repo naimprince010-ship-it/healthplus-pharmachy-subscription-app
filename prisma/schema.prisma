@@ -100,6 +100,7 @@ model Category {
   showInSidebar      Boolean       @default(false)
   sidebarOrder       Int           @default(0)
   sidebarIconUrl     String?
+  sidebarLinkUrl     String?       // Custom link URL for sidebar (e.g., /sections/women-s-choice)
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
   medicines          Medicine[]

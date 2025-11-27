@@ -16,6 +16,7 @@ export async function GET() {
         name: true,
         slug: true,
         sidebarIconUrl: true,
+        sidebarLinkUrl: true,
       },
     })
 

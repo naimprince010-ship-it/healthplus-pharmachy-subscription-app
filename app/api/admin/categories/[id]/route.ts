@@ -149,6 +149,7 @@ export async function PUT(
       showInSidebar?: boolean
       sidebarOrder?: number
       sidebarIconUrl?: string | null
+      sidebarLinkUrl?: string | null
     } = {}
     if (validatedData.name !== undefined) updateData.name = validatedData.name
     if (validatedData.slug !== undefined) updateData.slug = validatedData.slug
@@ -161,6 +162,7 @@ export async function PUT(
     if (validatedData.showInSidebar !== undefined) updateData.showInSidebar = validatedData.showInSidebar
     if (validatedData.sidebarOrder !== undefined) updateData.sidebarOrder = validatedData.sidebarOrder
     if (validatedData.sidebarIconUrl !== undefined) updateData.sidebarIconUrl = validatedData.sidebarIconUrl
+    if (validatedData.sidebarLinkUrl !== undefined) updateData.sidebarLinkUrl = validatedData.sidebarLinkUrl
 
     const category = await prisma.category.update({
       where: { id },

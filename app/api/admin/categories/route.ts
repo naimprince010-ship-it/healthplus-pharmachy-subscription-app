@@ -116,6 +116,7 @@ export async function POST(request: NextRequest) {
         showInSidebar: validatedData.showInSidebar ?? false,
         sidebarOrder: validatedData.sidebarOrder ?? 0,
         sidebarIconUrl: validatedData.sidebarIconUrl || null,
+        sidebarLinkUrl: validatedData.sidebarLinkUrl || null,
       },
     })
 

@@ -13,6 +13,7 @@ export const categorySchema = z.object({
   showInSidebar: z.boolean().default(false),
   sidebarOrder: z.coerce.number().int().min(0).default(0),
   sidebarIconUrl: z.string().trim().optional().nullable(),
+  sidebarLinkUrl: z.string().trim().optional().nullable(),
 })
 
 export const createCategorySchema = categorySchema
