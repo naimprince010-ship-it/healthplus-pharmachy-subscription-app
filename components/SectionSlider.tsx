@@ -41,7 +41,7 @@ export function SectionSlider({ section, products }: SectionSliderProps) {
 
   return (
     <section className="py-4" style={bgStyle}>
-      <div className="px-4 max-w-6xl">
+      <div className="px-4">
         <div className="mb-3 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold text-gray-900 lg:text-2xl">
@@ -61,10 +61,10 @@ export function SectionSlider({ section, products }: SectionSliderProps) {
           </Link>
         </div>
 
-        {/* MedEasy-style horizontal scroll - stronger clamp for better space filling */}
+        {/* MedEasy-style horizontal scroll - smaller cards to show 6-7 products per row on large screens */}
         <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
           {products.slice(0, 15).map((product) => (
-            <div key={product.id} className="flex-shrink-0" style={{ width: 'clamp(180px, 26vw, 360px)' }}>
+            <div key={product.id} className="flex-shrink-0" style={{ width: 'clamp(170px, 16vw, 230px)' }}>
               <ProductCard product={product} variant="compact" />
             </div>
           ))}
