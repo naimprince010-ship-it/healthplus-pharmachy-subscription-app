@@ -123,7 +123,7 @@ export function MedEasyHeader() {
   return (
     <>
       <header className="sticky top-0 z-50 w-full bg-[#0d6efd] shadow-md">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between gap-4">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 flex-shrink-0">
