@@ -74,8 +74,8 @@ export default async function MedicineDetailPage({
       : null)
 
   return (
-    <div className="bg-white py-16">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div className="bg-white py-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         <Link
           href="/medicines"
           className="mb-6 inline-flex items-center gap-2 text-sm text-teal-600 hover:text-teal-700"

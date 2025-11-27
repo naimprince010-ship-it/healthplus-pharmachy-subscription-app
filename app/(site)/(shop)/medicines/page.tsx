@@ -77,8 +77,8 @@ export default async function MedicinesPage({
   }
 
   return (
-    <div className="bg-white py-16">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div className="bg-white py-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <h1 className="text-3xl font-bold text-gray-900">Browse Medicines</h1>
           <form method="get" className="flex gap-2">
