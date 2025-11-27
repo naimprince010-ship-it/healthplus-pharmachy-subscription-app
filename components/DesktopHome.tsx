@@ -57,7 +57,7 @@ export function DesktopHome({ subscriptionPlans, membershipPlan, homeSections }:
       </section>
 
       {/* Home Sections */}
-      <div className="space-y-8 py-8">
+      <div className="space-y-4 py-4">
         {homeSections.map(({ section, products }) => (
           <SectionSlider key={section.id} section={section} products={products} />
         ))}
