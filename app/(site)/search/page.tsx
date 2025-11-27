@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Search, Loader2 } from 'lucide-react'
 import { ProductCard } from '@/components/ProductCard'
@@ -30,7 +30,7 @@ interface SearchProduct {
   isMedicine: boolean
 }
 
-export default function SearchPage() {
+function SearchContent() {
   const searchParams = useSearchParams()
   const query = searchParams.get('q') || ''
   
@@ -142,5 +142,24 @@ export default function SearchPage() {
         </div>
       )}
     </div>
+  )
+}
+
+function SearchFallback() {
+  return (
+    <div className="mx-auto max-w-7xl px-4 py-6">
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
+        <span className="ml-2 text-gray-600">Loading...</span>
+      </div>
+    </div>
+  )
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<SearchFallback />}>
+      <SearchContent />
+    </Suspense>
   )
 }
