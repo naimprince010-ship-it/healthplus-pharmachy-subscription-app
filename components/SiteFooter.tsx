@@ -6,8 +6,8 @@ import { Footer } from '@/components/Footer'
 export function SiteFooter() {
   const pathname = usePathname()
 
-  // Hide footer on cart page
-  if (pathname === '/cart') {
+  // Hide footer on cart and checkout pages
+  if (pathname === '/cart' || pathname === '/checkout') {
     return null
   }
 
