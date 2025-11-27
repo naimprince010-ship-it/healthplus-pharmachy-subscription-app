@@ -61,10 +61,12 @@ export function SectionSlider({ section, products }: SectionSliderProps) {
           </Link>
         </div>
 
-        {/* Grid layout for products - responsive columns like MedEasy */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          {products.slice(0, 10).map((product) => (
-            <ProductCard key={product.id} product={product} variant="compact" />
+        {/* Horizontal scroll layout like MedEasy - no empty space even with few products */}
+        <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+          {products.slice(0, 15).map((product) => (
+            <div key={product.id} className="w-[180px] flex-shrink-0 lg:w-[200px]">
+              <ProductCard product={product} variant="compact" />
+            </div>
           ))}
         </div>
       </div>
