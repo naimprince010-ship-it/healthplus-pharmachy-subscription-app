@@ -109,8 +109,8 @@ function ProductsContent() {
   }
 
   return (
-    <div className="bg-gray-50 py-16">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div className="bg-gray-50 py-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
@@ -251,8 +251,8 @@ function ProductsContent() {
 export default function ProductsPage() {
   return (
     <Suspense fallback={
-      <div className="bg-gray-50 py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="bg-gray-50 py-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-center py-12">
             <div className="text-gray-500">Loading products...</div>
           </div>

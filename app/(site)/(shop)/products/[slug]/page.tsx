@@ -65,8 +65,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const stockQuantity = Number(product.stockQuantity)
 
   return (
-    <div className="bg-gray-50 py-16">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div className="bg-gray-50 py-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         <Link
           href="/products"
           className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
