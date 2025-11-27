@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { AddToCartButton } from '@/components/AddToCartButton'
+import { ProductDetailClient } from '@/components/ProductDetailClient'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Metadata } from 'next'
@@ -92,60 +92,46 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
           <div>
             {product.category && (
-              <div className="mb-4">
+              <div className="mb-2">
                 <Link
                   href={`/products?categoryId=${product.category.id}`}
-                  className="text-sm text-teal-600 hover:text-teal-700"
+                  className="text-sm font-medium text-teal-600 hover:text-teal-700"
                 >
                   {product.category.name}
                 </Link>
               </div>
             )}
 
-            <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
+            <div className="mb-4">
+              <h1 className="text-2xl font-bold text-gray-900 lg:text-3xl">
+                {product.name}
+                {product.sizeLabel && (
+                  <span className="ml-2 text-lg font-normal text-gray-500">
+                    {product.sizeLabel}
+                  </span>
+                )}
+              </h1>
+            </div>
 
             {product.brandName && (
-              <p className="mt-2 text-lg text-gray-600">by {product.brandName}</p>
+              <div className="mb-6 flex items-center gap-2">
+                <span className="text-sm text-gray-500">Manufacturer:</span>
+                <span className="rounded bg-yellow-100 px-2 py-0.5 text-sm font-medium text-gray-900">
+                  {product.brandName}
+                </span>
+              </div>
             )}
 
-            {product.sizeLabel && (
-              <p className="mt-2 text-sm text-gray-500">{product.sizeLabel}</p>
-            )}
-
-            <div className="mt-6 flex items-baseline gap-3">
-              <span className="text-3xl font-bold text-gray-900">
-                ৳{sellingPrice.toFixed(2)}
-              </span>
-              {mrp && mrp > sellingPrice && (
-                <>
-                  <span className="text-xl text-gray-500 line-through">
-                    ৳{mrp.toFixed(2)}
-                  </span>
-                  <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-800">
-                    Save ৳{(mrp - sellingPrice).toFixed(2)}
-                  </span>
-                </>
-              )}
-            </div>
-
-            <div className="mt-6">
-              <AddToCartButton
-                productId={product.id}
-                name={product.name}
-                price={sellingPrice}
-                image={product.imageUrl || undefined}
-                stockQuantity={stockQuantity}
-                category={product.category?.name ?? 'General'}
-                type="PRODUCT"
-                className="px-8 py-3"
-              />
-            </div>
-
-            {stockQuantity > 0 && stockQuantity < 10 && (
-              <p className="mt-4 text-sm text-orange-600">
-                Only {stockQuantity} left in stock!
-              </p>
-            )}
+            <ProductDetailClient
+              productId={product.id}
+              name={product.name}
+              sellingPrice={sellingPrice}
+              mrp={mrp}
+              stockQuantity={stockQuantity}
+              imageUrl={product.imageUrl}
+              category={product.category?.name ?? 'General'}
+              unit={product.unit}
+            />
 
             {product.description && (
               <div className="mt-8">
