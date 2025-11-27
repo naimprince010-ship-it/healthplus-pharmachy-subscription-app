@@ -1,7 +1,9 @@
 'use client'
 
+import { useRef } from 'react'
 import Link from 'next/link'
 import { ProductCard } from '@/components/ProductCard'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface Product {
   id: string
@@ -33,11 +35,23 @@ interface SectionSliderProps {
 }
 
 export function SectionSlider({ section, products }: SectionSliderProps) {
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+
   if (products.length === 0) {
     return null
   }
 
   const bgStyle = section.bgColor ? { backgroundColor: section.bgColor } : {}
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = 300
+      scrollContainerRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      })
+    }
+  }
 
   return (
     <section className="py-4" style={bgStyle}>
@@ -61,13 +75,37 @@ export function SectionSlider({ section, products }: SectionSliderProps) {
           </Link>
         </div>
 
-        {/* MedEasy-style horizontal scroll - smaller cards to show 6-7 products per row on large screens */}
-        <div className="flex items-stretch gap-3 overflow-x-auto pb-2 scrollbar-hide">
-          {products.slice(0, 15).map((product) => (
-            <div key={product.id} className="flex-shrink-0" style={{ width: 'clamp(170px, 16vw, 230px)' }}>
-              <ProductCard product={product} variant="compact" className="h-full" />
-            </div>
-          ))}
+        {/* MedEasy-style horizontal scroll with arrow buttons - 10 products per section */}
+        <div className="relative">
+          {/* Left scroll arrow - desktop only */}
+          <button
+            onClick={() => scroll('left')}
+            className="absolute left-0 top-1/2 z-10 hidden -translate-y-1/2 rounded-full bg-white p-2 shadow-lg transition-all hover:bg-gray-100 lg:flex"
+            aria-label="Scroll left"
+          >
+            <ChevronLeft className="h-5 w-5 text-gray-600" />
+          </button>
+
+          {/* Product scroll container */}
+          <div
+            ref={scrollContainerRef}
+            className="flex items-stretch gap-3 overflow-x-auto pb-2 scrollbar-hide lg:px-8"
+          >
+            {products.slice(0, 10).map((product) => (
+              <div key={product.id} className="flex-shrink-0" style={{ width: 'clamp(170px, 16vw, 230px)' }}>
+                <ProductCard product={product} variant="compact" className="h-full" />
+              </div>
+            ))}
+          </div>
+
+          {/* Right scroll arrow - desktop only */}
+          <button
+            onClick={() => scroll('right')}
+            className="absolute right-0 top-1/2 z-10 hidden -translate-y-1/2 rounded-full bg-white p-2 shadow-lg transition-all hover:bg-gray-100 lg:flex"
+            aria-label="Scroll right"
+          >
+            <ChevronRight className="h-5 w-5 text-gray-600" />
+          </button>
         </div>
       </div>
     </section>
