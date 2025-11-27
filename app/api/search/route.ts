@@ -8,9 +8,11 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const q = (searchParams.get('q') || '').trim()
+    const limitParam = Number(searchParams.get('limit') ?? '40')
+    const limit = Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 40) : 40
 
     if (!q || q.length < 2) {
-      return NextResponse.json({ products: [], query: q })
+      return NextResponse.json({ products: [], items: [], query: q })
     }
 
     // Search across products with related medicine and category data
@@ -110,8 +112,20 @@ export async function GET(request: NextRequest) {
     // Combine and deduplicate results
     const allResults = [...formattedProducts, ...formattedMedicines]
 
+    // Create simplified items array for live search suggestions
+    const items = allResults.slice(0, limit).map((p) => ({
+      id: p.id,
+      name: p.name,
+      imageUrl: p.imageUrl,
+      price: p.sellingPrice,
+      manufacturer: p.brandName,
+      slug: p.slug,
+      href: p.href,
+    }))
+
     return NextResponse.json({
       products: allResults,
+      items,
       query: q,
       count: allResults.length,
     })
