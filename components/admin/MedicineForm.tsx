@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Save } from 'lucide-react'
+import { ArrowLeft, Save, Sparkles } from 'lucide-react'
 import { useForm, type DefaultValues, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { createMedicineSchema, updateMedicineSchema, type CreateMedicineInput, type UpdateMedicineInput } from '@/lib/validations/medicine'
@@ -26,10 +26,13 @@ interface MedicineFormProps {
 export function MedicineForm({ mode, medicineId, initialData }: MedicineFormProps) {
   const router = useRouter()
   const [categories, setCategories] = useState<Category[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [imageUrl, setImageUrl] = useState(initialData?.imageUrl || '')
-  const [imagePath, setImagePath] = useState(initialData?.imagePath || '')
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+    const [imageUrl, setImageUrl] = useState(initialData?.imageUrl || '')
+    const [imagePath, setImagePath] = useState(initialData?.imagePath || '')
+    const [aiLoading, setAiLoading] = useState(false)
+    const [aiError, setAiError] = useState('')
+    const [aiLanguage, setAiLanguage] = useState<'en' | 'bn'>('en')
 
   type FormValues = CreateMedicineInput & { id?: string }
 
@@ -89,19 +92,67 @@ export function MedicineForm({ mode, medicineId, initialData }: MedicineFormProp
     }
   }, [unitPrice, tabletsPerStrip, setValue])
 
-  const fetchCategories = async () => {
-    try {
-      const res = await fetch('/api/admin/categories')
-      const data = await res.json()
-      if (res.ok) {
-        setCategories(data.categories || [])
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch('/api/admin/categories')
+        const data = await res.json()
+        if (res.ok) {
+          setCategories(data.categories || [])
+        }
+      } catch (err) {
+        console.error('Failed to fetch categories:', err)
       }
-    } catch (err) {
-      console.error('Failed to fetch categories:', err)
     }
-  }
 
-  const onSubmit = async (data: CreateMedicineInput) => {
+    const handleAIGenerate = async () => {
+      const medicineName = watch('name')
+      if (!medicineName) {
+        setAiError('Please enter a medicine name first')
+        return
+      }
+
+      setAiLoading(true)
+      setAiError('')
+
+      try {
+        const res = await fetch('/api/ai/medicine-helper', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            medicineName,
+            genericName: watch('genericName') || undefined,
+            brandName: watch('brandName') || undefined,
+            manufacturer: watch('manufacturer') || undefined,
+            dosageForm: watch('dosageForm') || undefined,
+            strength: watch('strength') || undefined,
+            category: categories.find(c => c.id === watch('categoryId'))?.name || undefined,
+            language: aiLanguage,
+          }),
+        })
+
+        const data = await res.json()
+
+        if (res.ok) {
+          setValue('description', data.description || watch('description'))
+          setValue('uses', data.uses || watch('uses'))
+          setValue('sideEffects', data.sideEffects || watch('sideEffects'))
+          setValue('contraindications', data.contraindications || watch('contraindications'))
+          setValue('storageInstructions', data.storageInstructions || watch('storageInstructions'))
+          setValue('seoTitle', data.seoTitle || watch('seoTitle'))
+          setValue('seoDescription', data.seoDescription || watch('seoDescription'))
+          setValue('seoKeywords', data.seoKeywords?.join(', ') || watch('seoKeywords'))
+          setAiError('')
+        } else {
+          setAiError(data.error || 'AI generation failed')
+        }
+      } catch (err) {
+        setAiError('AI generation failed. Please try again.')
+      } finally {
+        setAiLoading(false)
+      }
+    }
+
+    const onSubmit= async (data: CreateMedicineInput) => {
     setLoading(true)
     setError(null)
 
@@ -649,12 +700,88 @@ export function MedicineForm({ mode, medicineId, initialData }: MedicineFormProp
         </div>
       )}
 
-      <form noValidate onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div className="rounded-lg border border-gray-200 bg-white p-6">
-          <Tabs tabs={tabs} defaultTab="basic" />
-        </div>
+            <form noValidate onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              <div className="rounded-lg border border-gray-200 bg-white p-6">
+                <Tabs tabs={tabs} defaultTab="basic" />
+              </div>
 
-        <div className="flex items-center justify-end gap-4">
+              {/* AI Assistant Section */}
+              <div className="rounded-lg border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50 p-6">
+                <div className="mb-4 flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-purple-600" />
+                  <h2 className="text-lg font-semibold text-gray-900">AI Assistant</h2>
+                  <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+                    Beta
+                  </span>
+                </div>
+          
+                <p className="mb-4 text-sm text-gray-600">
+                  Let AI generate medicine descriptions, uses, side effects, contraindications, and SEO content.
+                </p>
+
+                {aiError && (
+                  <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+                    {aiError}
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Language
+                      </label>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setAiLanguage('en')}
+                          className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                            aiLanguage === 'en'
+                              ? 'bg-purple-600 text-white'
+                              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          English
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAiLanguage('bn')}
+                          className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                            aiLanguage === 'bn'
+                              ? 'bg-purple-600 text-white'
+                              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          বাংলা (Bangla)
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Generate Content
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleAIGenerate}
+                        disabled={aiLoading || !watch('name')}
+                        className="flex items-center gap-2 rounded-lg bg-purple-600 px-6 py-2 text-sm font-semibold text-white transition-colors hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Sparkles className="h-4 w-4" />
+                        {aiLoading ? 'Generating...' : 'Generate with AI'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg bg-purple-100 p-3">
+                    <p className="text-xs text-purple-800">
+                      <strong>💡 Tip:</strong> Click &quot;Generate with AI&quot; to auto-fill Description, Uses, Side Effects, Contraindications, Storage Instructions, and SEO fields based on the medicine name and details.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-4">
           <Link
             href="/admin/medicines"
             className="rounded-lg border border-gray-300 px-6 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50"
