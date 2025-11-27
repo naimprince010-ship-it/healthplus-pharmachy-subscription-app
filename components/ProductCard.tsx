@@ -28,9 +28,10 @@ interface ProductCardProps {
 interface ProductCardComponentProps {
   product: ProductCardProps
   variant?: 'default' | 'compact'
+  className?: string
 }
 
-export function ProductCard({ product, variant = 'default' }: ProductCardComponentProps) {
+export function ProductCard({ product, variant = 'default', className = '' }: ProductCardComponentProps) {
   const href = product.href || `/products/${product.slug}`
   const medicineId = product.cartInfo?.kind === 'medicine' ? product.cartInfo.medicineId : undefined
   const productId = product.cartInfo?.kind === 'product' ? product.cartInfo.productId : product.id
@@ -47,7 +48,7 @@ export function ProductCard({ product, variant = 'default' }: ProductCardCompone
       href={href}
       className={`group relative flex flex-col rounded-lg border border-gray-200 bg-white transition-shadow hover:shadow-lg ${
         isCompact ? 'p-2' : 'p-4'
-      }`}
+      } ${className}`}
     >
       {/* Discount badge for compact variant */}
       {isCompact && discountPercent && discountPercent > 0 && (
