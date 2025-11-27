@@ -9,7 +9,7 @@ interface PageProps {
 }
 
 async function getSectionWithProducts(slug: string, page: number = 1) {
-  const section = await prisma.homeSection.findUnique({
+  const section = await prisma.homeSection.findFirst({
     where: { slug, isActive: true },
   })
 
