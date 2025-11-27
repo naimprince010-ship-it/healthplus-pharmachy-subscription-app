@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
-import { ProductCard } from '@/components/ProductCard'
 import { buildProductWhereClause } from '@/lib/homeSections'
 
 interface PageProps {
@@ -82,18 +82,44 @@ export default async function SectionDetailsPage({ params, searchParams }: PageP
         ) : (
           <>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {products.map((product) => {
-                // Ensure product has a valid category for ProductCard
-                const productWithCategory = {
-                  ...product,
-                  category: product.category || {
-                    id: 'uncategorized',
-                    name: 'Uncategorized',
-                    slug: 'uncategorized'
-                  }
-                }
-                return <ProductCard key={product.id} product={productWithCategory} />
-              })}
+              {products.map((product) => (
+                <Link
+                  key={product.id}
+                  href={`/products/${product.slug}`}
+                  className="group flex flex-col rounded-lg border border-gray-200 bg-white p-4 transition-shadow hover:shadow-lg"
+                >
+                  <div className="aspect-square overflow-hidden rounded-lg bg-gray-100">
+                    {product.imageUrl ? (
+                      <img
+                        src={product.imageUrl}
+                        alt={product.name}
+                        className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-gray-400">
+                        No image
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-4 flex flex-1 flex-col">
+                    <h3 className="font-semibold text-gray-900 line-clamp-2">{product.name}</h3>
+                    {product.brandName && (
+                      <p className="mt-1 text-sm text-gray-500">{product.brandName}</p>
+                    )}
+                    <div className="mt-3 flex items-center">
+                      <span className="text-lg font-bold text-gray-900">৳{product.sellingPrice}</span>
+                      {product.mrp && product.mrp > product.sellingPrice && (
+                        <span className="ml-2 text-sm text-gray-500 line-through">৳{product.mrp}</span>
+                      )}
+                    </div>
+                    <div className="mt-auto pt-4">
+                      <span className="flex w-full items-center justify-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white">
+                        View Product
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
             </div>
 
             {totalPages > 1 && (
