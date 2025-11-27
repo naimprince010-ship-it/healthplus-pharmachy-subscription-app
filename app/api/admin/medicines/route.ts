@@ -8,6 +8,7 @@ import {
   computeStripPrice,
   generateSeoTitle,
 } from '@/lib/pricing'
+import { syncMedicineToProduct } from '@/lib/services/syncMedicineToProduct'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -218,6 +219,33 @@ export async function POST(request: NextRequest) {
         },
       },
     })
+
+    try {
+      await syncMedicineToProduct({
+        id: medicine.id,
+        name: medicine.name,
+        slug: medicine.slug,
+        genericName: medicine.genericName,
+        brandName: medicine.brandName,
+        description: medicine.description,
+        categoryId: medicine.categoryId,
+        mrp: medicine.mrp,
+        sellingPrice: medicine.sellingPrice,
+        stockQuantity: medicine.stockQuantity,
+        inStock: medicine.inStock,
+        imageUrl: medicine.imageUrl,
+        imagePath: medicine.imagePath,
+        seoTitle: medicine.seoTitle,
+        seoDescription: medicine.seoDescription,
+        seoKeywords: medicine.seoKeywords,
+        canonicalUrl: medicine.canonicalUrl,
+        isFeatured: medicine.isFeatured,
+        isActive: medicine.isActive,
+        productId: medicine.productId,
+      })
+    } catch (syncError) {
+      console.error('Failed to sync medicine to product:', syncError)
+    }
 
     return NextResponse.json({ success: true, medicine }, { status: 201 })
   } catch (error) {
