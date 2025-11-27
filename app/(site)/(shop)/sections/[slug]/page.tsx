@@ -56,6 +56,19 @@ export default async function SectionDetailsPage({ params, searchParams }: PageP
   const { page: pageParam } = await searchParams
   const page = pageParam ? parseInt(pageParam, 10) : 1
 
+  // DEBUG: Return static content to test if route itself works
+  return (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="container mx-auto px-4">
+        <h1 className="text-3xl font-bold text-gray-900">Section Test Page</h1>
+        <p>Slug: {slug}</p>
+        <p>Page: {page}</p>
+      </div>
+    </div>
+  )
+
+  // Original code commented out for debugging
+  /*
   const data = await getSectionWithProducts(slug, page)
 
   if (!data) {
@@ -133,4 +146,5 @@ export default async function SectionDetailsPage({ params, searchParams }: PageP
       </div>
     </div>
   )
+  */
 }
