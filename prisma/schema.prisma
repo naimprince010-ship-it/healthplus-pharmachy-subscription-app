@@ -36,6 +36,12 @@ enum ProductType {
   GENERAL
 }
 
+enum PageGroup {
+  QUICK_LINKS
+  SUPPORT
+  NONE
+}
+
 model User {
   id            String           @id @default(cuid())
   name          String
@@ -441,4 +447,18 @@ model HomeSection {
 
   @@index([sortOrder])
   @@index([isActive, sortOrder])
+}
+
+model Page {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  content     String    @db.Text
+  group       PageGroup @default(SUPPORT)
+  sortOrder   Int       @default(0)
+  isPublished Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([group, isPublished, sortOrder])
 }
