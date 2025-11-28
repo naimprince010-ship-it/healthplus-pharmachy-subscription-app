@@ -58,6 +58,8 @@ export function ProductDetailClient({
       image: imageUrl || undefined,
       type: 'PRODUCT',
       quantity,
+      category,
+      mrp: hasExplicitDiscount ? sellingPrice : (mrp || undefined),
     })
 
     trackAddToCart({

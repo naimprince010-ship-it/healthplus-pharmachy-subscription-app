@@ -11,6 +11,9 @@ export interface CartItem {
   quantity: number
   image?: string
   type: 'MEDICINE' | 'PRODUCT'
+  category?: string
+  genericName?: string
+  mrp?: number
 }
 
 interface CartContextType {
