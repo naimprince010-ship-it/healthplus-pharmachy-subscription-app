@@ -123,13 +123,13 @@ export function MedEasyHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full bg-[#0d6efd] shadow-md">
+      <header className="sticky top-0 z-50 w-full bg-teal-600 shadow-md">
         <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between gap-4">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 flex-shrink-0">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white">
-                <span className="text-lg font-bold text-[#0d6efd]">H+</span>
+                <span className="text-lg font-bold text-teal-600">H+</span>
               </div>
               <span className="text-xl font-bold text-white hidden sm:block">HealthPlus</span>
             </Link>
@@ -148,7 +148,7 @@ export function MedEasyHeader() {
                 />
                 <button
                   type="submit"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full bg-[#0d6efd] p-2 text-white hover:bg-[#0b5ed7] transition-colors"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full bg-teal-600 p-2 text-white hover:bg-teal-700 transition-colors"
                 >
                   <Search className="h-4 w-4" />
                 </button>
@@ -335,7 +335,7 @@ export function MedEasyHeader() {
             <button
               type="submit"
               onClick={handleSearch}
-              className="rounded-full bg-[#0d6efd] p-2 text-white"
+              className="rounded-full bg-teal-600 p-2 text-white"
             >
               <Search className="h-4 w-4" />
             </button>
