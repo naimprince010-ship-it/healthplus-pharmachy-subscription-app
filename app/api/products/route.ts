@@ -104,6 +104,7 @@ export async function GET(request: NextRequest) {
           mrp: true,
           stockQuantity: true,
           imageUrl: true,
+          discountPercentage: true,
           createdAt: true,
           category: {
             select: {
@@ -158,6 +159,7 @@ export async function GET(request: NextRequest) {
             mrp: true,
             stockQuantity: true,
             imageUrl: true,
+            discountPercentage: true,
             createdAt: true,
             category: {
               select: {
@@ -184,6 +186,7 @@ export async function GET(request: NextRequest) {
         mrp: m.mrp,
         stockQuantity: m.stockQuantity,
         imageUrl: m.imageUrl,
+        discountPercentage: m.discountPercentage,
         createdAt: m.createdAt,
         category: m.category,
         _source: 'medicine' as const, // Internal flag to help with routing

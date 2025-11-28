@@ -202,16 +202,34 @@ export default async function MedicineDetailPage({
             </div>
 
             <div className="mb-6">
-              <div className="flex items-baseline gap-3">
-                <span className="text-4xl font-bold text-gray-900">
-                  ৳{medicine.sellingPrice.toFixed(2)}
-                </span>
-                {medicine.mrp && medicine.mrp > medicine.sellingPrice && (
-                  <span className="text-xl text-gray-500 line-through">
-                    ৳{medicine.mrp.toFixed(2)}
+              {medicine.discountPercentage && medicine.discountPercentage > 0 ? (
+                <>
+                  <div className="mb-2">
+                    <span className="rounded bg-red-500 px-2 py-1 text-sm font-semibold text-white">
+                      {Math.round(medicine.discountPercentage)}% ডিস্কাউন্ট
+                    </span>
+                  </div>
+                  <div className="flex items-baseline gap-3">
+                    <span className="text-4xl font-bold text-gray-900">
+                      ৳{(medicine.sellingPrice * (1 - medicine.discountPercentage / 100)).toFixed(2)}
+                    </span>
+                    <span className="text-xl text-gray-500 line-through">
+                      ৳{medicine.sellingPrice.toFixed(2)}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-baseline gap-3">
+                  <span className="text-4xl font-bold text-gray-900">
+                    ৳{medicine.sellingPrice.toFixed(2)}
                   </span>
-                )}
-              </div>
+                  {medicine.mrp && medicine.mrp > medicine.sellingPrice && (
+                    <span className="text-xl text-gray-500 line-through">
+                      ৳{medicine.mrp.toFixed(2)}
+                    </span>
+                  )}
+                </div>
+              )}
               {medicine.unitPrice && (
                 <p className="mt-1 text-sm text-gray-600">
                   ৳{medicine.unitPrice.toFixed(2)} per unit
@@ -232,7 +250,9 @@ export default async function MedicineDetailPage({
             <AddToCartButton
               medicineId={medicine.id}
               name={medicine.name}
-              price={medicine.sellingPrice}
+              price={medicine.discountPercentage && medicine.discountPercentage > 0 
+                ? medicine.sellingPrice * (1 - medicine.discountPercentage / 100)
+                : medicine.sellingPrice}
               image={imageUrl || undefined}
               requiresPrescription={medicine.requiresPrescription}
               stockQuantity={medicine.stockQuantity}

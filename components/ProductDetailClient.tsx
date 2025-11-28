@@ -15,6 +15,7 @@ interface ProductDetailClientProps {
   imageUrl: string | null
   category: string
   unit: string | null
+  discountPercentage?: number | null
 }
 
 export function ProductDetailClient({
@@ -26,14 +27,24 @@ export function ProductDetailClient({
   imageUrl,
   category,
   unit,
+  discountPercentage,
 }: ProductDetailClientProps) {
   const { addItem } = useCart()
   const [quantity, setQuantity] = useState(1)
   const [isAdding, setIsAdding] = useState(false)
 
-  const discountPercent = mrp && mrp > sellingPrice
-    ? Math.round(((mrp - sellingPrice) / mrp) * 100)
-    : null
+  // Use explicit discountPercentage from database, or calculate from MRP as fallback
+  const hasExplicitDiscount = discountPercentage && discountPercentage > 0
+  const discountPercent = hasExplicitDiscount
+    ? Math.round(discountPercentage)
+    : (mrp && mrp > sellingPrice
+      ? Math.round(((mrp - sellingPrice) / mrp) * 100)
+      : null)
+  
+  // Calculate discounted price if explicit discount exists
+  const discountedPrice = hasExplicitDiscount
+    ? sellingPrice * (1 - discountPercentage / 100)
+    : sellingPrice
 
   const handleAddToCart = () => {
     if (stockQuantity === 0) return
@@ -43,7 +54,7 @@ export function ProductDetailClient({
       id: productId,
       productId,
       name,
-      price: sellingPrice,
+      price: discountedPrice,
       image: imageUrl || undefined,
       type: 'PRODUCT',
       quantity,
@@ -53,7 +64,7 @@ export function ProductDetailClient({
       item_id: productId,
       item_name: name,
       item_category: category,
-      price: sellingPrice,
+      price: discountedPrice,
       quantity,
     })
 
@@ -65,7 +76,20 @@ export function ProductDetailClient({
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        {mrp && mrp > sellingPrice ? (
+        {hasExplicitDiscount ? (
+          <>
+            <div className="flex items-center gap-2">
+              <span className="rounded bg-red-500 px-2 py-0.5 text-sm font-semibold text-white">
+                {discountPercent}% ডিস্কাউন্ট
+              </span>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-bold text-gray-900">৳{discountedPrice.toFixed(2)}</span>
+              <span className="text-lg text-gray-500 line-through">৳{sellingPrice.toFixed(2)}</span>
+              {unit && <span className="text-sm text-gray-500">/{unit}</span>}
+            </div>
+          </>
+        ) : mrp && mrp > sellingPrice ? (
           <>
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-500">MRP</span>
