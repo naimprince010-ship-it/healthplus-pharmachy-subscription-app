@@ -63,6 +63,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const sellingPrice = Number(product.sellingPrice)
   const mrp = product.mrp ? Number(product.mrp) : null
   const stockQuantity = Number(product.stockQuantity)
+  const discountPercentage = product.discountPercentage ? Number(product.discountPercentage) : null
 
   return (
     <div className="bg-gray-50 py-8">
@@ -131,6 +132,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               imageUrl={product.imageUrl}
               category={product.category?.name ?? 'General'}
               unit={product.unit}
+              discountPercentage={discountPercentage}
             />
 
             {product.description && (
