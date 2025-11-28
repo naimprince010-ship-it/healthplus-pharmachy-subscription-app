@@ -40,9 +40,10 @@ const navItems: NavItem[] = [
   { label: 'Memberships', href: '/admin/memberships', icon: Shield },
   { label: 'Prescriptions', href: '/admin/prescriptions', icon: FileText },
   { label: 'Delivery Zones', href: '/admin/delivery-zones', icon: MapPin },
-  { label: 'Home Sections', href: '/admin/home-sections', icon: LayoutGrid },
-  { label: 'Banners', href: '/admin/banners', icon: Image },
-  { label: 'Users', href: '/admin/users', icon: Users },
+    { label: 'Home Sections', href: '/admin/home-sections', icon: LayoutGrid },
+    { label: 'Banners', href: '/admin/banners', icon: Image },
+    { label: 'Pages', href: '/admin/pages', icon: FileText },
+    { label: 'Users', href: '/admin/users', icon: Users },
   { label: 'Sales / Reports', href: '/admin/sales', icon: BarChart3 },
 ]
 
