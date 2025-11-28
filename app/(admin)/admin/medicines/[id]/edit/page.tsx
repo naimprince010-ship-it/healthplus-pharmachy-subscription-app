@@ -41,6 +41,8 @@ export default function EditMedicinePage() {
         categoryId: medicine.categoryId,
         mrp: medicine.mrp || undefined,
         sellingPrice: medicine.sellingPrice,
+        purchasePrice: medicine.purchasePrice || undefined,
+        discountPercentage: medicine.discountPercentage || undefined,
         unitPrice: medicine.unitPrice || undefined,
         stripPrice: medicine.stripPrice || undefined,
         tabletsPerStrip: medicine.tabletsPerStrip || undefined,

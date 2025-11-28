@@ -187,6 +187,8 @@ export async function POST(request: NextRequest) {
         categoryId: data.categoryId,
         mrp: data.mrp,
         sellingPrice,
+        purchasePrice: data.purchasePrice,
+        discountPercentage: data.discountPercentage,
         price: sellingPrice,
         unitPrice: data.unitPrice,
         stripPrice,

@@ -14,6 +14,7 @@ interface Category {
   parentCategoryId?: string | null
   isActive: boolean
   isMedicineCategory?: boolean
+  discountPercentage?: number | null
   sortOrder?: number
   showInSidebar?: boolean
   sidebarOrder?: number
@@ -44,6 +45,7 @@ export default function CategoryForm({ category, categories }: CategoryFormProps
     parentCategoryId: category?.parentCategoryId || '',
     isActive: category?.isActive ?? true,
     isMedicineCategory: category?.isMedicineCategory ?? false,
+    discountPercentage: category?.discountPercentage?.toString() || '',
     sortOrder: category?.sortOrder ?? 0,
     showInSidebar: category?.showInSidebar ?? false,
     sidebarOrder: category?.sidebarOrder ?? 0,
@@ -87,6 +89,7 @@ export default function CategoryForm({ category, categories }: CategoryFormProps
           parentCategoryId: formData.parentCategoryId || null,
           description: formData.description || null,
           imageUrl: formData.imageUrl || null,
+          discountPercentage: formData.discountPercentage ? parseFloat(formData.discountPercentage) : null,
           sidebarIconUrl: formData.sidebarIconUrl || null,
           sidebarLinkUrl: formData.sidebarLinkUrl || null,
         }),
@@ -261,6 +264,27 @@ export default function CategoryForm({ category, categories }: CategoryFormProps
           <p className="text-xs text-gray-500">
             When enabled, products in this category will automatically be set as medicines (requiring prescriptions, etc.). 
             Leave unchecked for general products like baby care, cosmetics, devices, etc.
+          </p>
+        </div>
+
+        {/* Category Discount */}
+        <div>
+          <label htmlFor="discountPercentage" className="block text-sm font-medium text-gray-700">
+            Category Discount (%)
+          </label>
+          <input
+            type="number"
+            id="discountPercentage"
+            step="0.01"
+            min="0"
+            max="100"
+            value={formData.discountPercentage}
+            onChange={(e) => setFormData({ ...formData, discountPercentage: e.target.value })}
+            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            placeholder="0"
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            Apply a discount to all products in this category (0-100%). Product-level discounts will override this.
           </p>
         </div>
 
