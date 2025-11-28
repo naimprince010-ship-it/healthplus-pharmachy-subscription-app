@@ -29,23 +29,23 @@ export function MobileHome({ subscriptionPlans, membershipPlan, homeSections }: 
       {/* Hero Section - Compact for Mobile */}
       <section className="bg-gradient-to-br from-teal-600 to-teal-700 px-4 py-8 text-white">
         <h1 className="text-2xl font-bold">
-          Your Trusted Partner for Affordable Medicine
+          সাশ্রয়ী মূল্যে ওষুধের জন্য আপনার বিশ্বস্ত সঙ্গী
         </h1>
         <p className="mt-3 text-sm text-teal-50">
-          Subscribe to monthly medicine plans and save with our membership
+          মাসিক ওষুধ প্ল্যানে সাবস্ক্রাইব করুন এবং আমাদের মেম্বারশিপে সাশ্রয় করুন
         </p>
         <div className="mt-6 flex gap-3">
           <Link
             href="/membership"
             className="flex-1 rounded-lg bg-white px-4 py-3 text-center text-sm font-semibold text-teal-600"
           >
-            Join Membership
+            মেম্বারশিপ নিন
           </Link>
           <Link
             href="/subscriptions"
             className="flex-1 rounded-lg border-2 border-white px-4 py-3 text-center text-sm font-semibold text-white"
           >
-            View Plans
+            প্ল্যান দেখুন
           </Link>
         </div>
       </section>
