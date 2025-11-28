@@ -28,6 +28,9 @@ export async function GET(
             medicine: {
               select: { name: true, imageUrl: true },
             },
+            product: {
+              select: { name: true, imageUrl: true },
+            },
           },
         },
       },
