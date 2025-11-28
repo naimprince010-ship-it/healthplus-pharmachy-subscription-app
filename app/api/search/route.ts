@@ -70,6 +70,7 @@ export async function GET(request: NextRequest) {
       mrp: p.mrp,
       stockQuantity: p.stockQuantity,
       imageUrl: p.imageUrl,
+      discountPercentage: p.discountPercentage || p.medicine?.discountPercentage || null,
       category: {
         id: p.category.id,
         name: p.category.name,
@@ -96,6 +97,7 @@ export async function GET(request: NextRequest) {
       mrp: m.mrp,
       stockQuantity: m.stockQuantity,
       imageUrl: m.imageUrl,
+      discountPercentage: m.discountPercentage || null,
       category: {
         id: m.category.id,
         name: m.category.name,

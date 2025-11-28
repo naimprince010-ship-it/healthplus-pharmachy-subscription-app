@@ -69,6 +69,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     requiresPrescription?: boolean
     genericName?: string | null
     strength?: string | null
+    discountPercentage?: number | null
   }> = []
 
   if (category.isMedicineCategory) {
@@ -92,6 +93,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         requiresPrescription: true,
         genericName: true,
         strength: true,
+        discountPercentage: true,
       },
       orderBy: [
         { isFeatured: 'desc' },
@@ -123,6 +125,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         sellingPrice: true,
         stockQuantity: true,
         isFeatured: true,
+        discountPercentage: true,
       },
       orderBy: [
         { isFeatured: 'desc' },
@@ -134,6 +137,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     items = products.map((p) => ({
       ...p,
       requiresPrescription: false,
+      discountPercentage: p.discountPercentage,
     }))
   }
 
@@ -183,11 +187,16 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
               const detailPath = category.isMedicineCategory 
                 ? `/medicines/${item.slug}` 
                 : `/products/${item.slug}`
+              
+              const hasDiscount = item.discountPercentage && item.discountPercentage > 0
+              const discountedPrice = hasDiscount 
+                ? item.sellingPrice * (1 - (item.discountPercentage || 0) / 100)
+                : item.sellingPrice
 
               return (
                 <div
                   key={item.id}
-                  className="group flex flex-col rounded-lg border border-gray-200 p-4 shadow-sm transition-shadow hover:shadow-md"
+                  className="group relative flex flex-col rounded-lg border border-gray-200 p-4 shadow-sm transition-shadow hover:shadow-md"
                 >
                   <Link href={detailPath} className="flex-1">
                     <div className="relative mb-4 h-48 overflow-hidden rounded-lg bg-gray-100">
@@ -203,13 +212,18 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                           No image
                         </div>
                       )}
-                      {item.isFeatured && (
-                        <span className="absolute right-2 top-2 rounded-full bg-yellow-400 px-2 py-1 text-xs font-semibold text-gray-900">
+                      {hasDiscount && (
+                        <span className="absolute left-2 top-2 z-10 rounded bg-red-500 px-2 py-1 text-xs font-semibold text-white">
+                          {Math.round(item.discountPercentage || 0)}% ডিস্কাউন্ট
+                        </span>
+                      )}
+                      {item.isFeatured && !hasDiscount && (
+                        <span className="absolute left-2 top-2 rounded-full bg-yellow-400 px-2 py-1 text-xs font-semibold text-gray-900">
                           Featured
                         </span>
                       )}
                       {item.requiresPrescription && (
-                        <span className="absolute left-2 top-2 rounded-full bg-red-500 px-2 py-1 text-xs font-semibold text-white">
+                        <span className="absolute right-2 top-2 rounded-full bg-red-500 px-2 py-1 text-xs font-semibold text-white">
                           Rx
                         </span>
                       )}
@@ -226,13 +240,13 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                       <p className="mt-1 text-xs text-gray-500">{item.strength}</p>
                     )}
                     <div className="mt-4 flex items-center justify-between">
-                      <div>
+                      <div className="flex flex-wrap items-baseline gap-2">
                         <span className="text-xl font-bold text-gray-900">
-                          ৳{item.sellingPrice.toFixed(2)}
+                          ৳{discountedPrice.toFixed(2)}
                         </span>
-                        {item.mrp && item.mrp > item.sellingPrice && (
-                          <span className="ml-2 text-sm text-gray-500 line-through">
-                            ৳{item.mrp.toFixed(2)}
+                        {hasDiscount && (
+                          <span className="text-sm text-gray-500 line-through">
+                            ৳{item.sellingPrice.toFixed(2)}
                           </span>
                         )}
                       </div>
@@ -246,7 +260,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                       <AddToCartButton
                         medicineId={item.id}
                         name={item.name}
-                        price={item.sellingPrice}
+                        price={discountedPrice}
                         image={item.imageUrl || undefined}
                         requiresPrescription={item.requiresPrescription}
                         stockQuantity={item.stockQuantity}
@@ -256,7 +270,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                       <AddToCartButton
                         productId={item.id}
                         name={item.name}
-                        price={item.sellingPrice}
+                        price={discountedPrice}
                         image={item.imageUrl || undefined}
                         stockQuantity={item.stockQuantity}
                         className="w-full"

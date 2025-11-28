@@ -16,6 +16,7 @@ interface SearchProduct {
   mrp: number | null
   stockQuantity: number
   imageUrl: string | null
+  discountPercentage?: number | null
   category: {
     id: string
     name: string

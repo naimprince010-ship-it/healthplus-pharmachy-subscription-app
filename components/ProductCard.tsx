@@ -12,6 +12,7 @@ interface ProductCardProps {
   mrp: number | null
   stockQuantity: number
   imageUrl: string | null
+  discountPercentage?: number | null
   category: {
     id: string
     name: string
@@ -38,10 +39,18 @@ export function ProductCard({ product, variant = 'default', className = '' }: Pr
 
   const isCompact = variant === 'compact'
 
-  // Calculate discount percentage for compact variant
-  const discountPercent = product.mrp && product.mrp > product.sellingPrice
-    ? Math.round(((product.mrp - product.sellingPrice) / product.mrp) * 100)
-    : null
+  // Use explicit discountPercentage from database, or calculate from MRP as fallback
+  const discountPercent = product.discountPercentage && product.discountPercentage > 0
+    ? Math.round(product.discountPercentage)
+    : (product.mrp && product.mrp > product.sellingPrice
+      ? Math.round(((product.mrp - product.sellingPrice) / product.mrp) * 100)
+      : null)
+  
+  // Calculate discounted price if discount exists
+  const hasExplicitDiscount = product.discountPercentage && product.discountPercentage > 0
+  const discountedPrice = hasExplicitDiscount
+    ? product.sellingPrice * (1 - (product.discountPercentage || 0) / 100)
+    : product.sellingPrice
 
   return (
     <Link
@@ -50,10 +59,10 @@ export function ProductCard({ product, variant = 'default', className = '' }: Pr
         isCompact ? 'p-2' : 'p-4'
       } ${className}`}
     >
-      {/* Discount badge for compact variant */}
-      {isCompact && discountPercent && discountPercent > 0 && (
-        <div className="absolute left-2 top-2 z-10 rounded bg-teal-600 px-2 py-0.5 text-xs font-semibold text-white">
-          {discountPercent}% OFF
+      {/* Discount badge */}
+      {discountPercent && discountPercent > 0 && (
+        <div className="absolute left-2 top-2 z-10 rounded bg-red-500 px-2 py-0.5 text-xs font-semibold text-white">
+          {discountPercent}% ডিস্কাউন্ট
         </div>
       )}
 
@@ -89,11 +98,16 @@ export function ProductCard({ product, variant = 'default', className = '' }: Pr
         <div className={`flex items-center ${isCompact ? 'mt-1' : 'mt-3'}`}>
           <div className="flex flex-wrap items-baseline gap-1">
             <span className={`font-bold text-gray-900 ${isCompact ? 'text-sm' : 'text-lg'}`}>
-              ৳{product.sellingPrice}
+              ৳{discountedPrice.toFixed(2)}
             </span>
-            {product.mrp && product.mrp > product.sellingPrice && (
+            {hasExplicitDiscount && (
               <span className={`text-gray-500 line-through ${isCompact ? 'text-xs' : 'text-sm'}`}>
-                ৳{product.mrp}
+                ৳{product.sellingPrice.toFixed(2)}
+              </span>
+            )}
+            {!hasExplicitDiscount && product.mrp && product.mrp > product.sellingPrice && (
+              <span className={`text-gray-500 line-through ${isCompact ? 'text-xs' : 'text-sm'}`}>
+                ৳{product.mrp.toFixed(2)}
               </span>
             )}
           </div>
@@ -103,7 +117,7 @@ export function ProductCard({ product, variant = 'default', className = '' }: Pr
             medicineId={medicineId}
             productId={productId}
             name={product.name}
-            price={product.sellingPrice}
+            price={discountedPrice}
             image={product.imageUrl || undefined}
             stockQuantity={product.stockQuantity}
             category={product.category.name}
