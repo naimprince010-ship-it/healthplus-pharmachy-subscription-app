@@ -16,6 +16,7 @@ interface ProductDetailClientProps {
   category: string
   unit: string | null
   discountPercentage?: number | null
+  slug: string
 }
 
 export function ProductDetailClient({
@@ -28,6 +29,7 @@ export function ProductDetailClient({
   category,
   unit,
   discountPercentage,
+  slug,
 }: ProductDetailClientProps) {
   const { addItem } = useCart()
   const [quantity, setQuantity] = useState(1)
@@ -60,6 +62,7 @@ export function ProductDetailClient({
       quantity,
       category,
       mrp: hasExplicitDiscount ? sellingPrice : (mrp || undefined),
+      slug,
     })
 
     trackAddToCart({

@@ -113,18 +113,19 @@ export function ProductCard({ product, variant = 'default', className = '' }: Pr
           </div>
         </div>
         <div className={`mt-auto ${isCompact ? 'pt-2' : 'pt-4'}`} onClick={(e) => e.preventDefault()}>
-          <AddToCartButton
-            medicineId={medicineId}
-            productId={productId}
-            name={product.name}
-            price={discountedPrice}
-            image={product.imageUrl || undefined}
-            stockQuantity={product.stockQuantity}
-            category={product.category.name}
-            mrp={hasExplicitDiscount ? product.sellingPrice : (product.mrp || undefined)}
-            type={product.type === 'MEDICINE' ? 'MEDICINE' : 'PRODUCT'}
-            className={`w-full ${isCompact ? 'py-1.5 text-sm' : ''}`}
-          />
+                    <AddToCartButton
+                      medicineId={medicineId}
+                      productId={productId}
+                      name={product.name}
+                      price={discountedPrice}
+                      image={product.imageUrl || undefined}
+                      stockQuantity={product.stockQuantity}
+                      category={product.category.name}
+                      mrp={hasExplicitDiscount ? product.sellingPrice : (product.mrp || undefined)}
+                      slug={product.slug}
+                      type={product.type === 'MEDICINE' ? 'MEDICINE' : 'PRODUCT'}
+                      className={`w-full ${isCompact ? 'py-1.5 text-sm' : ''}`}
+                    />
         </div>
       </div>
     </Link>

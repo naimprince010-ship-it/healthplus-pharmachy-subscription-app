@@ -14,6 +14,7 @@ export interface CartItem {
   category?: string
   genericName?: string
   mrp?: number
+  slug?: string
 }
 
 interface CartContextType {
@@ -24,6 +25,9 @@ interface CartContextType {
   clearCart: () => void
   total: number
   itemCount: number
+  isDrawerOpen: boolean
+  openDrawer: () => void
+  closeDrawer: () => void
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
@@ -42,6 +46,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
     return []
   })
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  
+  const openDrawer = () => setIsDrawerOpen(true)
+  const closeDrawer = () => setIsDrawerOpen(false)
+
   useEffect(() => {
     localStorage.setItem('healthplus_cart', JSON.stringify(items))
   }, [items])
@@ -100,6 +109,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
         clearCart,
         total,
         itemCount,
+        isDrawerOpen,
+        openDrawer,
+        closeDrawer,
       }}
     >
       {children}

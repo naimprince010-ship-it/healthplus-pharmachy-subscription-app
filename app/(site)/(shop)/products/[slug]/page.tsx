@@ -130,17 +130,18 @@ export default async function ProductPage({ params }: ProductPageProps) {
               </div>
             )}
 
-            <ProductDetailClient
-              productId={product.id}
-              name={product.name}
-              sellingPrice={sellingPrice}
-              mrp={mrp}
-              stockQuantity={stockQuantity}
-              imageUrl={product.imageUrl}
-              category={product.category?.name ?? 'General'}
-              unit={product.unit}
-              discountPercentage={discountPercentage}
-            />
+                        <ProductDetailClient
+                          productId={product.id}
+                          name={product.name}
+                          sellingPrice={sellingPrice}
+                          mrp={mrp}
+                          stockQuantity={stockQuantity}
+                          imageUrl={product.imageUrl}
+                          category={product.category?.name ?? 'General'}
+                          unit={product.unit}
+                          discountPercentage={discountPercentage}
+                          slug={slug}
+                        />
 
             {product.description && (
               <div className="mt-8">

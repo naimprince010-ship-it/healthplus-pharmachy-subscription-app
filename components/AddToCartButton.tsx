@@ -18,6 +18,7 @@ interface AddToCartButtonProps {
   category?: string
   genericName?: string
   mrp?: number
+  slug?: string
   type?: 'MEDICINE' | 'PRODUCT'
 }
 
@@ -33,6 +34,7 @@ export function AddToCartButton({
   category,
   genericName,
   mrp,
+  slug,
   type = 'MEDICINE',
 }: AddToCartButtonProps) {
   const { addItem } = useCart()
@@ -64,6 +66,7 @@ export function AddToCartButton({
       category,
       genericName,
       mrp,
+      slug,
     })
 
     trackAddToCart({
