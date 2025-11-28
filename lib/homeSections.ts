@@ -38,7 +38,9 @@ export function buildProductWhereClause(section: HomeSection): Prisma.ProductWhe
     }
   }
 
-  if (section.filterType === 'manual' && section.productIds) {
+  if (section.filterType === 'manual') {
+    // For manual sections, always filter by productIds
+    // If productIds is empty/null, return no products (not all products)
     const ids = Array.isArray(section.productIds) ? section.productIds : []
     return {
       ...baseWhere,
