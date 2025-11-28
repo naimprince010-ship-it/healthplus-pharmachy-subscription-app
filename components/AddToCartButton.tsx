@@ -16,6 +16,8 @@ interface AddToCartButtonProps {
   stockQuantity?: number
   className?: string
   category?: string
+  genericName?: string
+  mrp?: number
   type?: 'MEDICINE' | 'PRODUCT'
 }
 
@@ -29,6 +31,8 @@ export function AddToCartButton({
   stockQuantity = 0,
   className = '',
   category,
+  genericName,
+  mrp,
   type = 'MEDICINE',
 }: AddToCartButtonProps) {
   const { addItem } = useCart()
@@ -57,6 +61,9 @@ export function AddToCartButton({
       price,
       image,
       type,
+      category,
+      genericName,
+      mrp,
     })
 
     trackAddToCart({

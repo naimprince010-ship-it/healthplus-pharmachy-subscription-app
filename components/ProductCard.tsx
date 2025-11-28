@@ -121,6 +121,7 @@ export function ProductCard({ product, variant = 'default', className = '' }: Pr
             image={product.imageUrl || undefined}
             stockQuantity={product.stockQuantity}
             category={product.category.name}
+            mrp={hasExplicitDiscount ? product.sellingPrice : (product.mrp || undefined)}
             type={product.type === 'MEDICINE' ? 'MEDICINE' : 'PRODUCT'}
             className={`w-full ${isCompact ? 'py-1.5 text-sm' : ''}`}
           />
