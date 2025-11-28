@@ -53,6 +53,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
           slug: true,
         },
       },
+      medicine: {
+        select: {
+          discountPercentage: true,
+        },
+      },
     },
   })
 
@@ -63,7 +68,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const sellingPrice = Number(product.sellingPrice)
   const mrp = product.mrp ? Number(product.mrp) : null
   const stockQuantity = Number(product.stockQuantity)
-  const discountPercentage = product.discountPercentage ? Number(product.discountPercentage) : null
+  // Use product's discountPercentage, or fall back to linked medicine's discountPercentage
+  const rawDiscount = product.discountPercentage || product.medicine?.discountPercentage
+  const discountPercentage = rawDiscount ? Number(rawDiscount) : null
 
   return (
     <div className="bg-gray-50 py-8">
