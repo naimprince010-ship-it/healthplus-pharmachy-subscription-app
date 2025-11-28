@@ -113,7 +113,6 @@ export default function CheckoutPage() {
           })),
           paymentMethod: 'COD',
           notes,
-          addressId: selectedAddress,
         }),
       })
 
