@@ -7,14 +7,19 @@ import Link from 'next/link'
 
 interface OrderItem {
   id: string
-  medicineId: string
+  medicineId: string | null
+  productId: string | null
   quantity: number
   price: number
   total: number
   medicine: {
     name: string
     imageUrl: string | null
-  }
+  } | null
+  product: {
+    name: string
+    imageUrl: string | null
+  } | null
 }
 
 interface Order {
@@ -417,17 +422,20 @@ export default function OrderDetailsPage() {
                 <h2 className="text-lg font-bold text-gray-900">Order Items</h2>
               </div>
               <div className="space-y-4">
-                {order.items.map((item) => (
-                  <div key={item.id} className="flex items-start gap-4 border-b border-gray-200 pb-4 last:border-0">
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">{item.medicine.name}</p>
-                      <p className="text-sm text-gray-600">
-                        ৳{item.price.toFixed(2)} × {item.quantity}
-                      </p>
+                {order.items.map((item) => {
+                  const itemName = item.medicine?.name ?? item.product?.name ?? 'Unknown Item'
+                  return (
+                    <div key={item.id} className="flex items-start gap-4 border-b border-gray-200 pb-4 last:border-0">
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">{itemName}</p>
+                        <p className="text-sm text-gray-600">
+                          ৳{item.price.toFixed(2)} × {item.quantity}
+                        </p>
+                      </div>
+                      <p className="font-semibold text-gray-900">৳{item.total.toFixed(2)}</p>
                     </div>
-                    <p className="font-semibold text-gray-900">৳{item.total.toFixed(2)}</p>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
 
               <div className="mt-6 space-y-2 border-t border-gray-200 pt-4">
