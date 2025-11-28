@@ -25,7 +25,7 @@ export function DesktopHome({ subscriptionPlans, membershipPlan, homeSections }:
   return (
     <>
       {/* Hero Section with Prescription Upload */}
-      <section className="bg-gradient-to-br from-teal-50 to-white py-16">
+      <section className="bg-gradient-to-br from-teal-50 to-white py-6">
         <div className="grid gap-12 lg:grid-cols-2">
             <div className="flex flex-col justify-center">
               <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
