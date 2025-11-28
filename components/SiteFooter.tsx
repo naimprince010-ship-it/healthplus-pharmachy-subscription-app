@@ -1,15 +1,32 @@
-'use client'
-
-import { usePathname } from 'next/navigation'
+import { prisma } from '@/lib/prisma'
 import { Footer } from '@/components/Footer'
 
-export function SiteFooter() {
-  const pathname = usePathname()
+export async function SiteFooter() {
+  const quickLinksPages = await prisma.page.findMany({
+    where: {
+      group: 'QUICK_LINKS',
+      isPublished: true,
+    },
+    orderBy: { sortOrder: 'asc' },
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+    },
+  })
 
-  // Hide footer on cart and checkout pages
-  if (pathname === '/cart' || pathname === '/checkout') {
-    return null
-  }
+  const supportPages = await prisma.page.findMany({
+    where: {
+      group: 'SUPPORT',
+      isPublished: true,
+    },
+    orderBy: { sortOrder: 'asc' },
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+    },
+  })
 
-  return <Footer />
+  return <Footer quickLinksPages={quickLinksPages} supportPages={supportPages} />
 }
