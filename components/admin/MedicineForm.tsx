@@ -437,6 +437,44 @@ export function MedicineForm({ mode, medicineId, initialData }: MedicineFormProp
             </div>
 
             <div>
+              <Tooltip content="Cost price - what you pay to purchase this medicine (not shown to customers)">
+                <label className="block text-sm font-medium text-gray-700">
+                  Purchase Price (Cost)
+                </label>
+              </Tooltip>
+              <input
+                type="number"
+                step="0.01"
+                {...register('purchasePrice', { valueAsNumber: true })}
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                placeholder="0.00"
+              />
+              {errors.purchasePrice && (
+                <p className="mt-1 text-sm text-red-600">{errors.purchasePrice.message as string}</p>
+              )}
+            </div>
+
+            <div>
+              <Tooltip content="Discount percentage (0-100) - applied to selling price">
+                <label className="block text-sm font-medium text-gray-700">
+                  Discount (%)
+                </label>
+              </Tooltip>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                {...register('discountPercentage', { valueAsNumber: true })}
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                placeholder="0"
+              />
+              {errors.discountPercentage && (
+                <p className="mt-1 text-sm text-red-600">{errors.discountPercentage.message as string}</p>
+              )}
+            </div>
+
+            <div>
               <label className="block text-sm font-medium text-gray-700">
                 Stock Quantity
               </label>

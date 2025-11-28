@@ -9,6 +9,7 @@ export const categorySchema = z.object({
   parentCategoryId: z.string().optional().nullable(),
   isActive: z.boolean().default(true),
   isMedicineCategory: z.boolean().default(false),
+  discountPercentage: z.number().min(0).max(100).optional().nullable(),
   sortOrder: z.number().int().min(0).default(0),
   showInSidebar: z.boolean().default(false),
   sidebarOrder: z.coerce.number().int().min(0).default(0),

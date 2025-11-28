@@ -151,6 +151,8 @@ export async function PUT(
       updateData.sellingPrice = sellingPrice
       updateData.price = sellingPrice
     }
+    if (data.purchasePrice !== undefined) updateData.purchasePrice = data.purchasePrice
+    if (data.discountPercentage !== undefined) updateData.discountPercentage = data.discountPercentage
     if (data.unitPrice !== undefined) updateData.unitPrice = data.unitPrice
     if (stripPrice !== undefined) updateData.stripPrice = stripPrice
     if (tabletsPerStrip !== undefined) updateData.tabletsPerStrip = tabletsPerStrip

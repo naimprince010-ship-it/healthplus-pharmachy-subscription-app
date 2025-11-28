@@ -96,6 +96,7 @@ model Category {
   subCategories      Category[]    @relation("CategoryToSubCategory")
   isActive           Boolean       @default(true)
   isMedicineCategory Boolean       @default(false) // Auto-sets product.type when creating/updating products
+  discountPercentage Float?        // Category-wide discount percentage (0-100)
   sortOrder          Int           @default(0)
   showInSidebar      Boolean       @default(false)
   sidebarOrder       Int           @default(0)
@@ -120,8 +121,10 @@ model Product {
   imagePath String? // Storage path for deletion
 
   // Pricing
-  mrp          Float? // Maximum Retail Price
-  sellingPrice Float // Actual selling price
+  mrp               Float? // Maximum Retail Price
+  sellingPrice      Float // Actual selling price
+  purchasePrice     Float? // Cost price (what we pay to buy)
+  discountPercentage Float? // Discount percentage (0-100)
 
   // Stock
   stockQuantity Int     @default(0)
@@ -206,13 +209,15 @@ model Medicine {
   unit         String  @default("pcs")
 
   // Pricing (new fields)
-  mrp             Float? // Maximum Retail Price
-  sellingPrice    Float // Actual selling price
-  price           Float // Deprecated: use sellingPrice instead
-  discountPrice   Float? // Deprecated: use mrp/sellingPrice instead
-  unitPrice       Float? // Price per tablet/capsule
-  stripPrice      Float? // Price per strip
-  tabletsPerStrip Int? // Number of tablets per strip
+  mrp                Float? // Maximum Retail Price
+  sellingPrice       Float // Actual selling price
+  purchasePrice      Float? // Cost price (what we pay to buy)
+  discountPercentage Float? // Discount percentage (0-100)
+  price              Float // Deprecated: use sellingPrice instead
+  discountPrice      Float? // Deprecated: use mrp/sellingPrice instead
+  unitPrice          Float? // Price per tablet/capsule
+  stripPrice         Float? // Price per strip
+  tabletsPerStrip    Int? // Number of tablets per strip
 
   // Stock
   stockQuantity Int     @default(0)

@@ -14,6 +14,8 @@ const updateProductSchema = z.object({
   categoryId: z.string().optional(),
   mrp: z.number().positive().optional(),
   sellingPrice: z.number().positive().optional(),
+  purchasePrice: z.number().positive().optional(),
+  discountPercentage: z.number().min(0).max(100).optional(),
   stockQuantity: z.number().int().min(0).optional(),
   minStockAlert: z.number().int().min(0).optional(),
   unit: z.string().optional(),

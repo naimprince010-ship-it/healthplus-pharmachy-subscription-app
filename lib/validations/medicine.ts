@@ -32,6 +32,8 @@ export const createMedicineSchema = z.object({
   
   mrp: optionalNumber(z.number().positive('MRP must be positive')),
   sellingPrice: optionalNumber(z.number().positive('Selling price must be positive')),
+  purchasePrice: optionalNumber(z.number().positive('Purchase price must be positive')),
+  discountPercentage: optionalNumber(z.number().min(0, 'Discount cannot be negative').max(100, 'Discount cannot exceed 100%')),
   unitPrice: optionalNumber(z.number().positive('Unit price must be positive')),
   stripPrice: optionalNumber(z.number().positive('Strip price must be positive')),
   tabletsPerStrip: optionalNumber(z.number().int().positive('Tablets per strip must be positive')),

@@ -21,6 +21,8 @@ interface Product {
   categoryId: string
   mrp: number | null
   sellingPrice: number
+  purchasePrice: number | null
+  discountPercentage: number | null
   stockQuantity: number
   minStockAlert: number | null
   unit: string
@@ -62,6 +64,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     categoryId: '',
     mrp: '',
     sellingPrice: '',
+    purchasePrice: '',
+    discountPercentage: '',
     stockQuantity: '0',
     minStockAlert: '',
     unit: 'pcs',
@@ -107,6 +111,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           categoryId: product.categoryId,
           mrp: product.mrp?.toString() || '',
           sellingPrice: product.sellingPrice.toString(),
+          purchasePrice: product.purchasePrice?.toString() || '',
+          discountPercentage: product.discountPercentage?.toString() || '',
           stockQuantity: product.stockQuantity.toString(),
           minStockAlert: product.minStockAlert?.toString() || '',
           unit: product.unit,
@@ -249,6 +255,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         categoryId: formData.categoryId,
         mrp: formData.mrp ? parseFloat(formData.mrp) : undefined,
         sellingPrice: parseFloat(formData.sellingPrice),
+        purchasePrice: formData.purchasePrice ? parseFloat(formData.purchasePrice) : undefined,
+        discountPercentage: formData.discountPercentage ? parseFloat(formData.discountPercentage) : undefined,
         stockQuantity: parseInt(formData.stockQuantity),
         minStockAlert: formData.minStockAlert ? parseInt(formData.minStockAlert) : undefined,
         unit: formData.unit,
@@ -515,6 +523,36 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 onChange={(e) => setFormData({ ...formData, sellingPrice: e.target.value })}
                 className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
                 required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Purchase Price (Cost)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={formData.purchasePrice}
+                onChange={(e) => setFormData({ ...formData, purchasePrice: e.target.value })}
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                placeholder="Cost price (not shown to customers)"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Discount (%)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                value={formData.discountPercentage}
+                onChange={(e) => setFormData({ ...formData, discountPercentage: e.target.value })}
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                placeholder="0-100"
               />
             </div>
 
