@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import { ChevronRight, Zap } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
@@ -14,7 +13,6 @@ interface SidebarCategory {
 }
 
 export default function LeftCategorySidebar() {
-  const pathname = usePathname()
   const [categories, setCategories] = useState<SidebarCategory[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -65,9 +63,8 @@ export default function LeftCategorySidebar() {
         {/* Category List */}
         <div className="divide-y divide-gray-100">
           {categories.map((category) => {
-            // Use custom sidebarLinkUrl if set, otherwise default to category filter
-            const basePath = pathname?.startsWith('/products') ? '/products' : '/medicines'
-            const href = category.sidebarLinkUrl || `${basePath}?categoryId=${category.id}`
+            // Use custom sidebarLinkUrl if set, otherwise use dynamic category page
+            const href = category.sidebarLinkUrl || `/category/${category.slug}`
             
             return (
               <Link
