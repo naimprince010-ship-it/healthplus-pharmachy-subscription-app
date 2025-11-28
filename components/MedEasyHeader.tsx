@@ -6,6 +6,7 @@ import { ShoppingCart, User, Search, X, ChevronDown, Loader2 } from 'lucide-reac
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useCart } from '@/contexts/CartContext'
+import { CartDrawer } from './CartDrawer'
 
 interface SearchSuggestion {
   id: string
@@ -20,7 +21,7 @@ interface SearchSuggestion {
 export function MedEasyHeader() {
   const router = useRouter()
   const { data: session } = useSession()
-  const { itemCount } = useCart()
+  const { itemCount, openDrawer } = useCart()
   const [mounted, setMounted] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
@@ -225,19 +226,19 @@ export function MedEasyHeader() {
                 </div>
               </a>
 
-              {/* Cart */}
-              <Link
-                href="/cart"
-                className="relative rounded-full p-2 text-white hover:bg-white/10 transition-colors"
-                aria-label={`Cart${mounted && itemCount > 0 ? ` (${itemCount} items)` : ''}`}
-              >
-                <ShoppingCart className="h-5 w-5" />
-                {mounted && itemCount > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
-                    {itemCount > 99 ? '99+' : itemCount}
-                  </span>
-                )}
-              </Link>
+                            {/* Cart */}
+                            <button
+                              onClick={openDrawer}
+                              className="relative rounded-full p-2 text-white hover:bg-white/10 transition-colors"
+                              aria-label={`Cart${mounted && itemCount > 0 ? ` (${itemCount} items)` : ''}`}
+                            >
+                              <ShoppingCart className="h-5 w-5" />
+                              {mounted && itemCount > 0 && (
+                                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+                                  {itemCount > 99 ? '99+' : itemCount}
+                                </span>
+                              )}
+                            </button>
 
               {/* User Menu */}
               <div className="relative" ref={userMenuRef}>
@@ -387,6 +388,9 @@ export function MedEasyHeader() {
           </div>
         </div>
       )}
+
+      {/* Cart Drawer */}
+      <CartDrawer />
     </>
   )
 }
