@@ -29,24 +29,24 @@ export function DesktopHome({ subscriptionPlans, membershipPlan, homeSections }:
         <div className="grid gap-12 lg:grid-cols-2">
             <div className="flex flex-col justify-center">
               <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
-                Your Trusted Partner for{' '}
-                <span className="text-teal-600">Affordable Medicine</span>
+                সাশ্রয়ী মূল্যে ওষুধের জন্য{' '}
+                <span className="text-teal-600">আপনার বিশ্বস্ত সঙ্গী</span>
               </h1>
               <p className="mt-6 text-lg text-gray-600">
-                Subscribe to monthly medicine plans and save with our 100 BDT membership. Get 10% discount on all medicines!
+                মাসিক ওষুধ প্ল্যানে সাবস্ক্রাইব করুন এবং আমাদের ১০০ টাকা মেম্বারশিপে সাশ্রয় করুন। সব ওষুধে ১০% ছাড় পান!
               </p>
               <div className="mt-8 flex flex-col gap-4 sm:flex-row">
                 <Link
                   href="/membership"
                   className="rounded-lg bg-teal-600 px-6 py-3 text-center font-semibold text-white transition-colors hover:bg-teal-700"
                 >
-                  Join Membership
+                  মেম্বারশিপ নিন
                 </Link>
                 <Link
                   href="/subscriptions"
                   className="rounded-lg border-2 border-teal-600 px-6 py-3 text-center font-semibold text-teal-600 transition-colors hover:bg-teal-50"
                 >
-                  View Plans
+                  প্ল্যান দেখুন
                 </Link>
               </div>
             </div>
