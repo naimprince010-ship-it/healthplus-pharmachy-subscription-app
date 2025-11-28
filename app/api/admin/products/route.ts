@@ -64,6 +64,32 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
+    
+    // Handle fetching products by specific IDs (used by HomeSectionForm)
+    const idsParam = searchParams.get('ids')
+    if (idsParam) {
+      const ids = idsParam.split(',').filter(id => id.trim())
+      if (ids.length > 0) {
+        const products = await prisma.product.findMany({
+          where: {
+            id: { in: ids },
+            deletedAt: null,
+          },
+          include: {
+            category: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              },
+            },
+          },
+        })
+        return NextResponse.json({ products })
+      }
+      return NextResponse.json({ products: [] })
+    }
+    
     const queryResult = productListQuerySchema.safeParse({
       page: searchParams.get('page') || '1',
       limit: searchParams.get('limit') || '20',
