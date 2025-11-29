@@ -83,9 +83,10 @@ export function SectionSlider({ section, products }: SectionSliderProps) {
         </div>
 
         {/* Desktop: Compact single row with horizontal scroll - like MedEasy */}
-        <div className="hidden lg:flex lg:gap-3 lg:overflow-x-auto lg:pb-2">
+        {/* Cards use clamp() for responsive width: min 220px, preferred 20% of viewport, max 260px */}
+        <div className="hidden lg:flex lg:w-full lg:gap-4 lg:overflow-x-auto lg:pb-2">
           {products.slice(0, 12).map((product) => (
-            <div key={product.id} className="min-w-[180px] max-w-[200px] flex-shrink-0">
+            <div key={product.id} className="flex-shrink-0" style={{ width: 'clamp(220px, 20vw, 260px)' }}>
               <ProductCard product={product} variant="compact" className="h-full" />
             </div>
           ))}
