@@ -51,6 +51,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(getDefaultValueForKey(key))
   } catch (error) {
+    // Check if this is a "table not found" error (P2021) or similar Prisma error
+    // This happens when the Setting table hasn't been created yet (migration not run)
+    const prismaError = error as { code?: string }
+    if (prismaError.code === 'P2021' || prismaError.code === 'P2010') {
+      console.warn(`[Settings API] Setting table not found. Please run: npx prisma db push`)
+      // Return defaults so the UI can still render
+      return NextResponse.json(getDefaultValueForKey(key))
+    }
+    
     console.error(`[Settings API] Error fetching settings for key "${key}":`, error)
     return NextResponse.json(
       { error: 'Failed to fetch settings' },
@@ -88,6 +97,16 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(setting.value)
   } catch (error) {
+    // Check if this is a "table not found" error (P2021) or similar Prisma error
+    const prismaError = error as { code?: string }
+    if (prismaError.code === 'P2021' || prismaError.code === 'P2010') {
+      console.warn(`[Settings API] Setting table not found. Please run: npx prisma db push`)
+      return NextResponse.json(
+        { error: 'Settings storage not initialized. Please run database migration (npx prisma db push).' },
+        { status: 503 }
+      )
+    }
+    
     console.error(`[Settings API] Error updating settings for key "${key}":`, error)
     return NextResponse.json(
       { error: 'Failed to update settings' },
