@@ -4,7 +4,12 @@ import { useState } from 'react'
 import { Upload } from 'lucide-react'
 import { trackPrescriptionUpload } from '@/lib/trackEvent'
 
-export default function PrescriptionUploadForm() {
+interface PrescriptionUploadFormProps {
+  hideHeader?: boolean
+  compact?: boolean
+}
+
+export default function PrescriptionUploadForm({ hideHeader = false, compact = false }: PrescriptionUploadFormProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
@@ -85,16 +90,18 @@ export default function PrescriptionUploadForm() {
   }
 
   return (
-    <div className="rounded-2xl bg-white p-8 shadow-xl">
-      <div className="mb-6 flex items-center space-x-3">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-100">
-          <Upload className="h-6 w-6 text-teal-600" />
+    <div className={compact ? '' : 'rounded-2xl bg-white p-6 shadow-xl lg:p-5'}>
+      {!hideHeader && (
+        <div className="mb-4 flex items-center space-x-3 lg:mb-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-100">
+            <Upload className="h-6 w-6 text-teal-600" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">প্রেসক্রিপশন আপলোড করুন</h2>
+            <p className="text-sm text-gray-600">আমরা শীঘ্রই আপনাকে কল করব</p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">প্রেসক্রিপশন আপলোড করুন</h2>
-          <p className="text-sm text-gray-600">আমরা শীঘ্রই আপনাকে কল করব</p>
-        </div>
-      </div>
+      )}
 
       {success && (
         <div className="mb-4 rounded-lg bg-green-50 p-4 text-green-800">
@@ -114,7 +121,7 @@ export default function PrescriptionUploadForm() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4 lg:space-y-3">
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-gray-700">
             পুরো নাম

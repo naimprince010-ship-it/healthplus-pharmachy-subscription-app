@@ -1,6 +1,10 @@
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
-import { Shield, Package, Heart, Baby, Activity, Users } from 'lucide-react'
+import { Shield, Package, Heart, Baby, Activity, Users, Upload, CheckCircle, Truck } from 'lucide-react'
 import PrescriptionUploadForm from '@/components/PrescriptionUploadForm'
+import { PrescriptionUploadModal } from '@/components/PrescriptionUploadModal'
 import { SectionSlider } from '@/components/SectionSlider'
 import type { SubscriptionPlan, MembershipPlan } from '@prisma/client'
 
@@ -22,53 +26,94 @@ interface DesktopHomeProps {
 }
 
 export function DesktopHome({ subscriptionPlans, membershipPlan, homeSections }: DesktopHomeProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
   return (
     <>
-      {/* Hero Section with Prescription Upload - full width background */}
-      <section className="w-full bg-gradient-to-br from-teal-50 to-white py-6">
-        <div className="mx-auto w-full max-w-[1400px] px-2 sm:px-4">
-          <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
-            <div className="flex flex-col justify-center">
-              <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl lg:text-5xl">
+      {/* Prescription Upload Modal - only used on desktop */}
+      <PrescriptionUploadModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+
+      {/* Hero Section - compact on desktop with CTA button, full form on mobile */}
+      <section className="w-full bg-gradient-to-br from-teal-50 to-white py-5 lg:py-4">
+        <div className="w-full px-2 sm:px-4">
+          {/* Desktop layout: headline + bullet points on left, CTA button on right */}
+          <div className="hidden lg:grid lg:grid-cols-[1.4fr_1fr] lg:items-center lg:gap-6">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight text-gray-900 lg:text-4xl">
                 সাশ্রয়ী মূল্যে ওষুধের জন্য{' '}
                 <span className="text-teal-600">আপনার বিশ্বস্ত সঙ্গী</span>
               </h1>
-              <p className="mt-4 text-base text-gray-600 lg:mt-6 lg:text-lg">
+              <p className="mt-3 text-sm text-gray-600 lg:text-base">
+                মাসিক ওষুধ প্ল্যানে সাবস্ক্রাইব করুন এবং ১০% পর্যন্ত ডিস্কাউন্ট পান।
+              </p>
+              <ul className="mt-3 space-y-1.5 text-sm text-gray-700">
+                <li className="flex items-center">
+                  <CheckCircle className="mr-2 h-4 w-4 text-teal-600" />
+                  সব ওষুধে ১০% পর্যন্ত ডিস্কাউন্ট
+                </li>
+                <li className="flex items-center">
+                  <Truck className="mr-2 h-4 w-4 text-teal-600" />
+                  ২৪–৪৮ ঘন্টার মধ্যে দ্রুত ডেলিভারি
+                </li>
+              </ul>
+            </div>
+
+            {/* Desktop CTA button to open modal */}
+            <div className="flex flex-col items-center justify-center">
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(true)}
+                className="flex w-full max-w-xs items-center justify-center gap-2 rounded-xl bg-teal-600 px-6 py-4 text-lg font-semibold text-white shadow-lg transition-colors hover:bg-teal-700"
+              >
+                <Upload className="h-5 w-5" />
+                প্রেসক্রিপশন আপলোড করুন
+              </button>
+              <p className="mt-2 text-xs text-gray-500">JPG, JPEG, PNG, PDF • সর্বোচ্চ ৫MB</p>
+            </div>
+          </div>
+
+          {/* Mobile/Tablet layout: full form inline */}
+          <div className="lg:hidden">
+            <div className="mb-5">
+              <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+                সাশ্রয়ী মূল্যে ওষুধের জন্য{' '}
+                <span className="text-teal-600">আপনার বিশ্বস্ত সঙ্গী</span>
+              </h1>
+              <p className="mt-4 text-base text-gray-600">
                 মাসিক ওষুধ প্ল্যানে সাবস্ক্রাইব করুন এবং আমাদের ১০০ টাকা মেম্বারশিপে সাশ্রয় করুন। সব ওষুধে ১০% ছাড় পান!
               </p>
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row lg:mt-8 lg:gap-4">
+              <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href="/membership"
-                  className="rounded-lg bg-teal-600 px-5 py-2.5 text-center font-semibold text-white transition-colors hover:bg-teal-700 lg:px-6 lg:py-3"
+                  className="rounded-lg bg-teal-600 px-5 py-2.5 text-center font-semibold text-white transition-colors hover:bg-teal-700"
                 >
                   মেম্বারশিপ নিন
                 </Link>
                 <Link
                   href="/subscriptions"
-                  className="rounded-lg border-2 border-teal-600 px-5 py-2.5 text-center font-semibold text-teal-600 transition-colors hover:bg-teal-50 lg:px-6 lg:py-3"
+                  className="rounded-lg border-2 border-teal-600 px-5 py-2.5 text-center font-semibold text-teal-600 transition-colors hover:bg-teal-50"
                 >
                   প্ল্যান দেখুন
                 </Link>
               </div>
             </div>
-
-            {/* Prescription Upload Form */}
+            {/* Mobile inline prescription form */}
             <PrescriptionUploadForm />
           </div>
         </div>
       </section>
 
-      {/* Home Sections */}
-      <div className="space-y-2 py-2">
+      {/* Home Sections - compact spacing on desktop */}
+      <div className="space-y-2 py-2 lg:space-y-1 lg:py-1">
         {homeSections.map(({ section, products }) => (
           <SectionSlider key={section.id} section={section} products={products} />
         ))}
       </div>
 
-      {/* Membership Card - full width background */}
+      {/* Membership Card - full width */}
       {membershipPlan && (
         <section className="w-full py-8 lg:py-12">
-          <div className="mx-auto w-full max-w-[1400px] px-2 sm:px-4">
+          <div className="w-full px-2 sm:px-4">
             <div className="rounded-2xl bg-gradient-to-r from-teal-600 to-teal-700 p-6 text-white shadow-xl sm:p-8 lg:p-12">
               <div className="grid gap-6 lg:grid-cols-2 lg:gap-8">
                 <div>
@@ -119,9 +164,9 @@ export function DesktopHome({ subscriptionPlans, membershipPlan, homeSections }:
         </section>
       )}
 
-      {/* Subscription Plans - full width background */}
+      {/* Subscription Plans - full width */}
       <section className="w-full bg-gray-50 py-8 lg:py-12">
-        <div className="mx-auto w-full max-w-[1400px] px-2 sm:px-4">
+        <div className="w-full px-2 sm:px-4">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">Monthly Subscription Plans</h2>
             <p className="mt-3 text-base text-gray-600 lg:mt-4 lg:text-lg">
@@ -161,7 +206,7 @@ export function DesktopHome({ subscriptionPlans, membershipPlan, homeSections }:
 
       {/* Trust Badges - full width */}
       <section className="w-full py-8 lg:py-12">
-        <div className="mx-auto w-full max-w-[1400px] px-2 sm:px-4">
+        <div className="w-full px-2 sm:px-4">
           <div className="grid gap-6 sm:grid-cols-3 lg:gap-8">
             <div className="text-center">
               <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-teal-100 lg:mb-4 lg:h-16 lg:w-16">
