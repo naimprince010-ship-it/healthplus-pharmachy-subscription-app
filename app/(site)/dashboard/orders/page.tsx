@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Package } from 'lucide-react'
 import Link from 'next/link'
+import { MAIN_CONTAINER } from '@/lib/layout'
 
 interface Order {
   id: string
@@ -69,7 +70,7 @@ export default function OrdersPage() {
 
   return (
     <div className="bg-gray-50 py-16">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className={MAIN_CONTAINER}>
         <Link
           href="/dashboard"
           className="mb-6 inline-flex items-center gap-2 text-sm text-teal-600 hover:text-teal-700"

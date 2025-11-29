@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { notFound } from 'next/navigation'
 import { Metadata } from 'next'
+import { MAIN_CONTAINER } from '@/lib/layout'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,7 +41,7 @@ export default async function PublicPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+      <div className={`${MAIN_CONTAINER} max-w-4xl`}>
         <article className="rounded-lg bg-white p-8 shadow">
           <h1 className="mb-8 text-3xl font-bold text-gray-900">{page.title}</h1>
           <div 

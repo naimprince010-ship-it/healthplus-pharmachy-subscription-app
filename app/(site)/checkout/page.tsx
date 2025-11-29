@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { Plus, Tag } from 'lucide-react'
 import { useCart } from '@/contexts/CartContext'
 import { trackBeginCheckout, trackPurchase, type GA4Item } from '@/lib/trackEvent'
+import { MAIN_CONTAINER } from '@/lib/layout'
 
 interface Zone {
   id: string
@@ -164,7 +165,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="w-full px-4 py-6 lg:px-8">
+      <div className={`${MAIN_CONTAINER} py-6`}>
         <form onSubmit={handleSubmit}>
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Left Column - Delivery Info */}

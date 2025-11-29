@@ -1,6 +1,7 @@
 import { Shield, Check } from 'lucide-react'
 import Link from 'next/link'
 import type { MembershipPlan } from '@prisma/client'
+import { MAIN_CONTAINER } from '@/lib/layout'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -22,7 +23,7 @@ export default async function MembershipPage() {
 
   return (
     <div className="bg-white py-16">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className={MAIN_CONTAINER}>
         <div className="text-center">
           <h1 className="text-4xl font-bold text-gray-900">Membership Plans</h1>
           <p className="mt-4 text-lg text-gray-600">
