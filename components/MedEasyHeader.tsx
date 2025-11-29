@@ -7,6 +7,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useCart } from '@/contexts/CartContext'
 import { CartDrawer } from './CartDrawer'
+import { MAIN_CONTAINER } from '@/lib/layout'
 
 interface SearchSuggestion {
   id: string
@@ -123,10 +124,9 @@ export function MedEasyHeader() {
 
   return (
     <>
-                  <header className="sticky top-0 z-50 w-full bg-teal-600 shadow-md">
-                    {/* Centered container - matches ShopLayout */}
-                    {/* Up to 1536px: centered with max-w-[1480px], 2xl: full width with 32px padding */}
-                    <div className="mx-auto w-full max-w-[1480px] 2xl:max-w-none px-2 sm:px-4 lg:px-6 2xl:px-8">
+      <header className="sticky top-0 z-50 w-full bg-teal-600 shadow-md">
+        {/* Centered container - uses shared MAIN_CONTAINER for consistent layout */}
+        <div className={MAIN_CONTAINER}>
           <div className="flex h-14 items-center justify-between gap-2 sm:h-16 sm:gap-4">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 flex-shrink-0">

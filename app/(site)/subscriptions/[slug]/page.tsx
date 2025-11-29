@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { SubscriptionForm } from './SubscriptionForm'
 import type { SubscriptionPlan, Zone } from '@prisma/client'
+import { MAIN_CONTAINER } from '@/lib/layout'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,7 +37,7 @@ export default async function SubscriptionDetailPage({ params }: PageProps) {
 
   return (
     <div className="bg-white py-16">
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+      <div className={`${MAIN_CONTAINER} max-w-4xl`}>
         {/* Banner Image */}
         {plan.bannerImageUrl && (
           <div className="mb-8 overflow-hidden rounded-2xl">

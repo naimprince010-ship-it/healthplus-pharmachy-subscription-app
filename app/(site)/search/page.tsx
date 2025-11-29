@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Search, Loader2 } from 'lucide-react'
 import { ProductCard } from '@/components/ProductCard'
+import { MAIN_CONTAINER } from '@/lib/layout'
 
 interface SearchProduct {
   id: string
@@ -72,7 +73,7 @@ function SearchContent() {
   }, [query])
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6">
+    <div className={`${MAIN_CONTAINER} py-6`}>
       {/* Search Header */}
       <div className="mb-6">
         {query ? (
@@ -148,7 +149,7 @@ function SearchContent() {
 
 function SearchFallback() {
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6">
+    <div className={`${MAIN_CONTAINER} py-6`}>
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
         <span className="ml-2 text-gray-600">Loading...</span>

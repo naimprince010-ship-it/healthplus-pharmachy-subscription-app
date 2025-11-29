@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Clock, Zap } from 'lucide-react'
 import { AddToCartButton } from '@/components/AddToCartButton'
+import { MAIN_CONTAINER } from '@/lib/layout'
 
 interface Product {
   id: string
@@ -108,7 +109,7 @@ export default function FlashSalePage() {
   if (!mounted || loading) {
     return (
       <div className="min-h-screen bg-gray-50 py-12">
-        <div className="container mx-auto px-4">
+        <div className={MAIN_CONTAINER}>
           <div className="text-center">
             <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-teal-600 border-r-transparent"></div>
             <p className="mt-4 text-gray-600">Loading flash sale products...</p>
@@ -121,7 +122,7 @@ export default function FlashSalePage() {
   if (!data?.products.length) {
     return (
       <div className="min-h-screen bg-gray-50 py-12">
-        <div className="container mx-auto px-4">
+        <div className={MAIN_CONTAINER}>
           <div className="text-center">
             <Zap className="mx-auto h-16 w-16 text-gray-400" />
             <h2 className="mt-4 text-2xl font-bold text-gray-900">No Flash Sales Active</h2>
@@ -142,7 +143,7 @@ export default function FlashSalePage() {
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section - Compact */}
       <div className="bg-gradient-to-r from-teal-600 to-teal-700 py-4 text-white">
-        <div className="container mx-auto px-4">
+        <div className={MAIN_CONTAINER}>
           <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-6">
             <div className="flex items-center gap-2">
               <Zap className="h-5 w-5 animate-pulse" />
@@ -177,7 +178,7 @@ export default function FlashSalePage() {
       </div>
 
       {/* Products Grid - Compact */}
-      <div className="container mx-auto px-4 py-6">
+      <div className={`${MAIN_CONTAINER} py-6`}>
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-bold text-gray-900">

@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Package, ShoppingBag, CreditCard } from 'lucide-react'
 import Link from 'next/link'
+import { MAIN_CONTAINER } from '@/lib/layout'
 
 interface Order {
   id: string
@@ -70,7 +71,7 @@ export default function DashboardPage() {
 
   return (
     <div className="bg-gray-50 py-16">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className={MAIN_CONTAINER}>
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold text-gray-900">My Dashboard</h1>
           <p className="text-sm text-gray-600">Welcome, {session.user.name}</p>

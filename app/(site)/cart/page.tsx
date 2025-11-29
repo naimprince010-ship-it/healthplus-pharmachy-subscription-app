@@ -7,6 +7,7 @@ import { useSession } from 'next-auth/react'
 import { Trash2, Plus, Minus, X, ArrowLeft } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
+import { MAIN_CONTAINER } from '@/lib/layout'
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, clearCart, total, itemCount, isInitialized } = useCart()
@@ -89,7 +90,7 @@ export default function CartPage() {
         </div>
 
         <div className="bg-gray-50 py-16 lg:py-16">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className={MAIN_CONTAINER}>
             <h1 className="hidden text-3xl font-bold text-gray-900 lg:block">Shopping Cart</h1>
 
             <div className="mt-0 lg:mt-8">
@@ -129,9 +130,9 @@ export default function CartPage() {
         <h1 className="text-lg font-semibold text-gray-900">কার্ট ({itemCount})</h1>
       </div>
 
-      {/* Main cart content - pb-44 (~176px) accounts for checkout bar height (~150px) + small buffer */}
-      <div className="bg-gray-50 py-6 pb-44 lg:py-8 lg:pb-8">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      {/* Main cart content - pb-52 (208px) accounts for checkout bar height (~150px) + extra spacing */}
+      <div className="bg-gray-50 py-6 pb-52 lg:py-8 lg:pb-8">
+        <div className={MAIN_CONTAINER}>
           {/* Header with item count and clear all - Desktop only */}
           <div className="hidden items-center justify-between lg:flex">
             <h1 className="text-xl font-bold text-gray-900 lg:text-2xl">
