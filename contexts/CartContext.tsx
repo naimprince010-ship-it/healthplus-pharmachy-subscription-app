@@ -2,6 +2,9 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 
+// Cart version - increment this when cart structure changes or pricing updates require clearing old carts
+const CART_VERSION = 2
+
 export interface CartItem {
   id: string
   medicineId?: string
@@ -35,6 +38,17 @@ const CartContext = createContext<CartContextType | undefined>(undefined)
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>(() => {
     if (typeof window !== 'undefined') {
+      // Check cart version - clear cart if version mismatch (stale pricing data)
+      const savedVersion = localStorage.getItem('healthplus_cart_version')
+      const currentVersion = String(CART_VERSION)
+      
+      if (savedVersion !== currentVersion) {
+        // Version mismatch - clear old cart data to ensure fresh pricing
+        localStorage.removeItem('healthplus_cart')
+        localStorage.setItem('healthplus_cart_version', currentVersion)
+        return []
+      }
+      
       const savedCart = localStorage.getItem('healthplus_cart')
       if (savedCart) {
         try {
