@@ -4,6 +4,18 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Construction } from 'lucide-react'
 import { getSettingsSectionByKey } from '@/lib/settings-config'
+import BasicSettingsForm from '@/components/admin/settings/BasicSettingsForm'
+import BrandingSettingsForm from '@/components/admin/settings/BrandingSettingsForm'
+import ChargesSettingsForm from '@/components/admin/settings/ChargesSettingsForm'
+import CheckoutSettingsForm from '@/components/admin/settings/CheckoutSettingsForm'
+
+// Map of section keys to their form components
+const SECTION_FORMS: Record<string, React.ComponentType> = {
+  basic: BasicSettingsForm,
+  branding: BrandingSettingsForm,
+  charges: ChargesSettingsForm,
+  checkout: CheckoutSettingsForm,
+}
 
 export default function SettingsSectionPage() {
   const params = useParams()
@@ -35,6 +47,7 @@ export default function SettingsSectionPage() {
   }
 
   const Icon = section.icon
+  const FormComponent = SECTION_FORMS[sectionKey]
 
   return (
     <div className="space-y-6">
@@ -56,18 +69,22 @@ export default function SettingsSectionPage() {
         </div>
       </div>
 
-      <div className="rounded-lg border border-amber-200 bg-amber-50 p-8">
-        <div className="flex flex-col items-center text-center">
-          <Construction className="h-12 w-12 text-amber-500" />
-          <h2 className="mt-4 text-lg font-semibold text-amber-800">
-            Coming Soon
-          </h2>
-          <p className="mt-2 max-w-md text-sm text-amber-700">
-            The {section.title.toLowerCase()} form is under development and will
-            be available in Phase 2. Check back soon!
-          </p>
+      {FormComponent ? (
+        <FormComponent />
+      ) : (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-8">
+          <div className="flex flex-col items-center text-center">
+            <Construction className="h-12 w-12 text-amber-500" />
+            <h2 className="mt-4 text-lg font-semibold text-amber-800">
+              Coming Soon
+            </h2>
+            <p className="mt-2 max-w-md text-sm text-amber-700">
+              The {section.title.toLowerCase()} form is under development and will
+              be available in a future update. Check back soon!
+            </p>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
