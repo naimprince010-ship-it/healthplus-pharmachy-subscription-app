@@ -85,8 +85,8 @@ export default function PrescriptionUploadForm() {
   }
 
   return (
-    <div className="rounded-2xl bg-white p-8 shadow-xl">
-      <div className="mb-6 flex items-center space-x-3">
+    <div className="rounded-2xl bg-white p-6 shadow-xl lg:p-5">
+      <div className="mb-4 flex items-center space-x-3 lg:mb-3">
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-100">
           <Upload className="h-6 w-6 text-teal-600" />
         </div>
@@ -114,7 +114,7 @@ export default function PrescriptionUploadForm() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4 lg:space-y-3">
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-gray-700">
             পুরো নাম

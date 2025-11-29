@@ -24,19 +24,19 @@ interface DesktopHomeProps {
 export function DesktopHome({ subscriptionPlans, membershipPlan, homeSections }: DesktopHomeProps) {
   return (
     <>
-      {/* Hero Section with Prescription Upload - full width */}
-      <section className="w-full bg-gradient-to-br from-teal-50 to-white py-6">
+      {/* Hero Section with Prescription Upload - full width, compact on desktop */}
+      <section className="w-full bg-gradient-to-br from-teal-50 to-white py-6 lg:py-4">
         <div className="w-full px-2 sm:px-4">
-          <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
+          <div className="grid gap-8 lg:grid-cols-2 lg:gap-6">
             <div className="flex flex-col justify-center">
               <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl lg:text-5xl">
                 সাশ্রয়ী মূল্যে ওষুধের জন্য{' '}
                 <span className="text-teal-600">আপনার বিশ্বস্ত সঙ্গী</span>
               </h1>
-              <p className="mt-4 text-base text-gray-600 lg:mt-6 lg:text-lg">
+              <p className="mt-4 text-base text-gray-600 lg:mt-4 lg:text-lg">
                 মাসিক ওষুধ প্ল্যানে সাবস্ক্রাইব করুন এবং আমাদের ১০০ টাকা মেম্বারশিপে সাশ্রয় করুন। সব ওষুধে ১০% ছাড় পান!
               </p>
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row lg:mt-8 lg:gap-4">
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row lg:mt-5 lg:gap-4">
                 <Link
                   href="/membership"
                   className="rounded-lg bg-teal-600 px-5 py-2.5 text-center font-semibold text-white transition-colors hover:bg-teal-700 lg:px-6 lg:py-3"
