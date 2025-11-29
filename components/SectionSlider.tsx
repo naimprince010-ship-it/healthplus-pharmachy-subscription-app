@@ -57,9 +57,9 @@ export function SectionSlider({ section, products }: SectionSliderProps) {
       className={`w-full py-4 lg:py-2 ${desktopBgClass}`}
       style={section.bgColor ? { backgroundColor: section.bgColor } : {}}
     >
-      {/* Full-width content - no max-width so it fills the ShopLayout grid column */}
-      <div className="w-full px-2 sm:px-4">
-        <div className="mb-3 flex items-center justify-between">
+      {/* Full-width content - lg:px-0 to avoid double padding on desktop */}
+      <div className="w-full px-2 sm:px-4 lg:px-0">
+        <div className="mb-3 flex items-center justify-between lg:px-4">
           <div>
             <h2 className="text-lg font-bold text-gray-900 sm:text-xl lg:text-2xl">
               {section.title}
@@ -88,10 +88,11 @@ export function SectionSlider({ section, products }: SectionSliderProps) {
         </div>
 
         {/* Desktop: Compact single row with horizontal scroll - like MedEasy */}
-        {/* Cards are 190px wide with 16px gap to show ~6 cards in ~1240px content area */}
-        <div className="hidden lg:flex lg:w-full lg:gap-4 lg:overflow-x-auto lg:pb-2">
+        {/* Container: flex row nowrap, overflow-x auto, px-4 (16px), gap-4 (16px) */}
+        {/* Cards: flex 0 0 196px, min-width 190px - shows 5-6 cards + partial on ~1365px screen */}
+        <div className="hidden lg:flex lg:w-full lg:flex-nowrap lg:gap-4 lg:overflow-x-auto lg:px-4 lg:pb-2">
           {products.slice(0, 12).map((product) => (
-            <div key={product.id} className="w-[190px] flex-shrink-0">
+            <div key={product.id} className="shrink-0 flex-[0_0_196px] min-w-[190px]">
               <ProductCard product={product} variant="compact" className="h-full" />
             </div>
           ))}
