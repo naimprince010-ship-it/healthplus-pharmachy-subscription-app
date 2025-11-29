@@ -5,6 +5,7 @@ import { ShoppingCart } from 'lucide-react'
 import { useCart } from '@/contexts/CartContext'
 import { QuantitySelector } from '@/components/QuantitySelector'
 import { trackAddToCart } from '@/lib/trackEvent'
+import { getEffectivePrices } from '@/lib/pricing'
 
 interface ProductDetailClientProps {
   productId: string
@@ -16,6 +17,10 @@ interface ProductDetailClientProps {
   category: string
   unit: string | null
   discountPercentage?: number | null
+  flashSalePrice?: number | null
+  flashSaleStart?: Date | string | null
+  flashSaleEnd?: Date | string | null
+  isFlashSale?: boolean | null
   slug: string
 }
 
@@ -29,24 +34,28 @@ export function ProductDetailClient({
   category,
   unit,
   discountPercentage,
+  flashSalePrice,
+  flashSaleStart,
+  flashSaleEnd,
+  isFlashSale,
   slug,
 }: ProductDetailClientProps) {
   const { addItem } = useCart()
   const [quantity, setQuantity] = useState(1)
   const [isAdding, setIsAdding] = useState(false)
 
-  // Use explicit discountPercentage from database, or calculate from MRP as fallback
-  const hasExplicitDiscount = discountPercentage && discountPercentage > 0
-  const discountPercent = hasExplicitDiscount
-    ? Math.round(discountPercentage)
-    : (mrp && mrp > sellingPrice
-      ? Math.round(((mrp - sellingPrice) / mrp) * 100)
-      : null)
+  // Use centralized pricing helper that handles flash-sale and regular discounts
+  const { price, mrp: effectiveMrp, discountPercent, isFlashSale: isFlashActive } = getEffectivePrices({
+    sellingPrice,
+    mrp,
+    discountPercentage,
+    flashSalePrice,
+    flashSaleStart,
+    flashSaleEnd,
+    isFlashSale,
+  })
   
-  // Calculate discounted price if explicit discount exists
-  const discountedPrice = hasExplicitDiscount
-    ? sellingPrice * (1 - discountPercentage / 100)
-    : sellingPrice
+  const hasDiscount = discountPercent > 0
 
   const handleAddToCart = () => {
     if (stockQuantity === 0) return
@@ -56,12 +65,12 @@ export function ProductDetailClient({
       id: productId,
       productId,
       name,
-      price: discountedPrice,
+      price,
       image: imageUrl || undefined,
       type: 'PRODUCT',
       quantity,
       category,
-      mrp: hasExplicitDiscount ? sellingPrice : (mrp || undefined),
+      mrp: effectiveMrp,
       slug,
     })
 
@@ -69,7 +78,7 @@ export function ProductDetailClient({
       item_id: productId,
       item_name: name,
       item_category: category,
-      price: discountedPrice,
+      price,
       quantity,
     })
 
@@ -81,37 +90,22 @@ export function ProductDetailClient({
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        {hasExplicitDiscount ? (
+        {hasDiscount ? (
           <>
             <div className="flex items-center gap-2">
-              <span className="rounded bg-red-500 px-2 py-0.5 text-sm font-semibold text-white">
-                {discountPercent}% ডিস্কাউন্ট
+              <span className={`rounded px-2 py-0.5 text-sm font-semibold text-white ${isFlashActive ? 'bg-orange-500' : 'bg-red-500'}`}>
+                {discountPercent}% {isFlashActive ? 'OFF' : 'ডিস্কাউন্ট'}
               </span>
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-gray-900">৳{discountedPrice.toFixed(2)}</span>
-              <span className="text-lg text-gray-500 line-through">৳{sellingPrice.toFixed(2)}</span>
-              {unit && <span className="text-sm text-gray-500">/{unit}</span>}
-            </div>
-          </>
-        ) : mrp && mrp > sellingPrice ? (
-          <>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500">MRP</span>
-              <span className="text-lg text-gray-500 line-through">৳{mrp.toFixed(2)}</span>
-              <span className="rounded bg-red-100 px-2 py-0.5 text-sm font-semibold text-red-600">
-                {discountPercent}% OFF
-              </span>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-sm font-medium text-teal-600">Best Price</span>
-              <span className="text-3xl font-bold text-gray-900">৳{sellingPrice.toFixed(2)}</span>
+              <span className="text-3xl font-bold text-gray-900">৳{price.toFixed(2)}</span>
+              <span className="text-lg text-gray-500 line-through">৳{effectiveMrp.toFixed(2)}</span>
               {unit && <span className="text-sm text-gray-500">/{unit}</span>}
             </div>
           </>
         ) : (
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-gray-900">৳{sellingPrice.toFixed(2)}</span>
+            <span className="text-3xl font-bold text-gray-900">৳{price.toFixed(2)}</span>
             {unit && <span className="text-sm text-gray-500">/{unit}</span>}
           </div>
         )}
