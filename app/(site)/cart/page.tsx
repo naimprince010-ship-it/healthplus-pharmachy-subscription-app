@@ -96,8 +96,8 @@ export default function CartPage() {
         <h1 className="text-lg font-semibold text-gray-900">কার্ট ({itemCount})</h1>
       </div>
 
-                        {/* Main cart content */}
-                  <div className="bg-gray-50 py-6 pb-[320px] lg:py-8 lg:pb-8">
+                                          {/* Main cart content - pb-48 accounts for checkout bar height (~150px) */}
+                        <div className="bg-gray-50 py-6 pb-48 lg:py-8 lg:pb-8">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Header with item count and clear all - Desktop only */}
           <div className="hidden items-center justify-between lg:flex">
@@ -290,8 +290,8 @@ export default function CartPage() {
         </div>
       </div>
 
-      {/* Mobile sticky checkout bar */}
-      <div className="fixed bottom-[60px] left-0 right-0 z-40 border-t border-gray-200 bg-white shadow-lg lg:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+            {/* Mobile sticky checkout bar - positioned at bottom-0 since SiteMobileNav is hidden on cart page */}
+            <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white shadow-lg lg:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
         {/* Summary row */}
         <div className="border-b border-gray-100 px-4 py-2">
           <div className="flex justify-between text-sm">
