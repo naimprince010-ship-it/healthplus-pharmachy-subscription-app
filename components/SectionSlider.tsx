@@ -47,11 +47,16 @@ export function SectionSlider({ section, products }: SectionSliderProps) {
     return null
   }
 
-  const bgStyle = section.bgColor ? { backgroundColor: section.bgColor } : {}
+  // On desktop, use white background to keep sections compact like MedEasy
+  // On mobile/tablet, use the section's background color for visual separation
+  const desktopBgClass = section.bgColor ? 'lg:!bg-white' : ''
 
   return (
-    // Full-width section with background color - compact padding on desktop
-    <section className="w-full py-4 lg:py-2" style={bgStyle}>
+    // Full-width section with responsive background color
+    <section 
+      className={`w-full py-4 lg:py-2 ${desktopBgClass}`}
+      style={section.bgColor ? { backgroundColor: section.bgColor } : {}}
+    >
       {/* Full-width content - no max-width so it fills the ShopLayout grid column */}
       <div className="w-full px-2 sm:px-4">
         <div className="mb-3 flex items-center justify-between">
