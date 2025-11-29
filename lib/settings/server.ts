@@ -9,8 +9,20 @@ import { prisma } from '@/lib/prisma'
 import {
   LoginSettings,
   OrderOtpSettings,
+  FacebookPixelSettings,
+  FacebookCapiSettings,
+  TikTokPixelSettings,
+  GTMSettings,
+  GA4Settings,
+  GdprSettings,
   DEFAULT_LOGIN_SETTINGS,
   DEFAULT_ORDER_OTP_SETTINGS,
+  DEFAULT_FACEBOOK_PIXEL_SETTINGS,
+  DEFAULT_FACEBOOK_CAPI_SETTINGS,
+  DEFAULT_TIKTOK_PIXEL_SETTINGS,
+  DEFAULT_GTM_SETTINGS,
+  DEFAULT_GA4_SETTINGS,
+  DEFAULT_GDPR_SETTINGS,
 } from '@/lib/admin/settings'
 
 /**
@@ -120,4 +132,148 @@ export async function processOrderOtp(
     console.error('[Order OTP] Failed to process order OTP:', error)
     // Don't throw - OTP failure shouldn't break order flow
   }
+}
+
+// ============================================
+// Phase 4: Tracking Settings Server Helpers
+// ============================================
+
+/**
+ * Fetch Facebook Pixel Settings from the database (server-side)
+ */
+export async function getFacebookPixelSettingsServer(): Promise<FacebookPixelSettings> {
+  try {
+    const setting = await prisma.setting.findUnique({
+      where: { key: 'facebook-pixel' },
+    })
+    if (!setting) {
+      return DEFAULT_FACEBOOK_PIXEL_SETTINGS
+    }
+    return {
+      ...DEFAULT_FACEBOOK_PIXEL_SETTINGS,
+      ...(setting.value as Partial<FacebookPixelSettings>),
+    }
+  } catch (error) {
+    console.error('[Settings] Failed to fetch Facebook Pixel settings:', error)
+    return DEFAULT_FACEBOOK_PIXEL_SETTINGS
+  }
+}
+
+/**
+ * Fetch Facebook CAPI Settings from the database (server-side)
+ */
+export async function getFacebookCapiSettingsServer(): Promise<FacebookCapiSettings> {
+  try {
+    const setting = await prisma.setting.findUnique({
+      where: { key: 'facebook-capi' },
+    })
+    if (!setting) {
+      return DEFAULT_FACEBOOK_CAPI_SETTINGS
+    }
+    return {
+      ...DEFAULT_FACEBOOK_CAPI_SETTINGS,
+      ...(setting.value as Partial<FacebookCapiSettings>),
+    }
+  } catch (error) {
+    console.error('[Settings] Failed to fetch Facebook CAPI settings:', error)
+    return DEFAULT_FACEBOOK_CAPI_SETTINGS
+  }
+}
+
+/**
+ * Fetch TikTok Pixel Settings from the database (server-side)
+ */
+export async function getTikTokPixelSettingsServer(): Promise<TikTokPixelSettings> {
+  try {
+    const setting = await prisma.setting.findUnique({
+      where: { key: 'tiktok-pixel' },
+    })
+    if (!setting) {
+      return DEFAULT_TIKTOK_PIXEL_SETTINGS
+    }
+    return {
+      ...DEFAULT_TIKTOK_PIXEL_SETTINGS,
+      ...(setting.value as Partial<TikTokPixelSettings>),
+    }
+  } catch (error) {
+    console.error('[Settings] Failed to fetch TikTok Pixel settings:', error)
+    return DEFAULT_TIKTOK_PIXEL_SETTINGS
+  }
+}
+
+/**
+ * Fetch GTM Settings from the database (server-side)
+ */
+export async function getGTMSettingsServer(): Promise<GTMSettings> {
+  try {
+    const setting = await prisma.setting.findUnique({
+      where: { key: 'gtm' },
+    })
+    if (!setting) {
+      return DEFAULT_GTM_SETTINGS
+    }
+    return {
+      ...DEFAULT_GTM_SETTINGS,
+      ...(setting.value as Partial<GTMSettings>),
+    }
+  } catch (error) {
+    console.error('[Settings] Failed to fetch GTM settings:', error)
+    return DEFAULT_GTM_SETTINGS
+  }
+}
+
+/**
+ * Fetch GA4 Settings from the database (server-side)
+ */
+export async function getGA4SettingsServer(): Promise<GA4Settings> {
+  try {
+    const setting = await prisma.setting.findUnique({
+      where: { key: 'ga4' },
+    })
+    if (!setting) {
+      return DEFAULT_GA4_SETTINGS
+    }
+    return {
+      ...DEFAULT_GA4_SETTINGS,
+      ...(setting.value as Partial<GA4Settings>),
+    }
+  } catch (error) {
+    console.error('[Settings] Failed to fetch GA4 settings:', error)
+    return DEFAULT_GA4_SETTINGS
+  }
+}
+
+/**
+ * Fetch GDPR Settings from the database (server-side)
+ */
+export async function getGdprSettingsServer(): Promise<GdprSettings> {
+  try {
+    const setting = await prisma.setting.findUnique({
+      where: { key: 'gdpr' },
+    })
+    if (!setting) {
+      return DEFAULT_GDPR_SETTINGS
+    }
+    return {
+      ...DEFAULT_GDPR_SETTINGS,
+      ...(setting.value as Partial<GdprSettings>),
+    }
+  } catch (error) {
+    console.error('[Settings] Failed to fetch GDPR settings:', error)
+    return DEFAULT_GDPR_SETTINGS
+  }
+}
+
+/**
+ * Fetch all tracking settings at once (for TrackingScripts component)
+ */
+export async function getAllTrackingSettingsServer() {
+  const [fbPixel, tiktokPixel, gtm, ga4, gdpr] = await Promise.all([
+    getFacebookPixelSettingsServer(),
+    getTikTokPixelSettingsServer(),
+    getGTMSettingsServer(),
+    getGA4SettingsServer(),
+    getGdprSettingsServer(),
+  ])
+  return { fbPixel, tiktokPixel, gtm, ga4, gdpr }
 }

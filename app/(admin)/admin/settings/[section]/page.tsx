@@ -10,6 +10,12 @@ import ChargesSettingsForm from '@/components/admin/settings/ChargesSettingsForm
 import CheckoutSettingsForm from '@/components/admin/settings/CheckoutSettingsForm'
 import LoginSettingsForm from '@/components/admin/settings/LoginSettingsForm'
 import OrderOtpSettingsForm from '@/components/admin/settings/OrderOtpSettingsForm'
+import FacebookPixelSettingsForm from '@/components/admin/settings/FacebookPixelSettingsForm'
+import FacebookCapiSettingsForm from '@/components/admin/settings/FacebookCapiSettingsForm'
+import TikTokPixelSettingsForm from '@/components/admin/settings/TikTokPixelSettingsForm'
+import GTMSettingsForm from '@/components/admin/settings/GTMSettingsForm'
+import GA4SettingsForm from '@/components/admin/settings/GA4SettingsForm'
+import GdprSettingsForm from '@/components/admin/settings/GdprSettingsForm'
 
 // Map of section keys to their form components
 const SECTION_FORMS: Record<string, React.ComponentType> = {
@@ -19,6 +25,12 @@ const SECTION_FORMS: Record<string, React.ComponentType> = {
   checkout: CheckoutSettingsForm,
   login: LoginSettingsForm,
   'order-otp': OrderOtpSettingsForm,
+  'facebook-pixel': FacebookPixelSettingsForm,
+  'facebook-capi': FacebookCapiSettingsForm,
+  'tiktok-pixel': TikTokPixelSettingsForm,
+  gtm: GTMSettingsForm,
+  ga4: GA4SettingsForm,
+  gdpr: GdprSettingsForm,
 }
 
 export default function SettingsSectionPage() {

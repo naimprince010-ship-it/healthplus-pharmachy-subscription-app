@@ -51,6 +51,39 @@ export type OrderOtpSettings = {
   phoneField: 'shipping_phone' | 'billing_phone' // which phone to use
 }
 
+// Phase 4: Marketing/Tracking Integration Types
+export type FacebookPixelSettings = {
+  enabled: boolean
+  pixelId: string
+}
+
+export type FacebookCapiSettings = {
+  enabled: boolean
+  accessToken: string
+  testEventCode: string | null
+}
+
+export type TikTokPixelSettings = {
+  enabled: boolean
+  pixelId: string
+}
+
+export type GTMSettings = {
+  enabled: boolean
+  containerId: string // e.g. "GTM-XXXXX"
+}
+
+export type GA4Settings = {
+  enabled: boolean
+  measurementId: string // e.g. "G-XXXXXXXX"
+}
+
+export type GdprSettings = {
+  cookieBannerEnabled: boolean
+  cookieBannerText: string
+  requireConsentForTracking: boolean
+}
+
 // ============================================
 // Zod Schemas for Validation
 // ============================================
@@ -101,6 +134,57 @@ export const orderOtpSettingsSchema = z.object({
   { message: 'When enabled, at least one event must be selected and SMS template must not be empty' }
 )
 
+// Phase 4: Marketing/Tracking Schemas
+export const facebookPixelSettingsSchema = z.object({
+  enabled: z.boolean(),
+  pixelId: z.string(),
+}).refine(
+  (data) => !data.enabled || data.pixelId.trim().length > 0,
+  { message: 'Pixel ID is required when Facebook Pixel is enabled' }
+)
+
+export const facebookCapiSettingsSchema = z.object({
+  enabled: z.boolean(),
+  accessToken: z.string(),
+  testEventCode: z.string().nullable(),
+}).refine(
+  (data) => !data.enabled || data.accessToken.trim().length > 0,
+  { message: 'Access Token is required when Facebook CAPI is enabled' }
+)
+
+export const tiktokPixelSettingsSchema = z.object({
+  enabled: z.boolean(),
+  pixelId: z.string(),
+}).refine(
+  (data) => !data.enabled || data.pixelId.trim().length > 0,
+  { message: 'Pixel ID is required when TikTok Pixel is enabled' }
+)
+
+export const gtmSettingsSchema = z.object({
+  enabled: z.boolean(),
+  containerId: z.string(),
+}).refine(
+  (data) => !data.enabled || /^GTM-[A-Z0-9]+$/i.test(data.containerId),
+  { message: 'Container ID must be in format GTM-XXXXX when GTM is enabled' }
+)
+
+export const ga4SettingsSchema = z.object({
+  enabled: z.boolean(),
+  measurementId: z.string(),
+}).refine(
+  (data) => !data.enabled || data.measurementId.startsWith('G-'),
+  { message: 'Measurement ID must start with "G-" when GA4 is enabled' }
+)
+
+export const gdprSettingsSchema = z.object({
+  cookieBannerEnabled: z.boolean(),
+  cookieBannerText: z.string(),
+  requireConsentForTracking: z.boolean(),
+}).refine(
+  (data) => !data.cookieBannerEnabled || data.cookieBannerText.trim().length > 0,
+  { message: 'Cookie banner text is required when banner is enabled' }
+)
+
 // ============================================
 // Default Values
 // ============================================
@@ -143,6 +227,39 @@ export const DEFAULT_ORDER_OTP_SETTINGS: OrderOtpSettings = {
   sendOn: ['order_confirmed'],
   smsTemplate: 'Your HealthPlus order {{order_id}} is confirmed. Amount: {{amount}} BDT. Thank you {{customer_name}}!',
   phoneField: 'shipping_phone',
+}
+
+// Phase 4: Marketing/Tracking Defaults
+export const DEFAULT_FACEBOOK_PIXEL_SETTINGS: FacebookPixelSettings = {
+  enabled: false,
+  pixelId: '',
+}
+
+export const DEFAULT_FACEBOOK_CAPI_SETTINGS: FacebookCapiSettings = {
+  enabled: false,
+  accessToken: '',
+  testEventCode: null,
+}
+
+export const DEFAULT_TIKTOK_PIXEL_SETTINGS: TikTokPixelSettings = {
+  enabled: false,
+  pixelId: '',
+}
+
+export const DEFAULT_GTM_SETTINGS: GTMSettings = {
+  enabled: false,
+  containerId: '',
+}
+
+export const DEFAULT_GA4_SETTINGS: GA4Settings = {
+  enabled: false,
+  measurementId: '',
+}
+
+export const DEFAULT_GDPR_SETTINGS: GdprSettings = {
+  cookieBannerEnabled: true,
+  cookieBannerText: 'We use cookies to improve your experience on HealthPlus.',
+  requireConsentForTracking: true,
 }
 
 // ============================================
