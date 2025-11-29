@@ -50,8 +50,8 @@ export function SectionSlider({ section, products }: SectionSliderProps) {
   const bgStyle = section.bgColor ? { backgroundColor: section.bgColor } : {}
 
   return (
-    // Full-width section with background color
-    <section className="w-full py-4" style={bgStyle}>
+    // Full-width section with background color - compact padding on desktop
+    <section className="w-full py-4 lg:py-2" style={bgStyle}>
       {/* Full-width content - no max-width so it fills the ShopLayout grid column */}
       <div className="w-full px-2 sm:px-4">
         <div className="mb-3 flex items-center justify-between">
@@ -73,10 +73,19 @@ export function SectionSlider({ section, products }: SectionSliderProps) {
           </Link>
         </div>
 
-        {/* CSS Grid with auto-wrap - products wrap automatically based on available space */}
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+        {/* Mobile/Tablet: CSS Grid with auto-wrap */}
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:grid-cols-4 lg:hidden">
           {products.slice(0, 12).map((product) => (
             <div key={product.id} className="w-full">
+              <ProductCard product={product} variant="compact" className="h-full" />
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop: Compact single row with horizontal scroll - like MedEasy */}
+        <div className="hidden lg:flex lg:gap-3 lg:overflow-x-auto lg:pb-2">
+          {products.slice(0, 12).map((product) => (
+            <div key={product.id} className="min-w-[180px] max-w-[200px] flex-shrink-0">
               <ProductCard product={product} variant="compact" className="h-full" />
             </div>
           ))}

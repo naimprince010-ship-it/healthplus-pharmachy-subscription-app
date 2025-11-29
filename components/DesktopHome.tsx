@@ -103,8 +103,8 @@ export function DesktopHome({ subscriptionPlans, membershipPlan, homeSections }:
         </div>
       </section>
 
-      {/* Home Sections */}
-      <div className="space-y-2 py-2">
+      {/* Home Sections - compact spacing on desktop */}
+      <div className="space-y-2 py-2 lg:space-y-1 lg:py-1">
         {homeSections.map(({ section, products }) => (
           <SectionSlider key={section.id} section={section} products={products} />
         ))}

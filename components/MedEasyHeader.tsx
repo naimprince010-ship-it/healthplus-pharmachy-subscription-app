@@ -123,9 +123,9 @@ export function MedEasyHeader() {
 
   return (
     <>
-            <header className="sticky top-0 z-50 w-full bg-teal-600 shadow-md">
-              {/* Full-width on desktop with minimal padding - matches ShopLayout */}
-              <div className="mx-auto w-full max-w-[1400px] px-2 sm:px-4 lg:max-w-none lg:px-4 xl:px-6">
+                  <header className="sticky top-0 z-50 w-full bg-teal-600 shadow-md">
+                    {/* Centered container - matches ShopLayout max-w-[1480px] */}
+                    <div className="mx-auto w-full max-w-[1480px] px-2 sm:px-4 lg:px-6">
           <div className="flex h-14 items-center justify-between gap-2 sm:h-16 sm:gap-4">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 flex-shrink-0">

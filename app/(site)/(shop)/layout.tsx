@@ -7,9 +7,9 @@ export default function ShopLayout({
 }) {
   return (
     <div className="w-full bg-white">
-      {/* Full-width on desktop with minimal padding (16-24px) - like MedEasy */}
-      {/* Mobile/tablet: max-w-[1400px] centered, Desktop: full width with small padding */}
-      <div className="mx-auto w-full max-w-[1400px] px-2 sm:px-4 lg:max-w-none lg:px-4 xl:px-6 lg:grid lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-4">
+      {/* Centered container wrapping sidebar + content - like MedEasy */}
+      {/* max-w-[1480px] keeps everything centered at 25% zoom */}
+      <div className="mx-auto w-full max-w-[1480px] px-2 sm:px-4 lg:px-6 lg:grid lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-4">
         {/* Left Sidebar - Desktop only, sticky positioned */}
         <aside className="hidden lg:block">
           <div className="sticky top-16 w-[240px] py-2">
