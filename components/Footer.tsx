@@ -14,9 +14,9 @@ interface FooterProps {
 
 export function Footer({ quickLinksPages = [], supportPages = [] }: FooterProps) {
   return (
-    <footer className="border-t border-gray-200 bg-gray-50">
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
+    <footer className="w-full border-t border-gray-200 bg-gray-50">
+      <div className="mx-auto w-full max-w-[1400px] px-2 py-8 sm:px-4 lg:py-12">
+        <div className="grid grid-cols-2 gap-6 sm:grid-cols-2 md:grid-cols-4 lg:gap-8">
           <div>
             <div className="flex items-center space-x-2">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-600">
