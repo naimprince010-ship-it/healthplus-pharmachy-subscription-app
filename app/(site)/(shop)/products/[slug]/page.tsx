@@ -103,19 +103,21 @@ export default async function ProductPage({ params }: ProductPageProps) {
           {product.category?.name ? `Back to ${product.category.name}` : 'Back to Products'}
         </Link>
 
-        <div className="mt-8 grid gap-8 lg:grid-cols-2">
-          <div className="aspect-square overflow-hidden rounded-lg bg-gray-100">
-            {product.imageUrl ? (
-              <img
-                src={product.imageUrl}
-                alt={product.name}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center text-gray-400">
-                No image available
-              </div>
-            )}
+        <div className="mt-6 grid gap-6 lg:grid-cols-[350px_1fr] xl:grid-cols-[400px_1fr]">
+          <div className="mx-auto w-full max-w-[350px] lg:mx-0 lg:max-w-none">
+            <div className="aspect-[4/5] overflow-hidden rounded-lg bg-gray-100">
+              {product.imageUrl ? (
+                <img
+                  src={product.imageUrl}
+                  alt={product.name}
+                  className="h-full w-full object-contain"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center text-gray-400">
+                  No image available
+                </div>
+              )}
+            </div>
           </div>
 
           <div>
