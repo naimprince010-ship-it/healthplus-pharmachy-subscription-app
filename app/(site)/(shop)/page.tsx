@@ -41,8 +41,29 @@ async function getHomeSections() {
         const whereClause = buildProductWhereClause(section)
         const products = await prisma.product.findMany({
           where: whereClause,
-          include: {
-            category: true,
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            imageUrl: true,
+            sellingPrice: true,
+            mrp: true,
+            stockQuantity: true,
+            brandName: true,
+            description: true,
+            type: true,
+            discountPercentage: true,
+            flashSalePrice: true,
+            flashSaleStart: true,
+            flashSaleEnd: true,
+            isFlashSale: true,
+            category: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              },
+            },
             medicine: {
               select: {
                 discountPercentage: true,

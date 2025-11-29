@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { AddToCartButton } from '@/components/AddToCartButton'
+import { getEffectivePrices } from '@/lib/pricing'
 
 interface ProductCardProps {
   id: string
@@ -13,6 +14,10 @@ interface ProductCardProps {
   stockQuantity: number
   imageUrl: string | null
   discountPercentage?: number | null
+  flashSalePrice?: number | null
+  flashSaleStart?: Date | string | null
+  flashSaleEnd?: Date | string | null
+  isFlashSale?: boolean | null
   category: {
     id: string
     name: string
@@ -39,18 +44,18 @@ export function ProductCard({ product, variant = 'default', className = '' }: Pr
 
   const isCompact = variant === 'compact'
 
-  // Use explicit discountPercentage from database, or calculate from MRP as fallback
-  const discountPercent = product.discountPercentage && product.discountPercentage > 0
-    ? Math.round(product.discountPercentage)
-    : (product.mrp && product.mrp > product.sellingPrice
-      ? Math.round(((product.mrp - product.sellingPrice) / product.mrp) * 100)
-      : null)
+  // Use centralized pricing helper that handles flash-sale and regular discounts
+  const { price, mrp, discountPercent, isFlashSale } = getEffectivePrices({
+    sellingPrice: product.sellingPrice,
+    mrp: product.mrp,
+    discountPercentage: product.discountPercentage,
+    flashSalePrice: product.flashSalePrice,
+    flashSaleStart: product.flashSaleStart,
+    flashSaleEnd: product.flashSaleEnd,
+    isFlashSale: product.isFlashSale,
+  })
   
-  // Calculate discounted price if discount exists
-  const hasExplicitDiscount = product.discountPercentage && product.discountPercentage > 0
-  const discountedPrice = hasExplicitDiscount
-    ? product.sellingPrice * (1 - (product.discountPercentage || 0) / 100)
-    : product.sellingPrice
+  const hasDiscount = discountPercent > 0
 
   return (
     <Link
@@ -60,9 +65,9 @@ export function ProductCard({ product, variant = 'default', className = '' }: Pr
       } ${className}`}
     >
       {/* Discount badge */}
-      {discountPercent && discountPercent > 0 && (
-        <div className="absolute left-2 top-2 z-10 rounded bg-red-500 px-2 py-0.5 text-xs font-semibold text-white">
-          {discountPercent}% ডিস্কাউন্ট
+      {hasDiscount && (
+        <div className={`absolute left-2 top-2 z-10 rounded px-2 py-0.5 text-xs font-semibold text-white ${isFlashSale ? 'bg-orange-500' : 'bg-red-500'}`}>
+          {discountPercent}% {isFlashSale ? 'OFF' : 'ডিস্কাউন্ট'}
         </div>
       )}
 
@@ -98,34 +103,29 @@ export function ProductCard({ product, variant = 'default', className = '' }: Pr
         <div className={`flex items-center ${isCompact ? 'mt-1' : 'mt-3'}`}>
           <div className="flex flex-wrap items-baseline gap-1">
             <span className={`font-bold text-gray-900 ${isCompact ? 'text-sm' : 'text-lg'}`}>
-              ৳{discountedPrice.toFixed(2)}
+              ৳{price.toFixed(2)}
             </span>
-            {hasExplicitDiscount && (
+            {hasDiscount && (
               <span className={`text-gray-500 line-through ${isCompact ? 'text-xs' : 'text-sm'}`}>
-                ৳{product.sellingPrice.toFixed(2)}
-              </span>
-            )}
-            {!hasExplicitDiscount && product.mrp && product.mrp > product.sellingPrice && (
-              <span className={`text-gray-500 line-through ${isCompact ? 'text-xs' : 'text-sm'}`}>
-                ৳{product.mrp.toFixed(2)}
+                ৳{mrp.toFixed(2)}
               </span>
             )}
           </div>
         </div>
         <div className={`mt-auto ${isCompact ? 'pt-2' : 'pt-4'}`} onClick={(e) => e.preventDefault()}>
-                    <AddToCartButton
-                      medicineId={medicineId}
-                      productId={productId}
-                      name={product.name}
-                      price={discountedPrice}
-                      image={product.imageUrl || undefined}
-                      stockQuantity={product.stockQuantity}
-                      category={product.category.name}
-                      mrp={hasExplicitDiscount ? product.sellingPrice : (product.mrp || undefined)}
-                      slug={product.slug}
-                      type={product.type === 'MEDICINE' ? 'MEDICINE' : 'PRODUCT'}
-                      className={`w-full ${isCompact ? 'py-1.5 text-sm' : ''}`}
-                    />
+          <AddToCartButton
+            medicineId={medicineId}
+            productId={productId}
+            name={product.name}
+            price={price}
+            image={product.imageUrl || undefined}
+            stockQuantity={product.stockQuantity}
+            category={product.category.name}
+            mrp={mrp}
+            slug={product.slug}
+            type={product.type === 'MEDICINE' ? 'MEDICINE' : 'PRODUCT'}
+            className={`w-full ${isCompact ? 'py-1.5 text-sm' : ''}`}
+          />
         </div>
       </div>
     </Link>
