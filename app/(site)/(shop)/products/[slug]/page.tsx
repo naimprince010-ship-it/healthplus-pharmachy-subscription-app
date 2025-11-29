@@ -45,7 +45,27 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   const product = await prisma.product.findUnique({
     where: { slug },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      imageUrl: true,
+      sellingPrice: true,
+      mrp: true,
+      stockQuantity: true,
+      brandName: true,
+      description: true,
+      keyFeatures: true,
+      specSummary: true,
+      sizeLabel: true,
+      unit: true,
+      type: true,
+      isActive: true,
+      discountPercentage: true,
+      flashSalePrice: true,
+      flashSaleStart: true,
+      flashSaleEnd: true,
+      isFlashSale: true,
       category: {
         select: {
           id: true,
@@ -76,11 +96,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
     <div className="bg-gray-50 py-8">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <Link
-          href="/products"
+          href={product.category?.slug ? `/category/${product.category.slug}` : '/products'}
           className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Products
+          {product.category?.name ? `Back to ${product.category.name}` : 'Back to Products'}
         </Link>
 
         <div className="mt-8 grid gap-8 lg:grid-cols-2">
@@ -130,18 +150,22 @@ export default async function ProductPage({ params }: ProductPageProps) {
               </div>
             )}
 
-                        <ProductDetailClient
-                          productId={product.id}
-                          name={product.name}
-                          sellingPrice={sellingPrice}
-                          mrp={mrp}
-                          stockQuantity={stockQuantity}
-                          imageUrl={product.imageUrl}
-                          category={product.category?.name ?? 'General'}
-                          unit={product.unit}
-                          discountPercentage={discountPercentage}
-                          slug={slug}
-                        />
+            <ProductDetailClient
+              productId={product.id}
+              name={product.name}
+              sellingPrice={sellingPrice}
+              mrp={mrp}
+              stockQuantity={stockQuantity}
+              imageUrl={product.imageUrl}
+              category={product.category?.name ?? 'General'}
+              unit={product.unit}
+              discountPercentage={discountPercentage}
+              flashSalePrice={product.flashSalePrice}
+              flashSaleStart={product.flashSaleStart}
+              flashSaleEnd={product.flashSaleEnd}
+              isFlashSale={product.isFlashSale}
+              slug={slug}
+            />
 
             {product.description && (
               <div className="mt-8">
