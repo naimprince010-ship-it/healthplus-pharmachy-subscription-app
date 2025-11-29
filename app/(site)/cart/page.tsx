@@ -4,11 +4,27 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useCart } from '@/contexts/CartContext'
 import { useSession } from 'next-auth/react'
-import { Trash2, Plus, Minus, X } from 'lucide-react'
+import { Trash2, Plus, Minus, X, ArrowLeft } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, clearCart, total, itemCount } = useCart()
   const { data: session } = useSession()
+  const router = useRouter()
+
+  // Hide footer on mobile for cart page
+  useEffect(() => {
+    const footer = document.querySelector('footer')
+    if (footer) {
+      footer.classList.add('hidden', 'lg:block')
+    }
+    return () => {
+      if (footer) {
+        footer.classList.remove('hidden', 'lg:block')
+      }
+    }
+  }, [])
 
   const hasMembership = false
 
@@ -54,14 +70,37 @@ export default function CartPage() {
 
   return (
     <>
+      {/* Mobile header with back button */}
+      <div className="sticky top-0 z-50 flex items-center gap-3 border-b border-gray-200 bg-white px-4 py-3 lg:hidden">
+        <button
+          onClick={() => router.back()}
+          className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-gray-100"
+          aria-label="Go back"
+        >
+          <ArrowLeft className="h-5 w-5 text-gray-700" />
+        </button>
+        <h1 className="text-lg font-semibold text-gray-900">কার্ট ({itemCount})</h1>
+      </div>
+
       {/* Main cart content */}
       <div className="bg-gray-50 py-6 pb-44 lg:py-8 lg:pb-8">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          {/* Header with item count and clear all */}
-          <div className="flex items-center justify-between">
+          {/* Header with item count and clear all - Desktop only */}
+          <div className="hidden items-center justify-between lg:flex">
             <h1 className="text-xl font-bold text-gray-900 lg:text-2xl">
               {itemCount} টি পণ্য
             </h1>
+            <button
+              onClick={clearCart}
+              className="flex items-center gap-1 text-sm text-gray-500 hover:text-red-600"
+            >
+              <Trash2 className="h-4 w-4" />
+              সব মুছুন
+            </button>
+          </div>
+          
+          {/* Mobile clear all button */}
+          <div className="flex justify-end lg:hidden">
             <button
               onClick={clearCart}
               className="flex items-center gap-1 text-sm text-gray-500 hover:text-red-600"
