@@ -1,6 +1,7 @@
 import { buildProductWhereClause } from '@/lib/homeSections'
 import { DesktopHome } from '@/components/DesktopHome'
 import { MobileHome } from '@/components/MobileHome'
+import { getEffectivePrices } from '@/lib/pricing'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -73,12 +74,31 @@ async function getHomeSections() {
           take: section.maxProducts,
         })
 
-        // Map products to flatten medicine.discountPercentage into product.discountPercentage
+        // Map products to flatten medicine.discountPercentage and pre-compute effective prices
+        // Pre-computing on server prevents hydration mismatch from Date() differences
         const mappedProducts = products.map((product) => {
           const rawDiscount = product.discountPercentage ?? product.medicine?.discountPercentage
+          const discountPercentage = rawDiscount ? Number(rawDiscount) : null
+          
+          // Pre-compute effective prices on server to avoid hydration mismatch
+          const effectivePrices = getEffectivePrices({
+            sellingPrice: Number(product.sellingPrice),
+            mrp: product.mrp ? Number(product.mrp) : null,
+            discountPercentage,
+            flashSalePrice: product.flashSalePrice ? Number(product.flashSalePrice) : null,
+            flashSaleStart: product.flashSaleStart,
+            flashSaleEnd: product.flashSaleEnd,
+            isFlashSale: product.isFlashSale,
+          })
+          
           return {
             ...product,
-            discountPercentage: rawDiscount ? Number(rawDiscount) : null,
+            discountPercentage,
+            // Pre-computed values for client to use directly (avoids hydration mismatch)
+            effectivePrice: effectivePrices.price,
+            effectiveMrp: effectivePrices.mrp,
+            effectiveDiscountPercent: effectivePrices.discountPercent,
+            isFlashSaleActive: effectivePrices.isFlashSale,
           }
         })
 

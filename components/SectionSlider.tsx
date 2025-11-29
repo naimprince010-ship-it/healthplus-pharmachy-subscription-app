@@ -19,6 +19,11 @@ interface Product {
   flashSaleStart?: Date | string | null
   flashSaleEnd?: Date | string | null
   isFlashSale?: boolean | null
+  // Pre-computed values from server to avoid hydration mismatch
+  effectivePrice?: number
+  effectiveMrp?: number
+  effectiveDiscountPercent?: number
+  isFlashSaleActive?: boolean
   category: {
     id: string
     name: string

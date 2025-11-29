@@ -18,6 +18,11 @@ interface ProductCardProps {
   flashSaleStart?: Date | string | null
   flashSaleEnd?: Date | string | null
   isFlashSale?: boolean | null
+  // Pre-computed values from server to avoid hydration mismatch
+  effectivePrice?: number
+  effectiveMrp?: number
+  effectiveDiscountPercent?: number
+  isFlashSaleActive?: boolean
   category: {
     id: string
     name: string
@@ -44,16 +49,35 @@ export function ProductCard({ product, variant = 'default', className = '' }: Pr
 
   const isCompact = variant === 'compact'
 
-  // Use centralized pricing helper that handles flash-sale and regular discounts
-  const { price, mrp, discountPercent, isFlashSale } = getEffectivePrices({
-    sellingPrice: product.sellingPrice,
-    mrp: product.mrp,
-    discountPercentage: product.discountPercentage,
-    flashSalePrice: product.flashSalePrice,
-    flashSaleStart: product.flashSaleStart,
-    flashSaleEnd: product.flashSaleEnd,
-    isFlashSale: product.isFlashSale,
-  })
+  // Use pre-computed values from server if available (avoids hydration mismatch)
+  // Fall back to computing on client for pages that don't pre-compute
+  let price: number
+  let mrp: number
+  let discountPercent: number
+  let isFlashSale: boolean
+  
+  if (product.effectivePrice !== undefined) {
+    // Use pre-computed values from server
+    price = product.effectivePrice
+    mrp = product.effectiveMrp ?? product.mrp ?? product.sellingPrice
+    discountPercent = product.effectiveDiscountPercent ?? 0
+    isFlashSale = product.isFlashSaleActive ?? false
+  } else {
+    // Fall back to computing on client (for pages that don't pre-compute)
+    const computed = getEffectivePrices({
+      sellingPrice: product.sellingPrice,
+      mrp: product.mrp,
+      discountPercentage: product.discountPercentage,
+      flashSalePrice: product.flashSalePrice,
+      flashSaleStart: product.flashSaleStart,
+      flashSaleEnd: product.flashSaleEnd,
+      isFlashSale: product.isFlashSale,
+    })
+    price = computed.price
+    mrp = computed.mrp
+    discountPercent = computed.discountPercent
+    isFlashSale = computed.isFlashSale
+  }
   
   const hasDiscount = discountPercent > 0
 
