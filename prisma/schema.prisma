@@ -462,3 +462,14 @@ model Page {
 
   @@index([group, isPublished, sortOrder])
 }
+
+// Generic admin settings storage system
+// No previous settings model existed in this codebase.
+// This unified model stores all admin settings as JSON by key.
+// Each key represents a settings section (e.g., "basic", "branding", "checkout", "facebook-pixel")
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique // Settings section key (e.g., "basic", "branding", "checkout")
+  value     Json     // Full settings object for that section
+  updatedAt DateTime @updatedAt
+}
