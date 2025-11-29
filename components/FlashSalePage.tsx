@@ -31,11 +31,17 @@ interface FlashSaleData {
 export default function FlashSalePage() {
   const [data, setData] = useState<FlashSaleData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
   const [timeLeft, setTimeLeft] = useState<{
     hours: number
     minutes: number
     seconds: number
   } | null>(null)
+
+  // Set mounted to true after hydration to prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     fetchFlashSaleProducts()
@@ -97,7 +103,9 @@ export default function FlashSalePage() {
   }
 
 
-  if (loading) {
+  // Show loading state for both SSR (not mounted) and client loading
+  // This ensures server and client render identical HTML initially
+  if (!mounted || loading) {
     return (
       <div className="min-h-screen bg-gray-50 py-12">
         <div className="container mx-auto px-4">
@@ -236,6 +244,7 @@ export default function FlashSalePage() {
                   productId={product.id}
                   name={product.name}
                   price={product.flashSalePrice ?? product.sellingPrice}
+                  mrp={product.sellingPrice}
                   image={product.imageUrl ?? undefined}
                   stockQuantity={product.stockQuantity}
                   category={product.category?.name ?? 'General'}
