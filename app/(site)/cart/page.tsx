@@ -96,8 +96,8 @@ export default function CartPage() {
         <h1 className="text-lg font-semibold text-gray-900">কার্ট ({itemCount})</h1>
       </div>
 
-      {/* Main cart content - pb-52 (208px) accounts for checkout bar height (~150px) + extra spacing */}
-      <div className="bg-gray-50 py-6 pb-52 lg:py-8 lg:pb-8">
+      {/* Main cart content - pb-44 (~176px) accounts for checkout bar height (~150px) + small buffer */}
+      <div className="bg-gray-50 py-6 pb-44 lg:py-8 lg:pb-8">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Header with item count and clear all - Desktop only */}
           <div className="hidden items-center justify-between lg:flex">

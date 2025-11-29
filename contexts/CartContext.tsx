@@ -37,38 +37,48 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>(() => {
-    if (typeof window !== 'undefined') {
-      // Check cart version - clear cart if version mismatch (stale pricing data)
-      const savedVersion = localStorage.getItem('healthplus_cart_version')
-      const currentVersion = String(CART_VERSION)
-      
-      if (savedVersion !== currentVersion) {
-        // Version mismatch - clear old cart data to ensure fresh pricing
-        localStorage.removeItem('healthplus_cart')
-        localStorage.setItem('healthplus_cart_version', currentVersion)
-        return []
-      }
-      
-      const savedCart = localStorage.getItem('healthplus_cart')
-      if (savedCart) {
-        try {
-          return JSON.parse(savedCart)
-        } catch (error) {
-          console.error('Failed to parse cart from localStorage:', error)
-        }
-      }
-    }
-    return []
-  })
+  // Initialize with empty array to avoid hydration mismatch (server and client both start with [])
+  const [items, setItems] = useState<CartItem[]>([])
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
   
   const openDrawer = () => setIsDrawerOpen(true)
   const closeDrawer = () => setIsDrawerOpen(false)
 
+  // Load cart from localStorage after mount to avoid hydration mismatch
   useEffect(() => {
-    localStorage.setItem('healthplus_cart', JSON.stringify(items))
-  }, [items])
+    if (typeof window === 'undefined') return
+
+    const currentVersion = String(CART_VERSION)
+    const savedVersion = localStorage.getItem('healthplus_cart_version')
+
+    if (savedVersion !== currentVersion) {
+      // Version mismatch - clear old cart data to ensure fresh pricing
+      localStorage.removeItem('healthplus_cart')
+      localStorage.setItem('healthplus_cart_version', currentVersion)
+      setIsInitialized(true)
+      return
+    }
+
+    const savedCart = localStorage.getItem('healthplus_cart')
+    if (savedCart) {
+      try {
+        setItems(JSON.parse(savedCart))
+      } catch (error) {
+        console.error('Failed to parse cart from localStorage:', error)
+        // Clear corrupted cart data
+        localStorage.removeItem('healthplus_cart')
+      }
+    }
+    setIsInitialized(true)
+  }, [])
+
+  // Save cart to localStorage whenever items change (but only after initialization)
+  useEffect(() => {
+    if (isInitialized) {
+      localStorage.setItem('healthplus_cart', JSON.stringify(items))
+    }
+  }, [items, isInitialized])
 
   const addItem = (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
     setItems((prevItems) => {
