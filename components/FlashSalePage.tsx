@@ -238,6 +238,7 @@ export default function FlashSalePage() {
                   productId={product.id}
                   name={product.name}
                   price={product.flashSalePrice ?? product.sellingPrice}
+                  mrp={product.sellingPrice}
                   image={product.imageUrl ?? undefined}
                   stockQuantity={product.stockQuantity}
                   category={product.category?.name ?? 'General'}
