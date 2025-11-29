@@ -42,29 +42,43 @@ export default function CartPage() {
 
   if (items.length === 0) {
     return (
-      <div className="bg-gray-50 py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold text-gray-900">Shopping Cart</h1>
+      <>
+        {/* Mobile header with back button */}
+        <div className="sticky top-0 z-50 flex items-center gap-3 border-b border-gray-200 bg-white px-4 py-3 lg:hidden">
+          <button
+            onClick={() => router.back()}
+            className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-gray-100"
+            aria-label="Go back"
+          >
+            <ArrowLeft className="h-5 w-5 text-gray-700" />
+          </button>
+          <h1 className="text-lg font-semibold text-gray-900">কার্ট</h1>
+        </div>
 
-          <div className="mt-8">
-            <div className="rounded-lg bg-white p-12 text-center shadow">
-              <div className="mx-auto mb-4 h-24 w-24 text-gray-300">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
-                </svg>
+        <div className="bg-gray-50 py-16 lg:py-16">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <h1 className="hidden text-3xl font-bold text-gray-900 lg:block">Shopping Cart</h1>
+
+            <div className="mt-0 lg:mt-8">
+              <div className="rounded-lg bg-white p-12 text-center shadow">
+                <div className="mx-auto mb-4 h-24 w-24 text-gray-300">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+                  </svg>
+                </div>
+                <p className="text-lg text-gray-600">আপনার কার্ট খালি</p>
+                <p className="mt-1 text-sm text-gray-500">পণ্য যোগ করুন শপিং শুরু করতে</p>
+                <Link
+                  href="/"
+                  className="mt-6 inline-block rounded-lg bg-teal-600 px-8 py-3 font-semibold text-white transition-colors hover:bg-teal-700"
+                >
+                  শপিং শুরু করুন
+                </Link>
               </div>
-              <p className="text-lg text-gray-600">আপনার কার্ট খালি</p>
-              <p className="mt-1 text-sm text-gray-500">পণ্য যোগ করুন শপিং শুরু করতে</p>
-              <Link
-                href="/"
-                className="mt-6 inline-block rounded-lg bg-teal-600 px-8 py-3 font-semibold text-white transition-colors hover:bg-teal-700"
-              >
-                শপিং শুরু করুন
-              </Link>
             </div>
           </div>
         </div>
-      </div>
+      </>
     )
   }
 
