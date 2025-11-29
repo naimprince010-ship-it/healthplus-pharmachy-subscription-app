@@ -32,6 +32,7 @@ interface CartContextType {
   isDrawerOpen: boolean
   openDrawer: () => void
   closeDrawer: () => void
+  isInitialized: boolean
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
@@ -137,6 +138,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         isDrawerOpen,
         openDrawer,
         closeDrawer,
+        isInitialized,
       }}
     >
       {children}

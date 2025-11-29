@@ -9,8 +9,8 @@ import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 
 export default function CartPage() {
-  const { items, removeItem, updateQuantity, clearCart, total, itemCount } = useCart()
-  const { data: session } = useSession()
+  const { items, removeItem, updateQuantity, clearCart, total, itemCount, isInitialized } = useCart()
+  const { data: session, status } = useSession()
   const router = useRouter()
 
   // Hide footer on mobile for cart page
@@ -25,6 +25,39 @@ export default function CartPage() {
       }
     }
   }, [])
+
+  // Gate content behind readiness check to avoid hydration mismatch
+  // Server and first client render both show loading state, then cart loads after mount
+  const isReady = isInitialized && status !== 'loading'
+
+  if (!isReady) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        {/* Mobile header skeleton */}
+        <div className="sticky top-0 z-50 flex items-center gap-3 border-b border-gray-200 bg-white px-4 py-3 lg:hidden">
+          <div className="h-10 w-10 animate-pulse rounded-full bg-gray-200" />
+          <div className="h-6 w-24 animate-pulse rounded bg-gray-200" />
+        </div>
+        {/* Loading skeleton */}
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="rounded-lg bg-white p-4 shadow-sm">
+                <div className="flex gap-4">
+                  <div className="h-20 w-20 animate-pulse rounded-lg bg-gray-200" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-5 w-3/4 animate-pulse rounded bg-gray-200" />
+                    <div className="h-4 w-1/2 animate-pulse rounded bg-gray-200" />
+                    <div className="h-6 w-20 animate-pulse rounded bg-gray-200" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const hasMembership = false
 
