@@ -94,33 +94,39 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   return (
     <div className="bg-gray-50 py-8">
-      <div className="w-full px-4 sm:px-6 lg:px-8">
-        <Link
-          href={product.category?.slug ? `/category/${product.category.slug}` : '/products'}
-          className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {product.category?.name ? `Back to ${product.category.name}` : 'Back to Products'}
-        </Link>
+      {/* Outer wrapper centers content on wide screens */}
+      <div className="w-full flex justify-center">
+        {/* Inner container matches MedEasy's 1158px content width */}
+        <div className="w-full max-w-[1158px] px-4 sm:px-6 xl:px-0">
+          <Link
+            href={product.category?.slug ? `/category/${product.category.slug}` : '/products'}
+            className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {product.category?.name ? `Back to ${product.category.name}` : 'Back to Products'}
+          </Link>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-[350px_1fr] xl:grid-cols-[400px_1fr]">
-          <div className="mx-auto w-full max-w-[350px] lg:mx-0 lg:max-w-none">
-            <div className="aspect-[4/5] overflow-hidden rounded-lg bg-gray-100">
-              {product.imageUrl ? (
-                <img
-                  src={product.imageUrl}
-                  alt={product.name}
-                  className="h-full w-full object-contain"
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center text-gray-400">
-                  No image available
-                </div>
-              )}
+          {/* MedEasy layout: 650px image + 91px gap + 417px details = 1158px */}
+          <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_1fr] xl:grid-cols-[650px_417px] xl:gap-[91px] items-start">
+            {/* Image container - 650px width, 390px height (aspect 650/390) on xl screens */}
+            <div className="mx-auto w-full max-w-[400px] lg:mx-0 lg:max-w-none xl:w-[650px]">
+              <div className="aspect-[650/390] overflow-hidden rounded-lg bg-white">
+                {product.imageUrl ? (
+                  <img
+                    src={product.imageUrl}
+                    alt={product.name}
+                    className="h-full w-full object-contain"
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-gray-400">
+                    No image available
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
 
-          <div>
+            {/* Details container - 417px width on xl screens */}
+            <div className="w-full xl:w-[417px]">
             {product.category && (
               <div className="mb-2">
                 <Link
@@ -232,5 +238,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
         </div>
       </div>
     </div>
+  </div>
   )
 }
