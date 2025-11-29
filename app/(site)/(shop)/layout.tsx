@@ -6,18 +6,18 @@ export default function ShopLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="bg-white">
-      {/* Full-width grid that wraps both sidebar and content - they zoom together as a unit */}
-      <div className="w-full lg:grid lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-4">
+    <div className="w-full bg-white">
+      {/* Centered container with max-width - sidebar and content zoom together */}
+      <div className="mx-auto w-full max-w-[1400px] px-2 sm:px-4 lg:grid lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-3 lg:px-4">
         {/* Left Sidebar - Desktop only, sticky positioned */}
         <aside className="hidden lg:block">
-          <div className="sticky top-16 w-[260px]">
+          <div className="sticky top-16 w-[220px] py-2">
             <LeftCategorySidebar />
           </div>
         </aside>
         
-        {/* Main Content */}
-        <div className="min-w-0 px-4 sm:px-6 lg:px-0">
+        {/* Main Content - fluid width */}
+        <div className="min-w-0 w-full">
           {children}
         </div>
       </div>
