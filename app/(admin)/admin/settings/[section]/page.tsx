@@ -8,6 +8,8 @@ import BasicSettingsForm from '@/components/admin/settings/BasicSettingsForm'
 import BrandingSettingsForm from '@/components/admin/settings/BrandingSettingsForm'
 import ChargesSettingsForm from '@/components/admin/settings/ChargesSettingsForm'
 import CheckoutSettingsForm from '@/components/admin/settings/CheckoutSettingsForm'
+import LoginSettingsForm from '@/components/admin/settings/LoginSettingsForm'
+import OrderOtpSettingsForm from '@/components/admin/settings/OrderOtpSettingsForm'
 
 // Map of section keys to their form components
 const SECTION_FORMS: Record<string, React.ComponentType> = {
@@ -15,6 +17,8 @@ const SECTION_FORMS: Record<string, React.ComponentType> = {
   branding: BrandingSettingsForm,
   charges: ChargesSettingsForm,
   checkout: CheckoutSettingsForm,
+  login: LoginSettingsForm,
+  'order-otp': OrderOtpSettingsForm,
 }
 
 export default function SettingsSectionPage() {

@@ -1,10 +1,12 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { signIn, getSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { z } from 'zod'
+import { Loader2 } from 'lucide-react'
+import { LoginSettings, DEFAULT_LOGIN_SETTINGS, fetchSettings } from '@/lib/admin/settings'
 
 const signinSchema = z.object({
   identifier: z
@@ -31,6 +33,24 @@ function SignInForm() {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(false)
   const [serverError, setServerError] = useState('')
+  const [loginSettings, setLoginSettings] = useState<LoginSettings>(DEFAULT_LOGIN_SETTINGS)
+  const [settingsLoading, setSettingsLoading] = useState(true)
+
+  // Fetch login settings on mount
+  useEffect(() => {
+    async function loadLoginSettings() {
+      try {
+        const settings = await fetchSettings<LoginSettings>('login')
+        setLoginSettings({ ...DEFAULT_LOGIN_SETTINGS, ...settings })
+      } catch (err) {
+        console.error('Failed to load login settings:', err)
+        // Use defaults if fetch fails
+      } finally {
+        setSettingsLoading(false)
+      }
+    }
+    loadLoginSettings()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -96,6 +116,18 @@ function SignInForm() {
     }
   }
 
+  // Show loading state while fetching settings
+  if (settingsLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
+      </div>
+    )
+  }
+
+  // Check if password login is disabled
+  const passwordLoginDisabled = !loginSettings.enablePasswordLogin
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-8">
@@ -114,69 +146,94 @@ function SignInForm() {
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {serverError && (
-            <div className="rounded-md bg-red-50 p-4">
-              <p className="text-sm text-red-800">{serverError}</p>
+        {passwordLoginDisabled ? (
+          <div className="mt-8 space-y-6">
+            <div className="rounded-md bg-amber-50 border border-amber-200 p-4">
+              <p className="text-sm text-amber-800">
+                Password login is currently disabled. Please use OTP login instead.
+              </p>
             </div>
-          )}
-
-          <div className="space-y-4 rounded-md shadow-sm">
-            <div>
-              <label htmlFor="identifier" className="block text-sm font-medium text-gray-700">
-                Email or Phone Number
-              </label>
-              <input
-                id="identifier"
-                name="identifier"
-                type="text"
-                autoComplete="username"
-                required
-                value={formData.identifier}
-                onChange={(e) =>
-                  setFormData({ ...formData, identifier: e.target.value })
-                }
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-teal-500 focus:outline-none focus:ring-teal-500 sm:text-sm"
-                placeholder="Email or phone (01XXXXXXXXX)"
-              />
-              {errors.identifier && (
-                <p className="mt-1 text-sm text-red-600">{errors.identifier}</p>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-teal-500 focus:outline-none focus:ring-teal-500 sm:text-sm"
-                placeholder="Enter your password"
-              />
-              {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password}</p>
-              )}
-            </div>
+            {loginSettings.enableOtpLogin && (
+              <div className="text-center">
+                <p className="text-sm text-gray-600 mb-4">
+                  OTP login will be available soon. Please contact support for assistance.
+                </p>
+              </div>
+            )}
           </div>
+        ) : (
+          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+            {serverError && (
+              <div className="rounded-md bg-red-50 p-4">
+                <p className="text-sm text-red-800">{serverError}</p>
+              </div>
+            )}
 
-          <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="group relative flex w-full justify-center rounded-md bg-teal-600 px-3 py-2 text-sm font-semibold text-white hover:bg-teal-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
-            >
-              {isLoading ? 'Signing in...' : 'Sign in'}
-            </button>
-          </div>
-        </form>
+            <div className="space-y-4 rounded-md shadow-sm">
+              <div>
+                <label htmlFor="identifier" className="block text-sm font-medium text-gray-700">
+                  Email or Phone Number
+                </label>
+                <input
+                  id="identifier"
+                  name="identifier"
+                  type="text"
+                  autoComplete="username"
+                  required
+                  value={formData.identifier}
+                  onChange={(e) =>
+                    setFormData({ ...formData, identifier: e.target.value })
+                  }
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-teal-500 focus:outline-none focus:ring-teal-500 sm:text-sm"
+                  placeholder="Email or phone (01XXXXXXXXX)"
+                />
+                {errors.identifier && (
+                  <p className="mt-1 text-sm text-red-600">{errors.identifier}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-teal-500 focus:outline-none focus:ring-teal-500 sm:text-sm"
+                  placeholder="Enter your password"
+                />
+                {errors.password && (
+                  <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="group relative flex w-full justify-center rounded-md bg-teal-600 px-3 py-2 text-sm font-semibold text-white hover:bg-teal-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                {isLoading ? 'Signing in...' : 'Sign in'}
+              </button>
+            </div>
+
+            {loginSettings.enableOtpLogin && (
+              <div className="text-center">
+                <p className="text-xs text-gray-500">
+                  OTP login option coming soon
+                </p>
+              </div>
+            )}
+          </form>
+        )}
       </div>
     </div>
   )

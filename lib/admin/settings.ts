@@ -38,6 +38,19 @@ export type CheckoutSettings = {
   defaultPaymentMethod: 'cod' | 'online' | 'wallet'
 }
 
+export type LoginSettings = {
+  enableOtpLogin: boolean // If true, show OTP login option
+  enablePasswordLogin: boolean // If true, allow password-based login
+  otpLoginMode: 'phone_only' | 'email_phone' // for future use
+}
+
+export type OrderOtpSettings = {
+  enabled: boolean // send OTP SMS for orders?
+  sendOn: ('order_created' | 'order_confirmed')[] // which events trigger OTP
+  smsTemplate: string // e.g. "Your HealthPlus order {{order_id}}..."
+  phoneField: 'shipping_phone' | 'billing_phone' // which phone to use
+}
+
 // ============================================
 // Zod Schemas for Validation
 // ============================================
@@ -69,6 +82,25 @@ export const checkoutSettingsSchema = z.object({
   defaultPaymentMethod: z.enum(['cod', 'online', 'wallet']),
 })
 
+export const loginSettingsSchema = z.object({
+  enableOtpLogin: z.boolean(),
+  enablePasswordLogin: z.boolean(),
+  otpLoginMode: z.enum(['phone_only', 'email_phone']),
+}).refine(
+  (data) => data.enableOtpLogin || data.enablePasswordLogin,
+  { message: 'At least one login method must remain enabled' }
+)
+
+export const orderOtpSettingsSchema = z.object({
+  enabled: z.boolean(),
+  sendOn: z.array(z.enum(['order_created', 'order_confirmed'])),
+  smsTemplate: z.string(),
+  phoneField: z.enum(['shipping_phone', 'billing_phone']),
+}).refine(
+  (data) => !data.enabled || (data.sendOn.length > 0 && data.smsTemplate.trim().length > 0),
+  { message: 'When enabled, at least one event must be selected and SMS template must not be empty' }
+)
+
 // ============================================
 // Default Values
 // ============================================
@@ -98,6 +130,19 @@ export const DEFAULT_CHECKOUT_SETTINGS: CheckoutSettings = {
   allowGuestCheckout: false,
   requiredFields: ['name', 'phone', 'address'],
   defaultPaymentMethod: 'cod',
+}
+
+export const DEFAULT_LOGIN_SETTINGS: LoginSettings = {
+  enableOtpLogin: true,
+  enablePasswordLogin: true,
+  otpLoginMode: 'phone_only',
+}
+
+export const DEFAULT_ORDER_OTP_SETTINGS: OrderOtpSettings = {
+  enabled: false,
+  sendOn: ['order_confirmed'],
+  smsTemplate: 'Your HealthPlus order {{order_id}} is confirmed. Amount: {{amount}} BDT. Thank you {{customer_name}}!',
+  phoneField: 'shipping_phone',
 }
 
 // ============================================
@@ -150,4 +195,12 @@ export function isChargesSettings(data: unknown): data is ChargesSettings {
 
 export function isCheckoutSettings(data: unknown): data is CheckoutSettings {
   return checkoutSettingsSchema.safeParse(data).success
+}
+
+export function isLoginSettings(data: unknown): data is LoginSettings {
+  return loginSettingsSchema.safeParse(data).success
+}
+
+export function isOrderOtpSettings(data: unknown): data is OrderOtpSettings {
+  return orderOtpSettingsSchema.safeParse(data).success
 }
