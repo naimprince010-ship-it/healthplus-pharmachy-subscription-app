@@ -94,8 +94,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   return (
     <div className="bg-gray-50 py-8">
-      {/* Content fills the shop layout container - no additional max-width needed */}
-      <div className="w-full px-2 sm:px-4 lg:px-0">
+      {/* MedEasy-style layout: centered on 2xl with max-w-[1480px] */}
+      <div className="w-full 2xl:max-w-[1480px] 2xl:mx-auto px-6 lg:px-8">
         <Link
           href={product.category?.slug ? `/category/${product.category.slug}` : '/products'}
           className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
@@ -104,11 +104,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
           {product.category?.name ? `Back to ${product.category.name}` : 'Back to Products'}
         </Link>
 
-        {/* Two-column layout: 55% image + 45% info */}
-        <div className="mt-6 flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
-          {/* Image container - 55% width on lg screens */}
-          <div className="w-full lg:w-[55%]">
-            <div className="aspect-[4/3] overflow-hidden rounded-lg bg-white">
+        {/* MedEasy grid: 640px image + 120px gap + flexible info panel */}
+        <div className="mt-6 grid grid-cols-1 lg:grid-cols-[640px_1fr] gap-6 lg:gap-[120px] items-start">
+          {/* Image container - max 640px width, centered like MedEasy */}
+          <div className="w-full max-w-[640px] mx-auto lg:mx-0">
+            <div className="aspect-[647/360] overflow-hidden rounded-lg bg-white">
               {product.imageUrl ? (
                 <img
                   src={product.imageUrl}
@@ -123,8 +123,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </div>
           </div>
 
-          {/* Details container - 45% width on lg screens */}
-          <div className="w-full lg:w-[45%]">
+          {/* Details container - flexible width */}
+          <div className="w-full">
             {product.category && (
               <div className="mb-2">
                 <Link
