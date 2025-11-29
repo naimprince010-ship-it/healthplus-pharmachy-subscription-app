@@ -8,10 +8,10 @@ export default function ShopLayout({
   return (
     <div className="w-full bg-white">
       {/* Centered container with max-width - sidebar and content zoom together */}
-      <div className="mx-auto w-full max-w-[1400px] px-2 sm:px-4 lg:grid lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-3 lg:px-4">
+      <div className="mx-auto w-full max-w-[1600px] px-2 sm:px-4 lg:grid lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-4 lg:px-6">
         {/* Left Sidebar - Desktop only, sticky positioned */}
         <aside className="hidden lg:block">
-          <div className="sticky top-16 w-[220px] py-2">
+          <div className="sticky top-16 w-[240px] py-2">
             <LeftCategorySidebar />
           </div>
         </aside>

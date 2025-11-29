@@ -59,9 +59,10 @@ export default async function SectionDetailsPage({ params, searchParams }: PageP
   const { section, products, totalCount, totalPages, currentPage } = data
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="container mx-auto px-4">
-        <div className="mb-8">
+    <div className="min-h-screen bg-gray-50 py-6">
+      {/* No container mx-auto here - ShopLayout already handles centering and max-width */}
+      <div className="px-2 sm:px-4">
+        <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900">
             {section.title}
             {section.badgeText && (
