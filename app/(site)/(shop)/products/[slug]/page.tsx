@@ -94,8 +94,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   return (
     <div className="bg-gray-50 py-8">
-      {/* Centered container matching home page layout */}
-      <div className="w-full max-w-[1480px] mx-auto px-4 lg:px-6">
+      {/* Content fills the shop layout container - no additional max-width needed */}
+      <div className="w-full px-2 sm:px-4 lg:px-0">
         <Link
           href={product.category?.slug ? `/category/${product.category.slug}` : '/products'}
           className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
