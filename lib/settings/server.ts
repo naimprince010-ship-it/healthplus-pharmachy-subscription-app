@@ -7,6 +7,7 @@
 
 import { prisma } from '@/lib/prisma'
 import {
+  BasicSettings,
   LoginSettings,
   OrderOtpSettings,
   FacebookPixelSettings,
@@ -15,6 +16,7 @@ import {
   GTMSettings,
   GA4Settings,
   GdprSettings,
+  DEFAULT_BASIC_SETTINGS,
   DEFAULT_LOGIN_SETTINGS,
   DEFAULT_ORDER_OTP_SETTINGS,
   DEFAULT_FACEBOOK_PIXEL_SETTINGS,
@@ -24,6 +26,30 @@ import {
   DEFAULT_GA4_SETTINGS,
   DEFAULT_GDPR_SETTINGS,
 } from '@/lib/admin/settings'
+
+/**
+ * Fetch Basic Settings from the database (server-side)
+ * Returns default values if no settings exist
+ */
+export async function getBasicSettingsServer(): Promise<BasicSettings> {
+  try {
+    const setting = await prisma.setting.findUnique({
+      where: { key: 'basic' },
+    })
+
+    if (!setting) {
+      return DEFAULT_BASIC_SETTINGS
+    }
+
+    return {
+      ...DEFAULT_BASIC_SETTINGS,
+      ...(setting.value as Partial<BasicSettings>),
+    }
+  } catch (error) {
+    console.error('[Settings] Failed to fetch basic settings:', error)
+    return DEFAULT_BASIC_SETTINGS
+  }
+}
 
 /**
  * Fetch Login Settings from the database (server-side)
