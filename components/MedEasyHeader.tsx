@@ -248,7 +248,7 @@ export function MedEasyHeader() {
                 >
                   <User className="h-5 w-5" />
                   <span className="hidden sm:inline text-sm font-medium">
-                    {session ? (session.user?.name?.split(' ')[0] || 'Account') : 'Sign In'}
+                    {mounted ? (session ? (session.user?.name?.split(' ')[0] || 'Account') : 'Sign In') : 'Sign In'}
                   </span>
                   <ChevronDown className="h-4 w-4 hidden sm:block" />
                 </button>
