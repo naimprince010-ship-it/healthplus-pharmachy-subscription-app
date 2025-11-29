@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { sendSMS, sendEmail } from '@/lib/notifications'
+import { processOrderOtp } from '@/lib/settings/server'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -216,6 +217,15 @@ export async function POST(request: NextRequest) {
         total: order.total,
       }),
     ])
+
+    // Process Order OTP based on admin settings (logs action for now, SMS integration in future)
+    await processOrderOtp('order_created', {
+      orderId: order.orderNumber,
+      amount: order.total,
+      customerName: order.user.name || 'Customer',
+      shippingPhone: address.phone || order.user.phone,
+      billingPhone: order.user.phone,
+    })
 
     return NextResponse.json({ success: true, order }, { status: 201 })
   } catch (error) {

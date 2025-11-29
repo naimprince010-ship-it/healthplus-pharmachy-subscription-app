@@ -19,6 +19,7 @@ import {
   Box,
   LayoutGrid,
   Sparkles,
+  Settings,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -45,6 +46,7 @@ const navItems: NavItem[] = [
     { label: 'Pages', href: '/admin/pages', icon: FileText },
     { label: 'Users', href: '/admin/users', icon: Users },
   { label: 'Sales / Reports', href: '/admin/sales', icon: BarChart3 },
+  { label: 'Settings', href: '/admin/settings', icon: Settings },
 ]
 
 interface AdminSidebarProps {
