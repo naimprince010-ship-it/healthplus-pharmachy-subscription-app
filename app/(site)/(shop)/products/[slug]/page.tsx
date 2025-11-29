@@ -94,7 +94,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   return (
     <div className="bg-gray-50 py-8">
-      <div className="w-full px-4 sm:px-6 lg:px-8">
+      {/* Content fills the shop layout container - no additional max-width needed */}
+      <div className="w-full px-2 sm:px-4 lg:px-0">
         <Link
           href={product.category?.slug ? `/category/${product.category.slug}` : '/products'}
           className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
@@ -103,9 +104,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
           {product.category?.name ? `Back to ${product.category.name}` : 'Back to Products'}
         </Link>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-[350px_1fr] xl:grid-cols-[400px_1fr]">
-          <div className="mx-auto w-full max-w-[350px] lg:mx-0 lg:max-w-none">
-            <div className="aspect-[4/5] overflow-hidden rounded-lg bg-gray-100">
+        {/* Two-column layout: 55% image + 45% info */}
+        <div className="mt-6 flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
+          {/* Image container - 55% width on lg screens */}
+          <div className="w-full lg:w-[55%]">
+            <div className="aspect-[4/3] overflow-hidden rounded-lg bg-white">
               {product.imageUrl ? (
                 <img
                   src={product.imageUrl}
@@ -120,7 +123,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </div>
           </div>
 
-          <div>
+          {/* Details container - 45% width on lg screens */}
+          <div className="w-full lg:w-[45%]">
             {product.category && (
               <div className="mb-2">
                 <Link
