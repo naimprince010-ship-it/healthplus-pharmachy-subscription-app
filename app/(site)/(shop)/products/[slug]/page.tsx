@@ -96,11 +96,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
     <div className="bg-gray-50 py-8">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <Link
-          href="/products"
+          href={product.category?.slug ? `/category/${product.category.slug}` : '/products'}
           className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Products
+          {product.category?.name ? `Back to ${product.category.name}` : 'Back to Products'}
         </Link>
 
         <div className="mt-8 grid gap-8 lg:grid-cols-2">
