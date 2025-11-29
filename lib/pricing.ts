@@ -2,6 +2,61 @@
  * Pricing helper functions for medicine calculations
  */
 
+export interface ProductWithPricing {
+  sellingPrice: number
+  mrp?: number | null
+  discountPercentage?: number | null
+  flashSalePrice?: number | null
+  flashSaleStart?: Date | string | null
+  flashSaleEnd?: Date | string | null
+  isFlashSale?: boolean | null
+}
+
+export interface EffectivePrices {
+  price: number
+  mrp: number
+  discountAmount: number
+  discountPercent: number
+  isFlashSale: boolean
+}
+
+export function getEffectivePrices(product: ProductWithPricing): EffectivePrices {
+  const baseMrp = product.mrp ?? product.sellingPrice
+  const now = new Date()
+
+  const flashStart = product.flashSaleStart ? new Date(product.flashSaleStart) : null
+  const flashEnd = product.flashSaleEnd ? new Date(product.flashSaleEnd) : null
+
+  const flashActive =
+    product.isFlashSale === true &&
+    product.flashSalePrice != null &&
+    product.flashSalePrice > 0 &&
+    (!flashStart || flashStart <= now) &&
+    (!flashEnd || flashEnd >= now) &&
+    product.flashSalePrice < baseMrp
+
+  let price: number
+
+  if (flashActive && product.flashSalePrice != null) {
+    price = product.flashSalePrice
+  } else if (product.discountPercentage && product.discountPercentage > 0) {
+    price = Math.round(product.sellingPrice * (1 - product.discountPercentage / 100))
+  } else {
+    price = product.sellingPrice
+  }
+
+  const discountAmount = baseMrp - price
+  const discountPercent = baseMrp > 0 ? Math.round((discountAmount / baseMrp) * 100) : 0
+
+  return {
+    price,
+    mrp: baseMrp,
+    discountAmount,
+    discountPercent,
+    isFlashSale: flashActive,
+  }
+}
+
 /**
  * Parse tablets per strip from pack size string
  * Examples: "1 strip x 10 tablets" -> 10, "10 tablets" -> 10, "1x10" -> 10

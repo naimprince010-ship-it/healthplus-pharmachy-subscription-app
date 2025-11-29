@@ -15,6 +15,10 @@ interface Product {
   stockQuantity: number
   imageUrl: string | null
   discountPercentage?: number | null
+  flashSalePrice?: number | null
+  flashSaleStart?: Date | string | null
+  flashSaleEnd?: Date | string | null
+  isFlashSale?: boolean | null
   category: {
     id: string
     name: string

@@ -3,7 +3,8 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 
 // Cart version - increment this when cart structure changes or pricing updates require clearing old carts
-const CART_VERSION = 2
+// Version 3: Ensure mrp field is properly stored for flash-sale products
+const CART_VERSION = 3
 
 export interface CartItem {
   id: string
