@@ -132,38 +132,34 @@ export default function FlashSalePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-teal-600 to-teal-700 py-12 text-white">
+      {/* Hero Section - Compact */}
+      <div className="bg-gradient-to-r from-teal-600 to-teal-700 py-4 text-white">
         <div className="container mx-auto px-4">
-          <div className="text-center">
-            <div className="mb-4 flex items-center justify-center gap-2">
-              <Zap className="h-8 w-8 animate-pulse" />
-              <h1 className="text-4xl font-bold md:text-5xl">Flash Sale</h1>
-              <Zap className="h-8 w-8 animate-pulse" />
+          <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-6">
+            <div className="flex items-center gap-2">
+              <Zap className="h-5 w-5 animate-pulse" />
+              <h1 className="text-xl font-bold sm:text-2xl">Flash Sale</h1>
+              <Zap className="h-5 w-5 animate-pulse" />
             </div>
-            <p className="mb-6 text-lg text-teal-100 md:text-xl">
-              Grab amazing deals on medicines and healthcare products!
-            </p>
 
-            {/* Countdown Timer */}
+            {/* Countdown Timer - Inline */}
             {timeLeft && (
-              <div className="mx-auto max-w-md">
-                <div className="mb-2 flex items-center justify-center gap-2 text-sm text-teal-100">
-                  <Clock className="h-4 w-4" />
-                  <span>Sale ends in:</span>
-                </div>
-                <div className="flex justify-center gap-4">
-                  <div className="rounded-lg bg-white/20 px-4 py-3 backdrop-blur-sm">
-                    <div className="text-3xl font-bold">{String(timeLeft.hours).padStart(2, '0')}</div>
-                    <div className="text-xs text-teal-100">Hours</div>
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-teal-100" />
+                <div className="flex gap-2">
+                  <div className="rounded bg-white/20 px-2 py-1 text-center">
+                    <span className="text-lg font-bold">{String(timeLeft.hours).padStart(2, '0')}</span>
+                    <span className="text-xs text-teal-100">h</span>
                   </div>
-                  <div className="rounded-lg bg-white/20 px-4 py-3 backdrop-blur-sm">
-                    <div className="text-3xl font-bold">{String(timeLeft.minutes).padStart(2, '0')}</div>
-                    <div className="text-xs text-teal-100">Minutes</div>
+                  <span className="text-lg font-bold">:</span>
+                  <div className="rounded bg-white/20 px-2 py-1 text-center">
+                    <span className="text-lg font-bold">{String(timeLeft.minutes).padStart(2, '0')}</span>
+                    <span className="text-xs text-teal-100">m</span>
                   </div>
-                  <div className="rounded-lg bg-white/20 px-4 py-3 backdrop-blur-sm">
-                    <div className="text-3xl font-bold">{String(timeLeft.seconds).padStart(2, '0')}</div>
-                    <div className="text-xs text-teal-100">Seconds</div>
+                  <span className="text-lg font-bold">:</span>
+                  <div className="rounded bg-white/20 px-2 py-1 text-center">
+                    <span className="text-lg font-bold">{String(timeLeft.seconds).padStart(2, '0')}</span>
+                    <span className="text-xs text-teal-100">s</span>
                   </div>
                 </div>
               </div>
@@ -172,20 +168,22 @@ export default function FlashSalePage() {
         </div>
       </div>
 
-      {/* Products Grid */}
-      <div className="container mx-auto px-4 py-12">
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900">
-            Top Deals ({data.count} {data.count === 1 ? 'Product' : 'Products'})
-          </h2>
-          <p className="text-gray-600">Sorted by highest discount</p>
+      {/* Products Grid - Compact */}
+      <div className="container mx-auto px-4 py-6">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">
+              Top Deals ({data.count} {data.count === 1 ? 'Product' : 'Products'})
+            </h2>
+            <p className="text-sm text-gray-600">Sorted by highest discount</p>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {data.products.map((product) => (
             <div
               key={product.id}
-              className="group overflow-hidden rounded-lg bg-white shadow-md transition-shadow hover:shadow-xl"
+              className="group overflow-hidden rounded-lg bg-white shadow-sm transition-shadow hover:shadow-md"
             >
               {/* Product Image */}
               <Link href={`/products/${product.slug}`} className="block">
@@ -198,38 +196,38 @@ export default function FlashSalePage() {
                       className="object-cover transition-transform group-hover:scale-105"
                     />
                   ) : (
-                    <div className="flex h-full items-center justify-center text-gray-400">
+                    <div className="flex h-full items-center justify-center text-gray-400 text-xs">
                       No Image
                     </div>
                   )}
                   {/* Discount Badge */}
-                  <div className="absolute right-2 top-2 rounded-full bg-red-500 px-3 py-1 text-sm font-bold text-white shadow-lg">
+                  <div className="absolute right-1 top-1 rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white shadow">
                     {product.discountPercentage}% OFF
                   </div>
                 </div>
               </Link>
 
               {/* Product Info */}
-              <div className="p-4">
+              <div className="p-2">
                 <Link href={`/products/${product.slug}`}>
-                  <h3 className="mb-2 line-clamp-2 text-sm font-semibold text-gray-900 hover:text-teal-600">
+                  <h3 className="mb-1 line-clamp-2 text-xs font-semibold text-gray-900 hover:text-teal-600">
                     {product.name}
                   </h3>
                 </Link>
-                <p className="mb-3 text-xs text-gray-500">{product.category.name}</p>
+                <p className="mb-1 text-[10px] text-gray-500">{product.category.name}</p>
 
                 {/* Pricing */}
-                <div className="mb-4">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold text-teal-600">
-                      ৳{product.flashSalePrice?.toFixed(2)}
+                <div className="mb-2">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-sm font-bold text-teal-600">
+                      ৳{product.flashSalePrice?.toFixed(0)}
                     </span>
-                    <span className="text-sm text-gray-500 line-through">
-                      ৳{product.sellingPrice.toFixed(2)}
+                    <span className="text-[10px] text-gray-500 line-through">
+                      ৳{product.sellingPrice.toFixed(0)}
                     </span>
                   </div>
-                  <p className="text-xs text-green-600">
-                    Save ৳{(product.sellingPrice - (product.flashSalePrice || 0)).toFixed(2)}
+                  <p className="text-[10px] text-green-600">
+                    Save ৳{(product.sellingPrice - (product.flashSalePrice || 0)).toFixed(0)}
                   </p>
                 </div>
 
@@ -242,7 +240,7 @@ export default function FlashSalePage() {
                   stockQuantity={product.stockQuantity}
                   category={product.category?.name ?? 'General'}
                   type="PRODUCT"
-                  className="w-full"
+                  className="w-full text-xs py-1.5"
                 />
               </div>
             </div>
