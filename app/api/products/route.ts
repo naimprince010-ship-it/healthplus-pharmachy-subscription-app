@@ -30,6 +30,8 @@ const productListQuerySchema = z.object({
   limit: z.coerce.number().min(1).max(100).default(20),
   search: z.string().optional(),
   categoryId: z.string().optional(),
+  categorySlug: z.string().optional(),
+  isFlashSale: z.string().optional(),
   type: z.enum(['MEDICINE', 'GENERAL', 'all']).default('all'),
   sortBy: z.enum(['createdAt', 'name', 'sellingPrice', 'stockQuantity']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
@@ -49,6 +51,8 @@ export async function GET(request: NextRequest) {
       limit: searchParams.get('limit') || '20',
       search: searchParams.get('search') || undefined,
       categoryId: searchParams.get('categoryId') || undefined,
+      categorySlug: searchParams.get('categorySlug') || undefined,
+      isFlashSale: searchParams.get('isFlashSale') || undefined,
       type: searchParams.get('type') || 'all',
       sortBy: searchParams.get('sortBy') || 'createdAt',
       sortOrder: searchParams.get('sortOrder') || 'desc',
@@ -89,6 +93,37 @@ export async function GET(request: NextRequest) {
       productWhere.categoryId = { in: categoryIds }
     }
 
+    // Support filtering by category slug
+    if (query.categorySlug) {
+      const category = await prisma.category.findFirst({
+        where: { slug: query.categorySlug },
+        select: { id: true },
+      })
+      if (category) {
+        const categoryIds = await getCategoryWithDescendants(category.id)
+        productWhere.categoryId = { in: categoryIds }
+      }
+    }
+
+    // Support filtering by flash sale
+    if (query.isFlashSale === 'true') {
+      const now = new Date()
+      productWhere.isFlashSale = true
+      productWhere.flashSalePrice = { not: null, gt: 0 }
+      productWhere.OR = [
+        { flashSaleStart: null },
+        { flashSaleStart: { lte: now } },
+      ]
+      productWhere.AND = [
+        {
+          OR: [
+            { flashSaleEnd: null },
+            { flashSaleEnd: { gte: now } },
+          ],
+        },
+      ]
+    }
+
     const [productCount, productRecords] = await Promise.all([
       prisma.product.count({ where: productWhere }),
       prisma.product.findMany({
@@ -105,6 +140,10 @@ export async function GET(request: NextRequest) {
           stockQuantity: true,
           imageUrl: true,
           discountPercentage: true,
+          flashSalePrice: true,
+          flashSaleStart: true,
+          flashSaleEnd: true,
+          isFlashSale: true,
           createdAt: true,
           category: {
             select: {

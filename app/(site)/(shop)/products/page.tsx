@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Search, Filter, X } from 'lucide-react'
 import { ProductCard } from '@/components/ProductCard'
+import { MobileShop } from '@/components/MobileShop'
 
 interface Product {
   id: string
@@ -251,16 +252,26 @@ function ProductsContent() {
 
 export default function ProductsPage() {
   return (
-    <Suspense fallback={
-      <div className="bg-gray-50 py-8">
-        <div className="w-full px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center py-12">
-            <div className="text-gray-500">Loading products...</div>
+    <>
+      {/* Desktop View - shows traditional product grid with filters */}
+      <div className="hidden lg:block">
+        <Suspense fallback={
+          <div className="bg-gray-50 py-8">
+            <div className="w-full px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center justify-center py-12">
+                <div className="text-gray-500">Loading products...</div>
+              </div>
+            </div>
           </div>
-        </div>
+        }>
+          <ProductsContent />
+        </Suspense>
       </div>
-    }>
-      <ProductsContent />
-    </Suspense>
+
+      {/* Mobile View - shows products organized by sidebar categories */}
+      <div className="block lg:hidden">
+        <MobileShop />
+      </div>
+    </>
   )
 }
