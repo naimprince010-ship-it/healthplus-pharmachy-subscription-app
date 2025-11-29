@@ -43,8 +43,22 @@ async function getHomeSections() {
           where: whereClause,
           include: {
             category: true,
+            medicine: {
+              select: {
+                discountPercentage: true,
+              },
+            },
           },
           take: section.maxProducts,
+        })
+
+        // Map products to flatten medicine.discountPercentage into product.discountPercentage
+        const mappedProducts = products.map((product) => {
+          const rawDiscount = product.discountPercentage ?? product.medicine?.discountPercentage
+          return {
+            ...product,
+            discountPercentage: rawDiscount ? Number(rawDiscount) : null,
+          }
         })
 
         return {
@@ -55,7 +69,7 @@ async function getHomeSections() {
             badgeText: section.badgeText,
             bgColor: section.bgColor,
           },
-          products,
+          products: mappedProducts,
         }
       })
     )
