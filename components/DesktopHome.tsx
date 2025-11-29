@@ -24,9 +24,9 @@ interface DesktopHomeProps {
 export function DesktopHome({ subscriptionPlans, membershipPlan, homeSections }: DesktopHomeProps) {
   return (
     <>
-      {/* Hero Section with Prescription Upload - full width background */}
+      {/* Hero Section with Prescription Upload - full width */}
       <section className="w-full bg-gradient-to-br from-teal-50 to-white py-6">
-        <div className="mx-auto w-full max-w-[1400px] px-2 sm:px-4">
+        <div className="w-full px-2 sm:px-4">
           <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
             <div className="flex flex-col justify-center">
               <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl lg:text-5xl">
@@ -65,10 +65,10 @@ export function DesktopHome({ subscriptionPlans, membershipPlan, homeSections }:
         ))}
       </div>
 
-      {/* Membership Card - full width background */}
+      {/* Membership Card - full width */}
       {membershipPlan && (
         <section className="w-full py-8 lg:py-12">
-          <div className="mx-auto w-full max-w-[1400px] px-2 sm:px-4">
+          <div className="w-full px-2 sm:px-4">
             <div className="rounded-2xl bg-gradient-to-r from-teal-600 to-teal-700 p-6 text-white shadow-xl sm:p-8 lg:p-12">
               <div className="grid gap-6 lg:grid-cols-2 lg:gap-8">
                 <div>
@@ -119,9 +119,9 @@ export function DesktopHome({ subscriptionPlans, membershipPlan, homeSections }:
         </section>
       )}
 
-      {/* Subscription Plans - full width background */}
+      {/* Subscription Plans - full width */}
       <section className="w-full bg-gray-50 py-8 lg:py-12">
-        <div className="mx-auto w-full max-w-[1400px] px-2 sm:px-4">
+        <div className="w-full px-2 sm:px-4">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">Monthly Subscription Plans</h2>
             <p className="mt-3 text-base text-gray-600 lg:mt-4 lg:text-lg">
@@ -161,7 +161,7 @@ export function DesktopHome({ subscriptionPlans, membershipPlan, homeSections }:
 
       {/* Trust Badges - full width */}
       <section className="w-full py-8 lg:py-12">
-        <div className="mx-auto w-full max-w-[1400px] px-2 sm:px-4">
+        <div className="w-full px-2 sm:px-4">
           <div className="grid gap-6 sm:grid-cols-3 lg:gap-8">
             <div className="text-center">
               <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-teal-100 lg:mb-4 lg:h-16 lg:w-16">

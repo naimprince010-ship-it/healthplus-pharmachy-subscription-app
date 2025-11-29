@@ -52,8 +52,8 @@ export function SectionSlider({ section, products }: SectionSliderProps) {
   return (
     // Full-width section with background color
     <section className="w-full py-4" style={bgStyle}>
-      {/* Centered content container */}
-      <div className="mx-auto w-full max-w-[1400px] px-2 sm:px-4">
+      {/* Full-width content - no max-width so it fills the ShopLayout grid column */}
+      <div className="w-full px-2 sm:px-4">
         <div className="mb-3 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-bold text-gray-900 sm:text-xl lg:text-2xl">
