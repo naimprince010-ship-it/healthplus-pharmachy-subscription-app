@@ -15,6 +15,9 @@ const draftsQuerySchema = z.object({
   maxConfidence: z.coerce.number().min(0).max(1).optional(),
   sortBy: z.enum(['createdAt', 'updatedAt', 'rowIndex', 'aiConfidence']).default('rowIndex'),
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
+  // Phase 3: Image status filter
+  imageStatus: z.enum(['UNMATCHED', 'MATCHED', 'PROCESSED', 'MISSING', 'MANUAL', 'all']).default('all'),
+  hasImage: z.enum(['yes', 'no', 'all']).default('all'),
 })
 
 /**
@@ -63,6 +66,9 @@ export async function GET(request: NextRequest) {
       maxConfidence: searchParams.get('maxConfidence') || undefined,
       sortBy: searchParams.get('sortBy') || 'rowIndex',
       sortOrder: searchParams.get('sortOrder') || 'asc',
+      // Phase 3: Image filters
+      imageStatus: searchParams.get('imageStatus') || 'all',
+      hasImage: searchParams.get('hasImage') || 'all',
     })
 
     if (!queryResult.success) {
@@ -94,6 +100,18 @@ export async function GET(request: NextRequest) {
       if (query.maxConfidence !== undefined) {
         (where.aiConfidence as Record<string, number>).lte = query.maxConfidence
       }
+    }
+
+    // Phase 3: Image status filter
+    if (query.imageStatus !== 'all') {
+      where.imageStatus = query.imageStatus
+    }
+
+    // Phase 3: Has image filter
+    if (query.hasImage === 'yes') {
+      where.imageUrl = { not: null }
+    } else if (query.hasImage === 'no') {
+      where.imageUrl = null
     }
 
     const total = await prisma.aiProductDraft.count({ where })

@@ -11,7 +11,10 @@ import {
   XCircle,
   RefreshCw,
   FileText,
-  ChevronRight
+  ChevronRight,
+  Image as ImageIcon,
+  Archive,
+  Wand2
 } from 'lucide-react'
 
 interface AiImportJob {
@@ -37,6 +40,11 @@ interface AiImportJob {
     ai_error: number
     manually_edited: number
   }
+  // Phase 3: Image fields
+  zipPath: string | null
+  imageTotal: number | null
+  imageProcessed: number
+  imageStatus: 'NONE' | 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'
 }
 
 interface Pagination {
@@ -235,6 +243,80 @@ export default function AiImportPage() {
     return colors[status] || 'bg-gray-100 text-gray-800'
   }
 
+  // Phase 3: Image status badge
+  const getImageStatusBadge = (status: string) => {
+    const colors: Record<string, string> = {
+      NONE: 'bg-gray-100 text-gray-600',
+      PENDING: 'bg-yellow-100 text-yellow-800',
+      PROCESSING: 'bg-blue-100 text-blue-800',
+      COMPLETED: 'bg-green-100 text-green-800',
+      FAILED: 'bg-red-100 text-red-800',
+    }
+    return colors[status] || 'bg-gray-100 text-gray-600'
+  }
+
+  // Phase 3: Handle image matching
+  const [matchingJobId, setMatchingJobId] = useState<string | null>(null)
+  const handleMatchImages = async (jobId: string) => {
+    setMatchingJobId(jobId)
+    try {
+      const res = await fetch('/api/admin/ai-import/match-images', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId, batchSize: 100 }),
+      })
+
+      const data = await res.json()
+      if (res.ok) {
+        fetchJobs()
+        if (data.remaining > 0) {
+          setTimeout(() => handleMatchImages(jobId), 500)
+        } else {
+          setMatchingJobId(null)
+          alert(`Image matching completed! Matched: ${data.batch?.matched || 0}`)
+        }
+      } else {
+        setMatchingJobId(null)
+        alert(data.error || 'Failed to match images')
+      }
+    } catch (error) {
+      setMatchingJobId(null)
+      console.error('Match images error:', error)
+      alert('Failed to match images')
+    }
+  }
+
+  // Phase 3: Handle image processing
+  const [processingImagesJobId, setProcessingImagesJobId] = useState<string | null>(null)
+  const handleProcessImages = async (jobId: string) => {
+    setProcessingImagesJobId(jobId)
+    try {
+      const res = await fetch('/api/admin/ai-import/process-images', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId, batchSize: 50 }),
+      })
+
+      const data = await res.json()
+      if (res.ok) {
+        fetchJobs()
+        if (data.remaining > 0) {
+          setTimeout(() => handleProcessImages(jobId), 1000)
+        } else {
+          setProcessingImagesJobId(null)
+          alert(`Image processing completed! Processed: ${data.batch?.processed || 0}`)
+        }
+      } else {
+        setProcessingImagesJobId(null)
+        alert(data.error || 'Failed to process images')
+      }
+    } catch (error) {
+      setProcessingImagesJobId(null)
+      console.error('Process images error:', error)
+      alert('Failed to process images')
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -302,6 +384,9 @@ export default function AiImportPage() {
                     Drafts
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Images
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                     Created
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
@@ -359,6 +444,31 @@ export default function AiImportPage() {
                         )}
                       </div>
                     </td>
+                    {/* Phase 3: Images column */}
+                    <td className="whitespace-nowrap px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <ImageIcon className="h-4 w-4 text-gray-400" />
+                        <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getImageStatusBadge(job.imageStatus)}`}>
+                          {job.imageStatus}
+                        </span>
+                      </div>
+                      {job.imageTotal !== null && job.imageTotal > 0 && (
+                        <>
+                          <div className="mt-1 text-xs text-gray-600">
+                            {job.imageProcessed} / {job.imageTotal} processed
+                          </div>
+                          <div className="mt-1 h-2 w-24 rounded-full bg-gray-200">
+                            <div
+                              className="h-2 rounded-full bg-purple-500"
+                              style={{ width: `${(job.imageProcessed / job.imageTotal) * 100}%` }}
+                            />
+                          </div>
+                        </>
+                      )}
+                      {job.imageStatus === 'NONE' && (
+                        <p className="mt-1 text-xs text-gray-500">No ZIP uploaded</p>
+                      )}
+                    </td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                       {new Date(job.createdAt).toLocaleDateString('en-US', {
                         month: 'short',
@@ -368,33 +478,78 @@ export default function AiImportPage() {
                       })}
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
-                      <div className="flex items-center justify-end gap-2">
-                        {(job.status === 'PENDING' || job.status === 'PROCESSING') && (
-                          <button
-                            onClick={() => handleRunBatch(job.id)}
-                            disabled={processingJobId === job.id}
-                            className="flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+                      <div className="flex flex-col items-end gap-2">
+                        <div className="flex items-center gap-2">
+                          {(job.status === 'PENDING' || job.status === 'PROCESSING') && (
+                            <button
+                              onClick={() => handleRunBatch(job.id)}
+                              disabled={processingJobId === job.id}
+                              className="flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+                            >
+                              {processingJobId === job.id ? (
+                                <>
+                                  <RefreshCw className="h-3 w-3 animate-spin" />
+                                  Processing...
+                                </>
+                              ) : (
+                                <>
+                                  <Play className="h-3 w-3" />
+                                  Run Batch
+                                </>
+                              )}
+                            </button>
+                          )}
+                          <Link
+                            href={`/admin/ai-import/drafts?jobId=${job.id}`}
+                            className="flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
                           >
-                            {processingJobId === job.id ? (
-                              <>
-                                <RefreshCw className="h-3 w-3 animate-spin" />
-                                Processing...
-                              </>
-                            ) : (
-                              <>
-                                <Play className="h-3 w-3" />
-                                Run Batch
-                              </>
-                            )}
-                          </button>
+                            View Drafts
+                            <ChevronRight className="h-3 w-3" />
+                          </Link>
+                        </div>
+                        {/* Phase 3: Image action buttons */}
+                        {job.zipPath && job.imageStatus === 'PENDING' && (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleMatchImages(job.id)}
+                              disabled={matchingJobId === job.id}
+                              className="flex items-center gap-1 rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-purple-700 disabled:opacity-50"
+                            >
+                              {matchingJobId === job.id ? (
+                                <>
+                                  <RefreshCw className="h-3 w-3 animate-spin" />
+                                  Matching...
+                                </>
+                              ) : (
+                                <>
+                                  <Wand2 className="h-3 w-3" />
+                                  Match Images
+                                </>
+                              )}
+                            </button>
+                          </div>
                         )}
-                        <Link
-                          href={`/admin/ai-import/drafts?jobId=${job.id}`}
-                          className="flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
-                        >
-                          View Drafts
-                          <ChevronRight className="h-3 w-3" />
-                        </Link>
+                        {job.zipPath && (job.imageStatus === 'PENDING' || job.imageStatus === 'PROCESSING') && (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleProcessImages(job.id)}
+                              disabled={processingImagesJobId === job.id}
+                              className="flex items-center gap-1 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-green-700 disabled:opacity-50"
+                            >
+                              {processingImagesJobId === job.id ? (
+                                <>
+                                  <RefreshCw className="h-3 w-3 animate-spin" />
+                                  Processing...
+                                </>
+                              ) : (
+                                <>
+                                  <ImageIcon className="h-3 w-3" />
+                                  Process Images
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </td>
                   </tr>
