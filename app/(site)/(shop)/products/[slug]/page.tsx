@@ -94,8 +94,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   return (
     <div className="bg-gray-50 py-8">
-      {/* Content fills the shop layout container - no additional max-width needed */}
-      <div className="w-full px-2 sm:px-4 lg:px-0">
+      {/* MedEasy-style layout: centered container matching home page */}
+      <div className="w-full max-w-[1480px] mx-auto px-4">
         <Link
           href={product.category?.slug ? `/category/${product.category.slug}` : '/products'}
           className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
@@ -104,27 +104,25 @@ export default async function ProductPage({ params }: ProductPageProps) {
           {product.category?.name ? `Back to ${product.category.name}` : 'Back to Products'}
         </Link>
 
-        {/* Two-column layout: 55% image + 45% info */}
-        <div className="mt-6 flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
-          {/* Image container - 55% width on lg screens */}
-          <div className="w-full lg:w-[55%]">
-            <div className="aspect-[4/3] overflow-hidden rounded-lg bg-white">
-              {product.imageUrl ? (
-                <img
-                  src={product.imageUrl}
-                  alt={product.name}
-                  className="h-full w-full object-contain"
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center text-gray-400">
-                  No image available
-                </div>
-              )}
-            </div>
+        {/* MedEasy grid: 1.8fr image column + 1.4fr info column with gap-8 */}
+        <div className="mt-8 grid grid-cols-1 lg:grid-cols-[minmax(0,1.8fr)_minmax(0,1.4fr)] gap-6 lg:gap-8 items-start">
+          {/* Image container - max 600px width, 360px height like MedEasy (~573x343px) */}
+          <div className="w-full max-w-[600px] h-[360px] mx-auto lg:mx-0 bg-white rounded-xl flex items-center justify-center overflow-hidden">
+            {product.imageUrl ? (
+              <img
+                src={product.imageUrl}
+                alt={product.name}
+                className="h-full w-full object-contain"
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center text-gray-400">
+                No image available
+              </div>
+            )}
           </div>
 
-          {/* Details container - 45% width on lg screens */}
-          <div className="w-full lg:w-[45%]">
+          {/* Details container - flexible width */}
+          <div className="w-full">
             {product.category && (
               <div className="mb-2">
                 <Link
