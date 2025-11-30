@@ -42,6 +42,23 @@ enum PageGroup {
   NONE
 }
 
+// AI Import Wizard enums
+enum AiImportJobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum AiProductDraftStatus {
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  AI_ERROR
+  MANUALLY_EDITED
+}
+
 model User {
   id            String           @id @default(cuid())
   name          String
@@ -113,6 +130,9 @@ model Category {
   medicines          Medicine[]
   products           Product[]
   homeSections       HomeSection[]
+  // Phase 2: AI Import draft relations
+  aiDraftsAsCategory    AiProductDraft[] // Drafts where this is the matched category
+  aiDraftsAsSubcategory AiProductDraft[] @relation("SubcategoryDrafts") // Drafts where this is the matched subcategory
 }
 
 model Product {
@@ -472,4 +492,107 @@ model Setting {
   key       String   @unique // Settings section key (e.g., "basic", "branding", "checkout")
   value     Json     // Full settings object for that section
   updatedAt DateTime @updatedAt
+}
+
+// AI Product Import Wizard - Phase 1
+// Stores import job metadata and tracks processing progress
+model AiImportJob {
+  id               String            @id @default(cuid())
+  createdByAdminId String            // Admin user who created the import
+  csvPath          String            // Supabase storage path to uploaded CSV
+  status           AiImportJobStatus @default(PENDING)
+  totalRows        Int?              // Total rows in CSV (set after parsing)
+  processedRows    Int               @default(0) // Rows processed so far
+  failedRows       Int               @default(0) // Rows that failed AI processing
+  errorSummary     String?           // Summary of errors if any
+  config           Json?             // Configuration: model name, batch size, etc.
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  // Relations
+  drafts AiProductDraft[]
+
+  @@index([status])
+  @@index([createdByAdminId])
+}
+
+// AI Product Import Wizard - Phase 1 & 2
+// Stores individual product drafts with raw CSV data and AI suggestions
+model AiProductDraft {
+  id                 String               @id @default(cuid())
+  importJobId        String               // FK to AiImportJob
+  importJob          AiImportJob          @relation(fields: [importJobId], references: [id], onDelete: Cascade)
+  rowIndex           Int                  // Original CSV row number (for reference)
+  rawData            Json                 // Full original CSV row as JSON
+  aiSuggestion       Json?                // AI-generated structured data (brand_name, strength, descriptions, etc.)
+  aiConfidence       Float?               // Overall confidence score (0-1)
+  status             AiProductDraftStatus @default(PENDING_REVIEW)
+  publishedProductId String?              // FK to Product (set when approved and published)
+  notes              String?              // Admin comments/notes
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  // Phase 2: Master table match IDs (set by AI or admin)
+  genericMatchId      String?              // FK to Generic (matched generic)
+  generic             Generic?             @relation(fields: [genericMatchId], references: [id])
+  manufacturerMatchId String?              // FK to Manufacturer (matched manufacturer)
+  manufacturer        Manufacturer?        @relation(fields: [manufacturerMatchId], references: [id])
+  categoryMatchId     String?              // FK to Category (matched category)
+  category            Category?            @relation(fields: [categoryMatchId], references: [id])
+  subcategoryMatchId  String?              // FK to Category (matched subcategory)
+  subcategory         Category?            @relation("SubcategoryDrafts", fields: [subcategoryMatchId], references: [id])
+
+  // Phase 2: Field-level confidence scores (0-1)
+  genericConfidence      Float?            // Confidence for generic match
+  manufacturerConfidence Float?            // Confidence for manufacturer match
+  categoryConfidence     Float?            // Confidence for category match
+
+  // Phase 2: QC verification flags (admin must verify before approval)
+  genericVerified      Boolean @default(false)
+  manufacturerVerified Boolean @default(false)
+  categoryVerified     Boolean @default(false)
+
+  // Phase 2: Suggested new values (if no match found)
+  newGenericSuggested      String?         // AI suggested new generic name
+  newManufacturerSuggested String?         // AI suggested new manufacturer name
+
+  @@index([importJobId])
+  @@index([status])
+  @@index([importJobId, status])
+  @@index([genericMatchId])
+  @@index([manufacturerMatchId])
+  @@index([categoryMatchId])
+}
+
+// Master Tables for AI Import Wizard - Phase 2
+
+// Generic (active ingredient) master table
+model Generic {
+  id        String   @id @default(cuid())
+  name      String   @unique // Primary generic name (e.g., "Esomeprazole")
+  synonyms  Json?    // Array of alternative names/spellings (e.g., ["Esomeprazol", "Esomeprazole Magnesium"])
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  drafts AiProductDraft[]
+
+  @@index([name])
+}
+
+// Manufacturer master table
+model Manufacturer {
+  id                    String   @id @default(cuid())
+  name                  String   @unique // Primary manufacturer name (e.g., "Square Pharmaceuticals Ltd.")
+  aliasList             Json?    // Array of alternative names (e.g., ["Square", "Square Pharma"])
+  slug                  String   @unique
+  requiresQcVerification Boolean @default(true) // Whether products from this manufacturer need extra QC
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  drafts AiProductDraft[]
+
+  @@index([name])
 }
