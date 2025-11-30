@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import { z } from 'zod'
 import { generateSlug } from '@/lib/matching/masterMatching'
 
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
     const generic = await prisma.generic.create({
       data: {
         name: name.trim(),
-        synonyms: synonyms && synonyms.length > 0 ? synonyms : null,
+        synonyms: synonyms && synonyms.length > 0 ? synonyms : Prisma.JsonNull,
         slug,
       },
     })

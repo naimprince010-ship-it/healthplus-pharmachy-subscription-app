@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import { z } from 'zod'
 import { generateSlug } from '@/lib/matching/masterMatching'
 
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest) {
     const manufacturer = await prisma.manufacturer.create({
       data: {
         name: name.trim(),
-        aliasList: aliasList && aliasList.length > 0 ? aliasList : null,
+        aliasList: aliasList && aliasList.length > 0 ? aliasList : Prisma.JsonNull,
         slug,
         requiresQcVerification,
       },
