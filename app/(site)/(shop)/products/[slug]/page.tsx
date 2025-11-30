@@ -23,8 +23,8 @@ interface SimilarProduct {
   imageUrl: string | null
   discountPercentage: number | null
   flashSalePrice: number | null
-  flashSaleStart: Date | null
-  flashSaleEnd: Date | null
+  flashSaleStart: string | null
+  flashSaleEnd: string | null
   isFlashSale: boolean | null
   category: {
     id: string
@@ -110,8 +110,8 @@ async function getSimilarProducts(
         imageUrl: p.imageUrl,
         discountPercentage: p.discountPercentage ? Number(p.discountPercentage) : null,
         flashSalePrice: p.flashSalePrice ? Number(p.flashSalePrice) : null,
-        flashSaleStart: p.flashSaleStart,
-        flashSaleEnd: p.flashSaleEnd,
+        flashSaleStart: p.flashSaleStart ? new Date(p.flashSaleStart).toISOString() : null,
+        flashSaleEnd: p.flashSaleEnd ? new Date(p.flashSaleEnd).toISOString() : null,
         isFlashSale: p.isFlashSale,
         category: p.category,
         // Pre-computed values from server to avoid hydration mismatch
