@@ -29,6 +29,19 @@ const approveSchema = z.object({
     isActive: z.boolean().default(true),
     isFeatured: z.boolean().default(false),
   }),
+  // Phase 2: QC verification flags (must all be true to approve)
+  qcVerification: z.object({
+    genericVerified: z.boolean(),
+    manufacturerVerified: z.boolean(),
+    categoryVerified: z.boolean(),
+  }).optional(),
+  // Phase 2: Master table match IDs
+  matchIds: z.object({
+    genericMatchId: z.string().nullable().optional(),
+    manufacturerMatchId: z.string().nullable().optional(),
+    categoryMatchId: z.string().nullable().optional(),
+    subcategoryMatchId: z.string().nullable().optional(),
+  }).optional(),
 })
 
 /**
@@ -80,13 +93,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { draftId, productData } = validationResult.data
+    const { draftId, productData, qcVerification, matchIds } = validationResult.data
 
-    // Get the draft
+    // Get the draft with Phase 2 relations
     const draft = await prisma.aiProductDraft.findUnique({
       where: { id: draftId },
       include: {
         importJob: true,
+        generic: true,
+        manufacturer: true,
+        category: true,
+        subcategory: true,
       },
     })
 
@@ -99,6 +116,62 @@ export async function POST(request: NextRequest) {
         error: 'Draft already approved',
         publishedProductId: draft.publishedProductId,
       }, { status: 400 })
+    }
+
+    // Phase 2: QC Verification Enforcement
+    // Rule 5: Product approval blocked unless generic, manufacturer, category all verified
+    const qcFlags = qcVerification || {
+      genericVerified: draft.genericVerified,
+      manufacturerVerified: draft.manufacturerVerified,
+      categoryVerified: draft.categoryVerified,
+    }
+
+    // Check if all QC flags are verified
+    if (!qcFlags.genericVerified || !qcFlags.manufacturerVerified || !qcFlags.categoryVerified) {
+      const missingVerifications = []
+      if (!qcFlags.genericVerified) missingVerifications.push('Generic')
+      if (!qcFlags.manufacturerVerified) missingVerifications.push('Manufacturer')
+      if (!qcFlags.categoryVerified) missingVerifications.push('Category')
+      
+      return NextResponse.json({
+        error: 'QC verification incomplete',
+        message: `The following must be verified before approval: ${missingVerifications.join(', ')}`,
+        missingVerifications,
+      }, { status: 400 })
+    }
+
+    // Phase 2: Validate match IDs if provided
+    const finalMatchIds = matchIds || {
+      genericMatchId: draft.genericMatchId,
+      manufacturerMatchId: draft.manufacturerMatchId,
+      categoryMatchId: draft.categoryMatchId,
+      subcategoryMatchId: draft.subcategoryMatchId,
+    }
+
+    // Validate generic match ID exists if provided
+    if (finalMatchIds.genericMatchId) {
+      const genericExists = await prisma.generic.findUnique({
+        where: { id: finalMatchIds.genericMatchId },
+      })
+      if (!genericExists) {
+        return NextResponse.json({
+          error: 'Invalid generic match ID',
+          message: 'The selected generic does not exist in the master table',
+        }, { status: 400 })
+      }
+    }
+
+    // Validate manufacturer match ID exists if provided
+    if (finalMatchIds.manufacturerMatchId) {
+      const manufacturerExists = await prisma.manufacturer.findUnique({
+        where: { id: finalMatchIds.manufacturerMatchId },
+      })
+      if (!manufacturerExists) {
+        return NextResponse.json({
+          error: 'Invalid manufacturer match ID',
+          message: 'The selected manufacturer does not exist in the master table',
+        }, { status: 400 })
+      }
     }
 
     // Generate unique slug
@@ -161,12 +234,21 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Update the draft status
+    // Update the draft status with Phase 2 QC flags and match IDs
     await prisma.aiProductDraft.update({
       where: { id: draftId },
       data: {
         status: 'APPROVED',
         publishedProductId: product.id,
+        // Phase 2: Save final QC verification state
+        genericVerified: qcFlags.genericVerified,
+        manufacturerVerified: qcFlags.manufacturerVerified,
+        categoryVerified: qcFlags.categoryVerified,
+        // Phase 2: Save final match IDs
+        genericMatchId: finalMatchIds.genericMatchId,
+        manufacturerMatchId: finalMatchIds.manufacturerMatchId,
+        categoryMatchId: finalMatchIds.categoryMatchId,
+        subcategoryMatchId: finalMatchIds.subcategoryMatchId,
       },
     })
 
