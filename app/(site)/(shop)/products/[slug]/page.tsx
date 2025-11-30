@@ -86,42 +86,69 @@ async function getSimilarProducts(
     })
 
     // Pre-compute effective prices for each product to avoid hydration mismatch
-    return rawProducts.map((p: any) => {
-      const prices = getEffectivePrices({
-        sellingPrice: Number(p.sellingPrice),
-        mrp: p.mrp ? Number(p.mrp) : null,
-        discountPercentage: p.discountPercentage ? Number(p.discountPercentage) : null,
-        flashSalePrice: p.flashSalePrice ? Number(p.flashSalePrice) : null,
-        flashSaleStart: p.flashSaleStart,
-        flashSaleEnd: p.flashSaleEnd,
-        isFlashSale: p.isFlashSale,
-      })
+    // Use defensive mapping to skip any products with missing/invalid data
+    const mapped = rawProducts.map((p: any) => {
+      try {
+        // Skip products with missing required fields
+        if (!p || !p.id || !p.slug || !p.name) {
+          console.error('similarProducts: missing required fields for product', p?.id)
+          return null
+        }
+        
+        // Skip products with missing category (required for ProductCard)
+        if (!p.category || !p.category.id || !p.category.name || !p.category.slug) {
+          console.error('similarProducts: missing category for product', p.id)
+          return null
+        }
 
-      return {
-        id: p.id,
-        type: p.type,
-        name: p.name,
-        slug: p.slug,
-        brandName: p.brandName,
-        description: p.description,
-        sellingPrice: Number(p.sellingPrice),
-        mrp: p.mrp ? Number(p.mrp) : null,
-        stockQuantity: Number(p.stockQuantity),
-        imageUrl: p.imageUrl,
-        discountPercentage: p.discountPercentage ? Number(p.discountPercentage) : null,
-        flashSalePrice: p.flashSalePrice ? Number(p.flashSalePrice) : null,
-        flashSaleStart: p.flashSaleStart ? new Date(p.flashSaleStart).toISOString() : null,
-        flashSaleEnd: p.flashSaleEnd ? new Date(p.flashSaleEnd).toISOString() : null,
-        isFlashSale: p.isFlashSale,
-        category: p.category,
-        // Pre-computed values from server to avoid hydration mismatch
-        effectivePrice: prices.price,
-        effectiveMrp: prices.mrp,
-        effectiveDiscountPercent: prices.discountPercent,
-        isFlashSaleActive: prices.isFlashSale,
-        cartInfo: { kind: 'product' as const, productId: p.id },
+        // Ensure sellingPrice is valid
+        const sellingPrice = Number(p.sellingPrice)
+        if (isNaN(sellingPrice) || sellingPrice <= 0) {
+          console.error('similarProducts: invalid sellingPrice for product', p.id)
+          return null
+        }
+
+        const prices = getEffectivePrices({
+          sellingPrice: sellingPrice,
+          mrp: p.mrp != null ? Number(p.mrp) : null,
+          discountPercentage: p.discountPercentage != null ? Number(p.discountPercentage) : null,
+          flashSalePrice: p.flashSalePrice != null ? Number(p.flashSalePrice) : null,
+          flashSaleStart: p.flashSaleStart,
+          flashSaleEnd: p.flashSaleEnd,
+          isFlashSale: p.isFlashSale,
+        })
+
+        return {
+          id: p.id,
+          type: p.type || 'GENERAL',
+          name: p.name,
+          slug: p.slug,
+          brandName: p.brandName ?? null,
+          description: p.description ?? null,
+          sellingPrice: sellingPrice,
+          mrp: p.mrp != null ? Number(p.mrp) : null,
+          stockQuantity: Number(p.stockQuantity ?? 0),
+          imageUrl: p.imageUrl ?? null,
+          discountPercentage: p.discountPercentage != null ? Number(p.discountPercentage) : null,
+          flashSalePrice: p.flashSalePrice != null ? Number(p.flashSalePrice) : null,
+          flashSaleStart: p.flashSaleStart ? new Date(p.flashSaleStart).toISOString() : null,
+          flashSaleEnd: p.flashSaleEnd ? new Date(p.flashSaleEnd).toISOString() : null,
+          isFlashSale: p.isFlashSale ?? false,
+          category: p.category,
+          effectivePrice: prices.price,
+          effectiveMrp: prices.mrp,
+          effectiveDiscountPercent: prices.discountPercent,
+          isFlashSaleActive: prices.isFlashSale,
+          cartInfo: { kind: 'product' as const, productId: p.id },
+        } as SimilarProduct
+      } catch (err) {
+        console.error('similarProducts: failed to map product', p?.id, err)
+        return null
       }
     })
+
+    // Filter out any null values from failed mappings
+    return mapped.filter((p: SimilarProduct | null): p is SimilarProduct => p !== null)
   } catch (error) {
     console.error('Error fetching similar products:', error)
     return []
@@ -206,13 +233,19 @@ export default async function ProductPage({ params }: ProductPageProps) {
     notFound()
   }
 
-  // Fetch similar products from the same category
-  const similarProducts = await getSimilarProducts(
-    prisma,
-    product.id,
-    product.category?.id ?? null,
-    product.brandName
-  )
+  // Fetch similar products from the same category with extra safety wrapper
+  let similarProducts: SimilarProduct[] = []
+  try {
+    similarProducts = await getSimilarProducts(
+      prisma,
+      product.id,
+      product.category?.id ?? null,
+      product.brandName
+    )
+  } catch (e) {
+    console.error('Error in getSimilarProducts for product', product.id, e)
+    similarProducts = []
+  }
 
   const sellingPrice = Number(product.sellingPrice)
   const mrp = product.mrp ? Number(product.mrp) : null
