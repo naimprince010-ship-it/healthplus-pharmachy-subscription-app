@@ -493,7 +493,10 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Run batch error:', error)
     return NextResponse.json(
-      { error: 'Failed to process batch' },
+      { 
+        error: 'Failed to process batch',
+        details: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     )
   }
