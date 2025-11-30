@@ -37,8 +37,6 @@ import {
   Shield,
   type LucideIcon,
 } from 'lucide-react'
-import { prisma } from '@/lib/prisma'
-import { DEFAULT_BASIC_SETTINGS, type BasicSettings } from '@/lib/admin/settings'
 
 // All available settings section keys
 export type SettingsSectionKey =
@@ -306,23 +304,4 @@ export function getSettingsSectionsByGroup(): Record<SettingsGroup, SettingsSect
 // Helper to validate if a key is a valid settings section
 export function isValidSettingsKey(key: string): key is SettingsSectionKey {
   return SETTINGS_SECTIONS.some((section) => section.key === key)
-}
-
-// ============================================
-// Server-side Settings Fetchers
-// ============================================
-
-/**
- * Fetch basic settings from database (server-side only)
- * Returns merged default + stored values
- */
-export async function getBasicSettings(): Promise<BasicSettings> {
-  try {
-    const setting = await prisma.setting.findUnique({ where: { key: 'basic' } })
-    const value = (setting?.value ?? {}) as Partial<BasicSettings>
-    return { ...DEFAULT_BASIC_SETTINGS, ...value }
-  } catch (error) {
-    console.error('[getBasicSettings] Error fetching settings:', error)
-    return DEFAULT_BASIC_SETTINGS
-  }
 }

@@ -3,7 +3,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { SiteWhatsAppButton } from "@/components/SiteWhatsAppButton";
 import { SiteMobileNav } from "@/components/SiteMobileNav";
 import TrackingProvider from "@/components/tracking/TrackingProvider";
-import { getBasicSettings } from "@/lib/settings-config";
+import { getBasicSettings } from "@/lib/settings-server";
 
 export default async function SiteLayout({
   children,
