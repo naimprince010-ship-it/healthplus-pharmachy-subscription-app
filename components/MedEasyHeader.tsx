@@ -19,7 +19,11 @@ interface SearchSuggestion {
   href: string
 }
 
-export function MedEasyHeader() {
+interface MedEasyHeaderProps {
+  storeName?: string
+}
+
+export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) {
   const router = useRouter()
   const { data: session } = useSession()
   const { itemCount, openDrawer } = useCart()
@@ -133,7 +137,7 @@ export function MedEasyHeader() {
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white">
                 <span className="text-lg font-bold text-teal-600">H+</span>
               </div>
-              <span className="text-xl font-bold text-white hidden sm:block">HealthPlus</span>
+              <span className="text-xl font-bold text-white hidden sm:block">{storeName}</span>
             </Link>
 
             {/* Desktop Search Bar */}
