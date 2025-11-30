@@ -42,6 +42,23 @@ enum PageGroup {
   NONE
 }
 
+// AI Import Wizard enums
+enum AiImportJobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum AiProductDraftStatus {
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  AI_ERROR
+  MANUALLY_EDITED
+}
+
 model User {
   id            String           @id @default(cuid())
   name          String
@@ -472,4 +489,47 @@ model Setting {
   key       String   @unique // Settings section key (e.g., "basic", "branding", "checkout")
   value     Json     // Full settings object for that section
   updatedAt DateTime @updatedAt
+}
+
+// AI Product Import Wizard - Phase 1
+// Stores import job metadata and tracks processing progress
+model AiImportJob {
+  id               String            @id @default(cuid())
+  createdByAdminId String            // Admin user who created the import
+  csvPath          String            // Supabase storage path to uploaded CSV
+  status           AiImportJobStatus @default(PENDING)
+  totalRows        Int?              // Total rows in CSV (set after parsing)
+  processedRows    Int               @default(0) // Rows processed so far
+  failedRows       Int               @default(0) // Rows that failed AI processing
+  errorSummary     String?           // Summary of errors if any
+  config           Json?             // Configuration: model name, batch size, etc.
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  // Relations
+  drafts AiProductDraft[]
+
+  @@index([status])
+  @@index([createdByAdminId])
+}
+
+// AI Product Import Wizard - Phase 1
+// Stores individual product drafts with raw CSV data and AI suggestions
+model AiProductDraft {
+  id                 String               @id @default(cuid())
+  importJobId        String               // FK to AiImportJob
+  importJob          AiImportJob          @relation(fields: [importJobId], references: [id], onDelete: Cascade)
+  rowIndex           Int                  // Original CSV row number (for reference)
+  rawData            Json                 // Full original CSV row as JSON
+  aiSuggestion       Json?                // AI-generated structured data (brand_name, strength, descriptions, etc.)
+  aiConfidence       Float?               // Overall confidence score (0-1)
+  status             AiProductDraftStatus @default(PENDING_REVIEW)
+  publishedProductId String?              // FK to Product (set when approved and published)
+  notes              String?              // Admin comments/notes
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  @@index([importJobId])
+  @@index([status])
+  @@index([importJobId, status])
 }
