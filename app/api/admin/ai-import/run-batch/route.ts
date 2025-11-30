@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getOpenAIClient, defaultModel, isOpenAIConfigured } from '@/lib/openai'
@@ -172,7 +173,7 @@ export async function POST(request: NextRequest) {
     const unprocessedDrafts = await prisma.aiProductDraft.findMany({
       where: {
         importJobId: jobId,
-        aiSuggestion: null,
+        aiSuggestion: { equals: Prisma.DbNull },
         status: 'PENDING_REVIEW',
       },
       orderBy: { rowIndex: 'asc' },
@@ -319,7 +320,7 @@ export async function POST(request: NextRequest) {
     const remainingDrafts = await prisma.aiProductDraft.count({
       where: {
         importJobId: jobId,
-        aiSuggestion: null,
+        aiSuggestion: { equals: Prisma.DbNull },
         status: 'PENDING_REVIEW',
       },
     })

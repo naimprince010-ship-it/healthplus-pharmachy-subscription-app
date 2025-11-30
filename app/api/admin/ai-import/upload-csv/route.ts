@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 
 const uploadCsvSchema = z.object({
   csvPath: z.string().min(1, 'CSV path is required'),
-  csvData: z.array(z.record(z.any())).optional(),
+  csvData: z.array(z.record(z.string(), z.any())).optional(),
   totalRows: z.number().int().positive().optional(),
   config: z.object({
     modelName: z.string().default('gpt-4o-mini'),
