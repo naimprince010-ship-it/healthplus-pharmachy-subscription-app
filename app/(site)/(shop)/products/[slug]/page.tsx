@@ -365,33 +365,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
               </div>
             )}
 
-            <div className="mt-8 rounded-lg border border-gray-200 bg-white p-6">
-              <h3 className="font-semibold text-gray-900">Product Information</h3>
-              <dl className="mt-4 space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <dt className="text-gray-600">Category</dt>
-                  <dd className="font-medium text-gray-900">{product.category?.name ?? 'Uncategorized'}</dd>
-                </div>
-                {product.brandName && (
-                  <div className="flex justify-between">
-                    <dt className="text-gray-600">Brand</dt>
-                    <dd className="font-medium text-gray-900">{product.brandName}</dd>
-                  </div>
-                )}
-                {product.unit && (
-                  <div className="flex justify-between">
-                    <dt className="text-gray-600">Unit</dt>
-                    <dd className="font-medium text-gray-900">{product.unit}</dd>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <dt className="text-gray-600">Availability</dt>
-                  <dd className={`font-medium ${stockQuantity > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {stockQuantity > 0 ? 'In Stock' : 'Out of Stock'}
-                  </dd>
-                </div>
-              </dl>
-            </div>
           </div>
         </div>
 
@@ -408,6 +381,35 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </div>
           </section>
         )}
+
+        {/* Product Information Section - moved below Similar Products */}
+        <div className="mt-10 rounded-lg border border-gray-200 bg-white p-6 max-w-md">
+          <h3 className="font-semibold text-gray-900">Product Information</h3>
+          <dl className="mt-4 space-y-3 text-sm">
+            <div className="flex justify-between">
+              <dt className="text-gray-600">Category</dt>
+              <dd className="font-medium text-gray-900">{product.category?.name ?? 'Uncategorized'}</dd>
+            </div>
+            {product.brandName && (
+              <div className="flex justify-between">
+                <dt className="text-gray-600">Brand</dt>
+                <dd className="font-medium text-gray-900">{product.brandName}</dd>
+              </div>
+            )}
+            {product.unit && (
+              <div className="flex justify-between">
+                <dt className="text-gray-600">Unit</dt>
+                <dd className="font-medium text-gray-900">{product.unit}</dd>
+              </div>
+            )}
+            <div className="flex justify-between">
+              <dt className="text-gray-600">Availability</dt>
+              <dd className={`font-medium ${stockQuantity > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {stockQuantity > 0 ? 'In Stock' : 'Out of Stock'}
+              </dd>
+            </div>
+          </dl>
+        </div>
       </div>
     </div>
   )
