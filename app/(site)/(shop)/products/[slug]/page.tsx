@@ -1,11 +1,132 @@
 import { notFound } from 'next/navigation'
 import { ProductDetailClient } from '@/components/ProductDetailClient'
+import { ProductCard } from '@/components/ProductCard'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Metadata } from 'next'
+import { getEffectivePrices } from '@/lib/pricing'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+
+// Type for similar product with pre-computed prices
+interface SimilarProduct {
+  id: string
+  type: 'MEDICINE' | 'GENERAL'
+  name: string
+  slug: string
+  brandName: string | null
+  description: string | null
+  sellingPrice: number
+  mrp: number | null
+  stockQuantity: number
+  imageUrl: string | null
+  discountPercentage: number | null
+  flashSalePrice: number | null
+  flashSaleStart: Date | null
+  flashSaleEnd: Date | null
+  isFlashSale: boolean | null
+  category: {
+    id: string
+    name: string
+    slug: string
+  }
+  effectivePrice: number
+  effectiveMrp: number
+  effectiveDiscountPercent: number
+  isFlashSaleActive: boolean
+  cartInfo: { kind: 'product'; productId: string }
+}
+
+// Helper function to fetch similar products from the same category
+async function getSimilarProducts(
+  prisma: any,
+  productId: string,
+  categoryId: string | null,
+  brandName: string | null
+): Promise<SimilarProduct[]> {
+  if (!categoryId) return []
+
+  try {
+    // Fetch products from the same category, excluding the current product
+    const rawProducts = await prisma.product.findMany({
+      where: {
+        id: { not: productId },
+        categoryId: categoryId,
+        isActive: true,
+      },
+      select: {
+        id: true,
+        type: true,
+        name: true,
+        slug: true,
+        brandName: true,
+        description: true,
+        sellingPrice: true,
+        mrp: true,
+        stockQuantity: true,
+        imageUrl: true,
+        discountPercentage: true,
+        flashSalePrice: true,
+        flashSaleStart: true,
+        flashSaleEnd: true,
+        isFlashSale: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+      take: 10,
+      orderBy: {
+        sellingPrice: 'asc',
+      },
+    })
+
+    // Pre-compute effective prices for each product to avoid hydration mismatch
+    return rawProducts.map((p: any) => {
+      const prices = getEffectivePrices({
+        sellingPrice: Number(p.sellingPrice),
+        mrp: p.mrp ? Number(p.mrp) : null,
+        discountPercentage: p.discountPercentage ? Number(p.discountPercentage) : null,
+        flashSalePrice: p.flashSalePrice ? Number(p.flashSalePrice) : null,
+        flashSaleStart: p.flashSaleStart,
+        flashSaleEnd: p.flashSaleEnd,
+        isFlashSale: p.isFlashSale,
+      })
+
+      return {
+        id: p.id,
+        type: p.type,
+        name: p.name,
+        slug: p.slug,
+        brandName: p.brandName,
+        description: p.description,
+        sellingPrice: Number(p.sellingPrice),
+        mrp: p.mrp ? Number(p.mrp) : null,
+        stockQuantity: Number(p.stockQuantity),
+        imageUrl: p.imageUrl,
+        discountPercentage: p.discountPercentage ? Number(p.discountPercentage) : null,
+        flashSalePrice: p.flashSalePrice ? Number(p.flashSalePrice) : null,
+        flashSaleStart: p.flashSaleStart,
+        flashSaleEnd: p.flashSaleEnd,
+        isFlashSale: p.isFlashSale,
+        category: p.category,
+        // Pre-computed values from server to avoid hydration mismatch
+        effectivePrice: prices.price,
+        effectiveMrp: prices.mrp,
+        effectiveDiscountPercent: prices.discountPercent,
+        isFlashSaleActive: prices.isFlashSale,
+        cartInfo: { kind: 'product' as const, productId: p.id },
+      }
+    })
+  } catch (error) {
+    console.error('Error fetching similar products:', error)
+    return []
+  }
+}
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>
@@ -84,6 +205,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
   if (!product || !product.isActive) {
     notFound()
   }
+
+  // Fetch similar products from the same category
+  const similarProducts = await getSimilarProducts(
+    prisma,
+    product.id,
+    product.category?.id ?? null,
+    product.brandName
+  )
 
   const sellingPrice = Number(product.sellingPrice)
   const mrp = product.mrp ? Number(product.mrp) : null
@@ -232,6 +361,20 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </div>
           </div>
         </div>
+
+        {/* Similar Products Section */}
+        {similarProducts && similarProducts.length > 0 && (
+          <section className="mt-10">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              সমজাতীয় প্রোডাক্ট
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {similarProducts.map((item) => (
+                <ProductCard key={item.id} product={item} variant="compact" />
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </div>
   )
