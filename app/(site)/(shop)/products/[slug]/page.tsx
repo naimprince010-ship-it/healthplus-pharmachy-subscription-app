@@ -1,11 +1,159 @@
 import { notFound } from 'next/navigation'
 import { ProductDetailClient } from '@/components/ProductDetailClient'
+import { ProductCard } from '@/components/ProductCard'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Metadata } from 'next'
+import { getEffectivePrices } from '@/lib/pricing'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+
+// Type for similar product with pre-computed prices
+interface SimilarProduct {
+  id: string
+  type: 'MEDICINE' | 'GENERAL'
+  name: string
+  slug: string
+  brandName: string | null
+  description: string | null
+  sellingPrice: number
+  mrp: number | null
+  stockQuantity: number
+  imageUrl: string | null
+  discountPercentage: number | null
+  flashSalePrice: number | null
+  flashSaleStart: string | null
+  flashSaleEnd: string | null
+  isFlashSale: boolean | null
+  category: {
+    id: string
+    name: string
+    slug: string
+  }
+  effectivePrice: number
+  effectiveMrp: number
+  effectiveDiscountPercent: number
+  isFlashSaleActive: boolean
+  cartInfo: { kind: 'product'; productId: string }
+}
+
+// Helper function to fetch similar products from the same category
+async function getSimilarProducts(
+  prisma: any,
+  productId: string,
+  categoryId: string | null,
+  brandName: string | null
+): Promise<SimilarProduct[]> {
+  if (!categoryId) return []
+
+  try {
+    // Fetch products from the same category, excluding the current product
+    const rawProducts = await prisma.product.findMany({
+      where: {
+        id: { not: productId },
+        categoryId: categoryId,
+        isActive: true,
+      },
+      select: {
+        id: true,
+        type: true,
+        name: true,
+        slug: true,
+        brandName: true,
+        description: true,
+        sellingPrice: true,
+        mrp: true,
+        stockQuantity: true,
+        imageUrl: true,
+        discountPercentage: true,
+        flashSalePrice: true,
+        flashSaleStart: true,
+        flashSaleEnd: true,
+        isFlashSale: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+      take: 10,
+      orderBy: {
+        sellingPrice: 'asc',
+      },
+    })
+
+    // Pre-compute effective prices for each product to avoid hydration mismatch
+    // Use defensive mapping to skip any products with missing/invalid data
+    const mapped = rawProducts.map((p: any) => {
+      try {
+        // Skip products with missing required fields
+        if (!p || !p.id || !p.slug || !p.name) {
+          console.error('similarProducts: missing required fields for product', p?.id)
+          return null
+        }
+        
+        // Skip products with missing category (required for ProductCard)
+        if (!p.category || !p.category.id || !p.category.name || !p.category.slug) {
+          console.error('similarProducts: missing category for product', p.id)
+          return null
+        }
+
+        // Ensure sellingPrice is valid
+        const sellingPrice = Number(p.sellingPrice)
+        if (isNaN(sellingPrice) || sellingPrice <= 0) {
+          console.error('similarProducts: invalid sellingPrice for product', p.id)
+          return null
+        }
+
+        const prices = getEffectivePrices({
+          sellingPrice: sellingPrice,
+          mrp: p.mrp != null ? Number(p.mrp) : null,
+          discountPercentage: p.discountPercentage != null ? Number(p.discountPercentage) : null,
+          flashSalePrice: p.flashSalePrice != null ? Number(p.flashSalePrice) : null,
+          flashSaleStart: p.flashSaleStart,
+          flashSaleEnd: p.flashSaleEnd,
+          isFlashSale: p.isFlashSale,
+        })
+
+        return {
+          id: p.id,
+          type: p.type || 'GENERAL',
+          name: p.name,
+          slug: p.slug,
+          brandName: p.brandName ?? null,
+          description: p.description ?? null,
+          sellingPrice: sellingPrice,
+          mrp: p.mrp != null ? Number(p.mrp) : null,
+          stockQuantity: Number(p.stockQuantity ?? 0),
+          imageUrl: p.imageUrl ?? null,
+          discountPercentage: p.discountPercentage != null ? Number(p.discountPercentage) : null,
+          flashSalePrice: p.flashSalePrice != null ? Number(p.flashSalePrice) : null,
+          flashSaleStart: p.flashSaleStart ? new Date(p.flashSaleStart).toISOString() : null,
+          flashSaleEnd: p.flashSaleEnd ? new Date(p.flashSaleEnd).toISOString() : null,
+          isFlashSale: p.isFlashSale ?? false,
+          category: p.category,
+          effectivePrice: prices.price,
+          effectiveMrp: prices.mrp,
+          effectiveDiscountPercent: prices.discountPercent,
+          isFlashSaleActive: prices.isFlashSale,
+          cartInfo: { kind: 'product' as const, productId: p.id },
+        } as SimilarProduct
+      } catch (err) {
+        console.error('similarProducts: failed to map product', p?.id, err)
+        return null
+      }
+    })
+
+    // Filter out any null values from failed mappings
+    return mapped.filter((p: SimilarProduct | null): p is SimilarProduct => p !== null)
+  } catch (error) {
+    console.error('Error fetching similar products:', error)
+    return []
+  }
+}
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>
@@ -83,6 +231,20 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   if (!product || !product.isActive) {
     notFound()
+  }
+
+  // Fetch similar products from the same category with extra safety wrapper
+  let similarProducts: SimilarProduct[] = []
+  try {
+    similarProducts = await getSimilarProducts(
+      prisma,
+      product.id,
+      product.category?.id ?? null,
+      product.brandName
+    )
+  } catch (e) {
+    console.error('Error in getSimilarProducts for product', product.id, e)
+    similarProducts = []
   }
 
   const sellingPrice = Number(product.sellingPrice)
@@ -232,6 +394,20 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </div>
           </div>
         </div>
+
+        {/* Similar Products Section */}
+        {similarProducts && similarProducts.length > 0 && (
+          <section className="mt-10">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              সমজাতীয় প্রোডাক্ট
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {similarProducts.map((item) => (
+                <ProductCard key={item.id} product={item} variant="compact" />
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </div>
   )
