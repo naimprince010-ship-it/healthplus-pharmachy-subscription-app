@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { 
   ArrowLeft, 
   Check, 
@@ -11,7 +12,8 @@ import {
   AlertCircle,
   CheckCircle,
   Clock,
-  Edit
+  Edit,
+  Image as ImageIcon
 } from 'lucide-react'
 
 interface AiProductDraft {
@@ -76,6 +78,11 @@ interface AiProductDraft {
   manufacturer?: { id: string; name: string } | null
   category?: { id: string; name: string } | null
   subcategory?: { id: string; name: string } | null
+  // Phase 3 fields
+  imageRawFilename: string | null
+  imageMatchConfidence: number | null
+  imageStatus: 'UNMATCHED' | 'MATCHED' | 'PROCESSED' | 'MISSING' | 'MANUAL'
+  imageUrl: string | null
 }
 
 interface Category {
@@ -560,6 +567,68 @@ export default function DraftReviewPage() {
             ) : (
               <p className="text-sm text-blue-700">No AI suggestion available</p>
             )}
+          </div>
+
+          {/* Phase 3: Image Preview Section */}
+          <div className="rounded-lg border border-teal-200 bg-teal-50 p-4">
+            <h2 className="mb-4 text-lg font-semibold text-teal-900">Product Image (Phase 3)</h2>
+            
+            <div className="space-y-3">
+              {/* Image Preview */}
+              <div className="flex justify-center">
+                {draft.imageUrl ? (
+                  <div className="relative h-48 w-48 overflow-hidden rounded-lg border border-teal-200 bg-white">
+                    <Image
+                      src={draft.imageUrl}
+                      alt="Product"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex h-48 w-48 items-center justify-center rounded-lg border border-dashed border-teal-300 bg-white">
+                    <div className="text-center">
+                      <ImageIcon className="mx-auto h-12 w-12 text-teal-300" />
+                      <p className="mt-2 text-sm text-teal-600">No image</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Image Status */}
+              <div className="text-center">
+                <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                  draft.imageStatus === 'PROCESSED' ? 'bg-green-100 text-green-800' :
+                  draft.imageStatus === 'MATCHED' ? 'bg-yellow-100 text-yellow-800' :
+                  draft.imageStatus === 'MANUAL' ? 'bg-blue-100 text-blue-800' :
+                  draft.imageStatus === 'MISSING' ? 'bg-red-100 text-red-800' :
+                  'bg-gray-100 text-gray-600'
+                }`}>
+                  {draft.imageStatus}
+                </span>
+              </div>
+              
+              {/* Image Details */}
+              <div className="space-y-2 text-sm">
+                {draft.imageRawFilename && (
+                  <div>
+                    <dt className="font-medium text-teal-700">Matched File</dt>
+                    <dd className="mt-1 text-teal-900 break-all">{draft.imageRawFilename}</dd>
+                  </div>
+                )}
+                {draft.imageMatchConfidence !== null && (
+                  <div>
+                    <dt className="font-medium text-teal-700">Match Confidence</dt>
+                    <dd className="mt-1 text-teal-900">
+                      {(draft.imageMatchConfidence * 100).toFixed(0)}%
+                      {draft.imageMatchConfidence < 1 && (
+                        <span className="ml-2 text-xs text-yellow-600">(fuzzy match)</span>
+                      )}
+                    </dd>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Phase 2: QC Verification Section */}

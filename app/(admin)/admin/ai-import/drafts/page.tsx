@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { 
   ArrowLeft, 
   Filter, 
@@ -12,7 +13,8 @@ import {
   XCircle,
   Edit,
   Eye,
-  ChevronRight
+  ChevronRight,
+  Image as ImageIcon
 } from 'lucide-react'
 
 interface AiProductDraft {
@@ -48,6 +50,11 @@ interface AiProductDraft {
     status: string
     csvPath: string
   }
+  // Phase 3: Image fields
+  imageRawFilename: string | null
+  imageMatchConfidence: number | null
+  imageStatus: 'UNMATCHED' | 'MATCHED' | 'PROCESSED' | 'MISSING' | 'MANUAL'
+  imageUrl: string | null
 }
 
 interface Pagination {
@@ -68,6 +75,9 @@ export default function DraftsPage() {
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || 'all')
   const [minConfidence, setMinConfidence] = useState(searchParams.get('minConfidence') || '')
   const [maxConfidence, setMaxConfidence] = useState(searchParams.get('maxConfidence') || '')
+  // Phase 3: Image filters
+  const [imageStatusFilter, setImageStatusFilter] = useState(searchParams.get('imageStatus') || 'all')
+  const [hasImageFilter, setHasImageFilter] = useState(searchParams.get('hasImage') || 'all')
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
     limit: 20,
@@ -87,6 +97,9 @@ export default function DraftsPage() {
       if (statusFilter !== 'all') params.set('status', statusFilter)
       if (minConfidence) params.set('minConfidence', minConfidence)
       if (maxConfidence) params.set('maxConfidence', maxConfidence)
+      // Phase 3: Image filters
+      if (imageStatusFilter !== 'all') params.set('imageStatus', imageStatusFilter)
+      if (hasImageFilter !== 'all') params.set('hasImage', hasImageFilter)
       params.set('page', searchParams.get('page') || '1')
       params.set('limit', '20')
 
@@ -110,6 +123,9 @@ export default function DraftsPage() {
     if (statusFilter !== 'all') params.set('status', statusFilter)
     if (minConfidence) params.set('minConfidence', minConfidence)
     if (maxConfidence) params.set('maxConfidence', maxConfidence)
+    // Phase 3: Image filters
+    if (imageStatusFilter !== 'all') params.set('imageStatus', imageStatusFilter)
+    if (hasImageFilter !== 'all') params.set('hasImage', hasImageFilter)
     params.set('page', '1')
     router.push(`/admin/ai-import/drafts?${params}`)
   }
@@ -155,6 +171,18 @@ export default function DraftsPage() {
     return 'bg-red-100 text-red-800'
   }
 
+  // Phase 3: Image status badge
+  const getImageStatusBadge = (status: string) => {
+    const colors: Record<string, string> = {
+      UNMATCHED: 'bg-gray-100 text-gray-600',
+      MATCHED: 'bg-yellow-100 text-yellow-800',
+      PROCESSED: 'bg-green-100 text-green-800',
+      MISSING: 'bg-red-100 text-red-800',
+      MANUAL: 'bg-blue-100 text-blue-800',
+    }
+    return colors[status] || 'bg-gray-100 text-gray-600'
+  }
+
   const getProductName = (draft: AiProductDraft): string => {
     // Try to get name from AI suggestion first, then raw data
     if (draft.aiSuggestion?.brand_name) {
@@ -193,7 +221,7 @@ export default function DraftsPage() {
 
       {showFilters && (
         <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Status
@@ -241,6 +269,38 @@ export default function DraftsPage() {
                 className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
               />
             </div>
+            {/* Phase 3: Image filters */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Image Status
+              </label>
+              <select
+                value={imageStatusFilter}
+                onChange={(e) => setImageStatusFilter(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              >
+                <option value="all">All Image Status</option>
+                <option value="UNMATCHED">Unmatched</option>
+                <option value="MATCHED">Matched</option>
+                <option value="PROCESSED">Processed</option>
+                <option value="MISSING">Missing</option>
+                <option value="MANUAL">Manual</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Has Image
+              </label>
+              <select
+                value={hasImageFilter}
+                onChange={(e) => setHasImageFilter(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              >
+                <option value="all">All</option>
+                <option value="yes">With Image</option>
+                <option value="no">Without Image</option>
+              </select>
+            </div>
             <div className="flex items-end">
               <button
                 type="button"
@@ -287,6 +347,9 @@ export default function DraftsPage() {
                     Confidence
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Image
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                     Category
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
@@ -325,6 +388,31 @@ export default function DraftsPage() {
                         </span>
                       ) : (
                         <span className="text-xs text-gray-400">N/A</span>
+                      )}
+                    </td>
+                    {/* Phase 3: Image column */}
+                    <td className="whitespace-nowrap px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        {draft.imageUrl ? (
+                          <div className="relative h-8 w-8 overflow-hidden rounded border border-gray-200">
+                            <Image
+                              src={draft.imageUrl}
+                              alt="Product"
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <ImageIcon className="h-4 w-4 text-gray-400" />
+                        )}
+                        <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getImageStatusBadge(draft.imageStatus)}`}>
+                          {draft.imageStatus}
+                        </span>
+                      </div>
+                      {draft.imageMatchConfidence !== null && draft.imageMatchConfidence < 1 && (
+                        <div className="mt-1 text-xs text-gray-500">
+                          {(draft.imageMatchConfidence * 100).toFixed(0)}% match
+                        </div>
                       )}
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">

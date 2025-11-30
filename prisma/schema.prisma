@@ -59,6 +59,24 @@ enum AiProductDraftStatus {
   MANUALLY_EDITED
 }
 
+// Phase 3: Image processing status for AiImportJob
+enum AiImageJobStatus {
+  NONE        // No images uploaded yet
+  PENDING     // ZIP uploaded, not yet processed
+  PROCESSING  // Currently processing images
+  COMPLETED   // All images processed
+  FAILED      // Image processing failed
+}
+
+// Phase 3: Image status for individual AiProductDraft
+enum AiImageDraftStatus {
+  UNMATCHED   // No image matched to this draft
+  MATCHED     // Image matched but not yet processed
+  PROCESSED   // Image processed (watermarked, resized, stored)
+  MISSING     // Image was expected but not found in ZIP
+  MANUAL      // Image manually uploaded by admin
+}
+
 model User {
   id            String           @id @default(cuid())
   name          String
@@ -509,6 +527,12 @@ model AiImportJob {
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
 
+  // Phase 3: Image handling fields
+  zipPath          String?           // Supabase storage path to uploaded images ZIP
+  imageTotal       Int?              // Total number of images found in ZIP
+  imageProcessed   Int               @default(0) // Number of images processed (watermarked, stored)
+  imageStatus      AiImageJobStatus  @default(NONE) // Image processing status
+
   // Relations
   drafts AiProductDraft[]
 
@@ -556,12 +580,19 @@ model AiProductDraft {
   newGenericSuggested      String?         // AI suggested new generic name
   newManufacturerSuggested String?         // AI suggested new manufacturer name
 
+  // Phase 3: Image handling fields
+  imageRawFilename     String?              // Filename inside ZIP that was matched (e.g., "Sergel_Capsule_20mg.webp")
+  imageMatchConfidence Float?               // Confidence score for image match (0-1)
+  imageStatus          AiImageDraftStatus   @default(UNMATCHED) // Image processing status
+  imageUrl             String?              // Final URL/path of processed watermarked image
+
   @@index([importJobId])
   @@index([status])
   @@index([importJobId, status])
   @@index([genericMatchId])
   @@index([manufacturerMatchId])
   @@index([categoryMatchId])
+  @@index([imageStatus])
 }
 
 // Master Tables for AI Import Wizard - Phase 2

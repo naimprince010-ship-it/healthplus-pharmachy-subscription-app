@@ -104,6 +104,11 @@ export async function GET(request: NextRequest) {
           updatedAt: job.updatedAt,
           draftCount: job._count.drafts,
           draftStats: stats,
+          // Phase 3: Image fields
+          zipPath: job.zipPath,
+          imageTotal: job.imageTotal,
+          imageProcessed: job.imageProcessed,
+          imageStatus: job.imageStatus,
         }
       })
     )

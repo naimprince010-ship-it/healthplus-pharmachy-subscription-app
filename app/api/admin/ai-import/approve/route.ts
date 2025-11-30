@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
 
     const { draftId, productData, qcVerification, matchIds } = validationResult.data
 
-    // Get the draft with Phase 2 relations
+    // Get the draft with Phase 2 relations and Phase 3 image fields
     const draft = await prisma.aiProductDraft.findUnique({
       where: { id: draftId },
       include: {
@@ -202,6 +202,15 @@ export async function POST(request: NextRequest) {
 
     const productType = category?.isMedicineCategory ? 'MEDICINE' : 'GENERAL'
 
+    // Phase 3: Determine final image URL
+    // Priority: 1) productData.imageUrl (manual override), 2) draft.imageUrl (processed image)
+    const finalImageUrl = productData.imageUrl || draft.imageUrl || null
+
+    // Phase 3: Log warning if no image available
+    if (!finalImageUrl && draft.imageStatus !== 'PROCESSED') {
+      console.warn(`Approving draft ${draftId} without image. Image status: ${draft.imageStatus}`)
+    }
+
     // Create the product
     const product = await prisma.product.create({
       data: {
@@ -216,7 +225,7 @@ export async function POST(request: NextRequest) {
         stockQuantity: 0,
         inStock: false,
         unit: 'pcs',
-        imageUrl: productData.imageUrl,
+        imageUrl: finalImageUrl,
         seoTitle: productData.seoTitle,
         seoDescription: productData.seoDescription,
         seoKeywords: productData.seoKeywords,
