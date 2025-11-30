@@ -1,3 +1,5 @@
+'use client'
+
 import Link from 'next/link'
 import { AddToCartButton } from '@/components/AddToCartButton'
 import { getEffectivePrices } from '@/lib/pricing'
