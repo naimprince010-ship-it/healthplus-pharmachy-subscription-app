@@ -12,6 +12,7 @@ const updateProductSchema = z.object({
   description: z.string().optional(),
   brandName: z.string().optional(),
   categoryId: z.string().optional(),
+  manufacturerId: z.string().nullable().optional(),
   mrp: z.number().positive().optional(),
   sellingPrice: z.number().positive().optional(),
   purchasePrice: z.number().positive().optional(),
@@ -54,18 +55,25 @@ export async function GET(
 
     const { id } = await params
 
-    const product = await prisma.product.findUnique({
-      where: { id },
-      include: {
-        category: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
+        const product = await prisma.product.findUnique({
+          where: { id },
+          include: {
+            category: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              },
+            },
+            manufacturer: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              },
+            },
           },
-        },
-      },
-    })
+        })
 
     if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 })

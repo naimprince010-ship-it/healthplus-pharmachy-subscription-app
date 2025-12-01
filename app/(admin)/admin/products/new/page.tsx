@@ -11,9 +11,16 @@ interface Category {
   isMedicineCategory?: boolean
 }
 
+interface Manufacturer {
+  id: string
+  name: string
+  slug: string
+}
+
 export default function NewProductPage() {
   const router = useRouter()
   const [categories, setCategories] = useState<Category[]>([])
+  const [manufacturers, setManufacturers] = useState<Manufacturer[]>([])
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
@@ -21,12 +28,13 @@ export default function NewProductPage() {
   const [aiError, setAiError] = useState('')
   const [aiLanguage, setAiLanguage] = useState<'en' | 'bn'>('en')
 
-  const [formData, setFormData] = useState({
-    name: '',
-    brandName: '',
-    description: '',
-    categoryId: '',
-    mrp: '',
+    const [formData, setFormData] = useState({
+      name: '',
+      brandName: '',
+      description: '',
+      categoryId: '',
+      manufacturerId: '',
+      mrp: '',
     sellingPrice: '',
     stockQuantity: '0',
     minStockAlert: '',
@@ -49,21 +57,34 @@ export default function NewProductPage() {
     flashSaleEnd: '',
   })
 
-  useEffect(() => {
-    fetchCategories()
-  }, [])
+    useEffect(() => {
+      fetchCategories()
+      fetchManufacturers()
+    }, [])
 
-  const fetchCategories = async () => {
-    try {
-      const res = await fetch('/api/admin/categories')
-      const data = await res.json()
-      if (res.ok) {
-        setCategories(data.categories || [])
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch('/api/admin/categories')
+        const data = await res.json()
+        if (res.ok) {
+          setCategories(data.categories || [])
+        }
+      } catch (error) {
+        console.error('Failed to fetch categories:', error)
       }
-    } catch (error) {
-      console.error('Failed to fetch categories:', error)
     }
-  }
+
+    const fetchManufacturers = async () => {
+      try {
+        const res = await fetch('/api/admin/manufacturers')
+        const data = await res.json()
+        if (res.ok) {
+          setManufacturers(data.manufacturers || [])
+        }
+      } catch (error) {
+        console.error('Failed to fetch manufacturers:', error)
+      }
+    }
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -157,16 +178,17 @@ export default function NewProductPage() {
     setError('')
 
     try {
-      const payload = {
-        ...formData,
-        mrp: formData.mrp ? parseFloat(formData.mrp) : undefined,
-        sellingPrice: parseFloat(formData.sellingPrice),
-        stockQuantity: parseInt(formData.stockQuantity),
-        minStockAlert: formData.minStockAlert ? parseInt(formData.minStockAlert) : undefined,
-        flashSalePrice: formData.flashSalePrice ? parseFloat(formData.flashSalePrice) : undefined,
-        flashSaleStart: formData.flashSaleStart ? new Date(formData.flashSaleStart).toISOString() : undefined,
-        flashSaleEnd: formData.flashSaleEnd ? new Date(formData.flashSaleEnd).toISOString() : undefined,
-      }
+            const payload = {
+              ...formData,
+              manufacturerId: formData.manufacturerId || null,
+              mrp: formData.mrp ? parseFloat(formData.mrp) : undefined,
+              sellingPrice: parseFloat(formData.sellingPrice),
+              stockQuantity: parseInt(formData.stockQuantity),
+              minStockAlert: formData.minStockAlert ? parseInt(formData.minStockAlert) : undefined,
+              flashSalePrice: formData.flashSalePrice ? parseFloat(formData.flashSalePrice) : undefined,
+              flashSaleStart: formData.flashSaleStart ? new Date(formData.flashSaleStart).toISOString() : undefined,
+              flashSaleEnd: formData.flashSaleEnd ? new Date(formData.flashSaleEnd).toISOString() : undefined,
+            }
 
       const res = await fetch('/api/admin/products', {
         method: 'POST',
@@ -231,22 +253,43 @@ export default function NewProductPage() {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Brand Name
-              </label>
-              <input
-                type="text"
-                value={formData.brandName}
-                onChange={(e) => setFormData({ ...formData, brandName: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-              />
-            </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">
+                            Brand Name
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.brandName}
+                            onChange={(e) => setFormData({ ...formData, brandName: e.target.value })}
+                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                          />
+                        </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Category <span className="text-red-500">*</span>
-              </label>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">
+                            Manufacturer
+                          </label>
+                          <select
+                            value={formData.manufacturerId}
+                            onChange={(e) => setFormData({ ...formData, manufacturerId: e.target.value })}
+                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                          >
+                            <option value="">Select a manufacturer</option>
+                            {manufacturers.map((mfr) => (
+                              <option key={mfr.id} value={mfr.id}>
+                                {mfr.name}
+                              </option>
+                            ))}
+                          </select>
+                          <p className="mt-1 text-xs text-gray-500">
+                            Link to a manufacturer for clickable manufacturer links on product page
+                          </p>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">
+                            Category <span className="text-red-500">*</span>
+                          </label>
               <select
                 value={formData.categoryId}
                 onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
