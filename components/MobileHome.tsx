@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { Shield, Package, Heart, Baby, Activity, Users, ChevronRight } from 'lucide-react'
 import { PrescriptionUploadCard } from '@/components/PrescriptionUploadCard'
-import Image from 'next/image'
+import { ProductCard } from '@/components/ProductCard'
 import type { SubscriptionPlan, MembershipPlan } from '@prisma/client'
 
 interface HomeSection {
@@ -113,30 +113,29 @@ export function MobileHome({ subscriptionPlans, membershipPlan, homeSections }: 
           </div>
           <div className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide">
             {products.map((product) => (
-              <Link
-                key={product.id}
-                href={`/products/${product.slug}`}
-                className="flex-shrink-0 w-40 rounded-lg bg-white p-3 shadow-sm"
-              >
-                {product.imageUrl && (
-                  <div className="relative mb-2 h-32 w-full overflow-hidden rounded-md bg-gray-100">
-                    <Image
-                      src={product.imageUrl}
-                      alt={product.name}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                )}
-                <h3 className="line-clamp-2 text-sm font-medium text-gray-900">{product.name}</h3>
-                <p className="mt-1 text-xs text-gray-500">{product.category?.name}</p>
-                <div className="mt-2 flex items-baseline gap-1">
-                  <span className="text-base font-bold text-teal-600">৳{product.sellingPrice}</span>
-                  {product.flashSalePrice && (
-                    <span className="text-xs text-gray-400 line-through">৳{product.sellingPrice}</span>
-                  )}
-                </div>
-              </Link>
+              <div key={product.id} className="flex-shrink-0 w-40">
+                <ProductCard
+                  product={{
+                    id: product.id,
+                    type: product.type || 'GENERAL',
+                    name: product.name,
+                    slug: product.slug,
+                    brandName: product.brandName || null,
+                    description: product.description || null,
+                    sellingPrice: product.sellingPrice,
+                    mrp: product.mrp || null,
+                    stockQuantity: product.stockQuantity || 100,
+                    imageUrl: product.imageUrl || null,
+                    discountPercentage: product.discountPercentage || null,
+                    flashSalePrice: product.flashSalePrice || null,
+                    flashSaleStart: product.flashSaleStart || null,
+                    flashSaleEnd: product.flashSaleEnd || null,
+                    isFlashSale: product.isFlashSale || null,
+                    category: product.category || { id: '', name: '', slug: '' },
+                  }}
+                  variant="compact"
+                />
+              </div>
             ))}
           </div>
         </section>
