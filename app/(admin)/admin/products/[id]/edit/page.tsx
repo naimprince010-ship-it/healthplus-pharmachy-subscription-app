@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Upload, X, Sparkles } from 'lucide-react'
+import { ArrowLeft, Upload, X, Sparkles, Plus, Trash2 } from 'lucide-react'
 
 interface Category {
   id: string
@@ -42,6 +42,21 @@ interface Product {
   flashSalePrice: number | null
   flashSaleStart: Date | null
   flashSaleEnd: Date | null
+  variants?: ProductVariant[]
+}
+
+interface ProductVariant {
+  id: string
+  variantName: string
+  unitLabel: string | null
+  sizeLabel: string | null
+  mrp: number | null
+  sellingPrice: number
+  discountPercentage: number | null
+  stockQuantity: number
+  isDefault: boolean
+  isActive: boolean
+  sortOrder: number
 }
 
 export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
@@ -55,6 +70,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState('')
   const [aiLanguage, setAiLanguage] = useState<'en' | 'bn'>('en')
+  const [variants, setVariants] = useState<ProductVariant[]>([])
+  const [variantSaving, setVariantSaving] = useState(false)
 
   const [formData, setFormData] = useState({
     name: '',
@@ -91,10 +108,100 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     const loadData = async () => {
       const resolvedParams = await params
       setProductId(resolvedParams.id)
-      await Promise.all([fetchProduct(resolvedParams.id), fetchCategories()])
+      await Promise.all([fetchProduct(resolvedParams.id), fetchCategories(), fetchVariants(resolvedParams.id)])
     }
     loadData()
   }, [])
+
+  const fetchVariants = async (id: string) => {
+    try {
+      const res = await fetch(`/api/admin/products/${id}/variants`)
+      const data = await res.json()
+      if (res.ok) {
+        setVariants(data.variants || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch variants:', error)
+    }
+  }
+
+  const handleAddVariant = async () => {
+    if (!productId) return
+    setVariantSaving(true)
+    try {
+      const res = await fetch(`/api/admin/products/${productId}/variants`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          variantName: 'New Variant',
+          sellingPrice: formData.sellingPrice || '0',
+          mrp: formData.mrp || null,
+          stockQuantity: '0',
+          sortOrder: variants.length,
+        }),
+      })
+      if (res.ok) {
+        await fetchVariants(productId)
+      }
+    } catch (error) {
+      console.error('Failed to add variant:', error)
+    } finally {
+      setVariantSaving(false)
+    }
+  }
+
+  const handleUpdateVariant = async (variant: ProductVariant) => {
+    setVariantSaving(true)
+    try {
+      const res = await fetch(`/api/admin/products/${productId}/variants`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          variantId: variant.id,
+          variantName: variant.variantName,
+          unitLabel: variant.unitLabel,
+          sizeLabel: variant.sizeLabel,
+          mrp: variant.mrp,
+          sellingPrice: variant.sellingPrice,
+          discountPercentage: variant.discountPercentage,
+          stockQuantity: variant.stockQuantity,
+          isDefault: variant.isDefault,
+          isActive: variant.isActive,
+          sortOrder: variant.sortOrder,
+        }),
+      })
+      if (res.ok) {
+        await fetchVariants(productId)
+      }
+    } catch (error) {
+      console.error('Failed to update variant:', error)
+    } finally {
+      setVariantSaving(false)
+    }
+  }
+
+  const handleDeleteVariant = async (variantId: string) => {
+    if (!confirm('Are you sure you want to delete this variant?')) return
+    setVariantSaving(true)
+    try {
+      const res = await fetch(`/api/admin/products/${productId}/variants?variantId=${variantId}`, {
+        method: 'DELETE',
+      })
+      if (res.ok) {
+        await fetchVariants(productId)
+      }
+    } catch (error) {
+      console.error('Failed to delete variant:', error)
+    } finally {
+      setVariantSaving(false)
+    }
+  }
+
+  const updateVariantField = (variantId: string, field: keyof ProductVariant, value: any) => {
+    setVariants(prev => prev.map(v => 
+      v.id === variantId ? { ...v, [field]: value } : v
+    ))
+  }
 
   const fetchProduct = async (id: string) => {
     try {
@@ -831,6 +938,169 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 </div>
               </div>
             )}
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-gray-200 bg-white p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">📦 Product Variants</h2>
+            <button
+              type="button"
+              onClick={handleAddVariant}
+              disabled={!productId || variantSaving}
+              className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-700 disabled:opacity-50"
+            >
+              <Plus className="h-4 w-4" />
+              Add Variant
+            </button>
+          </div>
+
+          <p className="text-sm text-gray-600 mb-4">
+            Add variants like different pack sizes (10&apos;s Strip, 250&apos;s pack) or sizes (50ml, 100ml). Each variant can have its own price and stock.
+          </p>
+
+          {variants.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              No variants added yet. Click &quot;Add Variant&quot; to create one.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {variants.map((variant, index) => (
+                <div key={variant.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                  <div className="grid gap-4 md:grid-cols-6">
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Variant Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={variant.variantName}
+                        onChange={(e) => updateVariantField(variant.id, 'variantName', e.target.value)}
+                        onBlur={() => handleUpdateVariant(variant)}
+                        placeholder="e.g., 10's Strip, 50ml"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        MRP
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={variant.mrp || ''}
+                        onChange={(e) => updateVariantField(variant.id, 'mrp', e.target.value ? parseFloat(e.target.value) : null)}
+                        onBlur={() => handleUpdateVariant(variant)}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Selling Price <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={variant.sellingPrice}
+                        onChange={(e) => updateVariantField(variant.id, 'sellingPrice', parseFloat(e.target.value) || 0)}
+                        onBlur={() => handleUpdateVariant(variant)}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Stock
+                      </label>
+                      <input
+                        type="number"
+                        value={variant.stockQuantity}
+                        onChange={(e) => updateVariantField(variant.id, 'stockQuantity', parseInt(e.target.value) || 0)}
+                        onBlur={() => handleUpdateVariant(variant)}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      />
+                    </div>
+
+                    <div className="flex items-end gap-2">
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={variant.isDefault}
+                          onChange={(e) => {
+                            updateVariantField(variant.id, 'isDefault', e.target.checked)
+                            handleUpdateVariant({ ...variant, isDefault: e.target.checked })
+                          }}
+                          className="h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                        />
+                        <span className="text-xs text-gray-700">Default</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteVariant(variant.id)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete variant"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-3 mt-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Unit Label (shown after price)
+                      </label>
+                      <input
+                        type="text"
+                        value={variant.unitLabel || ''}
+                        onChange={(e) => updateVariantField(variant.id, 'unitLabel', e.target.value)}
+                        onBlur={() => handleUpdateVariant(variant)}
+                        placeholder="e.g., /10's Strip, /50ml"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Discount %
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={variant.discountPercentage || ''}
+                        onChange={(e) => updateVariantField(variant.id, 'discountPercentage', e.target.value ? parseFloat(e.target.value) : null)}
+                        onBlur={() => handleUpdateVariant(variant)}
+                        placeholder="0-100"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      />
+                    </div>
+
+                    <div className="flex items-end">
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={variant.isActive}
+                          onChange={(e) => {
+                            updateVariantField(variant.id, 'isActive', e.target.checked)
+                            handleUpdateVariant({ ...variant, isActive: e.target.checked })
+                          }}
+                          className="h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                        />
+                        <span className="text-xs text-gray-700">Active</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <p className="text-xs text-blue-800">
+              💡 <strong>Tip:</strong> Variants will appear as a dropdown on the product detail page. The &quot;Default&quot; variant will be pre-selected. Each variant can have its own price and stock level.
+            </p>
           </div>
         </div>
 

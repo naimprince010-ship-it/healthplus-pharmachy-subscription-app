@@ -10,6 +10,8 @@ export interface CartItem {
   id: string
   medicineId?: string
   productId?: string
+  variantId?: string
+  variantLabel?: string
   name: string
   price: number
   quantity: number
@@ -83,18 +85,28 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
     setItems((prevItems) => {
-      const itemKey = item.medicineId || item.productId
-      const existingItem = prevItems.find((i) => 
-        (i.medicineId && i.medicineId === item.medicineId) || 
-        (i.productId && i.productId === item.productId)
-      )
+      const existingItem = prevItems.find((i) => {
+        if (i.medicineId && i.medicineId === item.medicineId) return true
+        if (i.productId && i.productId === item.productId) {
+          if (item.variantId || i.variantId) {
+            return i.variantId === item.variantId
+          }
+          return true
+        }
+        return false
+      })
       if (existingItem) {
-        return prevItems.map((i) =>
-          ((i.medicineId && i.medicineId === item.medicineId) || 
-           (i.productId && i.productId === item.productId))
-            ? { ...i, quantity: i.quantity + (item.quantity || 1) }
-            : i
-        )
+        return prevItems.map((i) => {
+          const isMedicineMatch = i.medicineId && i.medicineId === item.medicineId
+          const isProductMatch = i.productId && i.productId === item.productId
+          const isVariantMatch = item.variantId || i.variantId 
+            ? i.variantId === item.variantId 
+            : true
+          if (isMedicineMatch || (isProductMatch && isVariantMatch)) {
+            return { ...i, quantity: i.quantity + (item.quantity || 1) }
+          }
+          return i
+        })
       }
       return [...prevItems, { ...item, quantity: item.quantity || 1 }]
     })
