@@ -205,17 +205,24 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
               </form>
             </div>
 
+            {/* Mobile Search Bar - inline in header */}
+            <div className="flex-1 md:hidden mx-2">
+              <form onSubmit={handleSearch} className="relative w-full">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onClick={() => setMobileSearchOpen(true)}
+                  placeholder="ওষুধ খুঁজুন..."
+                  className="w-full rounded-full border-0 bg-white/90 py-2 pl-4 pr-10 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/50"
+                  readOnly
+                />
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              </form>
+            </div>
+
             {/* Right Side Actions */}
             <div className="flex items-center gap-2 sm:gap-4">
-              {/* Mobile Search Icon */}
-              <button
-                onClick={() => setMobileSearchOpen(true)}
-                className="md:hidden rounded-full p-2 text-white hover:bg-white/10 transition-colors"
-                aria-label="Search"
-              >
-                <Search className="h-5 w-5" />
-              </button>
-
               {/* Google Play Badge - Desktop Only */}
               <a
                 href="https://play.google.com/store"
@@ -232,22 +239,22 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                 </div>
               </a>
 
-                            {/* Cart */}
-                            <button
-                              onClick={openDrawer}
-                              className="relative rounded-full p-2 text-white hover:bg-white/10 transition-colors"
-                              aria-label={`Cart${mounted && itemCount > 0 ? ` (${itemCount} items)` : ''}`}
-                            >
-                              <ShoppingCart className="h-5 w-5" />
-                              {mounted && itemCount > 0 && (
-                                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
-                                  {itemCount > 99 ? '99+' : itemCount}
-                                </span>
-                              )}
-                            </button>
+              {/* Cart - Desktop only */}
+              <button
+                onClick={openDrawer}
+                className="relative rounded-full p-2 text-white hover:bg-white/10 transition-colors hidden md:flex"
+                aria-label={`Cart${mounted && itemCount > 0 ? ` (${itemCount} items)` : ''}`}
+              >
+                <ShoppingCart className="h-5 w-5" />
+                {mounted && itemCount > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+                    {itemCount > 99 ? '99+' : itemCount}
+                  </span>
+                )}
+              </button>
 
-              {/* User Menu */}
-              <div className="relative" ref={userMenuRef}>
+              {/* User Menu - Desktop only */}
+              <div className="relative hidden md:block" ref={userMenuRef}>
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className="flex items-center gap-1 rounded-full px-2 py-1.5 text-white hover:bg-white/10 transition-colors"
