@@ -218,13 +218,16 @@ model ProductVariant {
   id            String   @id @default(cuid())
   productId     String
   product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  variantName   String // e.g., "50ml", "100ml - Lemon"
+  variantName   String // e.g., "10's Strip", "250's pack", "50ml"
+  unitLabel     String? // e.g., "/10's Strip", "/50ml", "/140 gm Tube" - shown after price
   sizeLabel     String? // e.g., "50ml", "100g"
   sku           String? // SKU / Barcode
   mrp           Float? // Variant-specific MRP
   sellingPrice  Float // Variant-specific selling price
+  discountPercentage Float? // Variant-specific discount percentage (0-100)
   stockQuantity Int      @default(0)
   inStock       Boolean  @default(true)
+  isDefault     Boolean  @default(false) // Mark as default variant for this product
   isActive      Boolean  @default(true)
   sortOrder     Int      @default(0)
   createdAt     DateTime @default(now())

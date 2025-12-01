@@ -224,6 +224,25 @@ export default async function ProductPage({ params }: ProductPageProps) {
       medicine: {
         select: {
           discountPercentage: true,
+          genericName: true,
+          dosageForm: true,
+          strength: true,
+          manufacturer: true,
+        },
+      },
+      variants: {
+        where: { isActive: true },
+        orderBy: { sortOrder: 'asc' },
+        select: {
+          id: true,
+          variantName: true,
+          unitLabel: true,
+          sizeLabel: true,
+          mrp: true,
+          sellingPrice: true,
+          discountPercentage: true,
+          stockQuantity: true,
+          isDefault: true,
         },
       },
     },
@@ -254,6 +273,26 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const rawDiscount = product.discountPercentage || product.medicine?.discountPercentage
   const discountPercentage = rawDiscount ? Number(rawDiscount) : null
 
+  // Map variants for client component (convert Prisma types to plain numbers)
+  const variants = (product.variants || []).map((v: any) => ({
+    id: v.id,
+    variantName: v.variantName,
+    unitLabel: v.unitLabel || `/${v.variantName}`,
+    sizeLabel: v.sizeLabel,
+    mrp: v.mrp != null ? Number(v.mrp) : null,
+    sellingPrice: Number(v.sellingPrice),
+    discountPercentage: v.discountPercentage != null ? Number(v.discountPercentage) : null,
+    stockQuantity: Number(v.stockQuantity),
+    isDefault: v.isDefault,
+  }))
+
+  // Get medicine-specific info for MedEasy-style display
+  const isMedicine = product.type === 'MEDICINE'
+  const genericName = product.medicine?.genericName || null
+  const dosageForm = product.medicine?.dosageForm || null
+  const strength = product.medicine?.strength || product.sizeLabel || null
+  const manufacturer = product.medicine?.manufacturer || product.brandName || null
+
   return (
     <div className="bg-gray-50 py-8">
       {/* MedEasy-style layout: centered container matching home page */}
@@ -283,35 +322,55 @@ export default async function ProductPage({ params }: ProductPageProps) {
             )}
           </div>
 
-          {/* Details container - flexible width */}
-          <div className="w-full">
-            {product.category && (
-              <div className="mb-2">
+          {/* Details container - MedEasy style with white background card */}
+          <div className="w-full bg-white rounded-xl p-6 shadow-sm">
+            {/* Product Name + Strength (MedEasy style: "Ace 500 mg") */}
+            <div className="mb-2">
+              <h1 className="text-2xl font-bold text-gray-900 lg:text-3xl">
+                {product.name}
+                {strength && (
+                  <span className="ml-2 text-lg font-normal text-gray-500">
+                    {strength}
+                  </span>
+                )}
+              </h1>
+            </div>
+
+            {/* Dosage Form or Category (MedEasy style: "Tablet" or "Skin Care") */}
+            <div className="text-gray-600 mb-1">
+              {dosageForm || product.category?.name || 'General'}
+            </div>
+
+            {/* Generic Name (MedEasy style: green link "Paracetamol") */}
+            {genericName && (
+              <div className="mb-4">
+                <span className="text-teal-600 font-medium hover:text-teal-700 cursor-pointer">
+                  {genericName}
+                </span>
+              </div>
+            )}
+
+            {/* Category link for non-medicine products */}
+            {!genericName && product.category && (
+              <div className="mb-4">
                 <Link
-                  href={`/products?categoryId=${product.category.id}`}
-                  className="text-sm font-medium text-teal-600 hover:text-teal-700"
+                  href={`/category/${product.category.slug}`}
+                  className="text-teal-600 font-medium hover:text-teal-700"
                 >
                   {product.category.name}
                 </Link>
               </div>
             )}
 
-            <div className="mb-4">
-              <h1 className="text-2xl font-bold text-gray-900 lg:text-3xl">
-                {product.name}
-                {product.sizeLabel && (
-                  <span className="ml-2 text-lg font-normal text-gray-500">
-                    {product.sizeLabel}
-                  </span>
-                )}
-              </h1>
-            </div>
+            {/* Divider */}
+            <hr className="my-4 border-gray-200" />
 
-            {product.brandName && (
-              <div className="mb-6 flex items-center gap-2">
-                <span className="text-sm text-gray-500">Manufacturer:</span>
-                <span className="rounded bg-yellow-100 px-2 py-0.5 text-sm font-medium text-gray-900">
-                  {product.brandName}
+            {/* Manufacturer (MedEasy style: "Manufacturer: Square Pharmaceuticals PLC.") */}
+            {manufacturer && (
+              <div className="mb-4">
+                <span className="text-gray-500 text-sm">Manufacturer:</span>
+                <span className="ml-2 text-teal-600 font-medium hover:text-teal-700 cursor-pointer">
+                  {manufacturer}
                 </span>
               </div>
             )}
@@ -331,6 +390,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               flashSaleEnd={product.flashSaleEnd}
               isFlashSale={product.isFlashSale}
               slug={slug}
+              variants={variants}
             />
 
             {product.description && (
