@@ -55,6 +55,16 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     notFound()
   }
 
+  // Find all child categories to include their products too
+  // This allows parent categories (like "Women's Choice") to show products from child categories (like "Sanitary Napkin")
+  const childCategories = await prisma.category.findMany({
+    where: { parentCategoryId: category.id },
+    select: { id: true },
+  })
+  
+  // Build array of category IDs: parent + all children
+  const categoryIds = [category.id, ...childCategories.map(c => c.id)]
+
   let items: Array<{
     id: string
     name: string
@@ -75,7 +85,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   if (category.isMedicineCategory) {
     const medicines = await prisma.medicine.findMany({
       where: {
-        categoryId: category.id,
+        categoryId: { in: categoryIds },
         isActive: true,
         deletedAt: null,
       },
@@ -111,7 +121,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   } else {
     const products = await prisma.product.findMany({
       where: {
-        categoryId: category.id,
+        categoryId: { in: categoryIds },
         isActive: true,
         deletedAt: null,
       },
