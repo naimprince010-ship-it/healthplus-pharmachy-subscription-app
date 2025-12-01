@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { Shield, Package, Heart, Baby, Activity, Users, ChevronRight } from 'lucide-react'
-import PrescriptionUploadForm from '@/components/PrescriptionUploadForm'
+import { PrescriptionUploadCard } from '@/components/PrescriptionUploadCard'
 import Image from 'next/image'
 import type { SubscriptionPlan, MembershipPlan } from '@prisma/client'
 
@@ -50,11 +50,9 @@ export function MobileHome({ subscriptionPlans, membershipPlan, homeSections }: 
         </div>
       </section>
 
-      {/* Prescription Upload - Full Width Card */}
+      {/* Prescription Upload - MedEasy-style compact card */}
       <section className="px-4 py-6">
-        <div className="rounded-xl bg-white p-4 shadow-md">
-          <PrescriptionUploadForm />
-        </div>
+        <PrescriptionUploadCard />
       </section>
 
       {/* Membership Card - Prominent on Mobile */}
