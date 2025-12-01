@@ -62,6 +62,7 @@ export default function EditMedicinePage() {
         requiresPrescription: medicine.requiresPrescription,
         isFeatured: medicine.isFeatured,
         isActive: medicine.isActive,
+        productId: medicine.productId || undefined,
       })
     } catch {
       setError('Network error while loading medicine')

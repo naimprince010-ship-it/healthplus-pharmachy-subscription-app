@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Save, Sparkles } from 'lucide-react'
+import { ArrowLeft, Save, Sparkles, Plus, Trash2 } from 'lucide-react'
 import { useForm, type DefaultValues, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { createMedicineSchema, updateMedicineSchema, type CreateMedicineInput, type UpdateMedicineInput } from '@/lib/validations/medicine'
@@ -17,10 +17,24 @@ interface Category {
   name: string
 }
 
+interface ProductVariant {
+  id: string
+  variantName: string
+  unitLabel: string | null
+  sizeLabel: string | null
+  mrp: number | null
+  sellingPrice: number
+  discountPercentage: number | null
+  stockQuantity: number
+  isDefault: boolean
+  isActive: boolean
+  sortOrder: number
+}
+
 interface MedicineFormProps {
   mode: 'create' | 'edit'
   medicineId?: string
-  initialData?: Partial<CreateMedicineInput>
+  initialData?: Partial<CreateMedicineInput> & { productId?: string }
 }
 
 export function MedicineForm({ mode, medicineId, initialData }: MedicineFormProps) {
@@ -33,6 +47,9 @@ export function MedicineForm({ mode, medicineId, initialData }: MedicineFormProp
     const [aiLoading, setAiLoading] = useState(false)
     const [aiError, setAiError] = useState('')
     const [aiLanguage, setAiLanguage] = useState<'en' | 'bn'>('en')
+    const [variants, setVariants] = useState<ProductVariant[]>([])
+    const [variantSaving, setVariantSaving] = useState(false)
+    const productId = initialData?.productId
 
   type FormValues = CreateMedicineInput & { id?: string }
 
@@ -66,7 +83,102 @@ export function MedicineForm({ mode, medicineId, initialData }: MedicineFormProp
 
   useEffect(() => {
     fetchCategories()
+    if (mode === 'edit' && productId) {
+      fetchVariants()
+    }
   }, [])
+
+  const fetchVariants = async () => {
+    if (!productId) return
+    try {
+      const res = await fetch(`/api/admin/products/${productId}/variants`)
+      const data = await res.json()
+      if (res.ok) {
+        setVariants(data.variants || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch variants:', error)
+    }
+  }
+
+  const handleAddVariant = async () => {
+    if (!productId) return
+    setVariantSaving(true)
+    try {
+      const res = await fetch(`/api/admin/products/${productId}/variants`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          variantName: 'New Variant',
+          sellingPrice: watch('sellingPrice') || '0',
+          mrp: watch('mrp') || null,
+          stockQuantity: '0',
+          sortOrder: variants.length,
+        }),
+      })
+      if (res.ok) {
+        await fetchVariants()
+      }
+    } catch (error) {
+      console.error('Failed to add variant:', error)
+    } finally {
+      setVariantSaving(false)
+    }
+  }
+
+  const handleUpdateVariant = async (variant: ProductVariant) => {
+    if (!productId) return
+    setVariantSaving(true)
+    try {
+      const res = await fetch(`/api/admin/products/${productId}/variants`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          variantId: variant.id,
+          variantName: variant.variantName,
+          unitLabel: variant.unitLabel,
+          sizeLabel: variant.sizeLabel,
+          mrp: variant.mrp,
+          sellingPrice: variant.sellingPrice,
+          discountPercentage: variant.discountPercentage,
+          stockQuantity: variant.stockQuantity,
+          isDefault: variant.isDefault,
+          isActive: variant.isActive,
+          sortOrder: variant.sortOrder,
+        }),
+      })
+      if (res.ok) {
+        await fetchVariants()
+      }
+    } catch (error) {
+      console.error('Failed to update variant:', error)
+    } finally {
+      setVariantSaving(false)
+    }
+  }
+
+  const handleDeleteVariant = async (variantId: string) => {
+    if (!productId || !confirm('Are you sure you want to delete this variant?')) return
+    setVariantSaving(true)
+    try {
+      const res = await fetch(`/api/admin/products/${productId}/variants?variantId=${variantId}`, {
+        method: 'DELETE',
+      })
+      if (res.ok) {
+        await fetchVariants()
+      }
+    } catch (error) {
+      console.error('Failed to delete variant:', error)
+    } finally {
+      setVariantSaving(false)
+    }
+  }
+
+  const updateVariantField = (variantId: string, field: keyof ProductVariant, value: unknown) => {
+    setVariants(prev => prev.map(v => 
+      v.id === variantId ? { ...v, [field]: value } : v
+    ))
+  }
 
   useEffect(() => {
     if (mode === 'edit' && initialData?.categoryId && categories.length > 0) {
@@ -706,6 +818,184 @@ export function MedicineForm({ mode, medicineId, initialData }: MedicineFormProp
             }}
             medicineId={medicineId}
           />
+        </div>
+      ),
+    },
+    {
+      id: 'variants',
+      label: 'Variants',
+      content: (
+        <div className="space-y-4">
+          {mode === 'create' ? (
+            <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+              <p className="text-sm text-yellow-800">
+                Save the medicine first to add variants. Variants can only be added after the medicine is created.
+              </p>
+            </div>
+          ) : !productId ? (
+            <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+              <p className="text-sm text-yellow-800">
+                This medicine is not synced to the products table yet. Please save the medicine to enable variant management.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900">Product Variants</h3>
+                  <p className="text-sm text-gray-500">
+                    Add different pack sizes, quantities, or variations of this medicine
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddVariant}
+                  disabled={variantSaving}
+                  className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 disabled:opacity-50"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Variant
+                </button>
+              </div>
+
+              {variants.length === 0 ? (
+                <div className="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center">
+                  <p className="text-gray-500">No variants added yet. Click &quot;Add Variant&quot; to create one.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {variants.map((variant) => (
+                    <div key={variant.id} className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                      <div className="mb-4 flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-700">
+                          {variant.isDefault && (
+                            <span className="mr-2 rounded bg-teal-100 px-2 py-0.5 text-xs text-teal-800">Default</span>
+                          )}
+                          Variant #{variants.indexOf(variant) + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteVariant(variant.id)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      <div className="grid gap-4 md:grid-cols-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Variant Name</label>
+                          <input
+                            type="text"
+                            value={variant.variantName}
+                            onChange={(e) => updateVariantField(variant.id, 'variantName', e.target.value)}
+                            onBlur={() => handleUpdateVariant(variant)}
+                            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                            placeholder="e.g., 10 Tablets, 30ml Bottle"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Unit Label</label>
+                          <input
+                            type="text"
+                            value={variant.unitLabel || ''}
+                            onChange={(e) => updateVariantField(variant.id, 'unitLabel', e.target.value)}
+                            onBlur={() => handleUpdateVariant(variant)}
+                            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                            placeholder="e.g., per strip, per bottle"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Size Label</label>
+                          <input
+                            type="text"
+                            value={variant.sizeLabel || ''}
+                            onChange={(e) => updateVariantField(variant.id, 'sizeLabel', e.target.value)}
+                            onBlur={() => handleUpdateVariant(variant)}
+                            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                            placeholder="e.g., 500mg, 100ml"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="mt-4 grid gap-4 md:grid-cols-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">MRP</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={variant.mrp || ''}
+                            onChange={(e) => updateVariantField(variant.id, 'mrp', e.target.value ? parseFloat(e.target.value) : null)}
+                            onBlur={() => handleUpdateVariant(variant)}
+                            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Selling Price</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={variant.sellingPrice}
+                            onChange={(e) => updateVariantField(variant.id, 'sellingPrice', parseFloat(e.target.value) || 0)}
+                            onBlur={() => handleUpdateVariant(variant)}
+                            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Discount %</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={variant.discountPercentage || ''}
+                            onChange={(e) => updateVariantField(variant.id, 'discountPercentage', e.target.value ? parseFloat(e.target.value) : null)}
+                            onBlur={() => handleUpdateVariant(variant)}
+                            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Stock</label>
+                          <input
+                            type="number"
+                            value={variant.stockQuantity}
+                            onChange={(e) => updateVariantField(variant.id, 'stockQuantity', parseInt(e.target.value) || 0)}
+                            onBlur={() => handleUpdateVariant(variant)}
+                            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="mt-4 flex items-center gap-6">
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={variant.isDefault}
+                            onChange={(e) => {
+                              updateVariantField(variant.id, 'isDefault', e.target.checked)
+                              handleUpdateVariant({ ...variant, isDefault: e.target.checked })
+                            }}
+                            className="h-4 w-4 rounded border-gray-300 text-teal-600"
+                          />
+                          <span className="text-sm text-gray-700">Default variant</span>
+                        </label>
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={variant.isActive}
+                            onChange={(e) => {
+                              updateVariantField(variant.id, 'isActive', e.target.checked)
+                              handleUpdateVariant({ ...variant, isActive: e.target.checked })
+                            }}
+                            className="h-4 w-4 rounded border-gray-300 text-teal-600"
+                          />
+                          <span className="text-sm text-gray-700">Active</span>
+                        </label>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </div>
       ),
     },
