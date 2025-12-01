@@ -122,9 +122,11 @@ async function getHomeSections() {
 }
 
 export default async function HomePage() {
-  const subscriptionPlans = await getSubscriptionPlans()
-  const membershipPlan = await getMembershipPlan()
-  const homeSections = await getHomeSections()
+  const [subscriptionPlans, membershipPlan, homeSections] = await Promise.all([
+    getSubscriptionPlans(),
+    getMembershipPlan(),
+    getHomeSections(),
+  ])
 
   return (
     <>
