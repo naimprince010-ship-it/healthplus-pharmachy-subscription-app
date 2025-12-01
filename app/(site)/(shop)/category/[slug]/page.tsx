@@ -55,15 +55,30 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     notFound()
   }
 
-  // Find all child categories to include their products too
-  // This allows parent categories (like "Women's Choice") to show products from child categories (like "Sanitary Napkin")
-  const childCategories = await prisma.category.findMany({
-    where: { parentCategoryId: category.id },
-    select: { id: true },
-  })
+  // Find ALL descendant categories recursively (not just direct children)
+  // This allows parent categories (like "Women's Choice") to show products from all nested subcategories
+  async function getAllDescendantCategoryIds(parentId: string): Promise<string[]> {
+    const children = await prisma.category.findMany({
+      where: { parentCategoryId: parentId },
+      select: { id: true },
+    })
+    
+    if (children.length === 0) {
+      return []
+    }
+    
+    const childIds = children.map(c => c.id)
+    const grandchildIds = await Promise.all(
+      childIds.map(id => getAllDescendantCategoryIds(id))
+    )
+    
+    return [...childIds, ...grandchildIds.flat()]
+  }
   
-  // Build array of category IDs: parent + all children
-  const categoryIds = [category.id, ...childCategories.map(c => c.id)]
+  const descendantIds = await getAllDescendantCategoryIds(category.id)
+  
+  // Build array of category IDs: parent + all descendants (children, grandchildren, etc.)
+  const categoryIds = [category.id, ...descendantIds]
 
   let items: Array<{
     id: string
