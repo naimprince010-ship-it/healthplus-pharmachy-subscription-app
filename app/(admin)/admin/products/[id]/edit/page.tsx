@@ -947,7 +947,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             <button
               type="button"
               onClick={handleAddVariant}
-              disabled={variantSaving}
+              disabled={!productId || variantSaving}
               className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-700 disabled:opacity-50"
             >
               <Plus className="h-4 w-4" />
