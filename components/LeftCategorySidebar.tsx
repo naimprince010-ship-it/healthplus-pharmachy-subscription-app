@@ -1,42 +1,26 @@
-'use client'
-
 import Link from 'next/link'
 import { ChevronRight, Zap } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { prisma } from '@/lib/prisma'
 
-interface SidebarCategory {
-  id: string
-  name: string
-  slug: string
-  sidebarIconUrl: string | null
-  sidebarLinkUrl: string | null
-}
-
-export default function LeftCategorySidebar() {
-  const [categories, setCategories] = useState<SidebarCategory[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchSidebarCategories()
-  }, [])
-
-  const fetchSidebarCategories = async () => {
-    try {
-      const res = await fetch('/api/sidebar-categories')
-      if (res.ok) {
-        const data = await res.json()
-        setCategories(data.categories || [])
-      }
-    } catch (error) {
-      console.error('Failed to fetch sidebar categories:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (loading) {
-    return null
-  }
+// Server component - fetches data on the server for instant loading
+// No more client-side delay or "pop-in" effect
+export default async function LeftCategorySidebar() {
+  const categories = await prisma.category.findMany({
+    where: {
+      showInSidebar: true,
+      isActive: true,
+    },
+    orderBy: {
+      sidebarOrder: 'asc',
+    },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      sidebarIconUrl: true,
+      sidebarLinkUrl: true,
+    },
+  })
 
   return (
     <div className="w-full">
