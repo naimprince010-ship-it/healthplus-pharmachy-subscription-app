@@ -76,7 +76,7 @@ export default function CartPage() {
 
   if (items.length === 0) {
     return (
-      <>
+      <div className="min-h-screen bg-gray-50">
         {/* Mobile header with back button */}
         <div className="sticky top-0 z-50 flex items-center gap-3 border-b border-gray-200 bg-white px-4 py-3 lg:hidden">
           <button
@@ -89,7 +89,7 @@ export default function CartPage() {
           <h1 className="text-lg font-semibold text-gray-900">কার্ট</h1>
         </div>
 
-        <div className="bg-gray-50 py-16 lg:py-16">
+        <div className="py-16 lg:py-16">
           <div className={MAIN_CONTAINER}>
             <h1 className="hidden text-3xl font-bold text-gray-900 lg:block">Shopping Cart</h1>
 
@@ -112,12 +112,12 @@ export default function CartPage() {
             </div>
           </div>
         </div>
-      </>
+      </div>
     )
   }
 
   return (
-    <>
+    <div className="min-h-screen bg-gray-50">
       {/* Mobile header with back button */}
       <div className="sticky top-0 z-50 flex items-center gap-3 border-b border-gray-200 bg-white px-4 py-3 lg:hidden">
         <button
@@ -131,7 +131,7 @@ export default function CartPage() {
       </div>
 
       {/* Main cart content - pb-52 (208px) accounts for checkout bar height (~150px) + extra spacing */}
-      <div className="bg-gray-50 py-6 pb-52 lg:py-8 lg:pb-8">
+      <div className="py-6 pb-52 lg:py-8 lg:pb-8">
         <div className={MAIN_CONTAINER}>
           {/* Header with item count and clear all - Desktop only */}
           <div className="hidden items-center justify-between lg:flex">
@@ -363,6 +363,6 @@ export default function CartPage() {
           )}
         </div>
       </div>
-    </>
+    </div>
   )
 }
