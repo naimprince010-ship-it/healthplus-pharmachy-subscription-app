@@ -21,6 +21,7 @@ import {
   Sparkles,
   Settings,
   Upload,
+  Factory,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -37,6 +38,7 @@ const navItems: NavItem[] = [
   { label: 'Medicines', href: '/admin/medicines', icon: Package },
   { label: 'Products', href: '/admin/products', icon: Box },
   { label: 'Categories', href: '/admin/categories', icon: FolderTree },
+  { label: 'Manufacturers', href: '/admin/manufacturers', icon: Factory },
   { label: 'Orders', href: '/admin/orders', icon: ShoppingBag },
   { label: 'Subscriptions', href: '/admin/subscriptions', icon: Calendar },
   { label: 'Subscription Plans', href: '/admin/subscription-plans', icon: PackageCheck },

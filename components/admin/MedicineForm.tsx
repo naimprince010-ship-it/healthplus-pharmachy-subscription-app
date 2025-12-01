@@ -17,6 +17,11 @@ interface Category {
   name: string
 }
 
+interface ManufacturerOption {
+  id: string
+  name: string
+}
+
 interface ProductVariant {
   id: string
   variantName: string
@@ -40,6 +45,7 @@ interface MedicineFormProps {
 export function MedicineForm({ mode, medicineId, initialData }: MedicineFormProps) {
   const router = useRouter()
   const [categories, setCategories] = useState<Category[]>([])
+  const [manufacturers, setManufacturers] = useState<ManufacturerOption[]>([])
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [imageUrl, setImageUrl] = useState(initialData?.imageUrl || '')
@@ -81,12 +87,13 @@ export function MedicineForm({ mode, medicineId, initialData }: MedicineFormProp
   const tabletsPerStrip = watch('tabletsPerStrip')
   const packSize = watch('packSize')
 
-  useEffect(() => {
-    fetchCategories()
-    if (mode === 'edit' && productId) {
-      fetchVariants()
-    }
-  }, [])
+    useEffect(() => {
+      fetchCategories()
+      fetchManufacturers()
+      if (mode === 'edit' && productId) {
+        fetchVariants()
+      }
+    }, [])
 
   const fetchVariants = async () => {
     if (!productId) return
@@ -204,17 +211,29 @@ export function MedicineForm({ mode, medicineId, initialData }: MedicineFormProp
     }
   }, [unitPrice, tabletsPerStrip, setValue])
 
-    const fetchCategories = async () => {
-      try {
-        const res = await fetch('/api/admin/categories')
-        const data = await res.json()
-        if (res.ok) {
-          setCategories(data.categories || [])
+        const fetchCategories = async () => {
+          try {
+            const res = await fetch('/api/admin/categories')
+            const data = await res.json()
+            if (res.ok) {
+              setCategories(data.categories || [])
+            }
+          } catch (err) {
+            console.error('Failed to fetch categories:', err)
+          }
         }
-      } catch (err) {
-        console.error('Failed to fetch categories:', err)
-      }
-    }
+
+        const fetchManufacturers = async () => {
+          try {
+            const res = await fetch('/api/admin/manufacturers')
+            const data = await res.json()
+            if (res.ok) {
+              setManufacturers(data.manufacturers || [])
+            }
+          } catch (err) {
+            console.error('Failed to fetch manufacturers:', err)
+          }
+        }
 
     const handleAIGenerate = async () => {
       const medicineName = watch('name')
@@ -354,20 +373,25 @@ export function MedicineForm({ mode, medicineId, initialData }: MedicineFormProp
               )}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Manufacturer <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                {...register('manufacturer')}
-                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                placeholder="e.g., Beximco Pharmaceuticals"
-              />
-              {errors.manufacturer && (
-                <p className="mt-1 text-sm text-red-600">{errors.manufacturer.message as string}</p>
-              )}
-            </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">
+                            Manufacturer <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            {...register('manufacturer')}
+                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                          >
+                            <option value="">Select a manufacturer</option>
+                            {manufacturers.map((mfr) => (
+                              <option key={mfr.id} value={mfr.name}>
+                                {mfr.name}
+                              </option>
+                            ))}
+                          </select>
+                          {errors.manufacturer && (
+                            <p className="mt-1 text-sm text-red-600">{errors.manufacturer.message as string}</p>
+                          )}
+                        </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700">
