@@ -12,6 +12,7 @@ interface Manufacturer {
   logoUrl?: string | null
   websiteUrl?: string | null
   description?: string | null
+  phoneNumber?: string | null
   aliasList?: string[] | null
 }
 
@@ -24,14 +25,15 @@ export default function ManufacturerForm({ manufacturer }: ManufacturerFormProps
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  const [formData, setFormData] = useState({
-    name: manufacturer?.name || '',
-    slug: manufacturer?.slug || '',
-    logoUrl: manufacturer?.logoUrl || '',
-    websiteUrl: manufacturer?.websiteUrl || '',
-    description: manufacturer?.description || '',
-    aliasList: manufacturer?.aliasList?.join(', ') || '',
-  })
+    const [formData, setFormData] = useState({
+      name: manufacturer?.name || '',
+      slug: manufacturer?.slug || '',
+      logoUrl: manufacturer?.logoUrl || '',
+      websiteUrl: manufacturer?.websiteUrl || '',
+      description: manufacturer?.description || '',
+      phoneNumber: manufacturer?.phoneNumber || '',
+      aliasList: manufacturer?.aliasList?.join(', ') || '',
+    })
 
   const generateSlug = (name: string) => {
     return name
@@ -64,19 +66,20 @@ export default function ManufacturerForm({ manufacturer }: ManufacturerFormProps
         ? formData.aliasList.split(',').map(s => s.trim()).filter(Boolean)
         : null
 
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          name: formData.name,
-          slug: formData.slug,
-          logoUrl: formData.logoUrl || null,
-          websiteUrl: formData.websiteUrl || null,
-          description: formData.description || null,
-          aliasList: aliasArray,
-        }),
-      })
+            const response = await fetch(url, {
+              method,
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({
+                name: formData.name,
+                slug: formData.slug,
+                logoUrl: formData.logoUrl || null,
+                websiteUrl: formData.websiteUrl || null,
+                description: formData.description || null,
+                phoneNumber: formData.phoneNumber?.trim() || null,
+                aliasList: aliasArray,
+              }),
+            })
 
       const data = await response.json()
 
@@ -175,22 +178,38 @@ export default function ManufacturerForm({ manufacturer }: ManufacturerFormProps
           )}
         </div>
 
-        {/* Website URL */}
-        <div>
-          <label htmlFor="websiteUrl" className="block text-sm font-medium text-gray-700">
-            Website URL
-          </label>
-          <input
-            type="url"
-            id="websiteUrl"
-            value={formData.websiteUrl}
-            onChange={(e) => setFormData({ ...formData, websiteUrl: e.target.value })}
-            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-            placeholder="https://www.example.com"
-          />
-        </div>
+                {/* Website URL */}
+                <div>
+                  <label htmlFor="websiteUrl" className="block text-sm font-medium text-gray-700">
+                    Website URL
+                  </label>
+                  <input
+                    type="url"
+                    id="websiteUrl"
+                    value={formData.websiteUrl}
+                    onChange={(e) => setFormData({ ...formData, websiteUrl: e.target.value })}
+                    className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                    placeholder="https://www.example.com"
+                  />
+                </div>
 
-        {/* Description */}
+                {/* Phone Number */}
+                <div>
+                  <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">
+                    Mobile Number
+                  </label>
+                  <input
+                    type="tel"
+                    id="phoneNumber"
+                    value={formData.phoneNumber}
+                    onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                    maxLength={20}
+                    className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                    placeholder="+8801XXXXXXXXX"
+                  />
+                </div>
+
+                {/* Description */}
         <div>
           <label htmlFor="description" className="block text-sm font-medium text-gray-700">
             Description

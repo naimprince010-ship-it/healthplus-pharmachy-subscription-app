@@ -626,6 +626,7 @@ model Manufacturer {
   logoUrl               String?  // Manufacturer logo image URL
   websiteUrl            String?  // Manufacturer website URL
   description           String?  // Manufacturer description
+  phoneNumber           String?  // Contact phone number (e.g., "+8801XXXXXXXXX")
   requiresQcVerification Boolean @default(true) // Whether products from this manufacturer need extra QC
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt

@@ -39,17 +39,18 @@ export async function generateMetadata({ params }: ManufacturerPageProps): Promi
 export default async function ManufacturerPage({ params }: ManufacturerPageProps) {
   const { slug } = await params
 
-  const manufacturer = await prisma.manufacturer.findUnique({
-    where: { slug },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      description: true,
-      logoUrl: true,
-      websiteUrl: true,
-    },
-  })
+    const manufacturer = await prisma.manufacturer.findUnique({
+      where: { slug },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        logoUrl: true,
+        websiteUrl: true,
+        phoneNumber: true,
+      },
+    })
 
   if (!manufacturer) {
     notFound()
@@ -108,18 +109,29 @@ export default async function ManufacturerPage({ params }: ManufacturerPageProps
               {manufacturer.description && (
                 <p className="mt-1 text-gray-600">{manufacturer.description}</p>
               )}
-              {manufacturer.websiteUrl && (
-                <a
-                  href={manufacturer.websiteUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-2 inline-flex items-center gap-1 text-sm text-teal-600 hover:text-teal-700"
-                >
-                  Visit Website <ExternalLink className="h-3 w-3" />
-                </a>
-              )}
-            </div>
-          </div>
+                        {manufacturer.websiteUrl && (
+                          <a
+                            href={manufacturer.websiteUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-2 inline-flex items-center gap-1 text-sm text-teal-600 hover:text-teal-700"
+                          >
+                            Visit Website <ExternalLink className="h-3 w-3" />
+                          </a>
+                        )}
+                        {manufacturer.phoneNumber && (
+                          <p className="mt-1 text-sm text-gray-600">
+                            Contact:{' '}
+                            <a
+                              href={`tel:${manufacturer.phoneNumber}`}
+                              className="text-teal-600 hover:text-teal-700"
+                            >
+                              {manufacturer.phoneNumber}
+                            </a>
+                          </p>
+                        )}
+                      </div>
+                    </div>
           
           <div className="mt-4 text-sm text-gray-500">
             {products.length} products found

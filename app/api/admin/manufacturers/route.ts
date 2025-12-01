@@ -74,9 +74,10 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     
-    // Clean up empty strings to null for optional URL fields
-    if (body.logoUrl === '') body.logoUrl = null
-    if (body.websiteUrl === '') body.websiteUrl = null
+        // Clean up empty strings to null for optional URL fields
+        if (body.logoUrl === '') body.logoUrl = null
+        if (body.websiteUrl === '') body.websiteUrl = null
+        if (body.phoneNumber === '') body.phoneNumber = null
     
     const validatedData = createManufacturerSchema.parse(body)
 
@@ -102,16 +103,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-        const manufacturer = await prisma.manufacturer.create({
-          data: {
-            name: validatedData.name,
-            slug: validatedData.slug,
-            logoUrl: validatedData.logoUrl || null,
-            websiteUrl: validatedData.websiteUrl || null,
-            description: validatedData.description || null,
-            aliasList: validatedData.aliasList ? validatedData.aliasList : Prisma.JsonNull,
-          },
-        })
+                const manufacturer = await prisma.manufacturer.create({
+                  data: {
+                    name: validatedData.name,
+                    slug: validatedData.slug,
+                    logoUrl: validatedData.logoUrl || null,
+                    websiteUrl: validatedData.websiteUrl || null,
+                    description: validatedData.description || null,
+                    phoneNumber: validatedData.phoneNumber || null,
+                    aliasList: validatedData.aliasList ? validatedData.aliasList : Prisma.JsonNull,
+                  },
+                })
 
     return NextResponse.json({ manufacturer }, { status: 201 })
   } catch (error) {

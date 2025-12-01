@@ -7,6 +7,7 @@ export const manufacturerSchema = z.object({
   logoUrl: z.string().url('Invalid logo URL').optional().nullable().or(z.literal('')),
   websiteUrl: z.string().url('Invalid website URL').optional().nullable().or(z.literal('')),
   description: z.string().optional().nullable(),
+  phoneNumber: z.string().max(20, 'Phone number must be less than 20 characters').optional().nullable().or(z.literal('')),
   aliasList: z.array(z.string()).optional().nullable(),
 })
 

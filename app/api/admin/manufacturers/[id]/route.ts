@@ -56,9 +56,10 @@ export async function PUT(
     const { id } = await params
     const body = await request.json()
     
-    // Clean up empty strings to null for optional URL fields
-    if (body.logoUrl === '') body.logoUrl = null
-    if (body.websiteUrl === '') body.websiteUrl = null
+        // Clean up empty strings to null for optional URL fields
+        if (body.logoUrl === '') body.logoUrl = null
+        if (body.websiteUrl === '') body.websiteUrl = null
+        if (body.phoneNumber === '') body.phoneNumber = null
     
     const validatedData = updateManufacturerSchema.parse({ ...body, id })
 
@@ -98,16 +99,17 @@ export async function PUT(
       }
     }
 
-        const updateData: Prisma.ManufacturerUpdateInput = {}
+                const updateData: Prisma.ManufacturerUpdateInput = {}
     
-        if (validatedData.name !== undefined) updateData.name = validatedData.name
-        if (validatedData.slug !== undefined) updateData.slug = validatedData.slug
-        if (validatedData.logoUrl !== undefined) updateData.logoUrl = validatedData.logoUrl
-        if (validatedData.websiteUrl !== undefined) updateData.websiteUrl = validatedData.websiteUrl
-        if (validatedData.description !== undefined) updateData.description = validatedData.description
-        if (validatedData.aliasList !== undefined) {
-          updateData.aliasList = validatedData.aliasList ? validatedData.aliasList : Prisma.JsonNull
-        }
+                if (validatedData.name !== undefined) updateData.name = validatedData.name
+                if (validatedData.slug !== undefined) updateData.slug = validatedData.slug
+                if (validatedData.logoUrl !== undefined) updateData.logoUrl = validatedData.logoUrl
+                if (validatedData.websiteUrl !== undefined) updateData.websiteUrl = validatedData.websiteUrl
+                if (validatedData.description !== undefined) updateData.description = validatedData.description
+                if (validatedData.phoneNumber !== undefined) updateData.phoneNumber = validatedData.phoneNumber
+                if (validatedData.aliasList !== undefined) {
+                  updateData.aliasList = validatedData.aliasList ? validatedData.aliasList : Prisma.JsonNull
+                }
 
         const manufacturer = await prisma.manufacturer.update({
           where: { id },
