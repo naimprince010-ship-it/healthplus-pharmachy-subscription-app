@@ -26,6 +26,7 @@ const createProductSchema = z.object({
   description: z.string().optional(),
   brandName: z.string().optional(),
   categoryId: z.string().min(1),
+  manufacturerId: z.string().nullable().optional(),
   mrp: z.number().positive().optional(),
   sellingPrice: z.number().positive(),
   stockQuantity: z.number().int().min(0).default(0),
@@ -232,15 +233,16 @@ export async function POST(request: NextRequest) {
       slug = uniqueSlug
     }
 
-    const product = await prisma.product.create({
-      data: {
-        type: productType,
-        name: data.name,
-        slug,
-        description: data.description,
-        brandName: data.brandName,
-        categoryId: data.categoryId,
-        mrp: data.mrp,
+        const product = await prisma.product.create({
+          data: {
+            type: productType,
+            name: data.name,
+            slug,
+            description: data.description,
+            brandName: data.brandName,
+            categoryId: data.categoryId,
+            manufacturerId: data.manufacturerId || null,
+            mrp: data.mrp,
         sellingPrice: data.sellingPrice,
         stockQuantity: data.stockQuantity,
         minStockAlert: data.minStockAlert,
