@@ -219,6 +219,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
           id: true,
           name: true,
           slug: true,
+          parentCategory: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
         },
       },
       medicine: {
@@ -293,6 +300,21 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const strength = product.medicine?.strength || product.sizeLabel || null
   const manufacturer = product.medicine?.manufacturer || product.brandName || null
 
+  // Parent/Leaf category for MedEasy-style display
+  // Line 1 (grey): Parent category/department (e.g., "Women's Choice") OR dosage form for medicines
+  // Line 2 (green link): Leaf category (e.g., "Sanitary Napkin") OR generic name for medicines
+  const parentCategoryName = product.category?.parentCategory?.name || null
+  const leafCategoryName = product.category?.name || null
+  const leafCategorySlug = product.category?.slug || null
+  
+  // Top line text: dosage form (for medicines) OR parent department (for general products with hierarchy)
+  const topLineText = isMedicine ? dosageForm : parentCategoryName
+  
+  // Normalize for comparison to avoid duplicates from whitespace/casing differences
+  const normalizedTop = topLineText?.trim().toLowerCase() || ''
+  const normalizedLeaf = leafCategoryName?.trim().toLowerCase() || ''
+  const showTopLine = !!topLineText && normalizedTop !== normalizedLeaf
+
   return (
     <div className="bg-gray-50 py-8">
       {/* MedEasy-style layout: centered container matching home page */}
@@ -336,12 +358,15 @@ export default async function ProductPage({ params }: ProductPageProps) {
               </h1>
             </div>
 
-            {/* Dosage Form or Category (MedEasy style: "Tablet" or "Skin Care") */}
-            <div className="text-gray-600 mb-1">
-              {dosageForm || product.category?.name || 'General'}
-            </div>
+            {/* Line 1 (grey): Parent Category/Department (for general products) OR Dosage Form (for medicines) */}
+            {/* Only show if different from leaf category to avoid duplicates */}
+            {showTopLine && (
+              <div className="text-gray-600 mb-1">
+                {topLineText}
+              </div>
+            )}
 
-            {/* Generic Name (MedEasy style: green link "Paracetamol") */}
+            {/* Line 2 (green link): Generic Name (for medicines) OR Leaf Category (for general products) */}
             {genericName && (
               <div className="mb-4">
                 <span className="text-teal-600 font-medium hover:text-teal-700 cursor-pointer">
@@ -350,14 +375,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
               </div>
             )}
 
-            {/* Category link for non-medicine products */}
-            {!genericName && product.category && (
+            {/* Leaf category link for non-medicine products */}
+            {!genericName && leafCategoryName && leafCategorySlug && (
               <div className="mb-4">
                 <Link
-                  href={`/category/${product.category.slug}`}
+                  href={`/category/${leafCategorySlug}`}
                   className="text-teal-600 font-medium hover:text-teal-700"
                 >
-                  {product.category.name}
+                  {leafCategoryName}
                 </Link>
               </div>
             )}
