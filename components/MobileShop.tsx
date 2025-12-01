@@ -1,11 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Zap, ChevronRight } from 'lucide-react'
 import { ProductCard } from '@/components/ProductCard'
 
-interface Product {
+export interface MobileShopProduct {
   id: string
   type: 'MEDICINE' | 'GENERAL'
   name: string
@@ -28,7 +27,7 @@ interface Product {
   }
 }
 
-interface SidebarCategory {
+export interface MobileShopCategory {
   id: string
   name: string
   slug: string
@@ -36,62 +35,17 @@ interface SidebarCategory {
   sidebarLinkUrl: string | null
 }
 
-interface CategorySection {
-  category: SidebarCategory
-  products: Product[]
+export interface MobileShopCategorySection {
+  category: MobileShopCategory
+  products: MobileShopProduct[]
 }
 
-export function MobileShop() {
-  const [flashSaleProducts, setFlashSaleProducts] = useState<Product[]>([])
-  const [categorySections, setCategorySections] = useState<CategorySection[]>([])
-  const [loading, setLoading] = useState(true)
+interface MobileShopProps {
+  flashSaleProducts: MobileShopProduct[]
+  categorySections: MobileShopCategorySection[]
+}
 
-  useEffect(() => {
-    fetchData()
-  }, [])
-
-  const fetchData = async () => {
-    try {
-      // Fetch flash sale products
-      const flashSaleRes = await fetch('/api/products?isFlashSale=true&limit=10')
-      const flashSaleData = await flashSaleRes.json()
-      if (flashSaleRes.ok) {
-        setFlashSaleProducts(flashSaleData.products || [])
-      }
-
-      // Fetch sidebar categories
-      const categoriesRes = await fetch('/api/sidebar-categories')
-      const categoriesData = await categoriesRes.json()
-      const categories: SidebarCategory[] = categoriesData.categories || []
-
-      // Fetch products for each category
-      const sections: CategorySection[] = []
-      for (const category of categories.slice(0, 8)) {
-        const productsRes = await fetch(`/api/products?categorySlug=${category.slug}&limit=10`)
-        const productsData = await productsRes.json()
-        if (productsRes.ok && productsData.products?.length > 0) {
-          sections.push({
-            category,
-            products: productsData.products,
-          })
-        }
-      }
-      setCategorySections(sections)
-    } catch (error) {
-      console.error('Failed to fetch shop data:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <div className="text-gray-500">Loading...</div>
-      </div>
-    )
-  }
-
+export function MobileShop({ flashSaleProducts, categorySections }: MobileShopProps) {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Flash Sale Section */}
