@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://healthplus.com'
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://halalzi.com'
 
   return [
     {
@@ -11,34 +11,28 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
     },
     {
+      url: `${baseUrl}/products`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
+    {
       url: `${baseUrl}/membership`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
-      priority: 0.9,
+      priority: 0.8,
     },
     {
       url: `${baseUrl}/subscriptions`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/medicines`,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
       priority: 0.8,
     },
     {
-      url: `${baseUrl}/cart`,
+      url: `${baseUrl}/flash-sale`,
       lastModified: new Date(),
-      changeFrequency: 'always',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/dashboard`,
-      lastModified: new Date(),
-      changeFrequency: 'always',
-      priority: 0.7,
+      changeFrequency: 'daily',
+      priority: 0.8,
     },
   ]
 }
