@@ -200,10 +200,12 @@ model Product {
   excludeFromMembershipDiscount Boolean @default(false)
 
   // Relations & Status
-  categoryId String
-  category   Category  @relation(fields: [categoryId], references: [id])
-  isActive   Boolean   @default(true)
-  deletedAt  DateTime? // Soft delete timestamp
+  categoryId     String
+  category       Category      @relation(fields: [categoryId], references: [id])
+  manufacturerId String?
+  manufacturer   Manufacturer? @relation(fields: [manufacturerId], references: [id], onDelete: SetNull)
+  isActive       Boolean       @default(true)
+  deletedAt      DateTime?     // Soft delete timestamp
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -621,12 +623,17 @@ model Manufacturer {
   name                  String   @unique // Primary manufacturer name (e.g., "Square Pharmaceuticals Ltd.")
   aliasList             Json?    // Array of alternative names (e.g., ["Square", "Square Pharma"])
   slug                  String   @unique
+  logoUrl               String?  // Manufacturer logo image URL
+  websiteUrl            String?  // Manufacturer website URL
+  description           String?  // Manufacturer description
+  phoneNumber           String?  // Contact phone number (e.g., "+8801XXXXXXXXX")
   requiresQcVerification Boolean @default(true) // Whether products from this manufacturer need extra QC
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
   // Relations
-  drafts AiProductDraft[]
+  drafts   AiProductDraft[]
+  products Product[]
 
   @@index([name])
 }

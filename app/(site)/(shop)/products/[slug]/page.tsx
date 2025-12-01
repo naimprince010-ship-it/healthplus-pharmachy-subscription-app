@@ -191,69 +191,76 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params
   const { prisma } = await import('@/lib/prisma')
 
-  const product = await prisma.product.findUnique({
-    where: { slug },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      imageUrl: true,
-      sellingPrice: true,
-      mrp: true,
-      stockQuantity: true,
-      brandName: true,
-      description: true,
-      keyFeatures: true,
-      specSummary: true,
-      sizeLabel: true,
-      unit: true,
-      type: true,
-      isActive: true,
-      discountPercentage: true,
-      flashSalePrice: true,
-      flashSaleStart: true,
-      flashSaleEnd: true,
-      isFlashSale: true,
-      category: {
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          parentCategory: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
+    const product = await prisma.product.findUnique({
+      where: { slug },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        imageUrl: true,
+        sellingPrice: true,
+        mrp: true,
+        stockQuantity: true,
+        brandName: true,
+        description: true,
+        keyFeatures: true,
+        specSummary: true,
+        sizeLabel: true,
+        unit: true,
+        type: true,
+        isActive: true,
+        discountPercentage: true,
+        flashSalePrice: true,
+        flashSaleStart: true,
+        flashSaleEnd: true,
+        isFlashSale: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            parentCategory: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              },
             },
           },
         },
-      },
-      medicine: {
-        select: {
-          discountPercentage: true,
-          genericName: true,
-          dosageForm: true,
-          strength: true,
-          manufacturer: true,
+        manufacturer: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+        medicine: {
+          select: {
+            discountPercentage: true,
+            genericName: true,
+            dosageForm: true,
+            strength: true,
+            manufacturer: true,
+          },
+        },
+        variants: {
+          where: { isActive: true },
+          orderBy: { sortOrder: 'asc' },
+          select: {
+            id: true,
+            variantName: true,
+            unitLabel: true,
+            sizeLabel: true,
+            mrp: true,
+            sellingPrice: true,
+            discountPercentage: true,
+            stockQuantity: true,
+            isDefault: true,
+          },
         },
       },
-      variants: {
-        where: { isActive: true },
-        orderBy: { sortOrder: 'asc' },
-        select: {
-          id: true,
-          variantName: true,
-          unitLabel: true,
-          sizeLabel: true,
-          mrp: true,
-          sellingPrice: true,
-          discountPercentage: true,
-          stockQuantity: true,
-          isDefault: true,
-        },
-      },
-    },
-  })
+    })
 
   if (!product || !product.isActive) {
     notFound()
@@ -293,12 +300,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
     isDefault: v.isDefault,
   }))
 
-  // Get medicine-specific info for MedEasy-style display
-  const isMedicine = product.type === 'MEDICINE'
-  const genericName = product.medicine?.genericName || null
-  const dosageForm = product.medicine?.dosageForm || null
-  const strength = product.medicine?.strength || product.sizeLabel || null
-  const manufacturer = product.medicine?.manufacturer || product.brandName || null
+    // Get medicine-specific info for MedEasy-style display
+    const isMedicine = product.type === 'MEDICINE'
+    const genericName = product.medicine?.genericName || null
+    const dosageForm = product.medicine?.dosageForm || null
+    const strength = product.medicine?.strength || product.sizeLabel || null
+    // Use Manufacturer relation first, then fall back to medicine.manufacturer or brandName
+    const manufacturerName = product.manufacturer?.name || product.medicine?.manufacturer || product.brandName || null
+    const manufacturerSlug = product.manufacturer?.slug || null
 
   // Parent/Leaf category for MedEasy-style display
   // Line 1 (grey): Parent category/department (e.g., "Women's Choice") OR dosage form for medicines
@@ -390,15 +399,24 @@ export default async function ProductPage({ params }: ProductPageProps) {
             {/* Divider */}
             <hr className="my-4 border-gray-200" />
 
-            {/* Manufacturer (MedEasy style: "Manufacturer: Square Pharmaceuticals PLC.") */}
-            {manufacturer && (
-              <div className="mb-4">
-                <span className="text-gray-500 text-sm">Manufacturer:</span>
-                <span className="ml-2 text-teal-600 font-medium hover:text-teal-700 cursor-pointer">
-                  {manufacturer}
-                </span>
-              </div>
-            )}
+                        {/* Manufacturer (MedEasy style: "Manufacturer: Square Pharmaceuticals PLC.") */}
+                        {manufacturerName && (
+                          <div className="mb-4">
+                            <span className="text-gray-500 text-sm">Manufacturer:</span>
+                            {manufacturerSlug ? (
+                              <Link
+                                href={`/manufacturer/${manufacturerSlug}`}
+                                className="ml-2 text-teal-600 font-medium hover:text-teal-700"
+                              >
+                                {manufacturerName}
+                              </Link>
+                            ) : (
+                              <span className="ml-2 text-teal-600 font-medium">
+                                {manufacturerName}
+                              </span>
+                            )}
+                          </div>
+                        )}
 
             <ProductDetailClient
               productId={product.id}
