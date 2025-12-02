@@ -196,6 +196,9 @@ model Product {
   canonicalUrl   String?
   isFeatured     Boolean @default(false)
 
+  // Search & Ranking
+  popularityScore Int @default(0) // Derived from order count, used for search ranking
+
   // Membership discount override
   excludeFromMembershipDiscount Boolean @default(false)
 
