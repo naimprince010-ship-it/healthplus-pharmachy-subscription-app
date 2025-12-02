@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { searchProducts, getSearchIndex } from '@/lib/search-index'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -10,132 +10,103 @@ export async function GET(request: NextRequest) {
     const q = (searchParams.get('q') || '').trim()
     const limitParam = Number(searchParams.get('limit') ?? '40')
     const limit = Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 40) : 40
+    const mode = searchParams.get('mode') || 'full'
 
     if (!q || q.length < 2) {
-      return NextResponse.json({ products: [], items: [], query: q })
+      if (mode === 'suggestions') {
+        return NextResponse.json({ items: [], query: q })
+      }
+      const { products } = await getSearchIndex()
+      const topProducts = products.slice(0, limit)
+      return NextResponse.json({
+        products: topProducts.map(formatProduct),
+        items: topProducts.slice(0, 10).map(formatSuggestion),
+        query: q,
+        count: topProducts.length,
+      })
     }
 
-    // Search across products with related medicine and category data
-    const products = await prisma.product.findMany({
-      where: {
-        isActive: true,
-        deletedAt: null,
-        OR: [
-          { name: { contains: q, mode: 'insensitive' } },
-          { brandName: { contains: q, mode: 'insensitive' } },
-          { description: { contains: q, mode: 'insensitive' } },
-          { medicine: { genericName: { contains: q, mode: 'insensitive' } } },
-          { medicine: { manufacturer: { contains: q, mode: 'insensitive' } } },
-          { medicine: { brandName: { contains: q, mode: 'insensitive' } } },
-          { category: { name: { contains: q, mode: 'insensitive' } } },
-        ],
-      },
-      include: {
-        medicine: true,
-        category: true,
-      },
-      take: 40,
-      orderBy: { name: 'asc' },
-    })
+    const results = await searchProducts(q, limit)
 
-    // Also search medicines that may not have a linked product
-    const standaloneMedicines = await prisma.medicine.findMany({
-      where: {
-        isActive: true,
-        deletedAt: null,
-        productId: null, // Only medicines without linked products
-        OR: [
-          { name: { contains: q, mode: 'insensitive' } },
-          { genericName: { contains: q, mode: 'insensitive' } },
-          { brandName: { contains: q, mode: 'insensitive' } },
-          { manufacturer: { contains: q, mode: 'insensitive' } },
-        ],
-      },
-      include: {
-        category: true,
-      },
-      take: 20,
-      orderBy: { name: 'asc' },
-    })
+    if (mode === 'suggestions') {
+      const items = results.slice(0, Math.min(limit, 10)).map((r) => formatSuggestion(r.item))
+      return NextResponse.json({
+        items,
+        query: q,
+        count: items.length,
+      })
+    }
 
-    // Format products for the response
-    const formattedProducts = products.map((p) => ({
-      id: p.id,
-      type: p.type,
-      name: p.name,
-      slug: p.slug,
-      brandName: p.medicine?.manufacturer || p.medicine?.brandName || p.brandName || null,
-      description: p.description,
-      sellingPrice: p.sellingPrice,
-      mrp: p.mrp,
-      stockQuantity: p.stockQuantity,
-      imageUrl: p.imageUrl,
-      discountPercentage: p.discountPercentage || p.medicine?.discountPercentage || null,
-      category: {
-        id: p.category.id,
-        name: p.category.name,
-        slug: p.category.slug,
-      },
-      href: `/products/${p.slug}`,
-      cartInfo: {
-        kind: p.type === 'MEDICINE' ? 'medicine' : 'product',
-        productId: p.id,
-        medicineId: p.medicine?.id,
-      },
-      isMedicine: p.type === 'MEDICINE',
-    }))
-
-    // Format standalone medicines
-    const formattedMedicines = standaloneMedicines.map((m) => ({
-      id: m.id,
-      type: 'MEDICINE' as const,
-      name: m.name,
-      slug: m.slug,
-      brandName: m.manufacturer || m.brandName || null,
-      description: m.description,
-      sellingPrice: m.sellingPrice,
-      mrp: m.mrp,
-      stockQuantity: m.stockQuantity,
-      imageUrl: m.imageUrl,
-      discountPercentage: m.discountPercentage || null,
-      category: {
-        id: m.category.id,
-        name: m.category.name,
-        slug: m.category.slug,
-      },
-      href: `/medicines/${m.slug}`,
-      cartInfo: {
-        kind: 'medicine' as const,
-        medicineId: m.id,
-      },
-      isMedicine: true,
-    }))
-
-    // Combine and deduplicate results
-    const allResults = [...formattedProducts, ...formattedMedicines]
-
-    // Create simplified items array for live search suggestions
-    const items = allResults.slice(0, limit).map((p) => ({
-      id: p.id,
-      name: p.name,
-      imageUrl: p.imageUrl,
-      price: p.sellingPrice,
-      manufacturer: p.brandName,
-      slug: p.slug,
-      href: p.href,
-    }))
+    const products = results.map((r) => formatProduct(r.item))
+    const items = results.slice(0, 10).map((r) => formatSuggestion(r.item))
 
     return NextResponse.json({
-      products: allResults,
+      products,
       items,
       query: q,
-      count: allResults.length,
+      count: products.length,
     })
   } catch (error) {
     console.error('Search API error:', error)
     return NextResponse.json(
-      { error: 'Search failed', products: [] },
+      { error: 'Search failed', products: [], items: [] },
       { status: 500 }
     )
+  }
+}
+
+interface SearchableItem {
+  id: string
+  type: string
+  name: string
+  slug: string
+  brandName: string | null
+  categoryName: string
+  categorySlug: string
+  description: string | null
+  sellingPrice: number
+  mrp: number | null
+  imageUrl: string | null
+  discountPercentage: number | null
+  isMedicine: boolean
+  medicineId: string | null
+  href: string
+}
+
+function formatProduct(p: SearchableItem) {
+  return {
+    id: p.id,
+    type: p.type,
+    name: p.name,
+    slug: p.slug,
+    brandName: p.brandName,
+    description: p.description,
+    sellingPrice: p.sellingPrice,
+    mrp: p.mrp,
+    imageUrl: p.imageUrl,
+    discountPercentage: p.discountPercentage,
+    category: {
+      name: p.categoryName,
+      slug: p.categorySlug,
+    },
+    href: p.href,
+    cartInfo: {
+      kind: p.isMedicine ? 'medicine' : 'product',
+      productId: p.id,
+      medicineId: p.medicineId,
+    },
+    isMedicine: p.isMedicine,
+  }
+}
+
+function formatSuggestion(p: SearchableItem) {
+  return {
+    id: p.id,
+    name: p.name,
+    imageUrl: p.imageUrl,
+    price: p.sellingPrice,
+    manufacturer: p.brandName,
+    slug: p.slug,
+    href: p.href,
   }
 }
