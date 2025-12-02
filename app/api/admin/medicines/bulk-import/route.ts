@@ -33,6 +33,7 @@ const CSV_FIELD_MAPPING: Record<string, string> = {
   expiry_date: 'expiryDate',
   requires_prescription: 'requiresPrescription',
   featured_medicine: 'isFeatured',
+  image_url: 'imageUrl',
 }
 
 function normalizeBoolean(value: string | undefined): boolean {
@@ -245,6 +246,7 @@ export async function POST(request: NextRequest) {
             isFeatured: (data.isFeatured as boolean) || false,
             isActive: false,
             categoryId,
+            imageUrl: (data.imageUrl as string) || null,
           },
         })
 
