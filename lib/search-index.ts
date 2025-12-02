@@ -81,7 +81,7 @@ async function loadProducts(): Promise<SearchableProduct[]> {
       isFeatured: p.isFeatured,
       isMedicine: p.type === 'MEDICINE',
       medicineId: p.medicine?.id || null,
-      href: `/medicines/${p.slug}`,
+      href: `/products/${p.slug}`,
     }
   })
 }
