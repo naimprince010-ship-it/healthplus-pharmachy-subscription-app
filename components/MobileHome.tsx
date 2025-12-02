@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { Shield, Package, Heart, Baby, Activity, Users, ChevronRight } from 'lucide-react'
+import Image from 'next/image'
+import { Shield, Package, Heart, Baby, Activity, Users, ChevronRight, Check } from 'lucide-react'
 import { PrescriptionUploadCard } from '@/components/PrescriptionUploadCard'
 import { ProductCard } from '@/components/ProductCard'
 import type { SubscriptionPlan, MembershipPlan } from '@prisma/client'
@@ -26,27 +27,42 @@ interface MobileHomeProps {
 export function MobileHome({ subscriptionPlans, membershipPlan, homeSections }: MobileHomeProps) {
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Section - Compact for Mobile */}
-      <section className="bg-gradient-to-br from-teal-600 to-teal-700 px-4 py-8 text-white">
-        <h1 className="text-2xl font-bold">
-          সাশ্রয়ী মূল্যে ওষুধের জন্য আপনার বিশ্বস্ত সঙ্গী
-        </h1>
-        <p className="mt-3 text-sm text-teal-50">
-          মাসিক ওষুধ প্ল্যানে সাবস্ক্রাইব করুন এবং আমাদের মেম্বারশিপে সাশ্রয় করুন
-        </p>
-        <div className="mt-6 flex gap-3">
-          <Link
-            href="/membership"
-            className="flex-1 rounded-lg bg-white px-4 py-3 text-center text-sm font-semibold text-teal-600"
-          >
-            মেম্বারশিপ নিন
-          </Link>
-          <Link
-            href="/subscriptions"
-            className="flex-1 rounded-lg border-2 border-white px-4 py-3 text-center text-sm font-semibold text-white"
-          >
-            প্ল্যান দেখুন
-          </Link>
+      {/* Hero Section - With Background Image */}
+      <section className="relative overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          <Image
+            src="/images/hero-pharmacy.jpg"
+            alt="Pharmacy"
+            fill
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-teal-900/80 to-teal-700/60" />
+        </div>
+        
+        {/* Content */}
+        <div className="relative px-4 py-10">
+          <h1 className="text-2xl font-bold text-white leading-tight">
+            আপনার স্বাস্থ্য,<br />আমাদের অগ্রাধিকার
+          </h1>
+          <p className="mt-2 text-sm text-white/90">
+            সাশ্রয়ী মূল্যে নির্ভরযোগ্য সেবা।
+          </p>
+          <div className="mt-6 flex gap-3">
+            <Link
+              href="/products"
+              className="flex-1 rounded-lg bg-white px-4 py-3 text-center text-sm font-semibold text-teal-700 shadow-lg"
+            >
+              এখনই শুরু করুন
+            </Link>
+            <Link
+              href="/subscriptions"
+              className="flex-1 rounded-lg border-2 border-white/80 bg-white/10 backdrop-blur-sm px-4 py-3 text-center text-sm font-semibold text-white"
+            >
+              প্ল্যান দেখুন
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -55,42 +71,47 @@ export function MobileHome({ subscriptionPlans, membershipPlan, homeSections }: 
         <PrescriptionUploadCard />
       </section>
 
-      {/* Membership Card - Prominent on Mobile */}
+      {/* Membership Card - Modern White Design */}
       {membershipPlan && (
         <section className="px-4 py-4">
-          <div className="rounded-xl bg-gradient-to-br from-teal-600 to-teal-700 p-6 text-white shadow-lg">
-            <div className="mb-3 inline-flex items-center rounded-full bg-white/20 px-3 py-1 text-xs font-semibold">
+          <div className="rounded-2xl bg-white p-6 shadow-md border border-gray-100">
+            {/* Premium Badge */}
+            <div className="mb-4 inline-flex items-center rounded-full bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-700">
               <Shield className="mr-1.5 h-3.5 w-3.5" />
               Premium Membership
             </div>
-            <h2 className="text-2xl font-bold">{membershipPlan.name}</h2>
-            <p className="mt-2 text-sm text-teal-50">
-              {membershipPlan.description || 'Get 10% discount on all medicines for 30 days'}
+            
+            {/* Title */}
+            <h2 className="text-xl font-bold text-gray-900">Monthly Membership</h2>
+            <p className="mt-1 text-sm text-gray-600">
+              Get {membershipPlan.discountPercent}% discount on all medicines for {membershipPlan.durationDays} days
             </p>
-            <div className="mt-4 flex items-baseline space-x-2">
-              <span className="text-4xl font-bold">৳{membershipPlan.price}</span>
-              <span className="text-lg text-teal-100">/month</span>
+            
+            {/* Price and Subscribe Button Row */}
+            <div className="mt-4 flex items-center justify-between">
+              <div className="flex items-baseline">
+                <span className="text-3xl font-bold text-gray-900">৳{membershipPlan.price}</span>
+                <span className="ml-1 text-sm text-gray-500">/month</span>
+              </div>
+              <Link
+                href="/membership"
+                className="rounded-lg bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-700 transition-colors"
+              >
+                সাবস্ক্রাইব করুন
+              </Link>
             </div>
+            
+            {/* Benefits List */}
             <ul className="mt-4 space-y-2">
-              <li className="flex items-center text-sm">
-                <svg className="mr-2 h-4 w-4 text-teal-200" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
+              <li className="flex items-center text-sm text-gray-700">
+                <Check className="mr-2 h-4 w-4 text-teal-600" />
                 {membershipPlan.discountPercent}% discount on all medicines
               </li>
-              <li className="flex items-center text-sm">
-                <svg className="mr-2 h-4 w-4 text-teal-200" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
+              <li className="flex items-center text-sm text-gray-700">
+                <Check className="mr-2 h-4 w-4 text-teal-600" />
                 Valid for {membershipPlan.durationDays} days
               </li>
             </ul>
-            <Link
-              href="/membership"
-              className="mt-5 block w-full rounded-lg bg-white py-3 text-center text-sm font-semibold text-teal-600"
-            >
-              Join Now
-            </Link>
           </div>
         </section>
       )}
