@@ -138,7 +138,7 @@ export default function BulkUploadPage() {
           </li>
           <li className="flex items-start gap-2">
             <span className="mt-0.5 text-teal-600">•</span>
-            <span>Maximum 2000 rows per upload</span>
+            <span>Maximum 3000 rows per upload</span>
           </li>
         </ul>
 
@@ -166,7 +166,7 @@ export default function BulkUploadPage() {
               {file ? file.name : 'Click to select CSV file'}
             </p>
             <p className="mt-1 text-xs text-gray-500">
-              CSV files only, max 2000 rows
+              CSV files only, max 3000 rows
             </p>
             <input
               id="file-input"
