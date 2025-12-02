@@ -8,8 +8,6 @@ import { ArrowLeft, X, Heart, Minus, Plus, Clock, Lock, ChevronRight, Truck } fr
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
-const FREE_DELIVERY_THRESHOLD = 499
-
 interface SuggestionProduct {
   id: string
   name: string
@@ -19,11 +17,48 @@ interface SuggestionProduct {
   slug: string
 }
 
+interface CartSettings {
+  freeDeliveryThreshold: number
+  freeDeliveryTextBn: string
+  freeDeliverySuccessTextBn: string
+  promoLabelBn: string
+  promoApplyTextBn: string
+  deliveryInfoTextBn: string
+  totalMrpLabelBn: string
+  savingsLabelBn: string
+  grandTotalLabelBn: string
+  checkoutButtonTextBn: string
+  suggestionTitleBn: string
+  emptyCartTextBn: string
+  emptyCartSubtextBn: string
+  startShoppingTextBn: string
+  cartTitleBn: string
+}
+
+const DEFAULT_SETTINGS: CartSettings = {
+  freeDeliveryThreshold: 499,
+  freeDeliveryTextBn: 'আর মাত্র ৳{remaining} টাকার পণ্য কিনলে ফ্রি ডেলিভারি পাবেন!',
+  freeDeliverySuccessTextBn: 'অভিনন্দন! আপনি ফ্রি ডেলিভারি পেয়েছেন 🎉',
+  promoLabelBn: 'প্রোমো কোড ব্যবহার করুন',
+  promoApplyTextBn: '[Apply]',
+  deliveryInfoTextBn: 'আনুমানিক ডেলিভারি: আগামীকাল',
+  totalMrpLabelBn: 'মোট এম.আর.পি:',
+  savingsLabelBn: 'আপনি সাশ্রয় করছেন:',
+  grandTotalLabelBn: 'সর্বমোট:',
+  checkoutButtonTextBn: 'নিরাপদ চেকআউট',
+  suggestionTitleBn: 'আপনার জন্য সাজেশন',
+  emptyCartTextBn: 'আপনার কার্ট খালি',
+  emptyCartSubtextBn: 'পণ্য যোগ করুন শপিং শুরু করতে',
+  startShoppingTextBn: 'শপিং শুরু করুন',
+  cartTitleBn: 'আপনার কার্ট',
+}
+
 export default function CartPage() {
   const { items, removeItem, updateQuantity, clearCart, total, itemCount, isInitialized, addItem } = useCart()
   const { data: session, status } = useSession()
   const router = useRouter()
   const [suggestions, setSuggestions] = useState<SuggestionProduct[]>([])
+  const [settings, setSettings] = useState<CartSettings>(DEFAULT_SETTINGS)
   const [promoCode, setPromoCode] = useState('')
   const [promoApplied, setPromoApplied] = useState(false)
 
@@ -40,21 +75,35 @@ export default function CartPage() {
     }
   }, [])
 
-  // Fetch suggestions
-  useEffect(() => {
-    const fetchSuggestions = async () => {
-      try {
-        const res = await fetch('/api/products?limit=10&sort=popular')
-        const data = await res.json()
-        if (data.products) {
-          setSuggestions(data.products.slice(0, 10))
+    // Fetch cart settings and suggestions from admin config
+    useEffect(() => {
+      const fetchCartConfig = async () => {
+        try {
+          const res = await fetch('/api/cart/settings')
+          const data = await res.json()
+          if (data.settings) {
+            setSettings(data.settings)
+          }
+          if (data.suggestions && data.suggestions.length > 0) {
+            setSuggestions(data.suggestions)
+          } else {
+            const fallbackRes = await fetch('/api/products?limit=10&sort=popular')
+            const fallbackData = await fallbackRes.json()
+            if (fallbackData.products) {
+              setSuggestions(fallbackData.products.slice(0, 10))
+            }
+          }
+        } catch (error) {
+          console.error('Failed to fetch cart config:', error)
+          const fallbackRes = await fetch('/api/products?limit=10&sort=popular')
+          const fallbackData = await fallbackRes.json()
+          if (fallbackData.products) {
+            setSuggestions(fallbackData.products.slice(0, 10))
+          }
         }
-      } catch (error) {
-        console.error('Failed to fetch suggestions:', error)
       }
-    }
-    fetchSuggestions()
-  }, [])
+      fetchCartConfig()
+    }, [])
 
   // Gate content behind readiness check to avoid hydration mismatch
   const isReady = isInitialized && status !== 'loading'
@@ -98,10 +147,10 @@ export default function CartPage() {
   // Calculate total savings
   const totalSavings = mrpTotal - total
 
-  // Free delivery progress
-  const remaining = Math.max(0, FREE_DELIVERY_THRESHOLD - total)
-  const progressPercent = Math.min(100, (total / FREE_DELIVERY_THRESHOLD) * 100)
-  const hasFreeDelivery = total >= FREE_DELIVERY_THRESHOLD
+    // Free delivery progress (using admin-configured threshold)
+    const remaining = Math.max(0, settings.freeDeliveryThreshold - total)
+    const progressPercent = Math.min(100, (total / settings.freeDeliveryThreshold) * 100)
+    const hasFreeDelivery = total >= settings.freeDeliveryThreshold
 
   // Handle promo code apply
   const handleApplyPromo = () => {
@@ -136,26 +185,26 @@ export default function CartPage() {
           >
             <ArrowLeft className="h-5 w-5 text-gray-700" />
           </button>
-          <h1 className="text-lg font-bold text-gray-900">আপনার কার্ট (0)</h1>
-        </div>
+              <h1 className="text-lg font-bold text-gray-900">{settings.cartTitleBn} (0)</h1>
+            </div>
 
-        <div className="flex flex-col items-center justify-center px-4 py-16">
-          <div className="mx-auto mb-4 h-24 w-24 text-gray-300">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
-            </svg>
+            <div className="flex flex-col items-center justify-center px-4 py-16">
+              <div className="mx-auto mb-4 h-24 w-24 text-gray-300">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+                </svg>
+              </div>
+              <p className="text-lg font-medium text-gray-700">{settings.emptyCartTextBn}</p>
+              <p className="mt-1 text-sm text-gray-500">{settings.emptyCartSubtextBn}</p>
+              <Link
+                href="/"
+                className="mt-6 rounded-full bg-[#00A651] px-8 py-3 font-semibold text-white"
+              >
+                {settings.startShoppingTextBn}
+              </Link>
+            </div>
           </div>
-          <p className="text-lg font-medium text-gray-700">আপনার কার্ট খালি</p>
-          <p className="mt-1 text-sm text-gray-500">পণ্য যোগ করুন শপিং শুরু করতে</p>
-          <Link
-            href="/"
-            className="mt-6 rounded-full bg-[#00A651] px-8 py-3 font-semibold text-white"
-          >
-            শপিং শুরু করুন
-          </Link>
-        </div>
-      </div>
-    )
+        )
   }
 
   return (
@@ -169,28 +218,28 @@ export default function CartPage() {
         >
           <ArrowLeft className="h-5 w-5 text-gray-700" />
         </button>
-        <h1 className="text-lg font-bold text-gray-900">আপনার কার্ট ({itemCount})</h1>
+        <h1 className="text-lg font-bold text-gray-900">{settings.cartTitleBn} ({itemCount})</h1>
       </div>
 
       {/* Main content */}
       <div className="px-4 py-4 lg:mx-auto lg:max-w-7xl lg:px-8">
         {/* Free Delivery Progress Bar */}
         <div className="mb-3 rounded-xl bg-white p-3 shadow-sm lg:hidden">
-          {hasFreeDelivery ? (
-            <div className="flex items-center gap-2">
-              <span className="text-lg">🎉</span>
-              <p className="text-sm font-medium text-[#00A651]">
-                অভিনন্দন! আপনি ফ্রি ডেলিভারি পেয়েছেন
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="flex items-center gap-2 mb-2">
-                <Truck className="h-5 w-5 text-[#00A651]" />
-                <p className="text-sm text-gray-700">
-                  আর মাত্র <span className="font-bold text-[#00A651]">৳{remaining.toFixed(0)}</span> টাকার পণ্য কিনলে ফ্রি ডেলিভারি পাবেন!
-                </p>
-              </div>
+                    {hasFreeDelivery ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">🎉</span>
+                        <p className="text-sm font-medium text-[#00A651]">
+                          {settings.freeDeliverySuccessTextBn}
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Truck className="h-5 w-5 text-[#00A651]" />
+                          <p className="text-sm text-gray-700">
+                            {settings.freeDeliveryTextBn.replace('{remaining}', remaining.toFixed(0))}
+                          </p>
+                        </div>
               <div className="h-2 w-full rounded-full bg-gray-200 overflow-hidden">
                 <div 
                   className="h-full rounded-full bg-[#00A651] transition-all duration-500"
@@ -307,58 +356,59 @@ export default function CartPage() {
               
               <div className="mt-4 space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">মোট এম.আর.পি:</span>
-                  <span className="font-medium text-gray-900">৳ {mrpTotal.toFixed(0)}</span>
-                </div>
+                                  <span className="text-gray-600">{settings.totalMrpLabelBn}</span>
+                                  <span className="font-medium text-gray-900">৳ {mrpTotal.toFixed(0)}</span>
+                                </div>
                 
-                {totalSavings > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-green-600">আপনি সাশ্রয় করছেন:</span>
-                    <span className="font-semibold text-green-600">৳ {totalSavings.toFixed(0)}</span>
-                  </div>
-                )}
+                                {totalSavings > 0 && (
+                                  <div className="flex justify-between text-sm">
+                                    <span className="text-green-600">{settings.savingsLabelBn}</span>
+                                    <span className="font-semibold text-green-600">৳ {totalSavings.toFixed(0)}</span>
+                                  </div>
+                                )}
 
-                <div className="flex justify-between border-t pt-3">
-                  <span className="font-bold text-gray-900">সর্বমোট:</span>
+                                <div className="flex justify-between border-t pt-3">
+                                  <span className="font-bold text-gray-900">{settings.grandTotalLabelBn}</span>
                   <span className="text-xl font-bold text-gray-900">৳ {total.toFixed(0)}</span>
                 </div>
               </div>
 
-              <div className="mt-6">
-                {!session ? (
-                  <Link
-                    href="/auth/signin?redirect=/cart"
-                    className="flex w-full items-center justify-center gap-2 rounded-full bg-[#00A651] py-3 font-semibold text-white hover:bg-[#008f45]"
-                  >
-                    <Lock className="h-4 w-4" />
-                    সাইন ইন করুন
-                  </Link>
-                ) : (
-                  <Link
-                    href="/checkout"
-                    className="flex w-full items-center justify-center gap-2 rounded-full bg-[#00A651] py-3 font-semibold text-white hover:bg-[#008f45]"
-                  >
-                    <Lock className="h-4 w-4" />
-                    নিরাপদ চেকআউট
-                  </Link>
-                )}
-              </div>
+                            <div className="mt-6">
+                              {!session ? (
+                                <Link
+                                  href="/auth/signin?redirect=/cart"
+                                  className="flex w-full items-center justify-center gap-2 rounded-full bg-[#00A651] py-3 font-semibold text-white hover:bg-[#008f45]"
+                                >
+                                  <Lock className="h-4 w-4" />
+                                  {settings.checkoutButtonTextBn}
+                                </Link>
+                              ) : (
+                                <Link
+                                  href="/checkout"
+                                  className="flex w-full items-center justify-center gap-2 rounded-full bg-[#00A651] py-3 font-semibold text-white hover:bg-[#008f45]"
+                                >
+                                  <Lock className="h-4 w-4" />
+                                  {settings.checkoutButtonTextBn}
+                                </Link>
+                              )}
+                            </div>
             </div>
           </div>
         </div>
 
-        {/* Suggestions Section */}
-        {suggestions.length > 0 && (
-          <div className="mt-6 lg:hidden">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="flex items-center gap-2 text-base font-bold text-gray-900">
-                <span>💡</span> আপনার জন্য সাজেশন
-              </h2>
-              <ChevronRight className="h-5 w-5 text-gray-400" />
-            </div>
-            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-              {suggestions.map((product) => (
-                <div key={product.id} className="flex-shrink-0 w-32 rounded-xl bg-white p-3 shadow-sm">
+                {/* Suggestions Section */}
+                {suggestions.length > 0 && (
+                  <div className="mt-6 lg:hidden">
+                    <div className="flex items-center justify-between mb-3">
+                      <h2 className="flex items-center gap-2 text-base font-bold text-gray-900">
+                        <span>💡</span> {settings.suggestionTitleBn}
+                      </h2>
+                      <ChevronRight className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <div className="overflow-x-auto [-webkit-overflow-scrolling:touch]">
+                      <div className="flex flex-nowrap gap-3 pb-2">
+                      {suggestions.map((product) => (
+                        <div key={product.id} className="min-w-[140px] max-w-[160px] flex-shrink-0 rounded-xl bg-white p-3 shadow-sm">
                   <Link href={`/products/${product.slug}`} className="block">
                     <div className="relative h-20 w-full mb-2 rounded-lg bg-gray-100 overflow-hidden">
                       {product.imageUrl ? (
@@ -377,83 +427,84 @@ export default function CartPage() {
                     <p className="text-sm font-medium text-gray-900 line-clamp-2 mb-1">{product.name}</p>
                   </Link>
                   <p className="text-sm font-bold text-gray-900 mb-2">৳{product.price}</p>
-                  <button
-                    onClick={() => handleAddSuggestion(product)}
-                    className="w-full rounded-full bg-[#00A651] py-1.5 text-xs font-semibold text-white"
-                  >
-                    + Add
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+                          <button
+                            onClick={() => handleAddSuggestion(product)}
+                            className="w-full rounded-full bg-[#00A651] py-1.5 text-xs font-semibold text-white"
+                          >
+                            + Add
+                          </button>
+                        </div>
+                      ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-        {/* Promo Code & Delivery Info */}
-        <div className="mt-6 rounded-xl bg-white p-4 shadow-sm lg:hidden">
-          {/* Promo Code Row */}
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-lg">🎫</span>
-            <span className="text-sm text-gray-700">প্রোমো কোড ব্যবহার করুন</span>
-            <button 
-              onClick={handleApplyPromo}
-              className="ml-auto text-sm font-semibold text-[#00A651]"
-            >
-              [Apply]
-            </button>
-          </div>
+                {/* Promo Code & Delivery Info */}
+                <div className="mt-6 rounded-xl bg-white p-4 shadow-sm lg:hidden">
+                  {/* Promo Code Row */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-lg">🎫</span>
+                    <span className="text-sm text-gray-700">{settings.promoLabelBn}</span>
+                    <button 
+                      onClick={handleApplyPromo}
+                      className="ml-auto text-sm font-semibold text-[#00A651]"
+                    >
+                      {settings.promoApplyTextBn}
+                    </button>
+                  </div>
           
-          {/* Delivery Info */}
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Clock className="h-4 w-4" />
-            <span>আনুমানিক ডেলিভারি: আগামীকাল, {new Date(Date.now() + 86400000).toLocaleDateString('bn-BD', { day: 'numeric', month: 'long' })}</span>
-          </div>
-        </div>
+                  {/* Delivery Info */}
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Clock className="h-4 w-4" />
+                    <span>{settings.deliveryInfoTextBn}</span>
+                  </div>
+                </div>
 
-        {/* Mobile Summary (above sticky footer) */}
-        <div className="mt-4 rounded-xl bg-white p-4 shadow-sm lg:hidden">
-          <div className="flex justify-between text-sm mb-1">
-            <span className="text-gray-600">মোট এম.আর.পি:</span>
-            <span className="text-gray-700">৳ {mrpTotal.toFixed(0)}</span>
-          </div>
-          {totalSavings > 0 && (
-            <div className="flex justify-between text-sm mb-1">
-              <span className="text-green-600">আপনি সাশ্রয় করছেন:</span>
-              <span className="font-semibold text-green-600">৳ {totalSavings.toFixed(0)}</span>
+                {/* Mobile Summary (above sticky footer) */}
+                <div className="mt-4 rounded-xl bg-white p-4 shadow-sm lg:hidden">
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-gray-600">{settings.totalMrpLabelBn}</span>
+                    <span className="text-gray-700">৳ {mrpTotal.toFixed(0)}</span>
+                  </div>
+                  {totalSavings > 0 && (
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-green-600">{settings.savingsLabelBn}</span>
+                      <span className="font-semibold text-green-600">৳ {totalSavings.toFixed(0)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between border-t pt-2 mt-2">
+                    <span className="font-bold text-gray-900">{settings.grandTotalLabelBn}</span>
+                    <span className="text-xl font-bold text-gray-900">৳ {total.toFixed(0)}</span>
+                  </div>
+                </div>
+      </div>
+
+            {/* Mobile Sticky Checkout Footer */}
+            <div 
+              className="fixed bottom-0 left-0 right-0 z-[100] bg-white shadow-[0_-4px_12px_rgba(0,0,0,0.1)] lg:hidden"
+              style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+            >
+              <div className="px-4 py-3">
+                {!session ? (
+                  <Link
+                    href="/auth/signin?redirect=/cart"
+                    className="flex w-full items-center justify-center gap-2 rounded-full bg-[#00A651] py-3.5 font-semibold text-white text-base"
+                  >
+                    <Lock className="h-5 w-5" />
+                    {settings.checkoutButtonTextBn}
+                  </Link>
+                ) : (
+                  <Link
+                    href="/checkout"
+                    className="flex w-full items-center justify-center gap-2 rounded-full bg-[#00A651] py-3.5 font-semibold text-white text-base"
+                  >
+                    <Lock className="h-5 w-5" />
+                    {settings.checkoutButtonTextBn}
+                  </Link>
+                )}
+              </div>
             </div>
-          )}
-          <div className="flex justify-between border-t pt-2 mt-2">
-            <span className="font-bold text-gray-900">সর্বমোট:</span>
-            <span className="text-xl font-bold text-gray-900">৳ {total.toFixed(0)}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Sticky Checkout Footer */}
-      <div 
-        className="fixed bottom-0 left-0 right-0 z-[100] bg-white shadow-[0_-4px_12px_rgba(0,0,0,0.1)] lg:hidden"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
-      >
-        <div className="px-4 py-3">
-          {!session ? (
-            <Link
-              href="/auth/signin?redirect=/cart"
-              className="flex w-full items-center justify-center gap-2 rounded-full bg-[#00A651] py-3.5 font-semibold text-white text-base"
-            >
-              <Lock className="h-5 w-5" />
-              নিরাপদ চেকআউট
-            </Link>
-          ) : (
-            <Link
-              href="/checkout"
-              className="flex w-full items-center justify-center gap-2 rounded-full bg-[#00A651] py-3.5 font-semibold text-white text-base"
-            >
-              <Lock className="h-5 w-5" />
-              নিরাপদ চেকআউট
-            </Link>
-          )}
-        </div>
-      </div>
     </div>
   )
 }

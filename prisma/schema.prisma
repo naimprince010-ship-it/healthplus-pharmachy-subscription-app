@@ -214,9 +214,10 @@ model Product {
   updatedAt DateTime @updatedAt
 
   // Relations
-  medicine   Medicine? // 1:1 relation for medicine-specific fields
-  variants   ProductVariant[]
-  orderItems OrderItem[]
+  medicine        Medicine? // 1:1 relation for medicine-specific fields
+  variants        ProductVariant[]
+  orderItems      OrderItem[]
+  cartSuggestions CartSuggestion[]
 }
 
 model ProductVariant {
@@ -601,6 +602,40 @@ model AiProductDraft {
   @@index([manufacturerMatchId])
   @@index([categoryMatchId])
   @@index([imageStatus])
+}
+
+// Cart Page Settings (singleton - only one row)
+model CartPageSettings {
+  id                       String   @id @default(cuid())
+  freeDeliveryThreshold    Int      @default(499)
+  freeDeliveryTextBn       String   @default("আর মাত্র ৳{remaining} টাকার পণ্য কিনলে ফ্রি ডেলিভারি পাবেন!")
+  freeDeliverySuccessTextBn String  @default("অভিনন্দন! আপনি ফ্রি ডেলিভারি পেয়েছেন 🎉")
+  promoLabelBn             String   @default("প্রোমো কোড ব্যবহার করুন")
+  promoApplyTextBn         String   @default("[Apply]")
+  deliveryInfoTextBn       String   @default("আনুমানিক ডেলিভারি: আগামীকাল")
+  totalMrpLabelBn          String   @default("মোট এম.আর.পি:")
+  savingsLabelBn           String   @default("আপনি সাশ্রয় করছেন:")
+  grandTotalLabelBn        String   @default("সর্বমোট:")
+  checkoutButtonTextBn     String   @default("নিরাপদ চেকআউট")
+  suggestionTitleBn        String   @default("আপনার জন্য সাজেশন")
+  emptyCartTextBn          String   @default("আপনার কার্ট খালি")
+  emptyCartSubtextBn       String   @default("পণ্য যোগ করুন শপিং শুরু করতে")
+  startShoppingTextBn      String   @default("শপিং শুরু করুন")
+  cartTitleBn              String   @default("আপনার কার্ট")
+  updatedAt                DateTime @updatedAt
+}
+
+// Cart Suggestions (cross-sell products shown in cart)
+model CartSuggestion {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
 }
 
 // Master Tables for AI Import Wizard - Phase 2
