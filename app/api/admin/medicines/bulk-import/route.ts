@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { parse } from 'csv-parse/sync'
 import { generateUniqueSlug } from '@/lib/slugify'
 
-const MAX_ROWS = 2000
+const MAX_ROWS = 3000
 
 const CSV_FIELD_MAPPING: Record<string, string> = {
   medicine_name: 'name',
