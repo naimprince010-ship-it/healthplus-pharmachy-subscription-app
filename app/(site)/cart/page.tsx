@@ -408,7 +408,7 @@ export default function CartPage() {
                     <div className="overflow-x-auto [-webkit-overflow-scrolling:touch]">
                       <div className="flex flex-nowrap gap-3 pb-2">
                       {suggestions.map((product) => (
-                        <div key={product.id} className="min-w-[140px] max-w-[160px] flex-shrink-0 rounded-xl bg-white p-3 shadow-sm">
+                        <div key={product.id} className="min-w-[140px] max-w-[160px] flex-shrink-0 rounded-xl bg-white p-3 shadow-sm flex flex-col">
                   <Link href={`/products/${product.slug}`} className="block">
                     <div className="relative h-20 w-full mb-2 rounded-lg bg-gray-100 overflow-hidden">
                       {product.imageUrl ? (
@@ -429,7 +429,7 @@ export default function CartPage() {
                   <p className="text-sm font-bold text-gray-900 mb-2">৳{product.price}</p>
                           <button
                             onClick={() => handleAddSuggestion(product)}
-                            className="w-full rounded-full bg-[#00A651] py-1.5 text-xs font-semibold text-white"
+                            className="w-full rounded-full bg-[#00A651] py-1.5 text-xs font-semibold text-white mt-auto"
                           >
                             + Add
                           </button>
