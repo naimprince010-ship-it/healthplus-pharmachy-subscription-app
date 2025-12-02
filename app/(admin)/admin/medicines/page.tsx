@@ -149,43 +149,86 @@ export default function MedicinesPage() {
       setSelectedIds(newSelected)
     }
 
-    const handleBulkDelete = async () => {
-      if (selectedIds.size === 0) return
+        const handleBulkDelete = async () => {
+          if (selectedIds.size === 0) return
 
-      const confirmed = confirm(
-        `Are you sure you want to delete ${selectedIds.size} medicine(s)? This action cannot be undone.`
-      )
-      if (!confirmed) return
-
-      setDeleting(true)
-      try {
-        const res = await fetch('/api/admin/medicines/bulk-delete', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ids: Array.from(selectedIds) }),
-        })
-
-        const data = await res.json()
-
-        if (res.ok) {
-          toast.success(
-            `Deleted ${data.summary.deleted} medicine(s)${
-              data.summary.softDeleted > 0
-                ? `, ${data.summary.softDeleted} soft-deleted (have orders)`
-                : ''
-            }`
+          const confirmed = confirm(
+            `Are you sure you want to delete ${selectedIds.size} medicine(s)? This action cannot be undone.`
           )
-          setSelectedIds(new Set())
-          fetchMedicines()
-        } else {
-          toast.error(data.error || 'Failed to delete medicines')
+          if (!confirmed) return
+
+          setDeleting(true)
+          try {
+            const res = await fetch('/api/admin/medicines/bulk-delete', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ids: Array.from(selectedIds) }),
+            })
+
+            const data = await res.json()
+
+            if (res.ok) {
+              toast.success(
+                `Deleted ${data.summary.deleted} medicine(s)${
+                  data.summary.softDeleted > 0
+                    ? `, ${data.summary.softDeleted} soft-deleted (have orders)`
+                    : ''
+                }`
+              )
+              setSelectedIds(new Set())
+              fetchMedicines()
+            } else {
+              toast.error(data.error || 'Failed to delete medicines')
+            }
+          } catch (error) {
+            toast.error('Failed to delete medicines')
+          } finally {
+            setDeleting(false)
+          }
         }
-      } catch (error) {
-        toast.error('Failed to delete medicines')
-      } finally {
-        setDeleting(false)
-      }
-    }
+
+        const handleDeleteAll = async () => {
+          const confirmed = confirm(
+            `Are you sure you want to delete ALL ${pagination.total} medicine(s) matching the current filter? This action cannot be undone.`
+          )
+          if (!confirmed) return
+
+          setDeleting(true)
+          try {
+            const res = await fetch('/api/admin/medicines/bulk-delete', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                selectAll: true,
+                filters: {
+                  search: search || undefined,
+                  categoryId: categoryFilter || undefined,
+                  isActive: statusFilter,
+                },
+              }),
+            })
+
+            const data = await res.json()
+
+            if (res.ok) {
+              toast.success(
+                `Deleted ${data.summary.deleted} medicine(s)${
+                  data.summary.softDeleted > 0
+                    ? `, ${data.summary.softDeleted} soft-deleted (have orders)`
+                    : ''
+                }`
+              )
+              setSelectedIds(new Set())
+              fetchMedicines()
+            } else {
+              toast.error(data.error || 'Failed to delete medicines')
+            }
+          } catch (error) {
+            toast.error('Failed to delete medicines')
+          } finally {
+            setDeleting(false)
+          }
+        }
 
   return (
     <div className="space-y-6">
@@ -305,27 +348,42 @@ export default function MedicinesPage() {
         </div>
       ) : (
         <>
-                    {selectedIds.size > 0 && (
-                      <div className="flex items-center gap-4 rounded-lg border border-red-200 bg-red-50 p-3">
-                        <span className="text-sm font-medium text-red-800">
-                          {selectedIds.size} item(s) selected
-                        </span>
-                        <button
-                          onClick={handleBulkDelete}
-                          disabled={deleting}
-                          className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:bg-red-400"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          {deleting ? 'Deleting...' : 'Delete Selected'}
-                        </button>
-                        <button
-                          onClick={() => setSelectedIds(new Set())}
-                          className="text-sm text-gray-600 hover:text-gray-900"
-                        >
-                          Clear selection
-                        </button>
-                      </div>
-                    )}
+                                        {(selectedIds.size > 0 || pagination.total > pagination.limit) && (
+                                          <div className="flex items-center gap-4 rounded-lg border border-red-200 bg-red-50 p-3">
+                                            {selectedIds.size > 0 && (
+                                              <>
+                                                <span className="text-sm font-medium text-red-800">
+                                                  {selectedIds.size} item(s) selected
+                                                </span>
+                                                <button
+                                                  onClick={handleBulkDelete}
+                                                  disabled={deleting}
+                                                  className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:bg-red-400"
+                                                >
+                                                  <Trash2 className="h-4 w-4" />
+                                                  {deleting ? 'Deleting...' : 'Delete Selected'}
+                                                </button>
+                                                <button
+                                                  onClick={() => setSelectedIds(new Set())}
+                                                  className="text-sm text-gray-600 hover:text-gray-900"
+                                                >
+                                                  Clear selection
+                                                </button>
+                                                <span className="text-gray-300">|</span>
+                                              </>
+                                            )}
+                                            {pagination.total > pagination.limit && (
+                                              <button
+                                                onClick={handleDeleteAll}
+                                                disabled={deleting}
+                                                className="flex items-center gap-2 rounded-lg border border-red-600 bg-white px-4 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
+                                              >
+                                                <Trash2 className="h-4 w-4" />
+                                                {deleting ? 'Deleting...' : `Delete All ${pagination.total} items`}
+                                              </button>
+                                            )}
+                                          </div>
+                                        )}
 
                     <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow">
                       <table className="min-w-full divide-y divide-gray-200">

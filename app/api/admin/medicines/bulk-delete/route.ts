@@ -6,9 +6,42 @@ import { deleteMedicineImage } from '@/lib/supabase'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
+interface BulkDeleteFilters {
+  search?: string
+  categoryId?: string
+  isActive?: string
+}
+
+function buildWhereFromFilters(filters: BulkDeleteFilters) {
+  const where: any = {
+    deletedAt: null,
+  }
+
+  if (filters.search) {
+    where.OR = [
+      { name: { contains: filters.search, mode: 'insensitive' } },
+      { genericName: { contains: filters.search, mode: 'insensitive' } },
+      { brandName: { contains: filters.search, mode: 'insensitive' } },
+    ]
+  }
+
+  if (filters.categoryId) {
+    where.categoryId = filters.categoryId
+  }
+
+  if (filters.isActive && filters.isActive !== 'all') {
+    where.isActive = filters.isActive === 'true'
+  }
+
+  return where
+}
+
 /**
  * POST /api/admin/medicines/bulk-delete
  * Delete multiple medicines at once
+ * Supports both:
+ * - ids: string[] - delete specific medicines by ID
+ * - selectAll: true + filters - delete all medicines matching filters
  */
 export async function POST(request: NextRequest) {
   try {
@@ -18,27 +51,43 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { ids } = body
+    const { ids, selectAll, filters } = body
 
-    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    let medicines: { id: string; imagePath: string | null; _count: { orderItems: number } }[]
+
+    if (selectAll && filters) {
+      const where = buildWhereFromFilters(filters)
+      medicines = await prisma.medicine.findMany({
+        where,
+        select: {
+          id: true,
+          imagePath: true,
+          _count: {
+            select: {
+              orderItems: true,
+            },
+          },
+        },
+      })
+    } else if (ids && Array.isArray(ids) && ids.length > 0) {
+      medicines = await prisma.medicine.findMany({
+        where: { id: { in: ids } },
+        select: {
+          id: true,
+          imagePath: true,
+          _count: {
+            select: {
+              orderItems: true,
+            },
+          },
+        },
+      })
+    } else {
       return NextResponse.json(
-        { error: 'No medicine IDs provided' },
+        { error: 'No medicine IDs provided or selectAll with filters' },
         { status: 400 }
       )
     }
-
-    const medicines = await prisma.medicine.findMany({
-      where: { id: { in: ids } },
-      select: {
-        id: true,
-        imagePath: true,
-        _count: {
-          select: {
-            orderItems: true,
-          },
-        },
-      },
-    })
 
     let deleted = 0
     let softDeleted = 0
@@ -78,16 +127,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({
-      success: true,
-      summary: {
-        requested: ids.length,
-        deleted,
-        softDeleted,
-        failed: errors.length,
-        errors,
-      },
-    })
+        return NextResponse.json({
+          success: true,
+          summary: {
+            requested: medicines.length,
+            deleted,
+            softDeleted,
+            failed: errors.length,
+            errors,
+          },
+        })
   } catch (error) {
     console.error('Bulk delete error:', error)
     return NextResponse.json(
