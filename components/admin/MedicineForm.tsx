@@ -228,7 +228,11 @@ export function MedicineForm({ mode, medicineId, initialData }: MedicineFormProp
             const res = await fetch('/api/admin/manufacturers')
             const data = await res.json()
             if (res.ok) {
-              setManufacturers(data.manufacturers || [])
+              let mfrList = data.manufacturers || []
+              if (initialData?.manufacturer && !mfrList.find((m: { name: string }) => m.name === initialData.manufacturer)) {
+                mfrList = [{ id: 'legacy-' + initialData.manufacturer, name: initialData.manufacturer }, ...mfrList]
+              }
+              setManufacturers(mfrList)
             }
           } catch (err) {
             console.error('Failed to fetch manufacturers:', err)
