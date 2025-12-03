@@ -22,6 +22,38 @@ interface Address {
   phone: string
 }
 
+interface CheckoutSettings {
+  pageTitleBn: string
+  addressSectionTitleBn: string
+  addAddressButtonBn: string
+  paymentSectionTitleBn: string
+  codLabelBn: string
+  bkashLabelBn: string
+  couponSectionTitleBn: string
+  couponPlaceholderBn: string
+  couponApplyBn: string
+  orderSummarySectionTitleBn: string
+  viewDetailsBn: string
+  totalLabelBn: string
+  confirmButtonBn: string
+}
+
+const DEFAULT_SETTINGS: CheckoutSettings = {
+  pageTitleBn: 'চেকআউট',
+  addressSectionTitleBn: '১. ডেলিভারি ঠিকানা',
+  addAddressButtonBn: 'নতুন ঠিকানা যোগ করুন',
+  paymentSectionTitleBn: '২. পেমেন্ট মেথড',
+  codLabelBn: 'ক্যাশ অন ডেলিভারি',
+  bkashLabelBn: 'বিকাশ / নগদ',
+  couponSectionTitleBn: '৩. কুপন কোড',
+  couponPlaceholderBn: 'কুপন কোড লিখুন',
+  couponApplyBn: 'Apply',
+  orderSummarySectionTitleBn: '৪. অর্ডার সামারি',
+  viewDetailsBn: 'বিস্তারিত দেখুন',
+  totalLabelBn: 'সর্বমোট:',
+  confirmButtonBn: 'অর্ডার কনফার্ম করুন',
+}
+
 export default function CheckoutPage() {
   const router = useRouter()
   const { data: session, status } = useSession()
@@ -40,6 +72,7 @@ export default function CheckoutPage() {
   const [couponDiscount, setCouponDiscount] = useState(0)
   const [paymentMethod, setPaymentMethod] = useState<'COD' | 'BKASH'>('COD')
   const [orderSummaryExpanded, setOrderSummaryExpanded] = useState(false)
+  const [settings, setSettings] = useState<CheckoutSettings>(DEFAULT_SETTINGS)
 
   useEffect(() => {
     // Wait until session has finished loading before checking auth
@@ -77,6 +110,15 @@ export default function CheckoutPage() {
         }
       })
       .catch((err) => console.error('Failed to fetch zones:', err))
+
+    fetch('/api/checkout/settings')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.settings) {
+          setSettings({ ...DEFAULT_SETTINGS, ...data.settings })
+        }
+      })
+      .catch((err) => console.error('Failed to fetch checkout settings:', err))
   }, [status, session, items, router, total])
 
   const handleAddAddress = () => {
@@ -212,14 +254,14 @@ export default function CheckoutPage() {
           >
             <ArrowLeft className="h-6 w-6 text-gray-700" />
           </button>
-          <h1 className="text-xl font-bold text-gray-900">চেকআউট</h1>
+          <h1 className="text-xl font-bold text-gray-900">{settings.pageTitleBn}</h1>
         </div>
       </div>
 
       {/* Desktop Header */}
       <div className="hidden lg:block bg-white border-b border-gray-200">
         <div className={`${MAIN_CONTAINER} py-4`}>
-          <h1 className="text-2xl font-bold text-gray-900">চেকআউট</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{settings.pageTitleBn}</h1>
         </div>
       </div>
 
@@ -234,7 +276,7 @@ export default function CheckoutPage() {
 
           {/* Section 1: Delivery Address */}
           <div className="bg-white rounded-xl p-4">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">১. ডেলিভারি ঠিকানা</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-4">{settings.addressSectionTitleBn}</h2>
             
             {/* Zone Selection */}
             <div className="mb-4">
@@ -295,7 +337,7 @@ export default function CheckoutPage() {
                 className="w-full flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-teal-400 py-3 text-teal-600 font-medium hover:bg-teal-50 transition-colors"
               >
                 <Plus className="h-5 w-5" />
-                <span>নতুন ঠিকানা যোগ করুন</span>
+                <span>{settings.addAddressButtonBn}</span>
               </button>
             ) : (
               <div className="rounded-lg border-2 border-gray-200 p-4 bg-gray-50">
@@ -345,7 +387,7 @@ export default function CheckoutPage() {
 
           {/* Section 2: Payment Method */}
           <div className="bg-white rounded-xl p-4">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">২. পেমেন্ট মেথড</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-4">{settings.paymentSectionTitleBn}</h2>
             
             <div className="flex items-center gap-6">
               {/* Cash on Delivery */}
@@ -353,7 +395,7 @@ export default function CheckoutPage() {
                 <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'COD' ? 'border-teal-500' : 'border-gray-300'}`}>
                   {paymentMethod === 'COD' && <div className="h-2.5 w-2.5 rounded-full bg-teal-500" />}
                 </div>
-                <span className="text-gray-900">ক্যাশ অন ডেলিভারি</span>
+                <span className="text-gray-900">{settings.codLabelBn}</span>
               </label>
 
               {/* Bkash / Nagad */}
@@ -361,21 +403,21 @@ export default function CheckoutPage() {
                 <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'BKASH' ? 'border-teal-500' : 'border-gray-300'}`}>
                   {paymentMethod === 'BKASH' && <div className="h-2.5 w-2.5 rounded-full bg-teal-500" />}
                 </div>
-                <span className="text-gray-900">বিকাশ / নগদ</span>
+                <span className="text-gray-900">{settings.bkashLabelBn}</span>
               </label>
             </div>
           </div>
 
           {/* Section 3: Coupon Code */}
           <div className="bg-white rounded-xl p-4">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">৩. কুপন কোড</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-4">{settings.couponSectionTitleBn}</h2>
             
             <div className="flex gap-2">
               <input
                 type="text"
                 value={couponCode}
                 onChange={(e) => setCouponCode(e.target.value)}
-                placeholder="কুপন কোড লিখুন"
+                placeholder={settings.couponPlaceholderBn}
                 className="flex-1 rounded-lg border-2 border-gray-200 px-4 py-3 text-base text-gray-900 focus:border-teal-500 focus:outline-none"
               />
               <button
@@ -383,7 +425,7 @@ export default function CheckoutPage() {
                 onClick={handleApplyCoupon}
                 className="px-6 py-3 bg-white border-2 border-teal-500 text-teal-600 font-semibold rounded-lg hover:bg-teal-50 transition-colors"
               >
-                Apply
+                {settings.couponApplyBn}
               </button>
             </div>
             {couponApplied && couponDiscount === 0 && (
@@ -398,7 +440,7 @@ export default function CheckoutPage() {
               onClick={() => setOrderSummaryExpanded(!orderSummaryExpanded)}
               className="w-full flex items-center justify-between p-4"
             >
-              <h2 className="text-lg font-bold text-gray-900">৪. অর্ডার সামারি ({itemCount}টি আইটেম)</h2>
+              <h2 className="text-lg font-bold text-gray-900">{settings.orderSummarySectionTitleBn} ({itemCount}টি আইটেম)</h2>
               <div className="flex items-center gap-3">
                 <span className="text-lg font-bold text-gray-900">৳ {total.toFixed(0)}</span>
                 {orderSummaryExpanded ? (
@@ -421,7 +463,7 @@ export default function CheckoutPage() {
                 ) : (
                   <ChevronDown className="h-4 w-4" />
                 )}
-                <span>বিস্তারিত দেখুন</span>
+                <span>{settings.viewDetailsBn}</span>
               </button>
             </div>
 
@@ -501,7 +543,7 @@ export default function CheckoutPage() {
               disabled={isLoading}
               className="w-full rounded-full bg-[#00A651] py-4 font-semibold text-white text-lg hover:bg-[#008f45] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >
-              {isLoading ? 'অর্ডার করা হচ্ছে...' : 'অর্ডার কনফার্ম করুন'}
+              {isLoading ? 'অর্ডার করা হচ্ছে...' : settings.confirmButtonBn}
             </button>
           </div>
         </div>
@@ -512,13 +554,13 @@ export default function CheckoutPage() {
           style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
         >
           <div className="flex items-center justify-between px-4 py-4">
-            <span className="text-white text-lg font-bold">সর্বমোট: ৳ {grandTotal.toFixed(0)}</span>
+            <span className="text-white text-lg font-bold">{settings.totalLabelBn} ৳ {grandTotal.toFixed(0)}</span>
             <button
               type="submit"
               disabled={isLoading}
               className="px-8 py-3 bg-[#00A651] text-white font-semibold rounded-full hover:bg-[#008f45] disabled:bg-gray-500 disabled:cursor-not-allowed transition-colors"
             >
-              {isLoading ? 'অপেক্ষা করুন...' : 'অর্ডার কনফার্ম করুন'}
+              {isLoading ? 'অপেক্ষা করুন...' : settings.confirmButtonBn}
             </button>
           </div>
         </div>

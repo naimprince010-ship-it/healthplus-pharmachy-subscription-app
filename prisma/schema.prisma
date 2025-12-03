@@ -627,6 +627,36 @@ model CartPageSettings {
   updatedAt                DateTime @updatedAt
 }
 
+// Checkout Page Settings (singleton - only one row)
+model CheckoutPageSettings {
+  id                       String   @id @default(cuid())
+  // Checkout page text
+  pageTitleBn              String   @default("চেকআউট")
+  addressSectionTitleBn    String   @default("১. ডেলিভারি ঠিকানা")
+  addAddressButtonBn       String   @default("+ নতুন ঠিকানা যোগ করুন")
+  paymentSectionTitleBn    String   @default("২. পেমেন্ট মেথড")
+  codLabelBn               String   @default("ক্যাশ অন ডেলিভারি")
+  bkashLabelBn             String   @default("বিকাশ / নগদ")
+  couponSectionTitleBn     String   @default("৩. কুপন কোড")
+  couponPlaceholderBn      String   @default("কুপন কোড লিখুন")
+  couponApplyBn            String   @default("Apply")
+  orderSummarySectionTitleBn String @default("৪. অর্ডার সামারি")
+  viewDetailsBn            String   @default("বিস্তারিত দেখুন")
+  totalLabelBn             String   @default("সর্বমোট:")
+  confirmButtonBn          String   @default("অর্ডার কনফার্ম করুন")
+  // Order success page text
+  successPageTitleBn       String   @default("অর্ডার কনফার্মেশন")
+  successLine1Bn           String   @default("ধন্যবাদ! আপনার অর্ডারটি")
+  successLine2Bn           String   @default("সফলভাবে প্লেস করা হয়েছে 🎉")
+  orderIdLabelBn           String   @default("অর্ডার আইডি:")
+  successTotalLabelBn      String   @default("সর্বমোট:")
+  successPaymentLabelBn    String   @default("পেমেন্ট মেথড:")
+  infoNoteBn               String   @default("আমাদের একজন ফার্মাসিস্ট শীঘ্রই আপনাকে ফোন করে অর্ডারটি কনফার্ম করবেন।")
+  trackOrderButtonBn       String   @default("অর্ডার ট্র্যাক করুন")
+  goHomeButtonBn           String   @default("হোম পেজে যান")
+  updatedAt                DateTime @updatedAt
+}
+
 // Cart Suggestions (cross-sell products shown in cart)
 model CartSuggestion {
   id        String   @id @default(cuid())

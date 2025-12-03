@@ -5,10 +5,39 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Check, Info } from 'lucide-react'
 
+interface CheckoutSettings {
+  successPageTitleBn: string
+  successLine1Bn: string
+  successLine2Bn: string
+  orderIdLabelBn: string
+  successTotalLabelBn: string
+  successPaymentLabelBn: string
+  infoNoteBn: string
+  trackOrderButtonBn: string
+  goHomeButtonBn: string
+  codLabelBn: string
+  bkashLabelBn: string
+}
+
+const DEFAULT_SETTINGS: CheckoutSettings = {
+  successPageTitleBn: 'অর্ডার কনফার্মেশন',
+  successLine1Bn: 'ধন্যবাদ! আপনার অর্ডারটি',
+  successLine2Bn: 'সফলভাবে প্লেস করা হয়েছে 🎉',
+  orderIdLabelBn: 'অর্ডার আইডি:',
+  successTotalLabelBn: 'সর্বমোট:',
+  successPaymentLabelBn: 'পেমেন্ট মেথড:',
+  infoNoteBn: 'আমাদের একজন ফার্মাসিস্ট শীঘ্রই আপনাকে ফোন করে অর্ডারটি কনফার্ম করবেন।',
+  trackOrderButtonBn: 'অর্ডার ট্র্যাক করুন',
+  goHomeButtonBn: 'হোম পেজে যান',
+  codLabelBn: 'ক্যাশ অন ডেলিভারি',
+  bkashLabelBn: 'বিকাশ / নগদ',
+}
+
 export default function OrderSuccessPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [mounted, setMounted] = useState(false)
+  const [settings, setSettings] = useState<CheckoutSettings>(DEFAULT_SETTINGS)
 
   const orderId = searchParams.get('orderId') || ''
   const amount = searchParams.get('amount') || '0'
@@ -16,6 +45,16 @@ export default function OrderSuccessPage() {
 
   useEffect(() => {
     setMounted(true)
+
+    // Fetch checkout settings
+    fetch('/api/checkout/settings')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.settings) {
+          setSettings({ ...DEFAULT_SETTINGS, ...data.settings })
+        }
+      })
+      .catch((err) => console.error('Failed to fetch settings:', err))
 
     // Replace history to prevent going back to checkout
     // This ensures pressing back button goes to home instead of checkout
@@ -43,8 +82,8 @@ export default function OrderSuccessPage() {
 
   // Format payment method for display
   const paymentMethodDisplay = paymentMethod === 'BKASH' 
-    ? 'বিকাশ / নগদ' 
-    : 'ক্যাশ অন ডেলিভারি'
+    ? settings.bkashLabelBn 
+    : settings.codLabelBn
 
   if (!mounted) {
     return (
@@ -65,14 +104,14 @@ export default function OrderSuccessPage() {
       {/* Mobile Header */}
       <div className="sticky top-0 z-50 bg-white border-b border-gray-200 lg:hidden">
         <div className="flex items-center justify-center px-4 py-3">
-          <h1 className="text-lg font-bold text-gray-900">অর্ডার কনফার্মেশন</h1>
+          <h1 className="text-lg font-bold text-gray-900">{settings.successPageTitleBn}</h1>
         </div>
       </div>
 
       {/* Desktop Header */}
       <div className="hidden lg:block bg-white border-b border-gray-200">
         <div className="max-w-4xl mx-auto py-4 px-4">
-          <h1 className="text-2xl font-bold text-gray-900">অর্ডার কনফার্মেশন</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{settings.successPageTitleBn}</h1>
         </div>
       </div>
 
@@ -92,13 +131,13 @@ export default function OrderSuccessPage() {
         {/* Success Message */}
         <div className="text-center mb-8">
           <h2 className="text-2xl font-bold text-[#00A651] mb-2">
-            ধন্যবাদ! আপনার অর্ডারটি
+            {settings.successLine1Bn}
           </h2>
           <h2 className="text-2xl font-bold text-[#00A651] mb-4">
-            সফলভাবে প্লেস করা হয়েছে 🎉
+            {settings.successLine2Bn}
           </h2>
           <p className="text-gray-600 text-lg">
-            অর্ডার আইডি: <span className="font-semibold text-gray-900">#{displayOrderId}</span>
+            {settings.orderIdLabelBn} <span className="font-semibold text-gray-900">#{displayOrderId}</span>
           </p>
         </div>
 
@@ -106,11 +145,11 @@ export default function OrderSuccessPage() {
         <div className="bg-white rounded-xl p-5 shadow-sm mb-4">
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-gray-600 font-medium">সর্বমোট:</span>
+              <span className="text-gray-600 font-medium">{settings.successTotalLabelBn}</span>
               <span className="text-xl font-bold text-gray-900">৳{parseInt(amount).toLocaleString('bn-BD')}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-gray-600 font-medium">পেমেন্ট মেথড:</span>
+              <span className="text-gray-600 font-medium">{settings.successPaymentLabelBn}</span>
               <span className="font-semibold text-gray-900">{paymentMethodDisplay}</span>
             </div>
           </div>
@@ -122,7 +161,7 @@ export default function OrderSuccessPage() {
             <Info className="h-5 w-5 text-blue-500" />
           </div>
           <p className="text-gray-700 text-sm leading-relaxed">
-            আমাদের একজন ফার্মাসিস্ট শীঘ্রই আপনাকে ফোন করে অর্ডারটি কনফার্ম করবেন।
+            {settings.infoNoteBn}
           </p>
         </div>
 
@@ -133,7 +172,7 @@ export default function OrderSuccessPage() {
             href={`/orders/${orderId}`}
             className="flex w-full items-center justify-center rounded-xl bg-[#00A651] py-4 font-semibold text-white text-lg hover:bg-[#008f45] transition-colors"
           >
-            অর্ডার ট্র্যাক করুন
+            {settings.trackOrderButtonBn}
           </Link>
 
           {/* Secondary Button - Continue Shopping */}
@@ -141,7 +180,7 @@ export default function OrderSuccessPage() {
             href="/"
             className="flex w-full items-center justify-center rounded-xl border-2 border-[#00A651] bg-white py-4 font-semibold text-[#00A651] text-lg hover:bg-[#00A651]/5 transition-colors"
           >
-            হোম পেজে যান
+            {settings.goHomeButtonBn}
           </Link>
         </div>
       </div>
