@@ -91,6 +91,7 @@ model User {
   orders        Order[]
   memberships   UserMembership[]
   subscriptions Subscription[]
+  wishlistItems WishlistItem[]
 }
 
 model Address {
@@ -218,6 +219,7 @@ model Product {
   variants        ProductVariant[]
   orderItems      OrderItem[]
   cartSuggestions CartSuggestion[]
+  wishlistItems   WishlistItem[]
 }
 
 model ProductVariant {
@@ -674,4 +676,17 @@ model Manufacturer {
   products Product[]
 
   @@index([name])
+}
+
+// Wishlist - user-specific product favorites
+model WishlistItem {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+  @@index([userId])
 }

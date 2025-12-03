@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useCart } from '@/contexts/CartContext'
+import { useWishlist } from '@/contexts/WishlistContext'
 import { useSession } from 'next-auth/react'
 import { ArrowLeft, X, Heart, Minus, Plus, Clock, Lock, ChevronRight, Truck } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -55,6 +56,7 @@ const DEFAULT_SETTINGS: CartSettings = {
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, clearCart, total, itemCount, isInitialized, addItem } = useCart()
+  const { isInWishlist, toggleWishlist } = useWishlist()
   const { data: session, status } = useSession()
   const router = useRouter()
   const [suggestions, setSuggestions] = useState<SuggestionProduct[]>([])
@@ -291,19 +293,26 @@ export default function CartPage() {
                             </p>
                           )}
                         </div>
-                        {/* Action buttons */}
-                        <div className="flex items-center gap-1">
-                          <button className="p-1 text-red-400 hover:text-red-500">
-                            <Heart className="h-5 w-5" />
-                          </button>
-                          <button
-                            onClick={() => removeItem(itemId)}
-                            className="p-1 text-gray-400 hover:text-gray-600"
-                            aria-label="Remove item"
-                          >
-                            <X className="h-5 w-5" />
-                          </button>
-                        </div>
+                                                {/* Action buttons */}
+                                                <div className="flex items-center gap-1">
+                                                  <button 
+                                                    onClick={() => toggleWishlist(item.productId || itemId)}
+                                                    className={`p-1 transition-colors ${isInWishlist(item.productId || itemId) ? 'text-red-500' : 'text-gray-400 hover:text-red-400'}`}
+                                                    aria-label={isInWishlist(item.productId || itemId) ? 'Remove from wishlist' : 'Add to wishlist'}
+                                                  >
+                                                    <Heart 
+                                                      className="h-5 w-5" 
+                                                      fill={isInWishlist(item.productId || itemId) ? 'currentColor' : 'none'}
+                                                    />
+                                                  </button>
+                                                  <button
+                                                    onClick={() => removeItem(itemId)}
+                                                    className="p-1 text-gray-400 hover:text-gray-600"
+                                                    aria-label="Remove item"
+                                                  >
+                                                    <X className="h-5 w-5" />
+                                                  </button>
+                                                </div>
                       </div>
 
                       {/* Price Row */}
