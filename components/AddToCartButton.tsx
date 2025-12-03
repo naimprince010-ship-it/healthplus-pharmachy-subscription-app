@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { ShoppingCart } from 'lucide-react'
-import { useCart } from '@/contexts/CartContext'
+import { useCart, buildUnitLabelBn, SellingUnitType } from '@/contexts/CartContext'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { trackAddToCart } from '@/lib/trackEvent'
 
@@ -20,6 +20,12 @@ interface AddToCartButtonProps {
   mrp?: number
   slug?: string
   type?: 'MEDICINE' | 'PRODUCT'
+  // Unit label fields
+  sellingUnitType?: SellingUnitType
+  unitQuantity?: number
+  baseUnitLabelBn?: string
+  dosageForm?: string
+  tabletsPerStrip?: number
 }
 
 export function AddToCartButton({
@@ -36,6 +42,11 @@ export function AddToCartButton({
   mrp,
   slug,
   type = 'MEDICINE',
+  sellingUnitType,
+  unitQuantity,
+  baseUnitLabelBn,
+  dosageForm,
+  tabletsPerStrip,
 }: AddToCartButtonProps) {
   const { addItem } = useCart()
   const [isAdding, setIsAdding] = useState(false)
@@ -54,20 +65,34 @@ export function AddToCartButton({
       return
     }
 
-    setIsAdding(true)
-    addItem({
-      id: itemId,
-      medicineId,
-      productId,
-      name,
-      price,
-      image,
-      type,
-      category,
-      genericName,
-      mrp,
-      slug,
-    })
+        setIsAdding(true)
+    
+        // Compute unit label from product data
+        const unitLabelBn = buildUnitLabelBn({
+          sellingUnitType,
+          unitQuantity,
+          baseUnitLabelBn,
+          dosageForm,
+          tabletsPerStrip,
+        })
+    
+        addItem({
+          id: itemId,
+          medicineId,
+          productId,
+          name,
+          price,
+          image,
+          type,
+          category,
+          genericName,
+          mrp,
+          slug,
+          unitLabelBn,
+          sellingUnitType,
+          unitQuantity,
+          baseUnitLabelBn,
+        })
 
     trackAddToCart({
       item_id: itemId,

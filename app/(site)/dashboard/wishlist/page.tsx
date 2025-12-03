@@ -7,7 +7,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Heart, ShoppingCart, ArrowLeft, Trash2 } from 'lucide-react'
 import { useWishlist } from '@/contexts/WishlistContext'
-import { useCart } from '@/contexts/CartContext'
+import { useCart, buildUnitLabelBn } from '@/contexts/CartContext'
 import { MAIN_CONTAINER } from '@/lib/layout'
 
 export default function WishlistPage() {
@@ -28,19 +28,20 @@ export default function WishlistPage() {
     }
   }, [status, refetch])
 
-  const handleAddToCart = (item: typeof items[0]) => {
-    addItem({
-      id: item.productId,
-      productId: item.productId,
-      name: item.name,
-      price: item.price,
-      image: item.imageUrl || undefined,
-      type: item.type === 'MEDICINE' ? 'MEDICINE' : 'PRODUCT',
-      category: item.category.name,
-      mrp: item.mrp || undefined,
-      slug: item.slug,
-    })
-  }
+    const handleAddToCart = (item: typeof items[0]) => {
+      addItem({
+        id: item.productId,
+        productId: item.productId,
+        name: item.name,
+        price: item.price,
+        image: item.imageUrl || undefined,
+        type: item.type === 'MEDICINE' ? 'MEDICINE' : 'PRODUCT',
+        category: item.category.name,
+        mrp: item.mrp || undefined,
+        slug: item.slug,
+        unitLabelBn: buildUnitLabelBn({}), // Default to piece for wishlist items
+      })
+    }
 
   if (status === 'loading' || isLoading) {
     return (

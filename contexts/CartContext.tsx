@@ -3,8 +3,10 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 
 // Cart version - increment this when cart structure changes or pricing updates require clearing old carts
-// Version 3: Ensure mrp field is properly stored for flash-sale products
-const CART_VERSION = 3
+// Version 4: Add unitLabelBn for dynamic unit labels (strip/pack/bottle/piece)
+const CART_VERSION = 4
+
+export type SellingUnitType = 'PIECE' | 'STRIP' | 'PACK' | 'BOX' | 'BOTTLE'
 
 export interface CartItem {
   id: string
@@ -21,6 +23,60 @@ export interface CartItem {
   genericName?: string
   mrp?: number
   slug?: string
+  // Unit label fields for dynamic display (e.g., "/ ১ পাতা (১০ পিস)")
+  unitLabelBn?: string
+  sellingUnitType?: SellingUnitType
+  unitQuantity?: number
+  baseUnitLabelBn?: string
+}
+
+// Helper function to build unit label in Bangla
+export function buildUnitLabelBn(opts: {
+  sellingUnitType?: SellingUnitType
+  unitQuantity?: number
+  baseUnitLabelBn?: string
+  dosageForm?: string
+  tabletsPerStrip?: number
+}): string {
+  // Try to infer from existing medicine fields if no explicit type
+  let type = opts.sellingUnitType
+  let qty = opts.unitQuantity
+  let base = opts.baseUnitLabelBn
+
+  // Infer from dosageForm if not explicitly set
+  if (!type && opts.dosageForm) {
+    const form = opts.dosageForm.toLowerCase()
+    if (form.includes('syrup') || form.includes('suspension') || form.includes('lotion') || form.includes('solution') || form.includes('drop')) {
+      type = 'BOTTLE'
+    } else if (form.includes('tablet') || form.includes('capsule')) {
+      if (opts.tabletsPerStrip && opts.tabletsPerStrip > 1) {
+        type = 'STRIP'
+        qty = opts.tabletsPerStrip
+        base = form.includes('capsule') ? 'ক্যাপসুল' : 'ট্যাবলেট'
+      } else {
+        type = 'PIECE'
+      }
+    }
+  }
+
+  // Default to PIECE if still not set
+  type = type ?? 'PIECE'
+  qty = qty ?? 1
+  base = base ?? 'পিস'
+
+  switch (type) {
+    case 'PIECE':
+      return '/ ১ পিস'
+    case 'STRIP':
+      return `/ ১ পাতা (${qty} ${base})`
+    case 'PACK':
+    case 'BOX':
+      return `/ ${qty} ${base}`
+    case 'BOTTLE':
+      return '/ ১ বোতল'
+    default:
+      return '/ ১ পিস'
+  }
 }
 
 interface CartContextType {
