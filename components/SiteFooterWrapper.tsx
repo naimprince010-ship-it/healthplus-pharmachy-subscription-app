@@ -9,8 +9,8 @@ interface SiteFooterWrapperProps {
 export function SiteFooterWrapper({ children }: SiteFooterWrapperProps) {
   const pathname = usePathname()
 
-  // Hide footer on cart and checkout pages (they have their own sticky bars)
-  if (pathname === '/cart' || pathname === '/checkout') {
+  // Hide footer on cart, checkout, and order-success pages (they have their own UI)
+  if (pathname === '/cart' || pathname === '/checkout' || pathname === '/order-success') {
     return null
   }
 

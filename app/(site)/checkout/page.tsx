@@ -150,7 +150,9 @@ export default function CheckoutPage() {
       })
 
       clearCart()
-      router.push(`/orders/${data.order.id}`)
+      // Redirect to order success page with order details
+      // Use replace to prevent going back to checkout
+      router.replace(`/order-success?orderId=${data.order.id}&amount=${grandTotal}&paymentMethod=${paymentMethod}`)
     } catch (err) {
       console.error('Checkout error:', err)
       setError('একটি ত্রুটি ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন।')
