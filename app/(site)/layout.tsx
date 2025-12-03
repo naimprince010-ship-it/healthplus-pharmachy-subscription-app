@@ -1,5 +1,6 @@
 import { MedEasyHeader } from "@/components/MedEasyHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { SiteFooterWrapper } from "@/components/SiteFooterWrapper";
 import { SiteWhatsAppButton } from "@/components/SiteWhatsAppButton";
 import { SiteMobileNav } from "@/components/SiteMobileNav";
 import TrackingProvider from "@/components/tracking/TrackingProvider";
@@ -17,7 +18,9 @@ export default async function SiteLayout({
       <TrackingProvider />
       <MedEasyHeader storeName={basicSettings.storeName} />
       <main className="min-h-screen">{children}</main>
-      <SiteFooter />
+      <SiteFooterWrapper>
+        <SiteFooter />
+      </SiteFooterWrapper>
       <SiteWhatsAppButton />
       <SiteMobileNav />
     </>

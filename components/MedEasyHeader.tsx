@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { ShoppingCart, User, Search, X, ChevronDown, Loader2 } from 'lucide-react'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSession, signOut } from 'next-auth/react'
@@ -25,8 +25,12 @@ interface MedEasyHeaderProps {
 
 export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) {
   const router = useRouter()
+  const pathname = usePathname()
   const { data: session } = useSession()
   const { itemCount, openDrawer } = useCart()
+  
+  // Hide header on mobile for checkout, cart, and order-success pages (they have their own headers)
+  const hideOnMobile = pathname === '/checkout' || pathname === '/cart' || pathname === '/order-success'
   const [mounted, setMounted] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
@@ -126,9 +130,9 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
     ? '/admin' 
     : '/dashboard'
 
-  return (
-    <>
-      <header className="sticky top-0 z-50 w-full bg-teal-600 shadow-md">
+    return (
+      <>
+        <header className={`sticky top-0 z-50 w-full bg-teal-600 shadow-md ${hideOnMobile ? 'hidden lg:block' : ''}`}>
         {/* Centered container - uses shared MAIN_CONTAINER for consistent layout */}
         <div className={MAIN_CONTAINER}>
           <div className="flex h-14 items-center justify-between gap-2 sm:h-16 sm:gap-4">

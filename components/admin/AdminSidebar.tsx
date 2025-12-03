@@ -52,6 +52,7 @@ const navItems: NavItem[] = [
     { label: 'Banners', href: '/admin/banners', icon: Image },
     { label: 'Pages', href: '/admin/pages', icon: FileText },
         { label: 'Cart Settings', href: '/admin/cart-settings', icon: ShoppingCart },
+        { label: 'Checkout Settings', href: '/admin/checkout-settings', icon: ShoppingBag },
         { label: 'Cart Suggestions', href: '/admin/cart-suggestions', icon: Lightbulb },
         { label: 'Fix Images', href: '/admin/fix-images', icon: ImageOff },
         { label: 'Users', href: '/admin/users', icon: Users },

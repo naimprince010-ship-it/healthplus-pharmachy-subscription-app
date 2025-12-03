@@ -6,10 +6,10 @@ import { MobileBottomNav } from '@/components/MobileBottomNav'
 export function SiteMobileNav() {
   const pathname = usePathname()
 
-  // Hide mobile bottom nav on cart page (cart has its own checkout bar)
-  if (pathname === '/cart') {
-    return null
-  }
+    // Hide mobile bottom nav on cart, checkout, and order-success pages (they have their own UI)
+    if (pathname === '/cart' || pathname === '/checkout' || pathname === '/order-success') {
+      return null
+    }
 
   return <MobileBottomNav />
 }
