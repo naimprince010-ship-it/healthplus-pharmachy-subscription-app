@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { User, LogOut, UserCircle, ChevronDown } from 'lucide-react'
+import { User, LogOut, UserCircle, ChevronDown, Heart } from 'lucide-react'
 import { signOut, useSession } from 'next-auth/react'
 import Link from 'next/link'
 
@@ -50,21 +50,31 @@ export function UserMenu({ userName, variant = 'navbar' }: UserMenuProps) {
               <p className="text-sm font-medium text-gray-900">{displayName}</p>
               <p className="text-xs text-gray-500">{session?.user?.email}</p>
             </div>
-            <Link
-              href={session?.user?.role === 'ADMIN' ? '/admin' : '/dashboard'}
-              className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-              onClick={() => setIsOpen(false)}
-            >
-              <UserCircle className="h-4 w-4" />
-              <span>{session?.user?.role === 'ADMIN' ? 'Admin Panel' : 'Dashboard'}</span>
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="flex w-full items-center space-x-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-            >
-              <LogOut className="h-4 w-4" />
-              <span>Logout</span>
-            </button>
+                        <Link
+                          href={session?.user?.role === 'ADMIN' ? '/admin' : '/dashboard'}
+                          className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          onClick={() => setIsOpen(false)}
+                        >
+                          <UserCircle className="h-4 w-4" />
+                          <span>{session?.user?.role === 'ADMIN' ? 'Admin Panel' : 'Dashboard'}</span>
+                        </Link>
+                        {session?.user?.role !== 'ADMIN' && (
+                          <Link
+                            href="/dashboard/wishlist"
+                            className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                            onClick={() => setIsOpen(false)}
+                          >
+                            <Heart className="h-4 w-4" />
+                            <span>Wishlist</span>
+                          </Link>
+                        )}
+                        <button
+                          onClick={handleLogout}
+                          className="flex w-full items-center space-x-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                        >
+                          <LogOut className="h-4 w-4" />
+                          <span>Logout</span>
+                        </button>
           </div>
         )}
       </div>
