@@ -363,9 +363,16 @@ model Order {
   paymentMethod            PaymentMethod @default(COD)
   paymentStatus            String        @default("PENDING")
   notes                    String?
+  // Rider info (for shipped orders)
+  riderName                String?
+  riderPhone               String?
+  // Estimated delivery time
+  estimatedDeliveryAt      DateTime?
+  estimatedDeliveryText    String? // Free text like "আগামীকাল দুপুর ২টা"
   createdAt                DateTime      @default(now())
   updatedAt                DateTime      @updatedAt
   items                    OrderItem[]
+  statusHistory            OrderStatusHistory[]
 }
 
 model OrderItem {
@@ -390,6 +397,19 @@ model OrderItem {
   discount  Float    @default(0)
   total     Float
   createdAt DateTime @default(now())
+}
+
+// Order Status History - tracks status changes with timestamps for timeline
+model OrderStatusHistory {
+  id        String      @id @default(cuid())
+  orderId   String
+  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status    OrderStatus
+  note      String?     // Optional note about the status change
+  changedAt DateTime    @default(now())
+
+  @@index([orderId])
+  @@index([orderId, changedAt])
 }
 
 model MembershipPlan {
@@ -654,6 +674,35 @@ model CheckoutPageSettings {
   infoNoteBn               String   @default("আমাদের একজন ফার্মাসিস্ট শীঘ্রই আপনাকে ফোন করে অর্ডারটি কনফার্ম করবেন।")
   trackOrderButtonBn       String   @default("অর্ডার ট্র্যাক করুন")
   goHomeButtonBn           String   @default("হোম পেজে যান")
+  updatedAt                DateTime @updatedAt
+}
+
+// Order Tracking Page Settings (singleton - only one row)
+model OrderTrackingSettings {
+  id                       String   @id @default(cuid())
+  // Header
+  headerTitlePrefixBn      String   @default("অর্ডার")
+  // Section titles
+  statusSectionTitleBn     String   @default("স্ট্যাটাস")
+  deliverySectionTitleBn   String   @default("ডেলিভারি ঠিকানা")
+  itemsSectionTitleBn      String   @default("আইটেমস")
+  totalLabelBn             String   @default("সর্বমোট:")
+  // Status labels
+  placedLabelBn            String   @default("অর্ডার প্লেসড")
+  confirmedLabelBn         String   @default("কনফার্মড")
+  processingLabelBn        String   @default("প্রসেসিং")
+  shippedLabelBn           String   @default("শিপড/অন দ্য ওয়ে")
+  deliveredLabelBn         String   @default("ডেলিভারড")
+  cancelledLabelBn         String   @default("বাতিল")
+  // Rider info
+  riderLabelBn             String   @default("রাইডার:")
+  callButtonBn             String   @default("Call")
+  // Estimated delivery
+  estimatedDeliveryLabelBn String   @default("আনুমানিক সময়:")
+  // Footer / support
+  supportTextBn            String   @default("সাহায্য প্রয়োজন?")
+  supportLinkTextBn        String   @default("কল করুন")
+  supportPhone             String   @default("01700000000")
   updatedAt                DateTime @updatedAt
 }
 
