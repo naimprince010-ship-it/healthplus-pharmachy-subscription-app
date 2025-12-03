@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Check, Info } from 'lucide-react'
@@ -33,7 +33,7 @@ const DEFAULT_SETTINGS: CheckoutSettings = {
   bkashLabelBn: 'বিকাশ / নগদ',
 }
 
-export default function OrderSuccessPage() {
+function OrderSuccessContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [mounted, setMounted] = useState(false)
@@ -185,5 +185,27 @@ export default function OrderSuccessPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-pulse">
+          <div className="h-24 w-24 rounded-full bg-gray-200 mx-auto mb-6" />
+          <div className="h-8 w-64 bg-gray-200 rounded mx-auto mb-4" />
+          <div className="h-6 w-48 bg-gray-200 rounded mx-auto" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function OrderSuccessPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <OrderSuccessContent />
+    </Suspense>
   )
 }
