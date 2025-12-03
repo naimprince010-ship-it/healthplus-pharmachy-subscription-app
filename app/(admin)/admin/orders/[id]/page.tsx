@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { ArrowLeft, Package, User, MapPin, CreditCard, Clock, CheckCircle, XCircle } from 'lucide-react'
+import { ArrowLeft, Package, User, MapPin, CreditCard, Clock, CheckCircle, XCircle, Phone, Truck } from 'lucide-react'
 import Link from 'next/link'
 
 interface OrderItem {
@@ -35,6 +35,9 @@ interface Order {
   notes: string | null
   createdAt: string
   updatedAt: string
+  riderName: string | null
+  riderPhone: string | null
+  estimatedDeliveryText: string | null
   user: {
     name: string
     phone: string
@@ -67,18 +70,31 @@ export default function OrderDetailsPage() {
   const params = useParams<{ id: string }>()
   const orderId = params?.id
   
-  const [order, setOrder] = useState<Order | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [isUpdating, setIsUpdating] = useState(false)
+    const [order, setOrder] = useState<Order | null>(null)
+    const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState('')
+    const [isUpdating, setIsUpdating] = useState(false)
+    const [riderName, setRiderName] = useState('')
+    const [riderPhone, setRiderPhone] = useState('')
+    const [estimatedDeliveryText, setEstimatedDeliveryText] = useState('')
+    const [isSavingRider, setIsSavingRider] = useState(false)
+    const [riderMessage, setRiderMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
-  useEffect(() => {
-    if (orderId) {
-      fetchOrder()
-    }
-  }, [orderId])
+    useEffect(() => {
+      if (orderId) {
+        fetchOrder()
+      }
+    }, [orderId])
 
-  const fetchOrder = async () => {
+    useEffect(() => {
+      if (order) {
+        setRiderName(order.riderName || '')
+        setRiderPhone(order.riderPhone || '')
+        setEstimatedDeliveryText(order.estimatedDeliveryText || '')
+      }
+    }, [order])
+
+    const fetchOrder = async () => {
     if (!orderId) {
       setError('Order ID is missing')
       setIsLoading(false)
@@ -128,17 +144,50 @@ export default function OrderDetailsPage() {
         throw new Error('Failed to update status')
       }
 
-      const data = await response.json()
-      setOrder(data.order)
-    } catch (err) {
-      console.error('Error updating status:', err)
-      setError('Failed to update order status')
-    } finally {
-      setIsUpdating(false)
+        const data = await response.json()
+        setOrder(data.order)
+      } catch (err) {
+        console.error('Error updating status:', err)
+        setError('Failed to update order status')
+      } finally {
+        setIsUpdating(false)
+      }
     }
-  }
 
-  if (isLoading) {
+    const saveRiderInfo = async () => {
+      if (!order || !orderId) return
+
+      setIsSavingRider(true)
+      setRiderMessage(null)
+
+      try {
+        const response = await fetch(`/api/admin/orders/${encodeURIComponent(orderId)}/rider`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            riderName: riderName || null,
+            riderPhone: riderPhone || null,
+            estimatedDeliveryText: estimatedDeliveryText || null,
+          }),
+          credentials: 'include',
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to save rider info')
+        }
+
+        const data = await response.json()
+        setOrder(data.order)
+        setRiderMessage({ type: 'success', text: 'Rider info saved successfully!' })
+      } catch (err) {
+        console.error('Error saving rider info:', err)
+        setRiderMessage({ type: 'error', text: 'Failed to save rider info' })
+      } finally {
+        setIsSavingRider(false)
+      }
+    }
+
+    if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <p className="text-gray-600">Loading order details...</p>
@@ -332,6 +381,74 @@ export default function OrderDetailsPage() {
                   Cancel Order
                 </button>
               )}
+            </div>
+          </div>
+        )}
+
+        {!isCancelled && (
+          <div className="mb-8 rounded-lg bg-white p-6 shadow">
+            <div className="mb-4 flex items-center gap-2">
+              <Truck className="h-5 w-5 text-gray-600" />
+              <h2 className="text-xl font-bold text-gray-900">Rider & Delivery Info</h2>
+            </div>
+            <p className="mb-4 text-sm text-gray-600">
+              Assign a rider to this order. The customer will see the rider&apos;s name and can call them from the order tracking page.
+            </p>
+            
+            {riderMessage && (
+              <div
+                className={`mb-4 rounded-lg p-3 ${
+                  riderMessage.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+                }`}
+              >
+                {riderMessage.text}
+              </div>
+            )}
+
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Rider Name</label>
+                <input
+                  type="text"
+                  value={riderName}
+                  onChange={(e) => setRiderName(e.target.value)}
+                  placeholder="e.g., করিম"
+                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-base focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Rider Phone</label>
+                <div className="relative mt-1">
+                  <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="tel"
+                    value={riderPhone}
+                    onChange={(e) => setRiderPhone(e.target.value)}
+                    placeholder="e.g., 01712345678"
+                    className="block w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 text-base focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Estimated Delivery Time</label>
+                <input
+                  type="text"
+                  value={estimatedDeliveryText}
+                  onChange={(e) => setEstimatedDeliveryText(e.target.value)}
+                  placeholder="e.g., আজকে বিকাল ৫টার মধ্যে"
+                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-base focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                />
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <button
+                onClick={saveRiderInfo}
+                disabled={isSavingRider}
+                className="rounded-lg bg-teal-600 px-4 py-2 font-semibold text-white hover:bg-teal-700 disabled:bg-gray-400"
+              >
+                {isSavingRider ? 'Saving...' : 'Save Rider Info'}
+              </button>
             </div>
           </div>
         )}
