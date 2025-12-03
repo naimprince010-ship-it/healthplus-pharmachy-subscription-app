@@ -4,8 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Image from 'next/image'
-import Link from 'next/link'
-import { Plus, Tag } from 'lucide-react'
+import { ArrowLeft, ChevronDown, ChevronUp, Plus } from 'lucide-react'
 import { useCart } from '@/contexts/CartContext'
 import { trackBeginCheckout, trackPurchase, type GA4Item } from '@/lib/trackEvent'
 import { MAIN_CONTAINER } from '@/lib/layout'
@@ -39,6 +38,8 @@ export default function CheckoutPage() {
   const [couponCode, setCouponCode] = useState('')
   const [couponApplied, setCouponApplied] = useState(false)
   const [couponDiscount, setCouponDiscount] = useState(0)
+  const [paymentMethod, setPaymentMethod] = useState<'COD' | 'BKASH'>('COD')
+  const [orderSummaryExpanded, setOrderSummaryExpanded] = useState(false)
 
   useEffect(() => {
     if (!session) {
@@ -64,6 +65,9 @@ export default function CheckoutPage() {
       .then((data) => {
         if (data.zones) {
           setZones(data.zones)
+          if (data.zones.length > 0) {
+            setSelectedZone(data.zones[0].id)
+          }
         }
       })
       .catch((err) => console.error('Failed to fetch zones:', err))
@@ -104,17 +108,17 @@ export default function CheckoutPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          zoneId: selectedZone,
-          items: items.map((item) => ({
-            medicineId: item.medicineId,
-            productId: item.productId,
-            quantity: item.quantity,
-            price: item.price,
-          })),
-          paymentMethod: 'COD',
-          notes,
-        }),
+                body: JSON.stringify({
+                  zoneId: selectedZone,
+                  items: items.map((item) => ({
+                    medicineId: item.medicineId,
+                    productId: item.productId,
+                    quantity: item.quantity,
+                    price: item.price,
+                  })),
+                  paymentMethod,
+                  notes,
+                }),
       })
 
       const data = await response.json()
@@ -156,197 +160,265 @@ export default function CheckoutPage() {
     return sum + mrp * item.quantity
   }, 0)
   
-  const savings = mrpTotal - total - couponDiscount
-  const grandTotal = total + deliveryCharge - couponDiscount
+    const savings = mrpTotal - total - couponDiscount
+    const grandTotal = total + deliveryCharge - couponDiscount
+    const itemCount = items.reduce((sum, item) => sum + item.quantity, 0)
 
-  if (!session || items.length === 0) {
-    return null
-  }
+    if (!session || items.length === 0) {
+      return null
+    }
+
+    const selectedAddressData = addresses.find(a => a.id === selectedAddress)
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className={`${MAIN_CONTAINER} py-6`}>
-        <form onSubmit={handleSubmit}>
-          <div className="flex flex-col lg:flex-row gap-6">
-            {/* Left Column - Delivery Info */}
-            <div className="flex-1 space-y-6">
-              {error && (
-                <div className="rounded-lg bg-red-50 p-4 border border-red-200">
-                  <p className="text-sm text-red-800">{error}</p>
-                </div>
-              )}
+    <div className="min-h-screen bg-gray-100">
+      {/* Mobile Header - Simple with back arrow */}
+      <div className="sticky top-0 z-50 bg-white border-b border-gray-200 lg:hidden">
+        <div className="flex items-center gap-3 px-4 py-3">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="p-1 -ml-1"
+          >
+            <ArrowLeft className="h-6 w-6 text-gray-700" />
+          </button>
+          <h1 className="text-xl font-bold text-gray-900">চেকআউট</h1>
+        </div>
+      </div>
 
-              {/* Section 1: Delivery Address */}
-              <div className="rounded-lg bg-white shadow-sm border border-gray-200">
-                <div className="flex items-center gap-3 p-4 border-b border-gray-100">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-600 text-white font-semibold text-sm">
-                    1
-                  </div>
-                  <h2 className="text-lg font-semibold text-gray-900">ডেলিভারি ঠিকানা</h2>
-                </div>
-                
-                <div className="p-4">
-                  {/* Zone Selection */}
-                  <div className="mb-4">
-                    <label htmlFor="zone" className="block text-sm font-medium text-gray-700 mb-2">
-                      ডেলিভারি জোন নির্বাচন করুন *
-                    </label>
-                    <select
-                      id="zone"
-                      value={selectedZone}
-                      onChange={(e) => setSelectedZone(e.target.value)}
-                      required
-                      className="block w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-                    >
-                      <option value="">জোন নির্বাচন করুন</option>
-                      {zones.map((zone) => (
-                        <option key={zone.id} value={zone.id}>
-                          {zone.name} - ৳{zone.deliveryCharge} ডেলিভারি
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+      {/* Desktop Header */}
+      <div className="hidden lg:block bg-white border-b border-gray-200">
+        <div className={`${MAIN_CONTAINER} py-4`}>
+          <h1 className="text-2xl font-bold text-gray-900">চেকআউট</h1>
+        </div>
+      </div>
 
-                  {/* Address Cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {addresses.length === 0 ? (
-                      <div className="flex items-center justify-center rounded-lg border-2 border-dashed border-gray-300 p-6 text-center">
-                        <span className="text-red-500 font-medium">No address found</span>
-                      </div>
-                    ) : (
-                      addresses.map((addr) => (
-                        <div
-                          key={addr.id}
-                          onClick={() => setSelectedAddress(addr.id)}
-                          className={`cursor-pointer rounded-lg border-2 p-4 transition-colors ${
-                            selectedAddress === addr.id
-                              ? 'border-teal-500 bg-teal-50'
-                              : 'border-gray-200 hover:border-gray-300'
-                          }`}
-                        >
-                          <p className="font-semibold text-gray-900">{addr.label}</p>
-                          <p className="text-sm text-gray-600 mt-1">{addr.fullAddress}</p>
-                          <p className="text-sm text-gray-600">{addr.phone}</p>
-                        </div>
-                      ))
-                    )}
+      <form onSubmit={handleSubmit}>
+        {/* Main Content - with bottom padding for sticky footer */}
+        <div className="px-4 py-4 pb-32 lg:pb-8 space-y-4 lg:max-w-4xl lg:mx-auto">
+          {error && (
+            <div className="rounded-lg bg-red-50 p-4 border border-red-200">
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+          )}
 
-                    {/* Add Address Button */}
-                    <button
-                      type="button"
-                      onClick={() => setShowAddAddress(true)}
-                      className="flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-teal-400 p-6 text-teal-600 hover:bg-teal-50 transition-colors"
-                    >
-                      <Plus className="h-5 w-5" />
-                      <span className="font-medium">ঠিকানা যোগ করুন</span>
-                    </button>
-                  </div>
-
-                  {/* Add Address Form */}
-                  {showAddAddress && (
-                    <div className="mt-4 rounded-lg border border-gray-200 p-4 bg-gray-50">
-                      <h3 className="font-semibold text-gray-900 mb-3">নতুন ঠিকানা যোগ করুন</h3>
-                      <div className="space-y-3">
-                        <input
-                          type="text"
-                          placeholder="ঠিকানার নাম (যেমন: বাসা, অফিস)"
-                          value={newAddress.label}
-                          onChange={(e) => setNewAddress({ ...newAddress, label: e.target.value })}
-                          className="block w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-teal-500 focus:outline-none"
-                        />
-                        <textarea
-                          placeholder="সম্পূর্ণ ঠিকানা"
-                          value={newAddress.fullAddress}
-                          onChange={(e) => setNewAddress({ ...newAddress, fullAddress: e.target.value })}
-                          rows={2}
-                          className="block w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-teal-500 focus:outline-none"
-                        />
-                        <input
-                          type="tel"
-                          placeholder="ফোন নম্বর"
-                          value={newAddress.phone}
-                          onChange={(e) => setNewAddress({ ...newAddress, phone: e.target.value })}
-                          className="block w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-teal-500 focus:outline-none"
-                        />
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={handleAddAddress}
-                            className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
-                          >
-                            সংরক্ষণ করুন
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setShowAddAddress(false)}
-                            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-                          >
-                            বাতিল
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Section 2: Instructions */}
-              <div className="rounded-lg bg-white shadow-sm border border-gray-200">
-                <div className="flex items-center gap-3 p-4 border-b border-gray-100">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-600 text-white font-semibold text-sm">
-                    2
-                  </div>
-                  <h2 className="text-lg font-semibold text-gray-900">নির্দেশাবলী (ঐচ্ছিক)</h2>
-                </div>
-                
-                <div className="p-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    অতিরিক্ত নির্দেশনা
-                  </label>
-                  <textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    rows={4}
-                    className="block w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500 resize-none"
-                    placeholder="ডেলিভারির জন্য কোনো বিশেষ নির্দেশনা থাকলে লিখুন..."
-                  />
-                </div>
-              </div>
+          {/* Section 1: Delivery Address */}
+          <div className="bg-white rounded-xl p-4">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">১. ডেলিভারি ঠিকানা</h2>
+            
+            {/* Zone Selection */}
+            <div className="mb-4">
+              <select
+                id="zone"
+                value={selectedZone}
+                onChange={(e) => setSelectedZone(e.target.value)}
+                required
+                className="block w-full rounded-lg border-2 border-gray-200 px-4 py-3 text-base text-gray-900 focus:border-teal-500 focus:outline-none"
+              >
+                <option value="">জোন নির্বাচন করুন</option>
+                {zones.map((zone) => (
+                  <option key={zone.id} value={zone.id}>
+                    {zone.name} - ৳{zone.deliveryCharge} ডেলিভারি
+                  </option>
+                ))}
+              </select>
             </div>
 
-            {/* Right Column - Order Summary */}
-            <div className="lg:w-96">
-              <div className="rounded-lg bg-white shadow-sm border border-gray-200 sticky top-4">
-                {/* Products Header */}
-                <div className="p-4 border-b border-gray-100">
-                  <h2 className="text-lg font-semibold text-gray-900">পণ্য</h2>
+            {/* Selected Address Card with Radio */}
+            {addresses.length > 0 && selectedAddressData && (
+              <div className="mb-3">
+                <div className="flex items-start gap-3 rounded-lg border-2 border-teal-500 bg-teal-50/30 p-4 cursor-pointer">
+                  <div className="mt-0.5">
+                    <div className="h-5 w-5 rounded-full border-2 border-teal-500 flex items-center justify-center">
+                      <div className="h-2.5 w-2.5 rounded-full bg-teal-500" />
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-gray-900">{selectedAddressData.fullAddress}</p>
+                    <button type="button" className="text-teal-600 font-medium text-sm">[সম্পাদনা]</button>
+                  </div>
                 </div>
+              </div>
+            )}
 
-                {/* Product List */}
+            {/* Other addresses */}
+            {addresses.filter(a => a.id !== selectedAddress).map((addr) => (
+              <div
+                key={addr.id}
+                className="mb-3 flex items-start gap-3 rounded-lg border-2 border-gray-200 p-4 cursor-pointer hover:border-gray-300"
+                onClick={() => setSelectedAddress(addr.id)}
+              >
+                <div className="mt-0.5">
+                  <div className="h-5 w-5 rounded-full border-2 border-gray-300" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-gray-900">{addr.fullAddress}</p>
+                </div>
+              </div>
+            ))}
+
+            {/* Add New Address Button */}
+            {!showAddAddress ? (
+              <button
+                type="button"
+                onClick={() => setShowAddAddress(true)}
+                className="w-full flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-teal-400 py-3 text-teal-600 font-medium hover:bg-teal-50 transition-colors"
+              >
+                <Plus className="h-5 w-5" />
+                <span>নতুন ঠিকানা যোগ করুন</span>
+              </button>
+            ) : (
+              <div className="rounded-lg border-2 border-gray-200 p-4 bg-gray-50">
+                <h3 className="font-semibold text-gray-900 mb-3">নতুন ঠিকানা যোগ করুন</h3>
+                <div className="space-y-3">
+                  <input
+                    type="text"
+                    placeholder="ঠিকানার নাম (যেমন: বাসা, অফিস)"
+                    value={newAddress.label}
+                    onChange={(e) => setNewAddress({ ...newAddress, label: e.target.value })}
+                    className="block w-full rounded-lg border-2 border-gray-200 px-4 py-3 text-base text-gray-900 focus:border-teal-500 focus:outline-none"
+                  />
+                  <textarea
+                    placeholder="সম্পূর্ণ ঠিকানা"
+                    value={newAddress.fullAddress}
+                    onChange={(e) => setNewAddress({ ...newAddress, fullAddress: e.target.value })}
+                    rows={2}
+                    className="block w-full rounded-lg border-2 border-gray-200 px-4 py-3 text-base text-gray-900 focus:border-teal-500 focus:outline-none"
+                  />
+                  <input
+                    type="tel"
+                    placeholder="ফোন নম্বর"
+                    value={newAddress.phone}
+                    onChange={(e) => setNewAddress({ ...newAddress, phone: e.target.value })}
+                    className="block w-full rounded-lg border-2 border-gray-200 px-4 py-3 text-base text-gray-900 focus:border-teal-500 focus:outline-none"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleAddAddress}
+                      className="flex-1 px-4 py-2.5 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors"
+                    >
+                      সংরক্ষণ করুন
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddAddress(false)}
+                      className="px-4 py-2.5 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+                    >
+                      বাতিল
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Section 2: Payment Method */}
+          <div className="bg-white rounded-xl p-4">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">২. পেমেন্ট মেথড</h2>
+            
+            <div className="flex items-center gap-6">
+              {/* Cash on Delivery */}
+              <label className="flex items-center gap-2 cursor-pointer" onClick={() => setPaymentMethod('COD')}>
+                <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'COD' ? 'border-teal-500' : 'border-gray-300'}`}>
+                  {paymentMethod === 'COD' && <div className="h-2.5 w-2.5 rounded-full bg-teal-500" />}
+                </div>
+                <span className="text-gray-900">ক্যাশ অন ডেলিভারি</span>
+              </label>
+
+              {/* Bkash / Nagad */}
+              <label className="flex items-center gap-2 cursor-pointer" onClick={() => setPaymentMethod('BKASH')}>
+                <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'BKASH' ? 'border-teal-500' : 'border-gray-300'}`}>
+                  {paymentMethod === 'BKASH' && <div className="h-2.5 w-2.5 rounded-full bg-teal-500" />}
+                </div>
+                <span className="text-gray-900">বিকাশ / নগদ</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Section 3: Coupon Code */}
+          <div className="bg-white rounded-xl p-4">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">৩. কুপন কোড</h2>
+            
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value)}
+                placeholder="কুপন কোড লিখুন"
+                className="flex-1 rounded-lg border-2 border-gray-200 px-4 py-3 text-base text-gray-900 focus:border-teal-500 focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={handleApplyCoupon}
+                className="px-6 py-3 bg-white border-2 border-teal-500 text-teal-600 font-semibold rounded-lg hover:bg-teal-50 transition-colors"
+              >
+                Apply
+              </button>
+            </div>
+            {couponApplied && couponDiscount === 0 && (
+              <p className="mt-2 text-sm text-red-500">কুপন কোড সঠিক নয়</p>
+            )}
+          </div>
+
+          {/* Section 4: Order Summary (Collapsible) */}
+          <div className="bg-white rounded-xl">
+            <button
+              type="button"
+              onClick={() => setOrderSummaryExpanded(!orderSummaryExpanded)}
+              className="w-full flex items-center justify-between p-4"
+            >
+              <h2 className="text-lg font-bold text-gray-900">৪. অর্ডার সামারি ({itemCount}টি আইটেম)</h2>
+              <div className="flex items-center gap-3">
+                <span className="text-lg font-bold text-gray-900">৳ {total.toFixed(0)}</span>
+                {orderSummaryExpanded ? (
+                  <ChevronUp className="h-5 w-5 text-gray-500" />
+                ) : (
+                  <ChevronDown className="h-5 w-5 text-gray-500" />
+                )}
+              </div>
+            </button>
+
+            {/* View Details Link */}
+            <div className="px-4 pb-2">
+              <button
+                type="button"
+                onClick={() => setOrderSummaryExpanded(!orderSummaryExpanded)}
+                className="flex items-center gap-1 text-teal-600 font-medium"
+              >
+                {orderSummaryExpanded ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+                <span>বিস্তারিত দেখুন</span>
+              </button>
+            </div>
+
+            {/* Expanded Product List */}
+            {orderSummaryExpanded && (
+              <div className="border-t border-gray-100">
                 <div className="max-h-80 overflow-y-auto">
                   {items.map((item) => {
                     const itemId = item.medicineId || item.productId || item.id
                     const mrp = item.mrp || item.price
                     const hasDiscount = mrp > item.price
-                    const productLink = item.slug 
-                      ? (item.type === 'MEDICINE' ? `/medicines/${item.slug}` : `/products/${item.slug}`)
-                      : null
 
                     return (
                       <div key={itemId} className="flex gap-3 p-4 border-b border-gray-100 last:border-b-0">
                         {/* Product Image */}
-                        <div className="relative h-16 w-16 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
+                        <div className="relative h-14 w-14 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
                           {item.image ? (
                             <Image
                               src={item.image}
                               alt={item.name}
                               fill
                               className="object-cover"
-                              sizes="64px"
+                              sizes="56px"
                             />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center text-gray-400">
-                              <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                               </svg>
                             </div>
@@ -355,17 +427,8 @@ export default function CheckoutPage() {
 
                         {/* Product Info */}
                         <div className="flex-1 min-w-0">
-                          {productLink ? (
-                            <Link href={productLink} className="text-sm font-medium text-gray-900 hover:text-teal-600 line-clamp-2">
-                              {item.name}
-                            </Link>
-                          ) : (
-                            <p className="text-sm font-medium text-gray-900 line-clamp-2">{item.name}</p>
-                          )}
-                          {item.category && (
-                            <p className="text-xs text-gray-500 mt-0.5">{item.category}</p>
-                          )}
-                          <p className="text-xs text-gray-500">{item.quantity} টি</p>
+                          <p className="text-sm font-medium text-gray-900 line-clamp-2">{item.name}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{item.quantity} টি</p>
                         </div>
 
                         {/* Price */}
@@ -381,10 +444,10 @@ export default function CheckoutPage() {
                 </div>
 
                 {/* Price Breakdown */}
-                <div className="p-4 border-t border-gray-200 space-y-3">
+                <div className="p-4 border-t border-gray-200 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">মোট এম.আর.পি মূল্য</span>
-                    <span className="text-gray-900">৳ {mrpTotal.toFixed(0)}</span>
+                    <span className="text-gray-600">সাবটোটাল</span>
+                    <span className="text-gray-900">৳ {total.toFixed(0)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">ডেলিভারি ফি</span>
@@ -392,65 +455,44 @@ export default function CheckoutPage() {
                   </div>
                   {savings > 0 && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">ছাড়</span>
+                      <span className="text-green-600">সেভিংস</span>
                       <span className="text-green-600">- ৳ {savings.toFixed(0)}</span>
                     </div>
                   )}
                 </div>
-
-                {/* Coupon Section */}
-                <div className="p-4 border-t border-gray-200">
-                  <button
-                    type="button"
-                    onClick={() => {}}
-                    className="flex items-center gap-2 text-teal-600 hover:text-teal-700 font-medium"
-                  >
-                    <Tag className="h-5 w-5" />
-                    <span>Apply a coupon</span>
-                  </button>
-                  {!couponApplied && (
-                    <div className="mt-3 flex gap-2">
-                      <input
-                        type="text"
-                        value={couponCode}
-                        onChange={(e) => setCouponCode(e.target.value)}
-                        placeholder="কুপন কোড"
-                        className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleApplyCoupon}
-                        className="px-4 py-2 bg-teal-600 text-white text-sm rounded-lg hover:bg-teal-700 transition-colors"
-                      >
-                        প্রয়োগ
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Total */}
-                <div className="p-4 border-t border-gray-200">
-                  <div className="flex justify-between text-base font-semibold">
-                    <span className="text-gray-900">মোট</span>
-                    <span className="text-gray-900">৳ {grandTotal.toFixed(0)}</span>
-                  </div>
-                </div>
-
-                {/* Order Button */}
-                <div className="p-4 border-t border-gray-200">
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full rounded-lg bg-sky-500 py-3 font-semibold text-white hover:bg-sky-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {isLoading ? 'অর্ডার করা হচ্ছে...' : 'অর্ডার করুন'}
-                  </button>
-                </div>
               </div>
-            </div>
+            )}
           </div>
-        </form>
-      </div>
+
+          {/* Desktop Order Button */}
+          <div className="hidden lg:block">
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full rounded-full bg-[#00A651] py-4 font-semibold text-white text-lg hover:bg-[#008f45] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            >
+              {isLoading ? 'অর্ডার করা হচ্ছে...' : 'অর্ডার কনফার্ম করুন'}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Sticky Footer */}
+        <div 
+          className="fixed bottom-0 left-0 right-0 z-[100] bg-[#1a1a2e] lg:hidden"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+        >
+          <div className="flex items-center justify-between px-4 py-4">
+            <span className="text-white text-lg font-bold">সর্বমোট: ৳ {grandTotal.toFixed(0)}</span>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="px-8 py-3 bg-[#00A651] text-white font-semibold rounded-full hover:bg-[#008f45] disabled:bg-gray-500 disabled:cursor-not-allowed transition-colors"
+            >
+              {isLoading ? 'অপেক্ষা করুন...' : 'অর্ডার কনফার্ম করুন'}
+            </button>
+          </div>
+        </div>
+      </form>
     </div>
   )
 }
