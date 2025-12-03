@@ -24,6 +24,7 @@ import {
   Factory,
   ShoppingCart,
   Lightbulb,
+  ImageOff,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -50,9 +51,10 @@ const navItems: NavItem[] = [
     { label: 'Home Sections', href: '/admin/home-sections', icon: LayoutGrid },
     { label: 'Banners', href: '/admin/banners', icon: Image },
     { label: 'Pages', href: '/admin/pages', icon: FileText },
-    { label: 'Cart Settings', href: '/admin/cart-settings', icon: ShoppingCart },
-    { label: 'Cart Suggestions', href: '/admin/cart-suggestions', icon: Lightbulb },
-    { label: 'Users', href: '/admin/users', icon: Users },
+        { label: 'Cart Settings', href: '/admin/cart-settings', icon: ShoppingCart },
+        { label: 'Cart Suggestions', href: '/admin/cart-suggestions', icon: Lightbulb },
+        { label: 'Fix Images', href: '/admin/fix-images', icon: ImageOff },
+        { label: 'Users', href: '/admin/users', icon: Users },
   { label: 'Sales / Reports', href: '/admin/sales', icon: BarChart3 },
   { label: 'Settings', href: '/admin/settings', icon: Settings },
 ]
