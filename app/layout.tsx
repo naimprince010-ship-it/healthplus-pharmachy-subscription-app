@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Tracking } from "@/components/Tracking";
 import { CartProvider } from "@/contexts/CartContext";
+import { WishlistProvider } from "@/contexts/WishlistContext";
 import { SessionProvider } from "next-auth/react";
 import { PWAProvider } from "@/components/PWAProvider";
 import { InstallPrompt } from "@/components/InstallPrompt";
@@ -78,15 +79,17 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} font-sans antialiased`}>
-        <SessionProvider>
-          <CartProvider>
-            <PWAProvider>
-              <Tracking />
-              {children}
-              <InstallPrompt />
-            </PWAProvider>
-          </CartProvider>
-        </SessionProvider>
+                <SessionProvider>
+                  <CartProvider>
+                    <WishlistProvider>
+                      <PWAProvider>
+                        <Tracking />
+                        {children}
+                        <InstallPrompt />
+                      </PWAProvider>
+                    </WishlistProvider>
+                  </CartProvider>
+                </SessionProvider>
       </body>
     </html>
   );
