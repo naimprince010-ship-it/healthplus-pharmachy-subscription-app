@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { useCart } from '@/contexts/CartContext'
+import { useCart, buildUnitLabelBn } from '@/contexts/CartContext'
 import { useWishlist } from '@/contexts/WishlistContext'
 import { useSession } from 'next-auth/react'
 import { ArrowLeft, X, Heart, Minus, Plus, Clock, Lock, ChevronRight, Truck } from 'lucide-react'
@@ -161,19 +161,20 @@ export default function CartPage() {
     }
   }
 
-  // Add suggestion to cart
-  const handleAddSuggestion = (product: SuggestionProduct) => {
-    addItem({
-      id: product.id,
-      productId: product.id,
-      name: product.name,
-      price: product.price,
-      mrp: product.mrp,
-      image: product.imageUrl || undefined,
-      type: 'PRODUCT',
-      slug: product.slug,
-    })
-  }
+    // Add suggestion to cart
+    const handleAddSuggestion = (product: SuggestionProduct) => {
+      addItem({
+        id: product.id,
+        productId: product.id,
+        name: product.name,
+        price: product.price,
+        mrp: product.mrp,
+        image: product.imageUrl || undefined,
+        type: 'PRODUCT',
+        slug: product.slug,
+        unitLabelBn: buildUnitLabelBn({}), // Default to piece for suggestions
+      })
+    }
 
   if (items.length === 0) {
     return (
@@ -330,9 +331,9 @@ export default function CartPage() {
 
                       {/* Quantity Stepper */}
                       <div className="mt-2 flex items-center justify-between">
-                        <p className="text-xs text-gray-500">
-                          {item.variantLabel || `/ ${item.quantity} পিস`}
-                        </p>
+                                                <p className="text-xs text-gray-500">
+                                                  {item.unitLabelBn || item.variantLabel || '/ ১ পিস'}
+                                                </p>
                         <div className="flex items-center rounded-lg border border-gray-200">
                           <button
                             onClick={() => updateQuantity(itemId, item.quantity - 1)}

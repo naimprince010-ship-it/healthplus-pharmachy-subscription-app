@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { ShoppingCart, ChevronDown } from 'lucide-react'
-import { useCart } from '@/contexts/CartContext'
+import { useCart, buildUnitLabelBn } from '@/contexts/CartContext'
 import { trackAddToCart } from '@/lib/trackEvent'
 import { getEffectivePrices } from '@/lib/pricing'
 
@@ -110,21 +110,28 @@ export function ProductDetailClient({
   const handleAddToCart = () => {
     if (currentStock === 0) return
 
-    setIsAdding(true)
-    addItem({
-      id: currentVariant ? `${productId}-${currentVariant.id}` : productId,
-      productId,
-      variantId: currentVariant?.id,
-      variantLabel: currentVariant?.variantName,
-      name: currentVariant ? `${name} - ${currentVariant.variantName}` : name,
-      price,
-      image: imageUrl || undefined,
-      type: 'PRODUCT',
-      quantity,
-      category,
-      mrp: effectiveMrp,
-      slug,
-    })
+        setIsAdding(true)
+    
+        // Use variant's unitLabel if available, otherwise compute from unit
+        const computedUnitLabelBn = currentVariant?.unitLabel 
+          ? currentVariant.unitLabel 
+          : buildUnitLabelBn({})
+    
+        addItem({
+          id: currentVariant ? `${productId}-${currentVariant.id}` : productId,
+          productId,
+          variantId: currentVariant?.id,
+          variantLabel: currentVariant?.variantName,
+          name: currentVariant ? `${name} - ${currentVariant.variantName}` : name,
+          price,
+          image: imageUrl || undefined,
+          type: 'PRODUCT',
+          quantity,
+          category,
+          mrp: effectiveMrp,
+          slug,
+          unitLabelBn: computedUnitLabelBn,
+        })
 
     trackAddToCart({
       item_id: productId,
