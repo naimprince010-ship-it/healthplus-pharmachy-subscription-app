@@ -66,6 +66,7 @@ interface SearchableItem {
   description: string | null
   sellingPrice: number
   mrp: number | null
+  stockQuantity: number
   imageUrl: string | null
   discountPercentage: number | null
   isMedicine: boolean
@@ -83,6 +84,7 @@ function formatProduct(p: SearchableItem) {
     description: p.description,
     sellingPrice: p.sellingPrice,
     mrp: p.mrp,
+    stockQuantity: p.stockQuantity,
     imageUrl: p.imageUrl,
     discountPercentage: p.discountPercentage,
     category: {

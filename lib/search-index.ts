@@ -14,6 +14,7 @@ export interface SearchableProduct {
   description: string | null
   sellingPrice: number
   mrp: number | null
+  stockQuantity: number
   imageUrl: string | null
   discountPercentage: number | null
   popularityScore: number
@@ -75,6 +76,7 @@ async function loadProducts(): Promise<SearchableProduct[]> {
       description: p.description,
       sellingPrice: p.sellingPrice,
       mrp: p.mrp,
+      stockQuantity: p.stockQuantity,
       imageUrl: p.imageUrl,
       discountPercentage: p.discountPercentage || p.medicine?.discountPercentage || null,
       popularityScore: rawProduct.popularityScore ?? 0,
