@@ -64,12 +64,12 @@ export async function PATCH(
 
     return NextResponse.json({ order: updatedOrder })
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid request data', details: error.errors },
-        { status: 400 }
-      )
-    }
+        if (error instanceof z.ZodError) {
+          return NextResponse.json(
+            { error: 'Invalid request data', details: error.issues },
+            { status: 400 }
+          )
+        }
     console.error('Update rider info error:', error)
     return NextResponse.json(
       { error: 'Failed to update rider info' },
