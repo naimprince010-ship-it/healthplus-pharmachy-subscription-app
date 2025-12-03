@@ -24,7 +24,7 @@ interface Address {
 
 export default function CheckoutPage() {
   const router = useRouter()
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const { items, total, clearCart } = useCart()
   const [zones, setZones] = useState<Zone[]>([])
   const [selectedZone, setSelectedZone] = useState('')
@@ -42,6 +42,12 @@ export default function CheckoutPage() {
   const [orderSummaryExpanded, setOrderSummaryExpanded] = useState(false)
 
   useEffect(() => {
+    // Wait until session has finished loading before checking auth
+    if (status === 'loading') {
+      return
+    }
+
+    // If no session after loading is done, redirect to signin
     if (!session) {
       router.push('/auth/signin?redirect=/checkout')
       return
@@ -71,7 +77,7 @@ export default function CheckoutPage() {
         }
       })
       .catch((err) => console.error('Failed to fetch zones:', err))
-  }, [session, items, router, total])
+  }, [status, session, items, router, total])
 
   const handleAddAddress = () => {
     if (!newAddress.label || !newAddress.fullAddress || !newAddress.phone) return
@@ -163,6 +169,28 @@ export default function CheckoutPage() {
     const savings = mrpTotal - total - couponDiscount
     const grandTotal = total + deliveryCharge - couponDiscount
     const itemCount = items.reduce((sum, item) => sum + item.quantity, 0)
+
+    // Show loading state while session is being fetched
+    if (status === 'loading') {
+      return (
+        <div className="min-h-screen bg-gray-100">
+          <div className="sticky top-0 z-50 bg-white border-b border-gray-200 lg:hidden">
+            <div className="flex items-center gap-3 px-4 py-3">
+              <div className="h-6 w-6 animate-pulse rounded bg-gray-200" />
+              <div className="h-6 w-24 animate-pulse rounded bg-gray-200" />
+            </div>
+          </div>
+          <div className="px-4 py-4 space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white rounded-xl p-4 animate-pulse">
+                <div className="h-6 w-1/3 bg-gray-200 rounded mb-4" />
+                <div className="h-12 w-full bg-gray-200 rounded" />
+              </div>
+            ))}
+          </div>
+        </div>
+      )
+    }
 
     if (!session || items.length === 0) {
       return null
