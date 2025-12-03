@@ -44,7 +44,7 @@ export default function ProductsPage() {
 
   const [search, setSearch] = useState(searchParams.get('search') || '')
   const [categoryFilter, setCategoryFilter] = useState(searchParams.get('categoryId') || '')
-  const [typeFilter, setTypeFilter] = useState(searchParams.get('type') || 'GENERAL')
+  const [typeFilter, setTypeFilter] = useState(searchParams.get('type') || 'all')
   const [statusFilter, setStatusFilter] = useState(searchParams.get('isActive') || 'all')
   const [showFilters, setShowFilters] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -280,9 +280,9 @@ export default function ProductsPage() {
                   onChange={(e) => setTypeFilter(e.target.value)}
                   className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
-                  <option value="GENERAL">General Products</option>
-                  <option value="MEDICINE">Medicines</option>
-                  <option value="all">All Types</option>
+                                    <option value="all">All Types</option>
+                                    <option value="GENERAL">General Products</option>
+                                    <option value="MEDICINE">Medicines</option>
                 </select>
               </div>
               <div>
