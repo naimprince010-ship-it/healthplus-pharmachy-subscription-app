@@ -72,8 +72,9 @@ export default function CheckoutPage() {
   const [couponDiscount, setCouponDiscount] = useState(0)
   const [paymentMethod, setPaymentMethod] = useState<'COD' | 'BKASH'>('COD')
   const [orderSummaryExpanded, setOrderSummaryExpanded] = useState(false)
-  const [settings, setSettings] = useState<CheckoutSettings>(DEFAULT_SETTINGS)
-  const [hasSubmittedOrder, setHasSubmittedOrder] = useState(false)
+    const [settings, setSettings] = useState<CheckoutSettings>(DEFAULT_SETTINGS)
+    const [hasSubmittedOrder, setHasSubmittedOrder] = useState(false)
+    const [freeDeliveryThreshold, setFreeDeliveryThreshold] = useState<number | null>(null)
 
   useEffect(() => {
     // Wait until session has finished loading before checking auth
@@ -114,15 +115,25 @@ export default function CheckoutPage() {
       })
       .catch((err) => console.error('Failed to fetch zones:', err))
 
-    fetch('/api/checkout/settings')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.settings) {
-          setSettings({ ...DEFAULT_SETTINGS, ...data.settings })
-        }
-      })
-      .catch((err) => console.error('Failed to fetch checkout settings:', err))
-  }, [status, session, items, router, total, hasSubmittedOrder])
+      fetch('/api/checkout/settings')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.settings) {
+            setSettings({ ...DEFAULT_SETTINGS, ...data.settings })
+          }
+        })
+        .catch((err) => console.error('Failed to fetch checkout settings:', err))
+
+      // Fetch cart settings to get free delivery threshold
+      fetch('/api/cart/settings')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.settings?.freeDeliveryThreshold) {
+            setFreeDeliveryThreshold(data.settings.freeDeliveryThreshold)
+          }
+        })
+        .catch((err) => console.error('Failed to fetch cart settings:', err))
+    }, [status, session, items, router, total, hasSubmittedOrder])
 
   const handleAddAddress = () => {
     if (!newAddress.label || !newAddress.fullAddress || !newAddress.phone) return
@@ -208,8 +219,10 @@ export default function CheckoutPage() {
     }
   }
 
-  const selectedZoneData = zones.find((z) => z.id === selectedZone)
-  const deliveryCharge = selectedZoneData?.deliveryCharge || 0
+    const selectedZoneData = zones.find((z) => z.id === selectedZone)
+    // Apply free delivery if cart total meets the threshold
+    const qualifiesForFreeDelivery = freeDeliveryThreshold !== null && total >= freeDeliveryThreshold
+    const deliveryCharge = qualifiesForFreeDelivery ? 0 : (selectedZoneData?.deliveryCharge || 0)
   
   const mrpTotal = items.reduce((sum, item) => {
     const mrp = item.mrp || item.price
