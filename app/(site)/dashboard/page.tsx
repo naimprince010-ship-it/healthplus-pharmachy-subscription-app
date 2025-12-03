@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { Package, ShoppingBag, CreditCard } from 'lucide-react'
+import { Package, ShoppingBag, CreditCard, Heart } from 'lucide-react'
 import Link from 'next/link'
 import { MAIN_CONTAINER } from '@/lib/layout'
 
@@ -100,16 +100,26 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="rounded-lg bg-white p-6 shadow">
-            <div className="flex items-center gap-4">
-              <CreditCard className="h-12 w-12 text-teal-600" />
-              <div>
-                <p className="text-2xl font-bold text-gray-900">৳0</p>
-                <p className="text-sm text-gray-600">Membership Status</p>
-              </div>
-            </div>
-          </div>
-        </div>
+                  <div className="rounded-lg bg-white p-6 shadow">
+                    <div className="flex items-center gap-4">
+                      <CreditCard className="h-12 w-12 text-teal-600" />
+                      <div>
+                        <p className="text-2xl font-bold text-gray-900">৳0</p>
+                        <p className="text-sm text-gray-600">Membership Status</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Link href="/dashboard/wishlist" className="rounded-lg bg-white p-6 shadow hover:shadow-md transition-shadow">
+                    <div className="flex items-center gap-4">
+                      <Heart className="h-12 w-12 text-red-500" />
+                      <div>
+                        <p className="text-2xl font-bold text-gray-900">Wishlist</p>
+                        <p className="text-sm text-gray-600">View saved items</p>
+                      </div>
+                    </div>
+                  </Link>
+                </div>
 
         <div className="mt-8 grid gap-8 lg:grid-cols-2">
           <div>
