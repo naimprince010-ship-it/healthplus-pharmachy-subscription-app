@@ -73,6 +73,7 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<'COD' | 'BKASH'>('COD')
   const [orderSummaryExpanded, setOrderSummaryExpanded] = useState(false)
   const [settings, setSettings] = useState<CheckoutSettings>(DEFAULT_SETTINGS)
+  const [hasSubmittedOrder, setHasSubmittedOrder] = useState(false)
 
   useEffect(() => {
     // Wait until session has finished loading before checking auth
@@ -86,7 +87,9 @@ export default function CheckoutPage() {
       return
     }
 
-    if (items.length === 0) {
+    // Only redirect to cart if cart is empty AND we haven't just submitted an order
+    // This prevents the redirect race condition when clearCart() is called after order submission
+    if (items.length === 0 && !hasSubmittedOrder) {
       router.push('/cart')
       return
     }
@@ -119,7 +122,7 @@ export default function CheckoutPage() {
         }
       })
       .catch((err) => console.error('Failed to fetch checkout settings:', err))
-  }, [status, session, items, router, total])
+  }, [status, session, items, router, total, hasSubmittedOrder])
 
   const handleAddAddress = () => {
     if (!newAddress.label || !newAddress.fullAddress || !newAddress.phone) return
@@ -191,6 +194,9 @@ export default function CheckoutPage() {
         items: ga4Items,
       })
 
+      // Set flag BEFORE clearing cart to prevent the useEffect from redirecting to /cart
+      // when it sees items.length === 0 after clearCart() is called
+      setHasSubmittedOrder(true)
       clearCart()
       // Redirect to order success page with order details
       // Use replace to prevent going back to checkout
