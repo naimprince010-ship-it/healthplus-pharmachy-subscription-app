@@ -41,27 +41,41 @@ export async function PATCH(
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
-    const updatedOrder = await prisma.order.update({
-      where: { id },
-      data: {
-        status,
-        updatedAt: new Date(),
-      },
-      include: {
-        user: {
-          select: { name: true, phone: true, email: true },
+    // Use transaction to update order and create status history entry
+    const updatedOrder = await prisma.$transaction(async (tx) => {
+      // Update the order status
+      const updated = await tx.order.update({
+        where: { id },
+        data: {
+          status,
+          updatedAt: new Date(),
         },
-        address: {
-          include: { zone: true },
-        },
-        items: {
-          include: {
-            medicine: {
-              select: { name: true, imageUrl: true },
+        include: {
+          user: {
+            select: { name: true, phone: true, email: true },
+          },
+          address: {
+            include: { zone: true },
+          },
+          items: {
+            include: {
+              medicine: {
+                select: { name: true, imageUrl: true },
+              },
             },
           },
         },
-      },
+      })
+
+      // Create status history entry
+      await tx.orderStatusHistory.create({
+        data: {
+          orderId: id,
+          status,
+        },
+      })
+
+      return updated
     })
 
     return NextResponse.json({ order: updatedOrder })

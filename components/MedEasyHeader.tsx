@@ -29,8 +29,8 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
   const { data: session } = useSession()
   const { itemCount, openDrawer } = useCart()
   
-  // Hide header on mobile for checkout, cart, and order-success pages (they have their own headers)
-  const hideOnMobile = pathname === '/checkout' || pathname === '/cart' || pathname === '/order-success'
+  // Hide header on mobile for checkout, cart, order-success, and order tracking pages (they have their own headers)
+  const hideOnMobile = pathname === '/checkout' || pathname === '/cart' || pathname === '/order-success' || pathname.startsWith('/orders/')
   const [mounted, setMounted] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')

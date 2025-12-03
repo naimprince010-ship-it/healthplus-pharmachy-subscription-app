@@ -53,6 +53,7 @@ const navItems: NavItem[] = [
     { label: 'Pages', href: '/admin/pages', icon: FileText },
         { label: 'Cart Settings', href: '/admin/cart-settings', icon: ShoppingCart },
         { label: 'Checkout Settings', href: '/admin/checkout-settings', icon: ShoppingBag },
+        { label: 'Order Tracking Settings', href: '/admin/order-tracking-settings', icon: MapPin },
         { label: 'Cart Suggestions', href: '/admin/cart-suggestions', icon: Lightbulb },
         { label: 'Fix Images', href: '/admin/fix-images', icon: ImageOff },
         { label: 'Users', href: '/admin/users', icon: Users },
