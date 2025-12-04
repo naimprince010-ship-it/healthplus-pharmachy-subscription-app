@@ -48,7 +48,7 @@ export const getLoginSettingsServer = cache(async (): Promise<LoginSettings> => 
     console.error('[Settings] Failed to fetch login settings:', error)
     return DEFAULT_LOGIN_SETTINGS
   }
-}
+})
 
 /**
  * Fetch Order OTP Settings from the database (server-side)

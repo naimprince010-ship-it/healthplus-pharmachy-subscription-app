@@ -157,12 +157,14 @@ export default function DashboardPage() {
 
   const handleAddToCart = (product: Product) => {
     addItem({
+      id: product.id,
       productId: product.id,
       name: product.name,
       price: product.sellingPrice,
       mrp: product.mrp || product.sellingPrice,
-      quantity: 1,
-      imageUrl: product.imageUrl || undefined,
+      type: 'PRODUCT',
+      image: product.imageUrl || undefined,
+      slug: product.slug || undefined,
     })
   }
 
