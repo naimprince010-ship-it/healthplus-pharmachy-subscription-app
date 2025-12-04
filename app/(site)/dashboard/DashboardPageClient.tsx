@@ -121,6 +121,8 @@ export default function DashboardPageClient() {
   const [settings, setSettings] = useState<DashboardSettings>(DEFAULT_SETTINGS)
   const [isLoading, setIsLoading] = useState(true)
 
+  // Fetch critical dashboard data first (orders, subscriptions, membership, wishlist, settings)
+  // Products are fetched separately to not block the main dashboard loading
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/auth/signin')
@@ -128,29 +130,40 @@ export default function DashboardPageClient() {
     }
 
     if (status === 'authenticated') {
+      // Fetch critical data first - this determines when the dashboard shows
       Promise.all([
-        fetch('/api/orders').then((res) => res.json()),
+        fetch('/api/orders?limit=5').then((res) => res.json()),
         fetch('/api/subscriptions').then((res) => res.json()),
         fetch('/api/membership').then((res) => res.json()).catch(() => ({ membership: null })),
         fetch('/api/wishlist').then((res) => res.json()).catch(() => ({ items: [] })),
         fetch('/api/dashboard/settings').then((res) => res.json()).catch(() => ({ settings: DEFAULT_SETTINGS })),
-        fetch('/api/products?limit=10&sort=popular').then((res) => res.json()).catch(() => ({ products: [] })),
       ])
-        .then(([ordersData, subscriptionsData, membershipData, wishlistData, settingsData, productsData]) => {
+        .then(([ordersData, subscriptionsData, membershipData, wishlistData, settingsData]) => {
           if (ordersData.orders) setOrders(ordersData.orders)
           if (subscriptionsData.subscriptions) setSubscriptions(subscriptionsData.subscriptions)
           if (membershipData.membership) setMembership(membershipData.membership)
           if (wishlistData.items) setWishlistCount(wishlistData.items.length)
           if (settingsData.settings) setSettings({ ...DEFAULT_SETTINGS, ...settingsData.settings })
-          if (productsData.products) {
-            setTrendingProducts(productsData.products.slice(0, 10))
-            setCuratedProducts(productsData.products.slice(0, 10))
-          }
         })
         .catch((err) => console.error('Failed to fetch dashboard data:', err))
         .finally(() => setIsLoading(false))
     }
   }, [status, router])
+
+  // Fetch cross-sell products separately (non-blocking)
+  useEffect(() => {
+    if (status === 'authenticated' && !isLoading) {
+      fetch('/api/products?limit=10&sort=popular')
+        .then((res) => res.json())
+        .then((productsData) => {
+          if (productsData.products) {
+            setTrendingProducts(productsData.products.slice(0, 10))
+            setCuratedProducts(productsData.products.slice(0, 10))
+          }
+        })
+        .catch((err) => console.error('Failed to fetch products:', err))
+    }
+  }, [status, isLoading])
 
   const handleAddToCart = (product: Product) => {
     addItem({
