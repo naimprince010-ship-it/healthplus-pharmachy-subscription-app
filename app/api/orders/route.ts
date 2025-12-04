@@ -258,7 +258,6 @@ export async function POST(request: NextRequest) {
       if (!plan) continue
 
       let finalEndDate: Date
-      let notificationType: 'MEMBERSHIP_PURCHASED' | 'MEMBERSHIP_RENEWED' | 'MEMBERSHIP_UPGRADED' = 'MEMBERSHIP_PURCHASED'
 
       if (existingActiveMembership) {
         const isSamePlan = existingActiveMembership.planId === plan.id
@@ -271,8 +270,6 @@ export async function POST(request: NextRequest) {
             where: { id: existingActiveMembership.id },
             data: { endDate: finalEndDate },
           })
-          
-          notificationType = 'MEMBERSHIP_RENEWED'
         } else {
           // UPGRADE/DOWNGRADE: Deactivate old membership, create new one
           await prisma.userMembership.update({
@@ -292,8 +289,6 @@ export async function POST(request: NextRequest) {
               isActive: true,
             },
           })
-          
-          notificationType = 'MEMBERSHIP_UPGRADED'
         }
       } else {
         // NEW PURCHASE: Create new membership
@@ -318,14 +313,14 @@ export async function POST(request: NextRequest) {
       })
 
       if (userForNotification) {
-        // Send membership notification
+        // Send membership notification (using MEMBERSHIP_PURCHASED for all cases: purchase, renew, upgrade)
         await Promise.all([
-          sendSMS(userForNotification.phone, notificationType, {
+          sendSMS(userForNotification.phone, 'MEMBERSHIP_PURCHASED', {
             name: userForNotification.name,
             expiresAt: format(finalEndDate, 'MMM dd, yyyy'),
             planName: plan.name,
           }),
-          sendEmail(`${userForNotification.phone}@example.com`, notificationType, {
+          sendEmail(`${userForNotification.phone}@example.com`, 'MEMBERSHIP_PURCHASED', {
             name: userForNotification.name,
             expiresAt: format(finalEndDate, 'MMM dd, yyyy'),
             planName: plan.name,
