@@ -175,6 +175,7 @@ export default function CheckoutPage() {
                   items: items.map((item) => ({
                     medicineId: item.medicineId,
                     productId: item.productId,
+                    membershipPlanId: item.membershipPlanId,
                     quantity: item.quantity,
                     price: item.price,
                   })),
