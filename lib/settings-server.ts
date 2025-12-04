@@ -9,13 +9,14 @@
 
 import 'server-only'
 import { prisma } from '@/lib/prisma'
+import { cache } from 'react'
 import { DEFAULT_BASIC_SETTINGS, type BasicSettings } from '@/lib/admin/settings'
 
 /**
  * Fetch basic settings from database (server-side only)
  * Returns merged default + stored values
  */
-export async function getBasicSettings(): Promise<BasicSettings> {
+export const getBasicSettings = cache(async (): Promise<BasicSettings> => {
   try {
     const setting = await prisma.setting.findUnique({ where: { key: 'basic' } })
     const value = (setting?.value ?? {}) as Partial<BasicSettings>
@@ -24,4 +25,4 @@ export async function getBasicSettings(): Promise<BasicSettings> {
     console.error('[getBasicSettings] Error fetching settings:', error)
     return DEFAULT_BASIC_SETTINGS
   }
-}
+})
