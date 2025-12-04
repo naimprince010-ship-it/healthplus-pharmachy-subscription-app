@@ -2,6 +2,7 @@ import { Shield, Check, Star } from 'lucide-react'
 import type { MembershipPlan } from '@prisma/client'
 import { MAIN_CONTAINER } from '@/lib/layout'
 import { PurchaseMembershipButton } from '@/components/PurchaseMembershipButton'
+import { auth } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -15,6 +16,22 @@ async function getMembershipPlans(): Promise<MembershipPlan[]> {
     })
   } catch {
     return []
+  }
+}
+
+async function checkActiveMembership(userId: string): Promise<boolean> {
+  try {
+    const { prisma } = await import('@/lib/prisma')
+    const activeMembership = await prisma.userMembership.findFirst({
+      where: {
+        userId,
+        isActive: true,
+        endDate: { gte: new Date() },
+      },
+    })
+    return !!activeMembership
+  } catch {
+    return false
   }
 }
 
@@ -41,7 +58,16 @@ function formatSavingsMonthly(plan: MembershipPlan) {
 }
 
 export default async function MembershipPage() {
-  const [plans, settings] = await Promise.all([getMembershipPlans(), getPageSettings()])
+  const [plans, settings, session] = await Promise.all([
+    getMembershipPlans(),
+    getPageSettings(),
+    auth(),
+  ])
+
+  let hasActiveMembership = false
+  if (session?.user?.id) {
+    hasActiveMembership = await checkActiveMembership(session.user.id)
+  }
 
   return (
     <div className="bg-white py-12">
@@ -104,8 +130,12 @@ export default async function MembershipPage() {
 
                 <PurchaseMembershipButton
                   planId={plan.id}
+                  planName={plan.name}
+                  planPrice={plan.price}
+                  durationDays={plan.durationDays}
                   ctaText={(plan as any).ctaText || 'Start Saving Today'}
                   isHighlighted={(plan as any).isHighlighted}
+                  hasActiveMembership={hasActiveMembership}
                 />
               </div>
             )
