@@ -132,7 +132,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
 
     return (
       <>
-        <header className={`sticky top-0 z-50 w-full bg-teal-600 shadow-md ${hideOnMobile ? 'hidden lg:block' : ''}`}>
+        <header className={`sticky top-0 z-50 w-full bg-teal-600 shadow-md safe-area-top ${hideOnMobile ? 'hidden lg:block' : ''}`}>
         {/* Centered container - uses shared MAIN_CONTAINER for consistent layout */}
         <div className={MAIN_CONTAINER}>
           <div className="flex h-14 items-center justify-between gap-2 sm:h-16 sm:gap-4">
