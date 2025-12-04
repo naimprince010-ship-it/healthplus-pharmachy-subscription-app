@@ -66,7 +66,7 @@ export function MobileBottomNav() {
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white shadow-lg lg:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white shadow-lg lg:hidden safe-area-bottom">
       <div className="flex items-center justify-around py-1">
         {navItems.map((item) => {
           const isActive = pathname === item.href || 
@@ -76,7 +76,7 @@ export function MobileBottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`relative flex flex-1 flex-col items-center justify-center py-2 text-xs transition-colors ${
+              className={`relative flex flex-1 flex-col items-center justify-center py-2 text-xs transition-all duration-100 active:scale-95 active:opacity-70 ${
                 isActive
                   ? 'text-teal-600'
                   : 'text-gray-500 hover:text-teal-600'
