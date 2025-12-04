@@ -59,6 +59,7 @@ const navItems: NavItem[] = [
         { label: 'Fix Images', href: '/admin/fix-images', icon: ImageOff },
         { label: 'Users', href: '/admin/users', icon: Users },
   { label: 'Sales / Reports', href: '/admin/sales', icon: BarChart3 },
+  { label: 'Membership Page', href: '/admin/membership-settings', icon: Shield },
   { label: 'Settings', href: '/admin/settings', icon: Settings },
 ]
 

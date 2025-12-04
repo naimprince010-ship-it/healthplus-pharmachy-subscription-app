@@ -417,12 +417,27 @@ model MembershipPlan {
   name            String           @unique
   description     String?
   price           Float
+  originalPrice   Float?
   durationDays    Int
   discountPercent Float
+  badge           String?
+  benefitsJson    Json?
+  ctaText         String? // e.g., "Start Saving Today"
+  isHighlighted   Boolean          @default(false)
+  sortOrder       Int?
   isActive        Boolean          @default(true)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   memberships     UserMembership[]
+}
+
+model MembershipPageSettings {
+  id                     String   @id @default(cuid())
+  heroHeadlineBn         String   @default("প্রতি মাসে ওষুধের খরচ ২০% কমান এবং ডাক্তারের পরামর্শ নিন একদম ফ্রি!")
+  heroSubheadlineBn      String   @default("আপনার পরিবারের মাসিক ওষুধ ফুরিয়ে যাওয়া নিয়ে চিন্তিত? আমরা দায়িত্ব নিচ্ছি।")
+  guaranteeTextBn        String   @default("🔒 কোনো দীর্ঘমেয়াদী চুক্তি নেই — যেকোনো সময় বাতিল করতে পারবেন")
+  testimonialsJson       Json?
+  updatedAt              DateTime @updatedAt
 }
 
 model UserMembership {
