@@ -19,7 +19,13 @@ async function getMembershipPlans(): Promise<MembershipPlan[]> {
   }
 }
 
-async function checkActiveMembership(userId: string): Promise<boolean> {
+interface ActiveMembershipInfo {
+  planId: string
+  planName: string
+  endDate: Date
+}
+
+async function getActiveMembership(userId: string): Promise<ActiveMembershipInfo | null> {
   try {
     const { prisma } = await import('@/lib/prisma')
     const activeMembership = await prisma.userMembership.findFirst({
@@ -28,10 +34,18 @@ async function checkActiveMembership(userId: string): Promise<boolean> {
         isActive: true,
         endDate: { gte: new Date() },
       },
+      include: {
+        plan: true,
+      },
     })
-    return !!activeMembership
+    if (!activeMembership) return null
+    return {
+      planId: activeMembership.planId,
+      planName: activeMembership.plan.name,
+      endDate: activeMembership.endDate,
+    }
   } catch {
-    return false
+    return null
   }
 }
 
@@ -64,9 +78,9 @@ export default async function MembershipPage() {
     auth(),
   ])
 
-  let hasActiveMembership = false
+  let currentMembership: ActiveMembershipInfo | null = null
   if (session?.user?.id) {
-    hasActiveMembership = await checkActiveMembership(session.user.id)
+    currentMembership = await getActiveMembership(session.user.id)
   }
 
   return (
@@ -135,7 +149,8 @@ export default async function MembershipPage() {
                   durationDays={plan.durationDays}
                   ctaText={(plan as any).ctaText || 'Start Saving Today'}
                   isHighlighted={(plan as any).isHighlighted}
-                  hasActiveMembership={hasActiveMembership}
+                  currentMembershipPlanId={currentMembership?.planId}
+                  currentMembershipEndDate={currentMembership?.endDate?.toISOString()}
                 />
               </div>
             )

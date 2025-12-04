@@ -130,22 +130,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid membership plan' }, { status: 400 })
     }
 
-    // Check if user already has an active membership (if trying to purchase membership)
+    // Check if user has an active membership (for renew/upgrade/downgrade)
+    let existingActiveMembership: { id: string; planId: string; endDate: Date } | null = null
     if (membershipItems.length > 0) {
-      const existingMembership = await prisma.userMembership.findFirst({
+      existingActiveMembership = await prisma.userMembership.findFirst({
         where: {
           userId: session.user.id,
           isActive: true,
           endDate: { gte: new Date() },
         },
+        select: {
+          id: true,
+          planId: true,
+          endDate: true,
+        },
       })
-
-      if (existingMembership) {
-        return NextResponse.json(
-          { error: 'আপনার ইতিমধ্যে একটি সক্রিয় মেম্বারশিপ আছে' },
-          { status: 400 }
-        )
-      }
     }
 
         const membership = await prisma.userMembership.findFirst({
@@ -253,44 +252,81 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Create membership records for any membership items in the order
+    // Create/update membership records for any membership items in the order
     for (const membershipItem of membershipItems) {
       const plan = membershipPlans.find(p => p.id === membershipItem.membershipPlanId)
       if (!plan) continue
 
-      const startDate = new Date()
-      const endDate = addDays(startDate, plan.durationDays)
+      let finalEndDate: Date
 
-      const newMembership = await prisma.userMembership.create({
-        data: {
-          userId: session.user.id,
-          planId: plan.id,
-          startDate,
-          endDate,
-          isActive: true,
-        },
-        include: {
-          plan: true,
-          user: {
-            select: {
-              name: true,
-              phone: true,
+      if (existingActiveMembership) {
+        const isSamePlan = existingActiveMembership.planId === plan.id
+
+        if (isSamePlan) {
+          // RENEW: Extend the existing membership's endDate
+          finalEndDate = addDays(existingActiveMembership.endDate, plan.durationDays)
+          
+          await prisma.userMembership.update({
+            where: { id: existingActiveMembership.id },
+            data: { endDate: finalEndDate },
+          })
+        } else {
+          // UPGRADE/DOWNGRADE: Deactivate old membership, create new one
+          await prisma.userMembership.update({
+            where: { id: existingActiveMembership.id },
+            data: { isActive: false },
+          })
+
+          const startDate = new Date()
+          finalEndDate = addDays(startDate, plan.durationDays)
+
+          await prisma.userMembership.create({
+            data: {
+              userId: session.user.id,
+              planId: plan.id,
+              startDate,
+              endDate: finalEndDate,
+              isActive: true,
             },
+          })
+        }
+      } else {
+        // NEW PURCHASE: Create new membership
+        const startDate = new Date()
+        finalEndDate = addDays(startDate, plan.durationDays)
+
+        await prisma.userMembership.create({
+          data: {
+            userId: session.user.id,
+            planId: plan.id,
+            startDate,
+            endDate: finalEndDate,
+            isActive: true,
           },
-        },
+        })
+      }
+
+      // Get user info for notification
+      const userForNotification = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { name: true, phone: true },
       })
 
-      // Send membership purchase notification
-      await Promise.all([
-        sendSMS(newMembership.user.phone, 'MEMBERSHIP_PURCHASED', {
-          name: newMembership.user.name,
-          expiresAt: format(endDate, 'MMM dd, yyyy'),
-        }),
-        sendEmail(`${newMembership.user.phone}@example.com`, 'MEMBERSHIP_PURCHASED', {
-          name: newMembership.user.name,
-          expiresAt: format(endDate, 'MMM dd, yyyy'),
-        }),
-      ])
+      if (userForNotification) {
+        // Send membership notification (using MEMBERSHIP_PURCHASED for all cases: purchase, renew, upgrade)
+        await Promise.all([
+          sendSMS(userForNotification.phone, 'MEMBERSHIP_PURCHASED', {
+            name: userForNotification.name,
+            expiresAt: format(finalEndDate, 'MMM dd, yyyy'),
+            planName: plan.name,
+          }),
+          sendEmail(`${userForNotification.phone}@example.com`, 'MEMBERSHIP_PURCHASED', {
+            name: userForNotification.name,
+            expiresAt: format(finalEndDate, 'MMM dd, yyyy'),
+            planName: plan.name,
+          }),
+        ])
+      }
     }
 
     await Promise.all([

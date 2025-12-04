@@ -223,7 +223,7 @@ export default function DashboardPageClient() {
           {/* Stats Cards Grid - 4 columns on lg, 5 on 2xl */}
           <div className="grid grid-cols-4 2xl:grid-cols-5 gap-8 xl:gap-10 2xl:gap-12 mb-8">
             {settings.showTotalOrdersCard && (
-              <div className="bg-white rounded-xl shadow-sm p-6 xl:p-8 2xl:p-10 hover:shadow-md transition-shadow">
+              <Link href="/orders" className="bg-white rounded-xl shadow-sm p-6 xl:p-8 2xl:p-10 hover:shadow-md transition-shadow">
                 <div className="flex items-center gap-4">
                   <div className="flex-shrink-0">
                     <ShoppingBag className="h-10 w-10 xl:h-12 xl:w-12 text-[#0A9F6E]" />
@@ -233,11 +233,11 @@ export default function DashboardPageClient() {
                     <p className="text-sm xl:text-base text-gray-500">{settings.totalOrdersLabelBn}</p>
                   </div>
                 </div>
-              </div>
+              </Link>
             )}
 
             {settings.showSubscriptionsCard && (
-              <div className="bg-white rounded-xl shadow-sm p-6 xl:p-8 2xl:p-10 hover:shadow-md transition-shadow">
+              <Link href="/subscriptions" className="bg-white rounded-xl shadow-sm p-6 xl:p-8 2xl:p-10 hover:shadow-md transition-shadow">
                 <div className="flex items-center gap-4">
                   <div className="flex-shrink-0">
                     <Package className="h-10 w-10 xl:h-12 xl:w-12 text-[#0A9F6E]" />
@@ -247,11 +247,11 @@ export default function DashboardPageClient() {
                     <p className="text-sm xl:text-base text-gray-500">{settings.subscriptionsLabelBn}</p>
                   </div>
                 </div>
-              </div>
+              </Link>
             )}
 
             {settings.showMembershipCard && (
-              <div className="bg-white rounded-xl shadow-sm p-6 xl:p-8 2xl:p-10 hover:shadow-md transition-shadow">
+              <Link href="/membership" className="bg-white rounded-xl shadow-sm p-6 xl:p-8 2xl:p-10 hover:shadow-md transition-shadow">
                 <div className="flex items-center gap-4">
                   <div className="flex-shrink-0">
                     <CreditCard className="h-10 w-10 xl:h-12 xl:w-12 text-[#0A9F6E]" />
@@ -263,7 +263,7 @@ export default function DashboardPageClient() {
                     <p className="text-sm xl:text-base text-gray-500">{settings.membershipLabelBn}</p>
                   </div>
                 </div>
-              </div>
+              </Link>
             )}
 
             {settings.showWishlistCard && (
@@ -504,7 +504,7 @@ export default function DashboardPageClient() {
           {/* Stats Cards - Stacked */}
           <div className="space-y-4 mb-6">
             {settings.showTotalOrdersCard && (
-              <div className="bg-white rounded-xl shadow-sm p-4">
+              <Link href="/orders" className="block bg-white rounded-xl shadow-sm p-4">
                 <div className="flex items-center gap-4">
                   <ShoppingBag className="h-10 w-10 text-[#0A9F6E]" />
                   <div>
@@ -512,11 +512,11 @@ export default function DashboardPageClient() {
                     <p className="text-sm text-gray-500">{settings.totalOrdersLabelBn}</p>
                   </div>
                 </div>
-              </div>
+              </Link>
             )}
 
             {settings.showSubscriptionsCard && (
-              <div className="bg-white rounded-xl shadow-sm p-4">
+              <Link href="/subscriptions" className="block bg-white rounded-xl shadow-sm p-4">
                 <div className="flex items-center gap-4">
                   <Package className="h-10 w-10 text-[#0A9F6E]" />
                   <div>
@@ -524,11 +524,11 @@ export default function DashboardPageClient() {
                     <p className="text-sm text-gray-500">{settings.subscriptionsLabelBn}</p>
                   </div>
                 </div>
-              </div>
+              </Link>
             )}
 
             {settings.showMembershipCard && (
-              <div className="bg-white rounded-xl shadow-sm p-4">
+              <Link href="/membership" className="block bg-white rounded-xl shadow-sm p-4">
                 <div className="flex items-center gap-4">
                   <CreditCard className="h-10 w-10 text-[#0A9F6E]" />
                   <div>
@@ -538,7 +538,7 @@ export default function DashboardPageClient() {
                     <p className="text-sm text-gray-500">{settings.membershipLabelBn}</p>
                   </div>
                 </div>
-              </div>
+              </Link>
             )}
 
             {settings.showWishlistCard && (
