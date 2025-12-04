@@ -6,6 +6,7 @@
  */
 
 import { prisma } from '@/lib/prisma'
+import { cache } from 'react'
 import {
   LoginSettings,
   OrderOtpSettings,
@@ -29,7 +30,7 @@ import {
  * Fetch Login Settings from the database (server-side)
  * Returns default values if no settings exist
  */
-export async function getLoginSettingsServer(): Promise<LoginSettings> {
+export const getLoginSettingsServer = cache(async (): Promise<LoginSettings> => {
   try {
     const setting = await prisma.setting.findUnique({
       where: { key: 'login' },
@@ -47,7 +48,7 @@ export async function getLoginSettingsServer(): Promise<LoginSettings> {
     console.error('[Settings] Failed to fetch login settings:', error)
     return DEFAULT_LOGIN_SETTINGS
   }
-}
+})
 
 /**
  * Fetch Order OTP Settings from the database (server-side)

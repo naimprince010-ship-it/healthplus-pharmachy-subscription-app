@@ -1,0 +1,32 @@
+-- CreateTable
+CREATE TABLE "DashboardPageSettings" (
+    "id" TEXT NOT NULL,
+    "pageTitleBn" TEXT NOT NULL DEFAULT 'আমার ড্যাশবোর্ড',
+    "welcomeTextBn" TEXT NOT NULL DEFAULT 'স্বাগতম,',
+    "showTotalOrdersCard" BOOLEAN NOT NULL DEFAULT true,
+    "showSubscriptionsCard" BOOLEAN NOT NULL DEFAULT true,
+    "showMembershipCard" BOOLEAN NOT NULL DEFAULT true,
+    "showWishlistCard" BOOLEAN NOT NULL DEFAULT true,
+    "showCrossSellSections" BOOLEAN NOT NULL DEFAULT true,
+    "totalOrdersLabelBn" TEXT NOT NULL DEFAULT 'মোট অর্ডার',
+    "subscriptionsLabelBn" TEXT NOT NULL DEFAULT 'সক্রিয় সাবস্ক্রিপশন',
+    "membershipLabelBn" TEXT NOT NULL DEFAULT 'মেম্বারশিপ স্ট্যাটাস',
+    "wishlistLabelBn" TEXT NOT NULL DEFAULT 'উইশলিস্ট',
+    "membershipUpsellTitleBn" TEXT NOT NULL DEFAULT 'আপনি এখনই ৳300 সেভ করার সুযোগ মিস করছেন!',
+    "membershipUpsellButtonBn" TEXT NOT NULL DEFAULT '৭ দিনের ফ্রি ট্রায়াল নিন',
+    "membershipActiveTitleBn" TEXT NOT NULL DEFAULT 'আপনার প্ল্যানে {remaining} টি ফ্রি ডেলিভারি বাকি আছে',
+    "recentOrdersTitleBn" TEXT NOT NULL DEFAULT 'সাম্প্রতিক অর্ডার',
+    "viewAllBn" TEXT NOT NULL DEFAULT 'সব দেখুন',
+    "subscriptionsTitleBn" TEXT NOT NULL DEFAULT 'সক্রিয় সাবস্ক্রিপশন',
+    "curatedForYouTitleBn" TEXT NOT NULL DEFAULT 'আপনার জন্য বাছাই করা',
+    "trendingNowTitleBn" TEXT NOT NULL DEFAULT 'এখন ট্রেন্ডিং',
+    "noOrdersTextBn" TEXT NOT NULL DEFAULT 'এখনো কোনো অর্ডার নেই',
+    "startShoppingBn" TEXT NOT NULL DEFAULT 'শপিং শুরু করুন →',
+    "noSubscriptionsTextBn" TEXT NOT NULL DEFAULT 'কোনো সক্রিয় সাবস্ক্রিপশন নেই',
+    "browsePlansBn" TEXT NOT NULL DEFAULT 'প্ল্যান দেখুন →',
+    "curatedProductsCount" INTEGER NOT NULL DEFAULT 10,
+    "trendingProductsCount" INTEGER NOT NULL DEFAULT 10,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "DashboardPageSettings_pkey" PRIMARY KEY ("id")
+);
