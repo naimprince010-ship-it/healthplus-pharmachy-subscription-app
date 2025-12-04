@@ -1,5 +1,5 @@
-const CACHE_NAME = 'halalzi-v2';
-const STATIC_CACHE_NAME = 'halalzi-static-v2';
+const CACHE_NAME = 'halalzi-v3';
+const STATIC_CACHE_NAME = 'halalzi-static-v3';
 
 const STATIC_ASSETS = [
   '/',
@@ -85,15 +85,27 @@ async function cacheFirst(request) {
 }
 
 async function staleWhileRevalidate(request) {
-  const cachedResponse = await caches.match(request);
-  const fetchPromise = fetch(request).then((networkResponse) => {
-    if (networkResponse.ok) {
-      const cache = caches.open(CACHE_NAME);
-      cache.then((c) => c.put(request, networkResponse.clone()));
+  const cache = await caches.open(CACHE_NAME);
+  const cachedResponse = await cache.match(request);
+
+  const networkPromise = fetch(request).then((networkResponse) => {
+    if (!networkResponse || !networkResponse.ok) {
+      return networkResponse;
     }
+
+    // Clone immediately before any other operation to avoid "body already used" error
+    const responseToCache = networkResponse.clone();
+    cache.put(request, responseToCache).catch((err) => {
+      console.error('SW cache put failed:', err);
+    });
+
     return networkResponse;
+  }).catch((err) => {
+    console.error('SW network fetch failed:', err);
+    return cachedResponse || new Response('Offline', { status: 503 });
   });
-  return cachedResponse || fetchPromise;
+
+  return cachedResponse || networkPromise;
 }
 
 self.addEventListener('fetch', (event) => {
