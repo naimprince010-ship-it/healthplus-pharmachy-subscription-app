@@ -10,6 +10,8 @@ interface PWAContextType {
   promptInstall: () => Promise<void>
   dismissInstallPrompt: () => void
   showInstallPrompt: boolean
+  hasUpdate: boolean
+  applyUpdate: () => Promise<void>
 }
 
 const PWAContext = createContext<PWAContextType | null>(null)
@@ -32,8 +34,10 @@ export function PWAProvider({ children }: { children: ReactNode }) {
   const [isInstallable, setIsInstallable] = useState(false)
   const [isIOS, setIsIOS] = useState(false)
   const [isStandalone, setIsStandalone] = useState(false)
-  const [showInstallPrompt, setShowInstallPrompt] = useState(false)
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
+    const [showInstallPrompt, setShowInstallPrompt] = useState(false)
+    const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
+    const [hasUpdate, setHasUpdate] = useState(false)
+    const [swRegistration, setSwRegistration] = useState<ServiceWorkerRegistration | null>(null)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -46,13 +50,36 @@ export function PWAProvider({ children }: { children: ReactNode }) {
     setIsStandalone(isStandaloneMode)
     setIsInstalled(isStandaloneMode)
 
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').then((registration) => {
-        console.log('Service Worker registered:', registration.scope)
-      }).catch((error) => {
-        console.error('Service Worker registration failed:', error)
-      })
-    }
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.register('/sw.js').then((registration) => {
+            console.log('Service Worker registered:', registration.scope)
+            setSwRegistration(registration)
+
+            // Check if there's already a waiting SW
+            if (registration.waiting) {
+              setHasUpdate(true)
+            }
+
+            // Listen for new SW updates
+            registration.addEventListener('updatefound', () => {
+              const newWorker = registration.installing
+              if (!newWorker) return
+
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  setHasUpdate(true)
+                }
+              })
+            })
+          }).catch((error) => {
+            console.error('Service Worker registration failed:', error)
+          })
+
+          // Listen for controller change to reload the page
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+            window.location.reload()
+          })
+        }
 
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault()
@@ -106,23 +133,31 @@ export function PWAProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const dismissInstallPrompt = () => {
-    setShowInstallPrompt(false)
-    localStorage.setItem('pwa-install-dismissed', Date.now().toString())
-  }
+    const dismissInstallPrompt = () => {
+      setShowInstallPrompt(false)
+      localStorage.setItem('pwa-install-dismissed', Date.now().toString())
+    }
+
+    const applyUpdate = async () => {
+      if (swRegistration?.waiting) {
+        swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' })
+      }
+    }
 
   return (
-    <PWAContext.Provider
-      value={{
-        isInstalled,
-        isInstallable,
-        isIOS,
-        isStandalone,
-        promptInstall,
-        dismissInstallPrompt,
-        showInstallPrompt,
-      }}
-    >
+        <PWAContext.Provider
+          value={{
+            isInstalled,
+            isInstallable,
+            isIOS,
+            isStandalone,
+            promptInstall,
+            dismissInstallPrompt,
+            showInstallPrompt,
+            hasUpdate,
+            applyUpdate,
+          }}
+        >
       {children}
     </PWAContext.Provider>
   )

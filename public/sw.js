@@ -1,5 +1,5 @@
-const CACHE_NAME = 'halalzi-v1';
-const STATIC_CACHE_NAME = 'halalzi-static-v1';
+const CACHE_NAME = 'halalzi-v2';
+const STATIC_CACHE_NAME = 'halalzi-static-v2';
 
 const STATIC_ASSETS = [
   '/',
@@ -42,6 +42,12 @@ function shouldUseNetworkFirst(url) {
 
 function shouldUseCacheFirst(url) {
   return CACHE_STRATEGIES.cacheFirst.some((path) => url.includes(path));
+}
+
+function isNavigationRequest(request) {
+  if (request.mode === 'navigate') return true;
+  const accept = request.headers.get('accept') || '';
+  return accept.includes('text/html');
 }
 
 async function networkFirst(request) {
@@ -99,6 +105,12 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (url.includes('/api/') && !url.includes('/api/search')) {
+    return;
+  }
+
+  // Force network-first for navigation/HTML requests (fixes iOS PWA update issues)
+  if (isNavigationRequest(request)) {
+    event.respondWith(networkFirst(request));
     return;
   }
 
