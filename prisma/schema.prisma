@@ -706,6 +706,45 @@ model OrderTrackingSettings {
   updatedAt                DateTime @updatedAt
 }
 
+// Dashboard Page Settings (singleton - only one row)
+model DashboardPageSettings {
+  id                       String   @id @default(cuid())
+  // Page title
+  pageTitleBn              String   @default("আমার ড্যাশবোর্ড")
+  welcomeTextBn            String   @default("স্বাগতম,")
+  // Card visibility toggles
+  showTotalOrdersCard      Boolean  @default(true)
+  showSubscriptionsCard    Boolean  @default(true)
+  showMembershipCard       Boolean  @default(true)
+  showWishlistCard         Boolean  @default(true)
+  showCrossSellSections    Boolean  @default(true)
+  // Card labels (Bangla)
+  totalOrdersLabelBn       String   @default("মোট অর্ডার")
+  subscriptionsLabelBn     String   @default("সক্রিয় সাবস্ক্রিপশন")
+  membershipLabelBn        String   @default("মেম্বারশিপ স্ট্যাটাস")
+  wishlistLabelBn          String   @default("উইশলিস্ট")
+  // Membership upsell (when user has no membership)
+  membershipUpsellTitleBn  String   @default("আপনি এখনই ৳300 সেভ করার সুযোগ মিস করছেন!")
+  membershipUpsellButtonBn String   @default("৭ দিনের ফ্রি ট্রায়াল নিন")
+  // Membership active (when user has membership)
+  membershipActiveTitleBn  String   @default("আপনার প্ল্যানে {remaining} টি ফ্রি ডেলিভারি বাকি আছে")
+  // Section titles
+  recentOrdersTitleBn      String   @default("সাম্প্রতিক অর্ডার")
+  viewAllBn                String   @default("সব দেখুন")
+  subscriptionsTitleBn     String   @default("সক্রিয় সাবস্ক্রিপশন")
+  curatedForYouTitleBn     String   @default("আপনার জন্য বাছাই করা")
+  trendingNowTitleBn       String   @default("এখন ট্রেন্ডিং")
+  // Empty states
+  noOrdersTextBn           String   @default("এখনো কোনো অর্ডার নেই")
+  startShoppingBn          String   @default("শপিং শুরু করুন →")
+  noSubscriptionsTextBn    String   @default("কোনো সক্রিয় সাবস্ক্রিপশন নেই")
+  browsePlansBn            String   @default("প্ল্যান দেখুন →")
+  // Cross-sell settings
+  curatedProductsCount     Int      @default(10)
+  trendingProductsCount    Int      @default(10)
+  updatedAt                DateTime @updatedAt
+}
+
 // Cart Suggestions (cross-sell products shown in cart)
 model CartSuggestion {
   id        String   @id @default(cuid())
