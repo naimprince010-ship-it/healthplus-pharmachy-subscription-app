@@ -272,22 +272,22 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
 
                 {userMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 rounded-lg bg-white py-2 shadow-lg ring-1 ring-black/5">
-                    {session ? (
-                      <>
-                        <Link
-                          href={profileHref}
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          onClick={() => setUserMenuOpen(false)}
-                        >
-                          {session.user?.role === 'ADMIN' ? 'Admin Panel' : 'My Dashboard'}
-                        </Link>
-                        <Link
-                          href="/orders"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          onClick={() => setUserMenuOpen(false)}
-                        >
-                          My Orders
-                        </Link>
+                                        {session ? (
+                                          <>
+                                            <Link
+                                              href={profileHref}
+                                              className="block px-4 py-2 text-sm font-medium text-teal-600 hover:bg-gray-100"
+                                              onClick={() => setUserMenuOpen(false)}
+                                            >
+                                              {session.user?.role === 'ADMIN' ? 'Admin Panel' : 'Dashboard'}
+                                            </Link>
+                                            <Link
+                                              href="/orders"
+                                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                              onClick={() => setUserMenuOpen(false)}
+                                            >
+                                              আমার অর্ডার
+                                            </Link>
                         <hr className="my-1" />
                         <button
                           onClick={() => {
