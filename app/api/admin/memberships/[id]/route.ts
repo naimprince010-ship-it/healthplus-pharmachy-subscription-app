@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { updateMembershipPlanSchema } from '@/lib/validations/membership'
 import { z } from 'zod'
+import { Prisma } from '@prisma/client'
 
 export async function GET(
   request: NextRequest,
@@ -78,20 +79,21 @@ export async function PUT(
       }
     }
 
-    const updateData: {
-      name?: string
-      description?: string | null
-      price?: number
-      durationDays?: number
-      discountPercent?: number
-      isActive?: boolean
-    } = {}
+    const updateData: Prisma.MembershipPlanUpdateInput = {}
 
     if (validatedData.name !== undefined) updateData.name = validatedData.name
     if (validatedData.description !== undefined) updateData.description = validatedData.description || null
     if (validatedData.price !== undefined) updateData.price = validatedData.price
+    if (validatedData.originalPrice !== undefined) updateData.originalPrice = validatedData.originalPrice ?? null
     if (validatedData.durationDays !== undefined) updateData.durationDays = validatedData.durationDays
     if (validatedData.discountPercent !== undefined) updateData.discountPercent = validatedData.discountPercent
+    if (validatedData.badge !== undefined) updateData.badge = validatedData.badge ?? null
+    if (validatedData.benefitsJson !== undefined) {
+      updateData.benefitsJson = validatedData.benefitsJson ?? Prisma.JsonNull
+    }
+    if (validatedData.ctaText !== undefined) updateData.ctaText = validatedData.ctaText ?? null
+    if (validatedData.isHighlighted !== undefined) updateData.isHighlighted = validatedData.isHighlighted
+    if (validatedData.sortOrder !== undefined) updateData.sortOrder = validatedData.sortOrder ?? null
     if (validatedData.isActive !== undefined) updateData.isActive = validatedData.isActive
 
     const plan = await prisma.membershipPlan.update({

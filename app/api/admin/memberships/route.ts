@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { membershipPlanSchema } from '@/lib/validations/membership'
 import { z } from 'zod'
+import { Prisma } from '@prisma/client'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -81,8 +82,14 @@ export async function POST(request: NextRequest) {
         name: validatedData.name,
         description: validatedData.description || null,
         price: validatedData.price,
+        originalPrice: validatedData.originalPrice ?? null,
         durationDays: validatedData.durationDays,
         discountPercent: validatedData.discountPercent,
+        badge: validatedData.badge ?? null,
+        benefitsJson: validatedData.benefitsJson ?? Prisma.JsonNull,
+        ctaText: validatedData.ctaText ?? null,
+        isHighlighted: validatedData.isHighlighted ?? false,
+        sortOrder: validatedData.sortOrder ?? null,
         isActive: validatedData.isActive ?? true,
       },
     })
