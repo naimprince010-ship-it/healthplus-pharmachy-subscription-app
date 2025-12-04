@@ -116,18 +116,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Some items not found' }, { status: 400 })
     }
 
-    const membership = await prisma.userMembership.findFirst({
-      where: {
-        userId: session.user.id,
-        isActive: true,
-        endDate: { gte: new Date() },
-      },
-      include: {
-        plan: true,
-      },
-    })
+        const membership = await prisma.userMembership.findFirst({
+          where: {
+            userId: session.user.id,
+            isActive: true,
+            endDate: { gte: new Date() },
+          },
+          include: {
+            plan: true,
+          },
+        })
 
-    const subtotal = items.reduce((sum, item) => {
+        // Fetch cart settings to get free delivery threshold
+        const cartSettings = await prisma.cartPageSettings.findFirst()
+        const freeDeliveryThreshold = cartSettings?.freeDeliveryThreshold ?? 499
+
+        const subtotal = items.reduce((sum, item) => {
       if (item.medicineId) {
         const medicine = medicines.find(m => m.id === item.medicineId)
         if (!medicine) return sum
@@ -142,9 +146,11 @@ export async function POST(request: NextRequest) {
       return sum
     }, 0)
     
-    const discount = membership ? subtotal * (membership.plan.discountPercent / 100) : 0
-    const deliveryCharge = address.zone.deliveryCharge
-    const total = subtotal - discount + deliveryCharge
+        const discount = membership ? subtotal * (membership.plan.discountPercent / 100) : 0
+        // Apply free delivery if subtotal meets the threshold
+        const qualifiesForFreeDelivery = subtotal >= freeDeliveryThreshold
+        const deliveryCharge = qualifiesForFreeDelivery ? 0 : address.zone.deliveryCharge
+        const total = subtotal - discount + deliveryCharge
 
     const orderNumber = `ORD-${Date.now()}`
 
