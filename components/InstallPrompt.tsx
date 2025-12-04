@@ -1,7 +1,32 @@
 'use client'
 
 import { usePWA } from './PWAProvider'
-import { X, Share, Plus, Download } from 'lucide-react'
+import { X, Share, Plus, Download, RefreshCw } from 'lucide-react'
+
+export function UpdatePrompt() {
+  const { hasUpdate, applyUpdate, isStandalone } = usePWA()
+
+  if (!hasUpdate || !isStandalone) {
+    return null
+  }
+
+  return (
+    <div className="fixed top-0 left-0 right-0 z-50 p-3 bg-teal-600 text-white shadow-lg animate-slide-up">
+      <div className="flex items-center justify-between max-w-screen-xl mx-auto px-4">
+        <div className="flex items-center gap-3">
+          <RefreshCw className="w-5 h-5" />
+          <span className="text-sm font-medium">নতুন ভার্সন আছে</span>
+        </div>
+        <button
+          onClick={applyUpdate}
+          className="px-4 py-1.5 bg-white text-teal-600 text-sm font-medium rounded-full hover:bg-teal-50 transition-colors"
+        >
+          আপডেট করুন
+        </button>
+      </div>
+    </div>
+  )
+}
 
 export function InstallPrompt() {
   const { showInstallPrompt, isIOS, isInstallable, promptInstall, dismissInstallPrompt, isStandalone } = usePWA()

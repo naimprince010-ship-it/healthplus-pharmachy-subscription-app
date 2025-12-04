@@ -6,7 +6,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import { WishlistProvider } from "@/contexts/WishlistContext";
 import { SessionProvider } from "next-auth/react";
 import { PWAProvider } from "@/components/PWAProvider";
-import { InstallPrompt } from "@/components/InstallPrompt";
+import { InstallPrompt, UpdatePrompt } from "@/components/InstallPrompt";
 
 export const runtime = 'nodejs'
 
@@ -85,6 +85,7 @@ export default function RootLayout({
                       <PWAProvider>
                         <Tracking />
                         {children}
+                        <UpdatePrompt />
                         <InstallPrompt />
                       </PWAProvider>
                     </WishlistProvider>
