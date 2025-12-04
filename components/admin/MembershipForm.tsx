@@ -14,7 +14,7 @@ interface MembershipPlan {
   durationDays: number
   discountPercent: number
   badge?: string | null
-  benefitsJson?: string[] | null
+  benefitsJson?: unknown
   ctaText?: string | null
   isHighlighted?: boolean
   sortOrder?: number | null
@@ -38,7 +38,9 @@ export default function MembershipForm({ plan }: MembershipFormProps) {
     durationDays: plan?.durationDays || 30,
     discountPercent: plan?.discountPercent || 0,
     badge: plan?.badge || '',
-    benefitsText: (plan?.benefitsJson || []).join('\n'),
+    benefitsText: Array.isArray(plan?.benefitsJson)
+      ? (plan.benefitsJson as string[]).join('\n')
+      : '',
     ctaText: plan?.ctaText || '',
     isHighlighted: plan?.isHighlighted ?? false,
     sortOrder: plan?.sortOrder ?? '',
