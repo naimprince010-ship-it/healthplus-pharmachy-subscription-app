@@ -1,4 +1,4 @@
-import { Shield, Check } from 'lucide-react'
+import { Shield, Check, Star } from 'lucide-react'
 import Link from 'next/link'
 import type { MembershipPlan } from '@prisma/client'
 import { MAIN_CONTAINER } from '@/lib/layout'
@@ -11,95 +11,126 @@ async function getMembershipPlans(): Promise<MembershipPlan[]> {
     const { prisma } = await import('@/lib/prisma')
     return await prisma.membershipPlan.findMany({
       where: { isActive: true },
-      orderBy: { price: 'asc' },
+      orderBy: [{ isHighlighted: 'desc' }, { sortOrder: 'asc' }, { price: 'asc' }],
     })
   } catch {
     return []
   }
 }
 
+async function getPageSettings() {
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || ''}/api/membership-settings`, { cache: 'no-store' })
+    return await res.json()
+  } catch {
+    return {
+      heroHeadlineBn:
+        'প্রতি মাসে ওষুধের খরচ ২০% কমান এবং ডাক্তারের পরামর্শ নিন একদম ফ্রি!',
+      heroSubheadlineBn: 'আপনার পরিবারের মাসিক ওষুধ ফুরিয়ে যাওয়া নিয়ে চিন্তিত? আমরা দায়িত্ব নিচ্ছি।',
+      guaranteeTextBn: '🔒 কোনো দীর্ঘমেয়াদী চুক্তি নেই — যেকোনো সময় বাতিল করতে পারবেন',
+      testimonialsJson: [],
+    }
+  }
+}
+
+function formatSavingsMonthly(plan: MembershipPlan) {
+  if (!plan.originalPrice || plan.originalPrice <= plan.price) return null
+  const monthlySavings = plan.originalPrice - plan.price
+  const yearlySavings = Math.round((monthlySavings * 365) / (plan.durationDays || 30))
+  return { monthlySavings, yearlySavings }
+}
+
 export default async function MembershipPage() {
-  const plans = await getMembershipPlans()
+  const [plans, settings] = await Promise.all([getMembershipPlans(), getPageSettings()])
 
   return (
-    <div className="bg-white py-16">
+    <div className="bg-white py-12">
       <div className={MAIN_CONTAINER}>
+        {/* Hero */}
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900">Membership Plans</h1>
-          <p className="mt-4 text-lg text-gray-600">
-            Join our membership program and save on all your medicine purchases
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900 md:text-4xl">{settings.heroHeadlineBn}</h1>
+          <p className="mt-3 text-base text-gray-600 md:mt-4 md:text-lg">{settings.heroSubheadlineBn}</p>
         </div>
 
-        <div className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-          {plans.map((plan) => (
-            <div
-              key={plan.id}
-              className="rounded-2xl border-2 border-gray-200 bg-white p-8 shadow-lg transition-transform hover:scale-105"
-            >
-              <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-teal-100">
-                <Shield className="h-8 w-8 text-teal-600" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900">{plan.name}</h2>
-              <p className="mt-2 text-gray-600">{plan.description}</p>
-              <div className="mt-6 flex items-baseline space-x-2">
-                <span className="text-5xl font-bold text-gray-900">৳{plan.price}</span>
-                <span className="text-xl text-gray-600">/{plan.durationDays} days</span>
-              </div>
-              <ul className="mt-8 space-y-4">
-                <li className="flex items-start">
-                  <Check className="mr-3 h-5 w-5 flex-shrink-0 text-teal-600" />
-                  <span className="text-gray-700">{plan.discountPercent}% discount on all medicines</span>
-                </li>
-                <li className="flex items-start">
-                  <Check className="mr-3 h-5 w-5 flex-shrink-0 text-teal-600" />
-                  <span className="text-gray-700">Valid for {plan.durationDays} days</span>
-                </li>
-                <li className="flex items-start">
-                  <Check className="mr-3 h-5 w-5 flex-shrink-0 text-teal-600" />
-                  <span className="text-gray-700">Priority customer support</span>
-                </li>
-                <li className="flex items-start">
-                  <Check className="mr-3 h-5 w-5 flex-shrink-0 text-teal-600" />
-                  <span className="text-gray-700">Free delivery on orders above ৳500</span>
-                </li>
-              </ul>
-              <Link
-                href="/dashboard"
-                className="mt-8 block w-full rounded-lg bg-teal-600 py-3 text-center font-semibold text-white transition-colors hover:bg-teal-700"
+        {/* Pricing Cards */}
+        <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {plans.map((plan) => {
+            const savings = formatSavingsMonthly(plan as any)
+            const benefits: string[] = Array.isArray((plan as any).benefitsJson)
+              ? ((plan as any).benefitsJson as string[])
+              : [
+                  `${plan.discountPercent}% ওষুধে ডিস্কাউন্ট`,
+                  `${plan.durationDays} দিনের জন্য বৈধ`,
+                  'অগ্রাধিকার ভিত্তিক সাপোর্ট',
+                  'আনলিমিটেড ফ্রি ডেলিভারি',
+                ]
+            return (
+              <div
+                key={plan.id}
+                className={`relative rounded-2xl border-2 bg-white p-6 shadow-sm transition-transform hover:scale-[1.01] ${
+                  (plan as any).isHighlighted ? 'border-amber-400' : 'border-gray-200'
+                }`}
               >
-                Join Now
-              </Link>
-            </div>
-          ))}
+                {(plan as any).badge && (
+                  <div className="absolute -top-3 left-6 inline-flex items-center gap-1 rounded-full bg-amber-500 px-3 py-1 text-xs font-semibold text-white">
+                    <Star className="h-3 w-3" /> {(plan as any).badge}
+                  </div>
+                )}
+
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-teal-100">
+                  <Shield className="h-6 w-6 text-teal-600" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-900">{plan.name}</h2>
+                {plan.description && <p className="mt-1 text-sm text-gray-600">{plan.description}</p>}
+
+                <div className="mt-4 flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-gray-900">৳{plan.price}</span>
+                  <span className="text-sm text-gray-600">/ {plan.durationDays} দিন</span>
+                </div>
+                {(plan as any).originalPrice && (plan as any).originalPrice > plan.price && (
+                  <div className="mt-1 text-sm text-gray-500">
+                    <span className="mr-2 line-through">৳{(plan as any).originalPrice}</span>
+                    {savings && <span className="text-green-600">(বছরে ৳{savings.yearlySavings} সেভ করুন)</span>}
+                  </div>
+                )}
+
+                <ul className="mt-6 space-y-2">
+                  {benefits.map((b, i) => (
+                    <li key={i} className="flex items-start text-sm text-gray-700">
+                      <Check className="mr-2 mt-0.5 h-4 w-4 flex-shrink-0 text-teal-600" /> {b}
+                    </li>
+                  ))}
+                </ul>
+
+                <Link
+                  href="/dashboard"
+                  className={`mt-6 block w-full rounded-lg py-2.5 text-center text-sm font-semibold text-white ${
+                    (plan as any).isHighlighted ? 'bg-amber-500 hover:bg-amber-600' : 'bg-teal-600 hover:bg-teal-700'
+                  }`}
+                >
+                  {(plan as any).ctaText || 'Start Saving Today'}
+                </Link>
+              </div>
+            )
+          })}
         </div>
 
-        <div className="mt-16 rounded-2xl bg-teal-50 p-8">
-          <h2 className="text-2xl font-bold text-gray-900">How It Works</h2>
-          <div className="mt-8 grid gap-8 md:grid-cols-3">
-            <div>
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-teal-600 text-xl font-bold text-white">
-                1
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900">Choose Your Plan</h3>
-              <p className="mt-2 text-gray-600">Select the membership plan that best fits your needs</p>
-            </div>
-            <div>
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-teal-600 text-xl font-bold text-white">
-                2
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900">Make Payment</h3>
-              <p className="mt-2 text-gray-600">Complete your payment securely through our platform</p>
-            </div>
-            <div>
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-teal-600 text-xl font-bold text-white">
-                3
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900">Start Saving</h3>
-              <p className="mt-2 text-gray-600">Enjoy your discount on all medicine purchases immediately</p>
-            </div>
-          </div>
+        {/* Guarantee */}
+        <div className="mt-10 rounded-2xl bg-teal-50 p-6 text-center text-sm text-teal-800 md:text-base">
+          {settings.guaranteeTextBn}
         </div>
+
+        {/* Testimonials */}
+        {Array.isArray(settings.testimonialsJson) && settings.testimonialsJson.length > 0 && (
+          <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {settings.testimonialsJson.map((t: any, i: number) => (
+              <div key={i} className="rounded-2xl bg-white p-5 shadow">
+                <div className="text-sm text-gray-700">“{t.text}”</div>
+                <div className="mt-3 text-right text-xs font-semibold text-gray-500">— {t.name}</div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
