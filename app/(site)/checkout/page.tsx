@@ -170,17 +170,18 @@ export default function CheckoutPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-                body: JSON.stringify({
-                  zoneId: selectedZone,
-                  items: items.map((item) => ({
-                    medicineId: item.medicineId,
-                    productId: item.productId,
-                    quantity: item.quantity,
-                    price: item.price,
-                  })),
-                  paymentMethod,
-                  notes,
-                }),
+                  body: JSON.stringify({
+                    zoneId: selectedZone,
+                    items: items.map((item) => ({
+                      medicineId: item.medicineId,
+                      productId: item.productId,
+                      membershipPlanId: item.membershipPlanId,
+                      quantity: item.quantity,
+                      price: item.price,
+                    })),
+                    paymentMethod,
+                    notes,
+                  }),
       })
 
       const data = await response.json()

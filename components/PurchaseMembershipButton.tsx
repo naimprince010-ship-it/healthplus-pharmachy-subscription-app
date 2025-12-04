@@ -3,21 +3,28 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession, signIn } from 'next-auth/react'
+import { useCart } from '@/contexts/CartContext'
 
 interface PurchaseMembershipButtonProps {
   planId: string
+  planName: string
+  planPrice: number
+  durationDays: number
   ctaText: string
   isHighlighted?: boolean
 }
 
 export function PurchaseMembershipButton({
   planId,
+  planName,
+  planPrice,
+  durationDays,
   ctaText,
   isHighlighted,
 }: PurchaseMembershipButtonProps) {
   const { status } = useSession()
   const router = useRouter()
-  const [loading, setLoading] = useState(false)
+  const { addItem } = useCart()
   const [error, setError] = useState<string | null>(null)
 
   const handleClick = async () => {
@@ -30,40 +37,29 @@ export function PurchaseMembershipButton({
 
     if (status !== 'authenticated') return
 
-    setLoading(true)
-    try {
-      const res = await fetch('/api/membership', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ planId }),
-      })
+    // Add membership to cart
+    addItem({
+      id: `membership-${planId}`,
+      membershipPlanId: planId,
+      name: planName,
+      price: planPrice,
+      type: 'MEMBERSHIP',
+      durationDays,
+    })
 
-      const data = await res.json()
-
-      if (!res.ok) {
-        setError(data.error || 'Failed to purchase membership')
-        return
-      }
-
-      router.push('/dashboard')
-    } catch {
-      setError('Something went wrong. Please try again.')
-    } finally {
-      setLoading(false)
-    }
+    // Redirect to checkout
+    router.push('/checkout')
   }
 
   return (
     <>
       <button
         onClick={handleClick}
-        disabled={loading}
         className={`mt-6 block w-full rounded-lg py-2.5 text-center text-sm font-semibold text-white ${
           isHighlighted ? 'bg-amber-500 hover:bg-amber-600' : 'bg-teal-600 hover:bg-teal-700'
-        } ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
+        }`}
       >
-        {loading ? 'Processing...' : ctaText}
+        {ctaText}
       </button>
       {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
     </>

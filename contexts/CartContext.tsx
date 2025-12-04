@@ -12,13 +12,14 @@ export interface CartItem {
   id: string
   medicineId?: string
   productId?: string
+  membershipPlanId?: string
   variantId?: string
   variantLabel?: string
   name: string
   price: number
   quantity: number
   image?: string
-  type: 'MEDICINE' | 'PRODUCT'
+  type: 'MEDICINE' | 'PRODUCT' | 'MEMBERSHIP'
   category?: string
   genericName?: string
   mrp?: number
@@ -28,6 +29,8 @@ export interface CartItem {
   sellingUnitType?: SellingUnitType
   unitQuantity?: number
   baseUnitLabelBn?: string
+  // Membership-specific fields
+  durationDays?: number
 }
 
 // Helper function to build unit label in Bangla
@@ -141,6 +144,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
     setItems((prevItems) => {
+      // For membership items, check if any membership already exists in cart
+      // Only allow one membership at a time (replace existing membership)
+      if (item.type === 'MEMBERSHIP' && item.membershipPlanId) {
+        const existingMembershipIndex = prevItems.findIndex((i) => i.type === 'MEMBERSHIP')
+        if (existingMembershipIndex !== -1) {
+          // Replace existing membership with new one
+          const newItems = [...prevItems]
+          newItems[existingMembershipIndex] = { ...item, quantity: 1 }
+          return newItems
+        }
+        // No existing membership, add new one with quantity 1
+        return [...prevItems, { ...item, quantity: 1 }]
+      }
+
       const existingItem = prevItems.find((i) => {
         if (i.medicineId && i.medicineId === item.medicineId) return true
         if (i.productId && i.productId === item.productId) {
@@ -170,7 +187,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const removeItem = (itemId: string) => {
     setItems((prevItems) => prevItems.filter((i) => 
-      i.medicineId !== itemId && i.productId !== itemId
+      i.medicineId !== itemId && i.productId !== itemId && i.membershipPlanId !== itemId
     ))
   }
 
@@ -180,9 +197,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return
     }
     setItems((prevItems) =>
-      prevItems.map((i) =>
-        (i.medicineId === itemId || i.productId === itemId) ? { ...i, quantity } : i
-      )
+      prevItems.map((i) => {
+        // Membership items always have quantity 1
+        if (i.membershipPlanId === itemId) {
+          return { ...i, quantity: 1 }
+        }
+        if (i.medicineId === itemId || i.productId === itemId) {
+          return { ...i, quantity }
+        }
+        return i
+      })
     )
   }
 

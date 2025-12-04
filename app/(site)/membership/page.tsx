@@ -104,6 +104,9 @@ export default async function MembershipPage() {
 
                 <PurchaseMembershipButton
                   planId={plan.id}
+                  planName={plan.name}
+                  planPrice={plan.price}
+                  durationDays={plan.durationDays}
                   ctaText={(plan as any).ctaText || 'Start Saving Today'}
                   isHighlighted={(plan as any).isHighlighted}
                 />
