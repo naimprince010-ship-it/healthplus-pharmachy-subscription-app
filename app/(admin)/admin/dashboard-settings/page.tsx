@@ -46,12 +46,19 @@ export default function DashboardSettingsPage() {
     try {
       const res = await fetch('/api/admin/dashboard-settings')
       const data = await res.json()
+      if (!res.ok) {
+        setMessage({ type: 'error', text: data.error || 'Failed to load settings' })
+        setLoading(false)
+        return
+      }
       if (data.settings) {
         setSettings(data.settings)
+      } else {
+        setMessage({ type: 'error', text: 'No settings data returned from server' })
       }
     } catch (error) {
       console.error('Failed to fetch settings:', error)
-      setMessage({ type: 'error', text: 'Failed to load settings' })
+      setMessage({ type: 'error', text: 'Failed to load settings - please check if the database migration has been run' })
     } finally {
       setLoading(false)
     }
