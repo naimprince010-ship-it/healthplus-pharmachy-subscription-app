@@ -1,7 +1,7 @@
 import { Shield, Check, Star } from 'lucide-react'
-import Link from 'next/link'
 import type { MembershipPlan } from '@prisma/client'
 import { MAIN_CONTAINER } from '@/lib/layout'
+import { PurchaseMembershipButton } from '@/components/PurchaseMembershipButton'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -102,14 +102,11 @@ export default async function MembershipPage() {
                   ))}
                 </ul>
 
-                <Link
-                  href="/dashboard"
-                  className={`mt-6 block w-full rounded-lg py-2.5 text-center text-sm font-semibold text-white ${
-                    (plan as any).isHighlighted ? 'bg-amber-500 hover:bg-amber-600' : 'bg-teal-600 hover:bg-teal-700'
-                  }`}
-                >
-                  {(plan as any).ctaText || 'Start Saving Today'}
-                </Link>
+                <PurchaseMembershipButton
+                  planId={plan.id}
+                  ctaText={(plan as any).ctaText || 'Start Saving Today'}
+                  isHighlighted={(plan as any).isHighlighted}
+                />
               </div>
             )
           })}
