@@ -305,14 +305,15 @@ export async function deletePrescriptionFile(path: string): Promise<void> {
 }
 
 /**
- * Generic image validation function
+ * Generic image validation function for banners
+ * Allows larger files (10MB) for high-quality banner images
  */
 export function validateImage(file: File): { valid: boolean; error?: string } {
-  const maxSize = 2 * 1024 * 1024 // 2MB for banners
+  const maxSize = 10 * 1024 * 1024 // 10MB for banners
   const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
 
   if (file.size > maxSize) {
-    return { valid: false, error: 'Image size must be less than 2MB' }
+    return { valid: false, error: 'ছবির সাইজ ১০MB এর কম হতে হবে' }
   }
 
   if (!allowedTypes.includes(file.type)) {
@@ -341,12 +342,12 @@ export async function uploadToSupabase(
 
   const bucket = process.env.SUPABASE_MEDICINE_BUCKET || 'medicine-images'
   
-  await ensureBucketConfigured(
-    bucket,
-    ['image/jpeg', 'image/png', 'image/webp'],
-    2 * 1024 * 1024, // 2MB
-    true
-  )
+    await ensureBucketConfigured(
+      bucket,
+      ['image/jpeg', 'image/png', 'image/webp'],
+      10 * 1024 * 1024, // 10MB for banner images
+      true
+    )
 
   const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg'
   const uuid = `${Date.now()}-${Math.random().toString(36).substring(7)}`
