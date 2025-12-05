@@ -157,42 +157,49 @@ async function importFromChaldal(url: string): Promise<ImportedProduct> {
   const html = await response.text()
   const $ = cheerio.load(html)
   
-  const name = $('h1').first().text().trim() || 
-               $('[class*="productName"]').first().text().trim() ||
-               $('title').text().replace(/ - Chaldal.*$/, '').trim() || ''
+  const pageTitle = $('title').text()
+  const name = pageTitle.replace(/ - Online Grocery.*$/i, '').replace(/ \| Buy.*$/i, '').trim() || ''
   
   let brandName: string | null = null
-  $('[class*="brand"]').each((_, el) => {
-    const text = $(el).text().trim()
-    if (text && !brandName) {
-      brandName = text
-    }
-  })
+  const nameParts = name.split(' ')
+  if (nameParts.length > 1) {
+    brandName = nameParts[0]
+  }
   
   let sellingPrice: number | null = null
   let mrp: number | null = null
   
   const priceText = $('body').text()
-  const priceMatch = priceText.match(/৳\s*([\d,.]+)/g)
-  if (priceMatch && priceMatch.length >= 1) {
-    sellingPrice = parsePrice(priceMatch[0])
-    if (priceMatch.length >= 2) {
-      mrp = parsePrice(priceMatch[1])
+  const priceMatches = priceText.match(/৳\s*([\d,.]+)/g) || []
+  const validPrices = priceMatches
+    .map(p => parsePrice(p))
+    .filter((p): p is number => p !== null && p > 0)
+  
+  if (validPrices.length >= 1) {
+    sellingPrice = validPrices[0]
+    if (validPrices.length >= 2 && validPrices[1] > validPrices[0]) {
+      mrp = validPrices[1]
     }
   }
   
   let imageUrl: string | null = null
-  $('img[src*="chaldn.com"]').each((_, el) => {
-    const src = $(el).attr('src')
-    if (src && !imageUrl && !src.includes('logo') && !src.includes('icon')) {
-      imageUrl = src
-    }
-  })
+  const ogImage = $('meta[property="og:image"]').attr('content')
+  if (ogImage) {
+    imageUrl = ogImage
+  } else {
+    $('img[src*="chaldn.com"]').each((_, el) => {
+      const src = $(el).attr('src')
+      if (src && !imageUrl && src.includes('m=400') && !src.includes('components')) {
+        imageUrl = src
+      }
+    })
+  }
   
   let packSize: string | null = null
-  const packMatch = $('body').text().match(/(\d+\s*(?:g|kg|ml|L|pcs?|pack|piece))/i)
+  const packMatch = name.match(/(\d+\s*(?:gm?|kg|ml|L|pcs?|pack|piece))/i) ||
+                    url.match(/(\d+)-(gm?|kg|ml|l|pcs?|pack)/i)
   if (packMatch) {
-    packSize = packMatch[1].trim()
+    packSize = packMatch[0].replace('-', ' ').trim()
   }
   
   let description: string | null = null
