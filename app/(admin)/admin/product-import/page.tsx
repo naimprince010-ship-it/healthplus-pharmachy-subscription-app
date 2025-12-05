@@ -43,6 +43,7 @@ export default function ProductImportPage() {
     mrp: '',
     stockQuantity: '100',
     categoryId: '',
+    packSize: '',
   })
 
   useEffect(() => {
@@ -95,6 +96,7 @@ export default function ProductImportPage() {
         mrp: data.product.mrp?.toString() || '',
         stockQuantity: '100',
         categoryId: '',
+        packSize: data.product.packSize || '',
       })
       
       toast.success('Product details fetched successfully!')
@@ -137,6 +139,7 @@ export default function ProductImportPage() {
         imageUrl: importedProduct?.imageUrl || undefined,
         isActive: true,
         categoryId: editedProduct.categoryId,
+        sizeLabel: editedProduct.packSize.trim() || undefined,
       }
       
       const res = await fetch('/api/admin/products', {
@@ -304,16 +307,30 @@ export default function ProductImportPage() {
                 </div>
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Stock Quantity
-                </label>
-                <input
-                  type="number"
-                  value={editedProduct.stockQuantity}
-                  onChange={(e) => setEditedProduct({ ...editedProduct, stockQuantity: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Stock Quantity
+                  </label>
+                  <input
+                    type="number"
+                    value={editedProduct.stockQuantity}
+                    onChange={(e) => setEditedProduct({ ...editedProduct, stockQuantity: e.target.value })}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Pack Size
+                  </label>
+                  <input
+                    type="text"
+                    value={editedProduct.packSize}
+                    onChange={(e) => setEditedProduct({ ...editedProduct, packSize: e.target.value })}
+                    placeholder="e.g., 500 ml, 300 gm"
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
               </div>
               
               <div>
