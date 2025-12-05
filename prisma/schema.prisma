@@ -761,6 +761,44 @@ model DashboardPageSettings {
   updatedAt                DateTime @updatedAt
 }
 
+// Footer Settings (singleton - only one row)
+model FooterSettings {
+  id                String   @id @default(cuid())
+  // Column 1: Brand Info
+  brandName         String   @default("Halalzi")
+  brandDescription  String   @default("আপনার পরিবারের সুস্বাস্থ্যের বিশ্বস্ত সঙ্গী। আমরা ১০০% অথেনটিক ঔষধ এবং স্বাস্থ্যপণ্য নিশ্চিত করি।")
+  drugLicense       String?
+  tradeLicense      String?
+  // Column 2: Quick Links - stored as JSON array [{label, href}]
+  quickLinks        Json     @default("[{\"label\":\"হোম\",\"href\":\"/\"},{\"label\":\"সব ঔষধ\",\"href\":\"/products\"},{\"label\":\"মেম্বারশিপ প্ল্যান\",\"href\":\"/membership\"},{\"label\":\"প্রেসক্রিপশন আপলোড\",\"href\":\"/prescription\"},{\"label\":\"অফারসমূহ\",\"href\":\"/offers\"}]")
+  quickLinksTitle   String   @default("কুইক লিংকস")
+  // Column 3: Support Links - stored as JSON array [{label, href}]
+  supportLinks      Json     @default("[{\"label\":\"প্রাইভেসি পলিসি\",\"href\":\"/pages/privacy\"},{\"label\":\"রিফান্ড ও রিটার্ন পলিসি\",\"href\":\"/pages/refund\"},{\"label\":\"শর্তাবলী\",\"href\":\"/pages/terms\"},{\"label\":\"সচরাচর জিজ্ঞাসিত প্রশ্ন\",\"href\":\"/pages/faq\"}]")
+  supportLinksTitle String   @default("কাস্টমার সাপোর্ট")
+  // Column 4: Contact Info
+  contactTitle      String   @default("যোগাযোগ")
+  address           String   @default("ঢাকা, বাংলাদেশ")
+  phone             String   @default("01700000000")
+  email             String?
+  // Social Links - stored as JSON array [{platform, url}]
+  socialLinks       Json     @default("[{\"platform\":\"facebook\",\"url\":\"https://facebook.com\"},{\"platform\":\"youtube\",\"url\":\"https://youtube.com\"}]")
+  // App Download
+  googlePlayUrl     String?
+  appStoreUrl       String?
+  // Copyright Bar
+  copyrightText     String   @default("© 2025 Halalzi. All rights reserved.")
+  developerCredit   String?
+  // Payment Methods - stored as JSON array [{name, iconKey}]
+  paymentMethods    Json     @default("[{\"name\":\"bKash\",\"iconKey\":\"bkash\"},{\"name\":\"Nagad\",\"iconKey\":\"nagad\"},{\"name\":\"Visa\",\"iconKey\":\"visa\"},{\"name\":\"Mastercard\",\"iconKey\":\"mastercard\"}]")
+  // Styling
+  bgColor           String   @default("#0b3b32")
+  textColor         String   @default("#e0e0e0")
+  headingColor      String   @default("#ffffff")
+  hoverColor        String   @default("#0A9F6E")
+  copyrightBgColor  String   @default("#04241e")
+  updatedAt         DateTime @updatedAt
+}
+
 // Cart Suggestions (cross-sell products shown in cart)
 model CartSuggestion {
   id        String   @id @default(cuid())
