@@ -73,9 +73,65 @@ export default async function MedicineDetailPage({
       ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/medicine-images/${medicine.imagePath}`
       : null)
 
+  // Calculate effective price for schema
+  const effectivePrice = medicine.discountPercentage && medicine.discountPercentage > 0
+    ? medicine.sellingPrice * (1 - medicine.discountPercentage / 100)
+    : medicine.sellingPrice
+
+  // Generate JSON-LD structured data for SEO
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: medicine.name,
+    description: medicine.description || `${medicine.name} - Buy online at best price`,
+    image: imageUrl || undefined,
+    sku: medicine.id,
+    brand: medicine.manufacturer ? {
+      '@type': 'Brand',
+      name: medicine.manufacturer,
+    } : undefined,
+    category: medicine.category?.name,
+    additionalProperty: [
+      medicine.genericName ? {
+        '@type': 'PropertyValue',
+        name: 'Generic Name',
+        value: medicine.genericName,
+      } : null,
+      medicine.strength ? {
+        '@type': 'PropertyValue',
+        name: 'Strength',
+        value: medicine.strength,
+      } : null,
+      medicine.dosageForm ? {
+        '@type': 'PropertyValue',
+        name: 'Dosage Form',
+        value: medicine.dosageForm,
+      } : null,
+    ].filter(Boolean),
+    offers: {
+      '@type': 'Offer',
+      url: `https://halalzi.com/medicines/${slug}`,
+      priceCurrency: 'BDT',
+      price: effectivePrice,
+      priceValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      availability: medicine.stockQuantity > 0 
+        ? 'https://schema.org/InStock' 
+        : 'https://schema.org/OutOfStock',
+      seller: {
+        '@type': 'Organization',
+        name: 'Halalzi',
+      },
+    },
+  }
+
   return (
-    <div className="bg-white py-8">
-      <div className="w-full px-4 sm:px-6 lg:px-8">
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <div className="bg-white py-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
         <Link
           href="/medicines"
           className="mb-6 inline-flex items-center gap-2 text-sm text-teal-600 hover:text-teal-700"
@@ -307,5 +363,6 @@ export default async function MedicineDetailPage({
         </div>
       </div>
     </div>
+    </>
   )
 }

@@ -20,6 +20,7 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
     select: {
       name: true,
       description: true,
+      imageUrl: true,
     },
   })
 
@@ -29,9 +30,29 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
     }
   }
 
+  const title = `${category.name} - অনলাইনে কিনুন সেরা দামে | Halalzi`
+  const description = category.description || `${category.name} পণ্য অনলাইনে কিনুন। সেরা দাম, দ্রুত ডেলিভারি, এবং নিরাপদ পেমেন্ট। Halalzi - আপনার বিশ্বস্ত অনলাইন ফার্মেসি।`
+
   return {
-    title: `${category.name} - HealthPlus`,
-    description: category.description || `Browse ${category.name} products at HealthPlus`,
+    title,
+    description,
+    keywords: `${category.name}, ${category.name} অনলাইন, ${category.name} কিনুন, ${category.name} দাম, Halalzi`,
+    openGraph: {
+      title,
+      description,
+      type: 'website',
+      url: `https://halalzi.com/category/${slug}`,
+      images: category.imageUrl ? [category.imageUrl] : undefined,
+      siteName: 'Halalzi',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+    },
+    alternates: {
+      canonical: `https://halalzi.com/category/${slug}`,
+    },
   }
 }
 
@@ -166,16 +187,73 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     }))
   }
 
+  // Generate JSON-LD structured data for SEO
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: 'https://halalzi.com',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: category.name,
+        item: `https://halalzi.com/category/${slug}`,
+      },
+    ],
+  }
+
+  const itemListJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: category.name,
+    description: category.description || `${category.name} পণ্য`,
+    numberOfItems: items.length,
+    itemListElement: items.slice(0, 10).map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      item: {
+        '@type': 'Product',
+        name: item.name,
+        url: `https://halalzi.com/${category.isMedicineCategory ? 'medicines' : 'products'}/${item.slug}`,
+        image: item.imageUrl || undefined,
+        offers: {
+          '@type': 'Offer',
+          priceCurrency: 'BDT',
+          price: item.discountPercentage && item.discountPercentage > 0
+            ? item.sellingPrice * (1 - item.discountPercentage / 100)
+            : item.sellingPrice,
+          availability: item.stockQuantity > 0
+            ? 'https://schema.org/InStock'
+            : 'https://schema.org/OutOfStock',
+        },
+      },
+    })),
+  }
+
   return (
-    <div className="bg-white py-8">
-      <div className="w-full px-4 sm:px-6 lg:px-8">
-        {/* Category Header */}
-        <div className="mb-8">
-          <nav className="mb-4 text-sm text-gray-500">
-            <Link href="/" className="hover:text-teal-600">Home</Link>
-            <span className="mx-2">/</span>
-            <span className="text-gray-900">{category.name}</span>
-          </nav>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
+      />
+      <div className="bg-white py-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
+          {/* Category Header */}
+          <div className="mb-8">
+            <nav className="mb-4 text-sm text-gray-500">
+              <Link href="/" className="hover:text-teal-600">Home</Link>
+              <span className="mx-2">/</span>
+              <span className="text-gray-900">{category.name}</span>
+            </nav>
           
           <div className="flex items-center gap-4">
             {category.imageUrl && (
@@ -307,7 +385,8 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             })}
           </div>
         )}
+        </div>
       </div>
-    </div>
+    </>
   )
 }

@@ -324,10 +324,44 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const normalizedLeaf = leafCategoryName?.trim().toLowerCase() || ''
   const showTopLine = !!topLineText && normalizedTop !== normalizedLeaf
 
+  // Generate JSON-LD structured data for SEO
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    description: product.description || `${product.name} - Buy online at best price`,
+    image: product.imageUrl || undefined,
+    sku: product.id,
+    brand: product.manufacturer?.name || product.brandName ? {
+      '@type': 'Brand',
+      name: product.manufacturer?.name || product.brandName,
+    } : undefined,
+    category: product.category?.name,
+    offers: {
+      '@type': 'Offer',
+      url: `https://halalzi.com/products/${slug}`,
+      priceCurrency: 'BDT',
+      price: sellingPrice,
+      priceValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      availability: stockQuantity > 0 
+        ? 'https://schema.org/InStock' 
+        : 'https://schema.org/OutOfStock',
+      seller: {
+        '@type': 'Organization',
+        name: 'Halalzi',
+      },
+    },
+  }
+
   return (
-    <div className="bg-gray-50 py-8">
-      {/* MedEasy-style layout: centered container matching home page */}
-      <div className="w-full max-w-[1480px] mx-auto px-4">
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <div className="bg-gray-50 py-8">
+        {/* MedEasy-style layout: centered container matching home page */}
+        <div className="w-full max-w-[1480px] mx-auto px-4">
         <Link
           href={product.category?.slug ? `/category/${product.category.slug}` : '/products'}
           className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
@@ -513,5 +547,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
         )}
       </div>
     </div>
+    </>
   )
 }
