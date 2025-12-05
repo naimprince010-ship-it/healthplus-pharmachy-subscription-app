@@ -195,6 +195,19 @@ export default function MembershipBannerSettingsPage() {
       const file = e.target.files?.[0]
       if (!file || !settings) return
 
+      const MAX_FILE_SIZE = 4 * 1024 * 1024 // 4MB - Vercel serverless function limit
+      if (file.size > MAX_FILE_SIZE) {
+        const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1)
+        setMessage({ 
+          type: 'error', 
+          text: `ছবির সাইজ ${fileSizeMB}MB - সর্বোচ্চ 4MB হতে হবে। অনুগ্রহ করে ছবি compress করুন।` 
+        })
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ''
+        }
+        return
+      }
+
       setUploading(true)
       setMessage(null)
 
@@ -208,7 +221,21 @@ export default function MembershipBannerSettingsPage() {
           body: formData,
         })
 
-        const data = await res.json()
+        if (res.status === 413) {
+          setMessage({ 
+            type: 'error', 
+            text: 'ছবির সাইজ অনেক বড়। সর্বোচ্চ 4MB হতে হবে। অনুগ্রহ করে ছবি compress করুন।' 
+          })
+          return
+        }
+
+        let data
+        try {
+          data = await res.json()
+        } catch {
+          setMessage({ type: 'error', text: 'সার্ভার থেকে অপ্রত্যাশিত response এসেছে' })
+          return
+        }
 
         if (res.ok && data.url) {
           setSettings({ ...settings, imageUrl: data.url })
