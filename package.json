@@ -26,6 +26,7 @@
     "@types/bcryptjs": "^2.4.6",
     "adm-zip": "^0.5.16",
     "bcryptjs": "^3.0.3",
+    "cheerio": "^1.1.2",
     "clsx": "^2.1.1",
     "csv-parse": "^6.1.0",
     "date-fns": "^4.1.0",
