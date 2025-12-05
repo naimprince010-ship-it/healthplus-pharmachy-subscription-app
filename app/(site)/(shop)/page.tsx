@@ -51,9 +51,9 @@ async function getMembershipBannerSettings(): Promise<MembershipBannerSettings> 
     let features: Feature[] = DEFAULT_BANNER_SETTINGS.features
     if (settings.features) {
       if (typeof settings.features === 'string') {
-        features = JSON.parse(settings.features)
+        features = JSON.parse(settings.features) as Feature[]
       } else if (Array.isArray(settings.features)) {
-        features = settings.features as Feature[]
+        features = settings.features as unknown as Feature[]
       }
     }
     return {
