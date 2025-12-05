@@ -2,9 +2,32 @@ import { buildProductWhereClause } from '@/lib/homeSections'
 import { DesktopHome } from '@/components/DesktopHome'
 import { MobileHome } from '@/components/MobileHome'
 import { getEffectivePrices } from '@/lib/pricing'
+import type { MembershipBannerSettings } from '@/components/MembershipBanner'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
+
+interface Feature {
+  iconKey: string
+  text: string
+}
+
+const DEFAULT_BANNER_SETTINGS: MembershipBannerSettings = {
+  isEnabled: true,
+  badge: 'Premium Membership',
+  headline: 'হালালজি প্রিমিয়াম মেম্বারশিপ',
+  subheadline: 'আনলিমিটেড ফ্রি ডেলিভারি, অতিরিক্ত ডিসকাউন্ট এবং ফ্রি ডাক্তার পরামর্শ—সবই এক ছাদের নিচে। আপনার এবং পরিবারের সুস্বাস্থ্যের জন্য সেরা ইনভেস্টমেন্ট।',
+  priceText: 'প্যাকেজ শুরু মাত্র ৯৯ টাকা থেকে!',
+  ctaLabel: 'সব প্ল্যান দেখুন',
+  ctaHref: '/membership',
+  features: [
+    { iconKey: 'delivery', text: 'আনলিমিটেড ফ্রি ডেলিভারি' },
+    { iconKey: 'discount', text: 'ফ্ল্যাট ডিসকাউন্ট' },
+    { iconKey: 'doctor', text: 'ডাক্তার কনসালটেশন' },
+  ],
+  bgColor: '#0b3b32',
+  textColor: '#ffffff',
+}
 
 async function getSubscriptionPlans() {
   try {
@@ -18,14 +41,35 @@ async function getSubscriptionPlans() {
   }
 }
 
-async function getMembershipPlan() {
+async function getMembershipBannerSettings(): Promise<MembershipBannerSettings> {
   try {
     const { prisma } = await import('@/lib/prisma')
-    return await prisma.membershipPlan.findFirst({
-      where: { isActive: true },
-    })
+    const settings = await prisma.membershipBannerSettings.findFirst()
+    if (!settings) {
+      return DEFAULT_BANNER_SETTINGS
+    }
+    let features: Feature[] = DEFAULT_BANNER_SETTINGS.features
+    if (settings.features) {
+      if (typeof settings.features === 'string') {
+        features = JSON.parse(settings.features) as Feature[]
+      } else if (Array.isArray(settings.features)) {
+        features = settings.features as unknown as Feature[]
+      }
+    }
+    return {
+      isEnabled: settings.isEnabled,
+      badge: settings.badge,
+      headline: settings.headline,
+      subheadline: settings.subheadline,
+      priceText: settings.priceText,
+      ctaLabel: settings.ctaLabel,
+      ctaHref: settings.ctaHref,
+      features,
+      bgColor: settings.bgColor,
+      textColor: settings.textColor,
+    }
   } catch {
-    return null
+    return DEFAULT_BANNER_SETTINGS
   }
 }
 
@@ -122,9 +166,9 @@ async function getHomeSections() {
 }
 
 export default async function HomePage() {
-  const [subscriptionPlans, membershipPlan, homeSections] = await Promise.all([
+  const [subscriptionPlans, membershipBannerSettings, homeSections] = await Promise.all([
     getSubscriptionPlans(),
-    getMembershipPlan(),
+    getMembershipBannerSettings(),
     getHomeSections(),
   ])
 
@@ -134,7 +178,7 @@ export default async function HomePage() {
       <div className="hidden lg:block">
         <DesktopHome 
           subscriptionPlans={subscriptionPlans}
-          membershipPlan={membershipPlan}
+          membershipBannerSettings={membershipBannerSettings}
           homeSections={homeSections}
         />
       </div>
@@ -143,7 +187,7 @@ export default async function HomePage() {
       <div className="block lg:hidden">
         <MobileHome 
           subscriptionPlans={subscriptionPlans}
-          membershipPlan={membershipPlan}
+          membershipBannerSettings={membershipBannerSettings}
           homeSections={homeSections}
         />
       </div>
