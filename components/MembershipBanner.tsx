@@ -8,6 +8,8 @@ interface Feature {
   text: string
 }
 
+type ImageSize = 'small' | 'medium' | 'large'
+
 export interface MembershipBannerSettings {
   isEnabled: boolean
   badge: string
@@ -19,6 +21,9 @@ export interface MembershipBannerSettings {
   features: Feature[]
   bgColor: string
   textColor: string
+  imageUrl?: string | null
+  imageAlt?: string
+  imageSize?: ImageSize
 }
 
 interface MembershipBannerProps {
@@ -130,14 +135,29 @@ export function MembershipBanner({ settings, variant = 'desktop' }: MembershipBa
               </ul>
             </div>
 
-            {/* CTA Button - centered on right side */}
+            {/* Right side - Image or CTA Button */}
             <div className="flex items-center justify-center">
-              <Link
-                href={settings.ctaHref}
-                className="rounded-lg bg-white px-6 py-3 text-base font-semibold text-teal-600 transition-transform hover:scale-105 lg:px-8 lg:py-4 lg:text-lg"
-              >
-                {settings.ctaLabel}
-              </Link>
+              {settings.imageUrl ? (
+                <div className={`relative ${
+                  settings.imageSize === 'small' ? 'w-1/4' : 
+                  settings.imageSize === 'large' ? 'w-full' : 
+                  'w-2/3'
+                }`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={settings.imageUrl}
+                    alt={settings.imageAlt || 'Membership banner'}
+                    className="h-auto w-full object-contain"
+                  />
+                </div>
+              ) : (
+                <Link
+                  href={settings.ctaHref}
+                  className="rounded-lg bg-white px-6 py-3 text-base font-semibold text-teal-600 transition-transform hover:scale-105 lg:px-8 lg:py-4 lg:text-lg"
+                >
+                  {settings.ctaLabel}
+                </Link>
+              )}
             </div>
           </div>
         </div>
