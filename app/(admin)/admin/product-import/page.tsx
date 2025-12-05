@@ -12,6 +12,12 @@ interface Category {
   isMedicineCategory?: boolean
 }
 
+interface Manufacturer {
+  id: string
+  name: string
+  slug: string
+}
+
 interface ImportedProduct {
   name: string
   brandName: string | null
@@ -33,42 +39,57 @@ export default function ProductImportPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [importedProduct, setImportedProduct] = useState<ImportedProduct | null>(null)
-  const [categories, setCategories] = useState<Category[]>([])
-  const [aiLoading, setAiLoading] = useState(false)
+    const [categories, setCategories] = useState<Category[]>([])
+    const [manufacturers, setManufacturers] = useState<Manufacturer[]>([])
+    const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState('')
   const [aiLanguage, setAiLanguage] = useState<'en' | 'bn'>('en')
   
-  const [editedProduct, setEditedProduct] = useState({
-    name: '',
-    brandName: '',
-    description: '',
-    sellingPrice: '',
-    mrp: '',
-    stockQuantity: '100',
-    categoryId: '',
-    packSize: '',
-    keyFeatures: '',
-    specSummary: '',
-    seoTitle: '',
-    seoDescription: '',
-    seoKeywords: '',
-  })
+    const [editedProduct, setEditedProduct] = useState({
+      name: '',
+      brandName: '',
+      description: '',
+      sellingPrice: '',
+      mrp: '',
+      stockQuantity: '100',
+      categoryId: '',
+      manufacturerId: '',
+      packSize: '',
+      keyFeatures: '',
+      specSummary: '',
+      seoTitle: '',
+      seoDescription: '',
+      seoKeywords: '',
+    })
 
-  useEffect(() => {
-    fetchCategories()
-  }, [])
+    useEffect(() => {
+      fetchCategories()
+      fetchManufacturers()
+    }, [])
 
-  const fetchCategories = async () => {
-    try {
-      const res = await fetch('/api/admin/categories')
-      const data = await res.json()
-      if (res.ok) {
-        setCategories(data.categories || [])
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch('/api/admin/categories')
+        const data = await res.json()
+        if (res.ok) {
+          setCategories(data.categories || [])
+        }
+      } catch (error) {
+        console.error('Failed to fetch categories:', error)
       }
-    } catch (error) {
-      console.error('Failed to fetch categories:', error)
     }
-  }
+
+    const fetchManufacturers = async () => {
+      try {
+        const res = await fetch('/api/admin/manufacturers')
+        const data = await res.json()
+        if (res.ok) {
+          setManufacturers(data.manufacturers || [])
+        }
+      } catch (error) {
+        console.error('Failed to fetch manufacturers:', error)
+      }
+    }
 
   const handleAIGenerate = async () => {
     if (!editedProduct.name) {
@@ -140,22 +161,23 @@ export default function ProductImportPage() {
         throw new Error(data.error || 'Failed to import product')
       }
       
-      setImportedProduct(data.product)
-      setEditedProduct({
-        name: data.product.name || '',
-        brandName: data.product.brandName || '',
-        description: data.product.description || '',
-        sellingPrice: data.product.sellingPrice?.toString() || '',
-        mrp: data.product.mrp?.toString() || '',
-        stockQuantity: '100',
-        categoryId: '',
-        packSize: data.product.packSize || '',
-        keyFeatures: '',
-        specSummary: '',
-        seoTitle: '',
-        seoDescription: '',
-        seoKeywords: '',
-      })
+            setImportedProduct(data.product)
+            setEditedProduct({
+              name: data.product.name || '',
+              brandName: data.product.brandName || '',
+              description: data.product.description || '',
+              sellingPrice: data.product.sellingPrice?.toString() || '',
+              mrp: data.product.mrp?.toString() || '',
+              stockQuantity: '100',
+              categoryId: '',
+              manufacturerId: '',
+              packSize: data.product.packSize || '',
+              keyFeatures: '',
+              specSummary: '',
+              seoTitle: '',
+              seoDescription: '',
+              seoKeywords: '',
+            })
       
       toast.success('Product details fetched successfully!')
     } catch (err) {
@@ -186,19 +208,20 @@ export default function ProductImportPage() {
     setLoading(true)
     
     try {
-      const productData = {
-        type: 'GENERAL',
-        name: editedProduct.name.trim(),
-        brandName: editedProduct.brandName.trim() || undefined,
-        description: editedProduct.description.trim() || undefined,
-        sellingPrice: parseFloat(editedProduct.sellingPrice),
-        mrp: editedProduct.mrp ? parseFloat(editedProduct.mrp) : undefined,
-        stockQuantity: parseInt(editedProduct.stockQuantity) || 100,
-        imageUrl: importedProduct?.imageUrl || undefined,
-        isActive: true,
-        categoryId: editedProduct.categoryId,
-        sizeLabel: editedProduct.packSize.trim() || undefined,
-        keyFeatures: editedProduct.keyFeatures.trim() || undefined,
+            const productData = {
+              type: 'GENERAL',
+              name: editedProduct.name.trim(),
+              brandName: editedProduct.brandName.trim() || undefined,
+              description: editedProduct.description.trim() || undefined,
+              sellingPrice: parseFloat(editedProduct.sellingPrice),
+              mrp: editedProduct.mrp ? parseFloat(editedProduct.mrp) : undefined,
+              stockQuantity: parseInt(editedProduct.stockQuantity) || 100,
+              imageUrl: importedProduct?.imageUrl || undefined,
+              isActive: true,
+              categoryId: editedProduct.categoryId,
+              manufacturerId: editedProduct.manufacturerId || undefined,
+              sizeLabel: editedProduct.packSize.trim() || undefined,
+              keyFeatures: editedProduct.keyFeatures.trim() || undefined,
         specSummary: editedProduct.specSummary.trim() || undefined,
         seoTitle: editedProduct.seoTitle.trim() || undefined,
         seoDescription: editedProduct.seoDescription.trim() || undefined,
@@ -396,29 +419,47 @@ export default function ProductImportPage() {
                 </div>
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Category <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={editedProduct.categoryId}
-                  onChange={(e) => setEditedProduct({ ...editedProduct, categoryId: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  required
-                >
-                  <option value="">Select Category</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">
+                                Category <span className="text-red-500">*</span>
+                              </label>
+                              <select
+                                value={editedProduct.categoryId}
+                                onChange={(e) => setEditedProduct({ ...editedProduct, categoryId: e.target.value })}
+                                className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                required
+                              >
+                                <option value="">Select Category</option>
+                                {categories.map((cat) => (
+                                  <option key={cat.id} value={cat.id}>
+                                    {cat.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">
+                                Manufacturer
+                              </label>
+                              <select
+                                value={editedProduct.manufacturerId}
+                                onChange={(e) => setEditedProduct({ ...editedProduct, manufacturerId: e.target.value })}
+                                className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                              >
+                                <option value="">Select Manufacturer</option>
+                                {manufacturers.map((mfr) => (
+                                  <option key={mfr.id} value={mfr.id}>
+                                    {mfr.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Description
-                </label>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">
+                                Description
+                              </label>
                 <textarea
                   rows={4}
                   value={editedProduct.description}
