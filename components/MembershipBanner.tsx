@@ -133,15 +133,23 @@ export function MembershipBanner({ settings, variant = 'desktop' }: MembershipBa
                   </li>
                 ))}
               </ul>
+
+              {/* CTA Button - always visible below features */}
+              <Link
+                href={settings.ctaHref}
+                className="mt-6 inline-block rounded-lg bg-white px-6 py-3 text-base font-semibold text-teal-600 transition-transform hover:scale-105 lg:mt-8 lg:px-8 lg:py-4 lg:text-lg"
+              >
+                {settings.ctaLabel}
+              </Link>
             </div>
 
-            {/* Right side - Image or CTA Button */}
-            <div className="flex items-center justify-center">
-              {settings.imageUrl ? (
+            {/* Right side - Image */}
+            {settings.imageUrl && (
+              <div className="flex items-center justify-center">
                 <div className={`relative ${
-                  settings.imageSize === 'small' ? 'w-1/4' : 
+                  settings.imageSize === 'small' ? 'w-1/2' : 
                   settings.imageSize === 'large' ? 'w-full' : 
-                  'w-2/3'
+                  'w-3/4'
                 }`}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -150,15 +158,8 @@ export function MembershipBanner({ settings, variant = 'desktop' }: MembershipBa
                     className="h-auto w-full object-contain"
                   />
                 </div>
-              ) : (
-                <Link
-                  href={settings.ctaHref}
-                  className="rounded-lg bg-white px-6 py-3 text-base font-semibold text-teal-600 transition-transform hover:scale-105 lg:px-8 lg:py-4 lg:text-lg"
-                >
-                  {settings.ctaLabel}
-                </Link>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
