@@ -3,7 +3,7 @@
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
-import { ArrowLeft, Phone, Loader2, CheckCircle, Circle, MapPin, Clock } from 'lucide-react'
+import { ArrowLeft, Phone, Loader2, CheckCircle, Circle, MapPin, Clock, RefreshCw, ShoppingCart } from 'lucide-react'
 import Image from 'next/image'
 
 interface OrderItem {
@@ -90,6 +90,8 @@ export default function OrderTrackingPage() {
   const [settings, setSettings] = useState<OrderTrackingSettings | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [isReordering, setIsReordering] = useState(false)
+  const [reorderMessage, setReorderMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   useEffect(() => {
     if (sessionStatus === 'unauthenticated') {
@@ -176,6 +178,47 @@ export default function OrderTrackingPage() {
       return 'active'
     }
     return 'pending'
+  }
+
+  const handleReorder = async () => {
+    if (!order) return
+    
+    setIsReordering(true)
+    setReorderMessage(null)
+    
+    try {
+      const response = await fetch(`/api/orders/${order.id}/reorder`, {
+        method: 'POST',
+      })
+      
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'রি-অর্ডার করতে সমস্যা হয়েছে')
+      }
+      
+      if (data.addedItems && data.addedItems.length > 0) {
+        setReorderMessage({
+          type: 'success',
+          text: data.message,
+        })
+        setTimeout(() => {
+          router.push('/cart')
+        }, 1500)
+      } else {
+        setReorderMessage({
+          type: 'error',
+          text: data.message || 'কোনো পণ্য কার্টে যোগ করা যায়নি',
+        })
+      }
+    } catch (err) {
+      setReorderMessage({
+        type: 'error',
+        text: err instanceof Error ? err.message : 'রি-অর্ডার করতে সমস্যা হয়েছে',
+      })
+    } finally {
+      setIsReordering(false)
+    }
   }
 
   if (sessionStatus === 'loading' || loading) {
@@ -394,6 +437,36 @@ export default function OrderTrackingPage() {
               <span className="text-gray-900">{settings?.totalLabelBn || 'সর্বমোট:'}</span>
               <span className="text-[#00A651]">৳{order.total.toFixed(0)}</span>
             </div>
+          </div>
+
+          {/* Re-order Button */}
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            {reorderMessage && (
+              <div className={`mb-3 p-3 rounded-lg text-sm ${
+                reorderMessage.type === 'success' 
+                  ? 'bg-green-50 text-green-700 border border-green-200' 
+                  : 'bg-red-50 text-red-700 border border-red-200'
+              }`}>
+                {reorderMessage.text}
+              </div>
+            )}
+            <button
+              onClick={handleReorder}
+              disabled={isReordering}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#00A651] text-white rounded-xl font-medium hover:bg-[#008f45] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            >
+              {isReordering ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  রি-অর্ডার হচ্ছে...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-5 h-5" />
+                  আবার অর্ডার করুন
+                </>
+              )}
+            </button>
           </div>
         </div>
 
