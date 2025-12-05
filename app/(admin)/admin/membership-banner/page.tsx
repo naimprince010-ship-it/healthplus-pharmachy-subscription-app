@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Save, Loader2, Plus, Trash2, Eye, EyeOff, Truck, Percent, Stethoscope, Check } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Save, Loader2, Plus, Trash2, Eye, EyeOff, Truck, Percent, Stethoscope, Check, Upload } from 'lucide-react'
 
 interface Feature {
   iconKey: string
@@ -84,11 +84,13 @@ function FeatureIcon({ iconKey, className }: { iconKey: string; className?: stri
 }
 
 export default function MembershipBannerSettingsPage() {
-  const [settings, setSettings] = useState<MembershipBannerSettings | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
-  const [showPreview, setShowPreview] = useState(true)
+    const [settings, setSettings] = useState<MembershipBannerSettings | null>(null)
+    const [loading, setLoading] = useState(true)
+    const [saving, setSaving] = useState(false)
+    const [uploading, setUploading] = useState(false)
+    const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+    const [showPreview, setShowPreview] = useState(true)
+    const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     fetchSettings()
@@ -181,15 +183,51 @@ export default function MembershipBannerSettingsPage() {
     })
   }
 
-  const removeFeature = (index: number) => {
-    if (!settings) return
-    setSettings({
-      ...settings,
-      features: settings.features.filter((_, i) => i !== index),
-    })
-  }
+    const removeFeature = (index: number) => {
+      if (!settings) return
+      setSettings({
+        ...settings,
+        features: settings.features.filter((_, i) => i !== index),
+      })
+    }
 
-  if (loading) {
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      if (!file || !settings) return
+
+      setUploading(true)
+      setMessage(null)
+
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('bannerId', 'membership-banner')
+
+        const res = await fetch('/api/admin/uploads/banner-image', {
+          method: 'POST',
+          body: formData,
+        })
+
+        const data = await res.json()
+
+        if (res.ok && data.url) {
+          setSettings({ ...settings, imageUrl: data.url })
+          setMessage({ type: 'success', text: 'ছবি আপলোড হয়েছে!' })
+        } else {
+          setMessage({ type: 'error', text: data.error || 'ছবি আপলোড ব্যর্থ হয়েছে' })
+        }
+      } catch (error) {
+        console.error('Image upload error:', error)
+        setMessage({ type: 'error', text: 'ছবি আপলোড ব্যর্থ হয়েছে' })
+      } finally {
+        setUploading(false)
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ''
+        }
+      }
+    }
+
+    if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
@@ -419,26 +457,53 @@ export default function MembershipBannerSettingsPage() {
               </div>
             </div>
 
-            {/* Banner Image Section */}
-            <div className="rounded-lg border border-gray-200 bg-white p-6">
-              <h2 className="mb-4 text-lg font-semibold text-gray-900">Banner Image (ব্যানার ছবি)</h2>
-              <p className="mb-4 text-sm text-gray-500">
-                ডান পাশে একটি ছবি যোগ করুন। ছবি না দিলে শুধু টেক্সট দেখাবে।
-              </p>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Image URL (ছবির লিংক)</label>
-                  <input
-                    type="text"
-                    value={settings.imageUrl || ''}
-                    onChange={(e) => handleChange('imageUrl', e.target.value || null)}
-                    placeholder="https://example.com/image.jpg or /images/banner.png"
-                    className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    ছবি আপলোড করতে Cloudinary বা অন্য কোনো image hosting service ব্যবহার করুন, অথবা /images/ ফোল্ডারে ছবি রাখুন
-                  </p>
-                </div>
+                        {/* Banner Image Section */}
+                        <div className="rounded-lg border border-gray-200 bg-white p-6">
+                          <h2 className="mb-4 text-lg font-semibold text-gray-900">Banner Image (ব্যানার ছবি)</h2>
+                          <p className="mb-4 text-sm text-gray-500">
+                            ডান পাশে একটি ছবি যোগ করুন। ছবি না দিলে শুধু টেক্সট দেখাবে।
+                          </p>
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">ছবি আপলোড করুন</label>
+                              <div className="mt-2 flex items-center gap-3">
+                                <input
+                                  ref={fileInputRef}
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={handleImageUpload}
+                                  className="hidden"
+                                  id="banner-image-upload"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => fileInputRef.current?.click()}
+                                  disabled={uploading}
+                                  className="flex items-center gap-2 rounded-lg border border-teal-600 bg-teal-50 px-4 py-2 text-sm font-medium text-teal-700 hover:bg-teal-100 disabled:opacity-50"
+                                >
+                                  {uploading ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Upload className="h-4 w-4" />
+                                  )}
+                                  {uploading ? 'আপলোড হচ্ছে...' : 'ছবি আপলোড করুন'}
+                                </button>
+                                <span className="text-sm text-gray-500">অথবা</span>
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">Image URL (ছবির লিংক)</label>
+                              <input
+                                type="text"
+                                value={settings.imageUrl || ''}
+                                onChange={(e) => handleChange('imageUrl', e.target.value || null)}
+                                placeholder="https://example.com/image.jpg or /images/banner.png"
+                                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                              />
+                              <p className="mt-1 text-xs text-gray-500">
+                                সরাসরি URL দিতে পারেন অথবা উপরের বাটন দিয়ে আপলোড করুন
+                              </p>
+                            </div>
                 {settings.imageUrl && (
                   <div className="mt-2">
                     <p className="mb-2 text-sm font-medium text-gray-700">Preview:</p>
