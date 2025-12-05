@@ -134,13 +134,15 @@ export function MembershipBanner({ settings, variant = 'desktop' }: MembershipBa
                 ))}
               </ul>
 
-              {/* CTA Button - always visible below features */}
-              <Link
-                href={settings.ctaHref}
-                className="mt-6 inline-block rounded-lg bg-white px-6 py-3 text-base font-semibold text-teal-600 transition-transform hover:scale-105 lg:mt-8 lg:px-8 lg:py-4 lg:text-lg"
-              >
-                {settings.ctaLabel}
-              </Link>
+              {/* CTA Button - centered below features */}
+              <div className="mt-6 flex justify-center lg:mt-8">
+                <Link
+                  href={settings.ctaHref}
+                  className="rounded-lg bg-white px-6 py-3 text-base font-semibold text-teal-600 transition-transform hover:scale-105 lg:px-8 lg:py-4 lg:text-lg"
+                >
+                  {settings.ctaLabel}
+                </Link>
+              </div>
             </div>
 
             {/* Right side - Image */}
