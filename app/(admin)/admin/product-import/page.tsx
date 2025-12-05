@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Download, ExternalLink, AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
+import { Download, ExternalLink, AlertCircle, CheckCircle, Loader2, Sparkles } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface Category {
@@ -34,6 +34,9 @@ export default function ProductImportPage() {
   const [error, setError] = useState<string | null>(null)
   const [importedProduct, setImportedProduct] = useState<ImportedProduct | null>(null)
   const [categories, setCategories] = useState<Category[]>([])
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState('')
+  const [aiLanguage, setAiLanguage] = useState<'en' | 'bn'>('en')
   
   const [editedProduct, setEditedProduct] = useState({
     name: '',
@@ -44,6 +47,11 @@ export default function ProductImportPage() {
     stockQuantity: '100',
     categoryId: '',
     packSize: '',
+    keyFeatures: '',
+    specSummary: '',
+    seoTitle: '',
+    seoDescription: '',
+    seoKeywords: '',
   })
 
   useEffect(() => {
@@ -59,6 +67,51 @@ export default function ProductImportPage() {
       }
     } catch (error) {
       console.error('Failed to fetch categories:', error)
+    }
+  }
+
+  const handleAIGenerate = async () => {
+    if (!editedProduct.name) {
+      setAiError('Please enter a product name first')
+      return
+    }
+
+    setAiLoading(true)
+    setAiError('')
+
+    try {
+      const res = await fetch('/api/ai/product-helper', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productName: editedProduct.name,
+          brandName: editedProduct.brandName || undefined,
+          category: categories.find(c => c.id === editedProduct.categoryId)?.name || undefined,
+          language: aiLanguage,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        setEditedProduct(prev => ({
+          ...prev,
+          description: data.description || prev.description,
+          keyFeatures: data.keyFeatures?.join('\n') || prev.keyFeatures,
+          specSummary: data.specsSummary || prev.specSummary,
+          seoTitle: data.seoTitle || prev.seoTitle,
+          seoDescription: data.seoDescription || prev.seoDescription,
+          seoKeywords: data.seoKeywords?.join(', ') || prev.seoKeywords,
+        }))
+        setAiError('')
+        toast.success('AI content generated successfully!')
+      } else {
+        setAiError(data.error || 'AI generation failed')
+      }
+    } catch (error) {
+      setAiError('AI generation failed. Please try again.')
+    } finally {
+      setAiLoading(false)
     }
   }
 
@@ -97,6 +150,11 @@ export default function ProductImportPage() {
         stockQuantity: '100',
         categoryId: '',
         packSize: data.product.packSize || '',
+        keyFeatures: '',
+        specSummary: '',
+        seoTitle: '',
+        seoDescription: '',
+        seoKeywords: '',
       })
       
       toast.success('Product details fetched successfully!')
@@ -140,6 +198,11 @@ export default function ProductImportPage() {
         isActive: true,
         categoryId: editedProduct.categoryId,
         sizeLabel: editedProduct.packSize.trim() || undefined,
+        keyFeatures: editedProduct.keyFeatures.trim() || undefined,
+        specSummary: editedProduct.specSummary.trim() || undefined,
+        seoTitle: editedProduct.seoTitle.trim() || undefined,
+        seoDescription: editedProduct.seoDescription.trim() || undefined,
+        seoKeywords: editedProduct.seoKeywords.trim() || undefined,
       }
       
       const res = await fetch('/api/admin/products', {
@@ -363,6 +426,32 @@ export default function ProductImportPage() {
                   className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Key Features
+                </label>
+                <textarea
+                  rows={3}
+                  value={editedProduct.keyFeatures}
+                  onChange={(e) => setEditedProduct({ ...editedProduct, keyFeatures: e.target.value })}
+                  placeholder="Enter key features, one per line"
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Specifications Summary
+                </label>
+                <textarea
+                  rows={3}
+                  value={editedProduct.specSummary}
+                  onChange={(e) => setEditedProduct({ ...editedProduct, specSummary: e.target.value })}
+                  placeholder="Enter specifications"
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+              </div>
             </div>
             
             <div className="space-y-4">
@@ -427,6 +516,114 @@ export default function ProductImportPage() {
                     </dd>
                   </div>
                 </dl>
+              </div>
+
+              <div className="rounded-lg border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50 p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-purple-600" />
+                  <h3 className="text-sm font-semibold text-gray-900">AI Assistant</h3>
+                  <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+                    Beta
+                  </span>
+                </div>
+                
+                <p className="mb-3 text-xs text-gray-600">
+                  Generate SEO content automatically based on product name and category.
+                </p>
+
+                {aiError && (
+                  <div className="mb-3 rounded-lg bg-red-50 p-2 text-xs text-red-600">
+                    {aiError}
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Language
+                    </label>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setAiLanguage('en')}
+                        className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                          aiLanguage === 'en'
+                            ? 'bg-purple-600 text-white'
+                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        English
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAiLanguage('bn')}
+                        className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                          aiLanguage === 'bn'
+                            ? 'bg-purple-600 text-white'
+                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        বাংলা
+                      </button>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleAIGenerate}
+                    disabled={aiLoading || !editedProduct.name}
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    {aiLoading ? 'Generating...' : 'Regenerate with AI'}
+                  </button>
+
+                  <p className="text-xs text-purple-700">
+                    <strong>Tip:</strong> Click to generate Description, Key Features, Specifications, and SEO fields.
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-gray-200 bg-white p-4">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">SEO Settings</h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700">
+                      SEO Title
+                    </label>
+                    <input
+                      type="text"
+                      value={editedProduct.seoTitle}
+                      onChange={(e) => setEditedProduct({ ...editedProduct, seoTitle: e.target.value })}
+                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700">
+                      SEO Description
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={editedProduct.seoDescription}
+                      onChange={(e) => setEditedProduct({ ...editedProduct, seoDescription: e.target.value })}
+                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700">
+                      SEO Keywords
+                    </label>
+                    <input
+                      type="text"
+                      value={editedProduct.seoKeywords}
+                      onChange={(e) => setEditedProduct({ ...editedProduct, seoKeywords: e.target.value })}
+                      placeholder="keyword1, keyword2, keyword3"
+                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
