@@ -1,10 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Download, ExternalLink, AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
+
+interface Category {
+  id: string
+  name: string
+  isMedicineCategory?: boolean
+}
 
 interface ImportedProduct {
   name: string
@@ -27,6 +33,7 @@ export default function ProductImportPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [importedProduct, setImportedProduct] = useState<ImportedProduct | null>(null)
+  const [categories, setCategories] = useState<Category[]>([])
   
   const [editedProduct, setEditedProduct] = useState({
     name: '',
@@ -38,7 +45,23 @@ export default function ProductImportPage() {
     categoryId: '',
   })
 
-  const handleFetch = async (e: React.FormEvent) => {
+  useEffect(() => {
+    fetchCategories()
+  }, [])
+
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch('/api/admin/categories')
+      const data = await res.json()
+      if (res.ok) {
+        setCategories(data.categories || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch categories:', error)
+    }
+  }
+
+  const handleFetch= async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!url.trim()) {
@@ -95,20 +118,25 @@ export default function ProductImportPage() {
       return
     }
     
+    if (!editedProduct.categoryId) {
+      toast.error('Please select a category')
+      return
+    }
+    
     setLoading(true)
     
     try {
       const productData = {
         type: 'GENERAL',
         name: editedProduct.name.trim(),
-        brandName: editedProduct.brandName.trim() || null,
-        description: editedProduct.description.trim() || null,
+        brandName: editedProduct.brandName.trim() || undefined,
+        description: editedProduct.description.trim() || undefined,
         sellingPrice: parseFloat(editedProduct.sellingPrice),
-        mrp: editedProduct.mrp ? parseFloat(editedProduct.mrp) : null,
+        mrp: editedProduct.mrp ? parseFloat(editedProduct.mrp) : undefined,
         stockQuantity: parseInt(editedProduct.stockQuantity) || 100,
-        imageUrl: importedProduct?.imageUrl || null,
+        imageUrl: importedProduct?.imageUrl || undefined,
         isActive: true,
-        categoryId: editedProduct.categoryId || undefined,
+        categoryId: editedProduct.categoryId,
       }
       
       const res = await fetch('/api/admin/products', {
@@ -286,6 +314,25 @@ export default function ProductImportPage() {
                   onChange={(e) => setEditedProduct({ ...editedProduct, stockQuantity: e.target.value })}
                   className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Category <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={editedProduct.categoryId}
+                  onChange={(e) => setEditedProduct({ ...editedProduct, categoryId: e.target.value })}
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  required
+                >
+                  <option value="">Select Category</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
               </div>
               
               <div>
