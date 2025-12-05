@@ -27,6 +27,7 @@ const DEFAULT_BANNER_SETTINGS: MembershipBannerSettings = {
   ],
   bgColor: '#0b3b32',
   textColor: '#ffffff',
+  displayLocations: ['home'],
 }
 
 async function getSubscriptionPlans() {
@@ -56,6 +57,15 @@ async function getMembershipBannerSettings(): Promise<MembershipBannerSettings> 
         features = settings.features as unknown as Feature[]
       }
     }
+    // Parse displayLocations
+    let displayLocations: string[] = DEFAULT_BANNER_SETTINGS.displayLocations || ['home']
+    if (settings.displayLocations) {
+      if (typeof settings.displayLocations === 'string') {
+        displayLocations = JSON.parse(settings.displayLocations) as string[]
+      } else if (Array.isArray(settings.displayLocations)) {
+        displayLocations = settings.displayLocations as unknown as string[]
+      }
+    }
     return {
       isEnabled: settings.isEnabled,
       badge: settings.badge,
@@ -67,6 +77,7 @@ async function getMembershipBannerSettings(): Promise<MembershipBannerSettings> 
       features,
       bgColor: settings.bgColor,
       textColor: settings.textColor,
+      displayLocations,
     }
   } catch {
     return DEFAULT_BANNER_SETTINGS

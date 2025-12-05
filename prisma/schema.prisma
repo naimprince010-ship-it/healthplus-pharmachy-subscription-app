@@ -820,6 +820,8 @@ model MembershipBannerSettings {
   // Styling
   bgColor     String   @default("#0b3b32")
   textColor   String   @default("#ffffff")
+  // Display locations - where to show the banner (home, dashboard, membership)
+  displayLocations Json @default("[\"home\"]")
   updatedAt   DateTime @updatedAt
 }
 

@@ -72,10 +72,12 @@ export function MobileHome({ subscriptionPlans, membershipBannerSettings, homeSe
         <PrescriptionUploadCard />
       </section>
 
-      {/* Membership Banner - Admin Configurable */}
-      <MembershipBanner settings={membershipBannerSettings} variant="mobile" />
+            {/* Membership Banner - Admin Configurable */}
+            {membershipBannerSettings.displayLocations?.includes('home') && (
+              <MembershipBanner settings={membershipBannerSettings} variant="mobile" />
+            )}
 
-      {/* Home Sections - Horizontal Scrollable */}
+            {/* Home Sections - Horizontal Scrollable */}
       {homeSections.map(({ section, products }) => (
         <section key={section.id} className="py-4">
           <div className="mb-3 flex items-center justify-between px-4">

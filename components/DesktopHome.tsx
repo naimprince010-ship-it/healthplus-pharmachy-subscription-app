@@ -102,19 +102,21 @@ export function DesktopHome({ subscriptionPlans, membershipBannerSettings, homeS
             <PrescriptionUploadForm />
           </div>
         </div>
-      </section>
+            </section>
 
-      {/* Home Sections - compact spacing on desktop */}
-      <div className="space-y-2 py-2 lg:space-y-1 lg:py-1">
-        {homeSections.map(({ section, products }) => (
-          <SectionSlider key={section.id} section={section} products={products} />
-        ))}
-      </div>
+            {/* Membership Banner - Admin Configurable (above product sections) */}
+            {membershipBannerSettings.displayLocations?.includes('home') && (
+              <MembershipBanner settings={membershipBannerSettings} variant="desktop" />
+            )}
 
-      {/* Membership Banner - Admin Configurable */}
-      <MembershipBanner settings={membershipBannerSettings} variant="desktop" />
+            {/* Home Sections - compact spacing on desktop */}
+            <div className="space-y-2 py-2 lg:space-y-1 lg:py-1">
+              {homeSections.map(({ section, products }) => (
+                <SectionSlider key={section.id} section={section} products={products} />
+              ))}
+            </div>
 
-      {/* Subscription Plans - full width */}
+            {/* Subscription Plans - full width */}
       <section className="w-full bg-gray-50 py-8 lg:py-12">
         <div className="w-full px-2 sm:px-4">
           <div className="text-center">

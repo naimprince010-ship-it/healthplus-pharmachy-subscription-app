@@ -17,6 +17,7 @@ const DEFAULT_SETTINGS = {
   ],
   bgColor: '#0b3b32',
   textColor: '#ffffff',
+  displayLocations: ['home'],
 }
 
 export async function GET() {
@@ -34,13 +35,23 @@ export async function GET() {
       return NextResponse.json({ settings: DEFAULT_SETTINGS })
     }
 
-    // Parse JSON fields
-    const parsedSettings = {
-      ...settings,
-      features: typeof settings.features === 'string' 
-        ? JSON.parse(settings.features) 
-        : settings.features,
-    }
+        // Parse JSON fields
+        let features = settings.features
+        if (typeof features === 'string') {
+          features = JSON.parse(features)
+        }
+        let displayLocations = settings.displayLocations
+        if (typeof displayLocations === 'string') {
+          displayLocations = JSON.parse(displayLocations)
+        }
+        if (!Array.isArray(displayLocations)) {
+          displayLocations = ['home']
+        }
+        const parsedSettings = {
+          ...settings,
+          features,
+          displayLocations,
+        }
 
     return NextResponse.json({ settings: parsedSettings })
   } catch (error) {

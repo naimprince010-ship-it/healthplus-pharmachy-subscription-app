@@ -8,6 +8,8 @@ interface Feature {
   text: string
 }
 
+type DisplayLocation = 'home' | 'dashboard' | 'membership'
+
 interface MembershipBannerSettings {
   id: string
   isEnabled: boolean
@@ -20,7 +22,14 @@ interface MembershipBannerSettings {
   features: Feature[]
   bgColor: string
   textColor: string
+  displayLocations: DisplayLocation[]
 }
+
+const DISPLAY_LOCATION_OPTIONS: { value: DisplayLocation; label: string }[] = [
+  { value: 'home', label: 'Home Page (হোম পেজ)' },
+  { value: 'dashboard', label: 'Dashboard (ড্যাশবোর্ড)' },
+  { value: 'membership', label: 'Membership Page (মেম্বারশিপ পেজ)' },
+]
 
 const DEFAULT_SETTINGS: Omit<MembershipBannerSettings, 'id'> = {
   isEnabled: true,
@@ -37,6 +46,7 @@ const DEFAULT_SETTINGS: Omit<MembershipBannerSettings, 'id'> = {
   ],
   bgColor: '#0b3b32',
   textColor: '#ffffff',
+  displayLocations: ['home'],
 }
 
 const ICON_OPTIONS = [
@@ -71,30 +81,40 @@ export default function MembershipBannerSettingsPage() {
     fetchSettings()
   }, [])
 
-  const fetchSettings = async () => {
-    try {
-      const res = await fetch('/api/admin/membership-banner')
-      const data = await res.json()
-      if (data.settings) {
-        // Parse features if it's a string
-        const parsedSettings = {
-          ...data.settings,
-          features: typeof data.settings.features === 'string'
-            ? JSON.parse(data.settings.features)
-            : data.settings.features,
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch('/api/admin/membership-banner')
+        const data = await res.json()
+        if (data.settings) {
+          // Parse features and displayLocations if they are strings
+          let features = data.settings.features
+          if (typeof features === 'string') {
+            features = JSON.parse(features)
+          }
+          let displayLocations = data.settings.displayLocations
+          if (typeof displayLocations === 'string') {
+            displayLocations = JSON.parse(displayLocations)
+          }
+          if (!Array.isArray(displayLocations)) {
+            displayLocations = ['home']
+          }
+          const parsedSettings = {
+            ...data.settings,
+            features,
+            displayLocations,
+          }
+          setSettings(parsedSettings)
+        } else {
+          setSettings({ id: '', ...DEFAULT_SETTINGS })
         }
-        setSettings(parsedSettings)
-      } else {
+      } catch (error) {
+        console.error('Failed to fetch settings:', error)
         setSettings({ id: '', ...DEFAULT_SETTINGS })
+        setMessage({ type: 'error', text: 'Failed to load settings, using defaults' })
+      } finally {
+        setLoading(false)
       }
-    } catch (error) {
-      console.error('Failed to fetch settings:', error)
-      setSettings({ id: '', ...DEFAULT_SETTINGS })
-      setMessage({ type: 'error', text: 'Failed to load settings, using defaults' })
-    } finally {
-      setLoading(false)
     }
-  }
 
   const handleSave = async () => {
     if (!settings) return
@@ -143,15 +163,24 @@ export default function MembershipBannerSettingsPage() {
     })
   }
 
-  const removeFeature = (index: number) => {
-    if (!settings) return
-    setSettings({
-      ...settings,
-      features: settings.features.filter((_, i) => i !== index),
-    })
-  }
+    const removeFeature = (index: number) => {
+      if (!settings) return
+      setSettings({
+        ...settings,
+        features: settings.features.filter((_, i) => i !== index),
+      })
+    }
 
-  if (loading) {
+    const toggleDisplayLocation = (location: DisplayLocation, checked: boolean) => {
+      if (!settings) return
+      const current = settings.displayLocations ?? ['home']
+      const next = checked
+        ? Array.from(new Set([...current, location]))
+        : current.filter((loc) => loc !== location)
+      setSettings({ ...settings, displayLocations: next.length > 0 ? next : ['home'] })
+    }
+
+    if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
@@ -217,12 +246,33 @@ export default function MembershipBannerSettingsPage() {
                   />
                   <div className="peer h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-teal-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300"></div>
                 </label>
-              </div>
-            </div>
+                          </div>
+                        </div>
 
-            {/* Content Section */}
-            <div className="rounded-lg border border-gray-200 bg-white p-6">
-              <h2 className="mb-4 text-lg font-semibold text-gray-900">Banner Content</h2>
+                        {/* Display Locations Section */}
+                        <div className="rounded-lg border border-gray-200 bg-white p-6">
+                          <div>
+                            <h2 className="text-lg font-semibold text-gray-900">Display Locations</h2>
+                            <p className="text-sm text-gray-500">Select which pages will show this banner</p>
+                          </div>
+                          <div className="mt-4 space-y-2">
+                            {DISPLAY_LOCATION_OPTIONS.map((option) => (
+                              <label key={option.value} className="flex items-center gap-2 text-sm text-gray-700">
+                                <input
+                                  type="checkbox"
+                                  checked={settings.displayLocations?.includes(option.value) ?? option.value === 'home'}
+                                  onChange={(e) => toggleDisplayLocation(option.value, e.target.checked)}
+                                  className="h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                                />
+                                {option.label}
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Content Section */}
+                        <div className="rounded-lg border border-gray-200 bg-white p-6">
+                          <h2 className="mb-4 text-lg font-semibold text-gray-900">Banner Content</h2>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Badge Text</label>

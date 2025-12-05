@@ -19,6 +19,7 @@ export interface MembershipBannerSettings {
   features: Feature[]
   bgColor: string
   textColor: string
+  displayLocations?: string[]
 }
 
 interface MembershipBannerProps {
