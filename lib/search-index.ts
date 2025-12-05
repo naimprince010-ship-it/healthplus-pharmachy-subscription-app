@@ -22,6 +22,7 @@ export interface SearchableProduct {
   isMedicine: boolean
   medicineId: string | null
   href: string
+  sizeLabel: string | null
 }
 
 let searchIndex: Fuse<SearchableProduct> | null = null
@@ -63,28 +64,29 @@ async function loadProducts(): Promise<SearchableProduct[]> {
 
   return products.map((p) => {
     const rawProduct = p as typeof p & { popularityScore?: number }
-    return {
-      id: p.id,
-      type: p.type,
-      name: p.name,
-      slug: p.slug,
-      brandName: p.medicine?.manufacturer || p.medicine?.brandName || p.brandName || null,
-      genericName: p.medicine?.genericName || null,
-      manufacturer: p.medicine?.manufacturer || null,
-      categoryName: p.category.name,
-      categorySlug: p.category.slug,
-      description: p.description,
-      sellingPrice: p.sellingPrice,
-      mrp: p.mrp,
-      stockQuantity: p.stockQuantity,
-      imageUrl: p.imageUrl,
-      discountPercentage: p.discountPercentage || p.medicine?.discountPercentage || null,
-      popularityScore: rawProduct.popularityScore ?? 0,
-      isFeatured: p.isFeatured,
-      isMedicine: p.type === 'MEDICINE',
-      medicineId: p.medicine?.id || null,
-      href: `/products/${p.slug}`,
-    }
+        return {
+          id: p.id,
+          type: p.type,
+          name: p.name,
+          slug: p.slug,
+          brandName: p.medicine?.manufacturer || p.medicine?.brandName || p.brandName || null,
+          genericName: p.medicine?.genericName || null,
+          manufacturer: p.medicine?.manufacturer || null,
+          categoryName: p.category.name,
+          categorySlug: p.category.slug,
+          description: p.description,
+          sellingPrice: p.sellingPrice,
+          mrp: p.mrp,
+          stockQuantity: p.stockQuantity,
+          imageUrl: p.imageUrl,
+          discountPercentage: p.discountPercentage || p.medicine?.discountPercentage || null,
+          popularityScore: rawProduct.popularityScore ?? 0,
+          isFeatured: p.isFeatured,
+          isMedicine: p.type === 'MEDICINE',
+          medicineId: p.medicine?.id || null,
+          href: `/products/${p.slug}`,
+          sizeLabel: p.sizeLabel || null,
+        }
   })
 }
 

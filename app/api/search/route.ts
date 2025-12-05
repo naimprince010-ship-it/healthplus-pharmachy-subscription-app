@@ -72,6 +72,7 @@ interface SearchableItem {
   isMedicine: boolean
   medicineId: string | null
   href: string
+  sizeLabel: string | null
 }
 
 function formatProduct(p: SearchableItem) {
@@ -110,5 +111,6 @@ function formatSuggestion(p: SearchableItem) {
     manufacturer: p.brandName,
     slug: p.slug,
     href: p.href,
+    sizeLabel: p.sizeLabel,
   }
 }

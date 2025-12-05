@@ -17,6 +17,7 @@ interface SearchSuggestion {
   manufacturer: string | null
   slug: string
   href: string
+  sizeLabel: string | null
 }
 
 interface MedEasyHeaderProps {
@@ -187,12 +188,12 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                                 <div className="flex h-full w-full items-center justify-center text-gray-400 text-xs">No img</div>
                               )}
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
-                              {item.manufacturer && (
-                                <p className="text-xs text-gray-500 truncate">{item.manufacturer}</p>
-                              )}
-                            </div>
+                                                        <div className="flex-1 min-w-0">
+                                                          <p className="text-sm font-medium text-gray-900 truncate">{item.name}{item.sizeLabel ? ` ${item.sizeLabel}` : ''}</p>
+                                                          {item.manufacturer && (
+                                                            <p className="text-xs text-gray-500 truncate">{item.manufacturer}</p>
+                                                          )}
+                                                        </div>
                             <div className="flex-shrink-0 text-sm font-semibold text-teal-600">
                               ৳{item.price}
                             </div>
@@ -381,12 +382,12 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                         <div className="flex h-full w-full items-center justify-center text-gray-400 text-xs">No img</div>
                       )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 line-clamp-2">{item.name}</p>
-                      {item.manufacturer && (
-                        <p className="text-xs text-gray-500 truncate mt-0.5">{item.manufacturer}</p>
-                      )}
-                    </div>
+                                        <div className="flex-1 min-w-0">
+                                          <p className="text-sm font-medium text-gray-900 line-clamp-2">{item.name}{item.sizeLabel ? ` ${item.sizeLabel}` : ''}</p>
+                                          {item.manufacturer && (
+                                            <p className="text-xs text-gray-500 truncate mt-0.5">{item.manufacturer}</p>
+                                          )}
+                                        </div>
                     <div className="flex-shrink-0 text-sm font-semibold text-teal-600">
                       ৳{item.price}
                     </div>
