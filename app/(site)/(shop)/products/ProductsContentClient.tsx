@@ -17,6 +17,7 @@ interface Product {
   mrp: number | null
   stockQuantity: number
   imageUrl: string | null
+  sizeLabel?: string | null
   discountPercentage?: number | null
   category: {
     id: string

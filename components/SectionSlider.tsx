@@ -14,6 +14,7 @@ interface Product {
   mrp: number | null
   stockQuantity: number
   imageUrl: string | null
+  sizeLabel?: string | null
   discountPercentage?: number | null
   flashSalePrice?: number | null
   flashSaleStart?: Date | string | null

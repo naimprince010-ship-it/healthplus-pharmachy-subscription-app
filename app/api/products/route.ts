@@ -139,6 +139,7 @@ export async function GET(request: NextRequest) {
           mrp: true,
           stockQuantity: true,
           imageUrl: true,
+          sizeLabel: true,
           discountPercentage: true,
           flashSalePrice: true,
           flashSaleStart: true,

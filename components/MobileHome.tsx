@@ -106,6 +106,7 @@ export function MobileHome({ subscriptionPlans, membershipBannerSettings, homeSe
                     mrp: product.mrp || null,
                     stockQuantity: product.stockQuantity || 100,
                     imageUrl: product.imageUrl || null,
+                    sizeLabel: product.sizeLabel || null,
                     discountPercentage: product.discountPercentage || null,
                     flashSalePrice: product.flashSalePrice || null,
                     flashSaleStart: product.flashSaleStart || null,
