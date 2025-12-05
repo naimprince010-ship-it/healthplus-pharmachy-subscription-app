@@ -92,6 +92,7 @@ model User {
   memberships   UserMembership[]
   subscriptions Subscription[]
   wishlistItems WishlistItem[]
+  reviews       Review[]
 }
 
 model Address {
@@ -220,6 +221,7 @@ model Product {
   orderItems      OrderItem[]
   cartSuggestions CartSuggestion[]
   wishlistItems   WishlistItem[]
+  reviews         Review[]
 }
 
 model ProductVariant {
@@ -242,6 +244,34 @@ model ProductVariant {
   updatedAt     DateTime @updatedAt
 
   @@unique([productId, variantName])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int      // 1-5 star rating
+  title     String?  // Optional review title
+  comment   String?  // Review text
+  
+  // Relations
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  // Verification & Moderation
+  isVerifiedPurchase Boolean @default(false) // True if user has purchased this product
+  isApproved         Boolean @default(true)  // Admin can hide inappropriate reviews
+  
+  // Helpful votes
+  helpfulCount    Int @default(0)
+  notHelpfulCount Int @default(0)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([userId, productId]) // One review per user per product
+  @@index([productId])
+  @@index([userId])
 }
 
 model Medicine {

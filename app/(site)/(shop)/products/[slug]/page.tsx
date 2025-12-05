@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { ProductDetailClient } from '@/components/ProductDetailClient'
 import { ProductCard } from '@/components/ProductCard'
+import { ProductReviews } from '@/components/ProductReviews'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Metadata } from 'next'
@@ -545,6 +546,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </div>
           </section>
         )}
+
+        {/* Reviews Section */}
+        <section className="mt-10 bg-white rounded-xl p-6 shadow-sm">
+          <ProductReviews productId={product.id} />
+        </section>
       </div>
     </div>
     </>
