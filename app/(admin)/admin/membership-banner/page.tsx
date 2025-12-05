@@ -587,36 +587,57 @@ export default function MembershipBannerSettingsPage() {
                   className="overflow-hidden rounded-2xl p-6 shadow-xl"
                   style={{ backgroundColor: settings.bgColor, color: settings.textColor }}
                 >
-                  {/* Badge */}
-                  <div className="mb-3 inline-flex items-center rounded-full bg-white/20 px-3 py-1.5 text-sm font-semibold">
-                    {settings.badge}
+                  <div className={`${settings.imageUrl ? 'grid grid-cols-2 gap-4' : ''}`}>
+                    <div>
+                      {/* Badge */}
+                      <div className="mb-3 inline-flex items-center rounded-full bg-white/20 px-3 py-1.5 text-sm font-semibold">
+                        {settings.badge}
+                      </div>
+                      
+                      {/* Headline */}
+                      <h2 className="text-2xl font-bold">{settings.headline}</h2>
+                      
+                      {/* Subheadline */}
+                      <p className="mt-3 text-sm opacity-90">{settings.subheadline}</p>
+                      
+                      {/* Price Text */}
+                      <div className="mt-4 inline-block rounded-lg bg-white/20 px-4 py-2 text-lg font-bold">
+                        {settings.priceText}
+                      </div>
+                      
+                      {/* Features */}
+                      <ul className="mt-4 space-y-2">
+                        {settings.features.map((feature, index) => (
+                          <li key={index} className="flex items-center text-sm">
+                            <FeatureIcon iconKey={feature.iconKey} className="mr-2 h-4 w-4" />
+                            {feature.text}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    
+                    {/* Right side - Image or CTA Button */}
+                    <div className="flex items-center justify-center">
+                      {settings.imageUrl ? (
+                        <div className={`relative ${
+                          settings.imageSize === 'small' ? 'w-1/2' : 
+                          settings.imageSize === 'large' ? 'w-full' : 
+                          'w-3/4'
+                        }`}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={settings.imageUrl}
+                            alt={settings.imageAlt || 'Membership banner'}
+                            className="h-auto w-full object-contain"
+                          />
+                        </div>
+                      ) : (
+                        <button className="rounded-lg bg-white px-6 py-3 font-semibold text-teal-700 transition-transform hover:scale-105">
+                          {settings.ctaLabel}
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  
-                  {/* Headline */}
-                  <h2 className="text-2xl font-bold">{settings.headline}</h2>
-                  
-                  {/* Subheadline */}
-                  <p className="mt-3 text-sm opacity-90">{settings.subheadline}</p>
-                  
-                  {/* Price Text */}
-                  <div className="mt-4 inline-block rounded-lg bg-white/20 px-4 py-2 text-lg font-bold">
-                    {settings.priceText}
-                  </div>
-                  
-                  {/* Features */}
-                  <ul className="mt-4 space-y-2">
-                    {settings.features.map((feature, index) => (
-                      <li key={index} className="flex items-center text-sm">
-                        <FeatureIcon iconKey={feature.iconKey} className="mr-2 h-4 w-4" />
-                        {feature.text}
-                      </li>
-                    ))}
-                  </ul>
-                  
-                  {/* CTA Button */}
-                  <button className="mt-6 rounded-lg bg-white px-6 py-3 font-semibold text-teal-700 transition-transform hover:scale-105">
-                    {settings.ctaLabel}
-                  </button>
                 </div>
                 
                 {!settings.isEnabled && (
