@@ -1,6 +1,7 @@
-import { Prisma } from '@prisma/client'
+import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { Footer } from '@/components/Footer'
+
+export const dynamic = 'force-dynamic'
 
 // Default footer settings (used when database table doesn't exist yet)
 const DEFAULT_SETTINGS = {
@@ -48,52 +49,20 @@ const DEFAULT_SETTINGS = {
   copyrightBgColor: '#04241e',
 }
 
-export async function SiteFooter() {
-  let settings = DEFAULT_SETTINGS
-
+export async function GET() {
   try {
-    const footerSettings = await prisma.footerSettings.findFirst()
-    if (footerSettings) {
-      settings = {
-        brandName: footerSettings.brandName,
-        brandDescription: footerSettings.brandDescription,
-        drugLicense: footerSettings.drugLicense,
-        tradeLicense: footerSettings.tradeLicense,
-        quickLinks: footerSettings.quickLinks as typeof DEFAULT_SETTINGS.quickLinks,
-        quickLinksTitle: footerSettings.quickLinksTitle,
-        supportLinks: footerSettings.supportLinks as typeof DEFAULT_SETTINGS.supportLinks,
-        supportLinksTitle: footerSettings.supportLinksTitle,
-        contactTitle: footerSettings.contactTitle,
-        address: footerSettings.address,
-        phone: footerSettings.phone,
-        email: footerSettings.email,
-        socialLinks: footerSettings.socialLinks as typeof DEFAULT_SETTINGS.socialLinks,
-        googlePlayUrl: footerSettings.googlePlayUrl,
-        appStoreUrl: footerSettings.appStoreUrl,
-        copyrightText: footerSettings.copyrightText,
-        developerCredit: footerSettings.developerCredit,
-        paymentMethods: footerSettings.paymentMethods as typeof DEFAULT_SETTINGS.paymentMethods,
-        bgColor: footerSettings.bgColor,
-        textColor: footerSettings.textColor,
-        headingColor: footerSettings.headingColor,
-        hoverColor: footerSettings.hoverColor,
-        copyrightBgColor: footerSettings.copyrightBgColor,
-      }
-    }
-  } catch (err) {
-    // Handle case where FooterSettings table doesn't exist yet (before migration)
-    if (
-      err instanceof Prisma.PrismaClientKnownRequestError &&
-      err.code === 'P2021'
-    ) {
-      console.warn(
-        'FooterSettings table does not exist yet; using default settings.',
-      )
-    } else {
-      console.error('Failed to fetch footer settings:', err)
-    }
-    // Use default settings on error
-  }
+    let settings = await prisma.footerSettings.findFirst()
 
-  return <Footer settings={settings} />
+    if (!settings) {
+      settings = await prisma.footerSettings.create({
+        data: {},
+      })
+    }
+
+    return NextResponse.json({ settings })
+  } catch (error) {
+    console.error('Failed to fetch footer settings:', error)
+    // Fall back to safe defaults so preview builds don't fail
+    return NextResponse.json({ settings: DEFAULT_SETTINGS })
+  }
 }
