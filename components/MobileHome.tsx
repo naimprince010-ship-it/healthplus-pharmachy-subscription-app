@@ -2,10 +2,11 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Shield, Package, Heart, Baby, Activity, Users, ChevronRight, Check } from 'lucide-react'
+import { Shield, Package, Heart, Baby, Activity, Users, ChevronRight } from 'lucide-react'
 import { PrescriptionUploadCard } from '@/components/PrescriptionUploadCard'
 import { ProductCard } from '@/components/ProductCard'
-import type { SubscriptionPlan, MembershipPlan } from '@prisma/client'
+import { MembershipBanner, type MembershipBannerSettings } from '@/components/MembershipBanner'
+import type { SubscriptionPlan } from '@prisma/client'
 
 interface HomeSection {
   section: {
@@ -20,11 +21,11 @@ interface HomeSection {
 
 interface MobileHomeProps {
   subscriptionPlans: SubscriptionPlan[]
-  membershipPlan: MembershipPlan | null
+  membershipBannerSettings: MembershipBannerSettings
   homeSections: HomeSection[]
 }
 
-export function MobileHome({ subscriptionPlans, membershipPlan, homeSections }: MobileHomeProps) {
+export function MobileHome({ subscriptionPlans, membershipBannerSettings, homeSections }: MobileHomeProps) {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section - With Background Image */}
@@ -71,50 +72,8 @@ export function MobileHome({ subscriptionPlans, membershipPlan, homeSections }: 
         <PrescriptionUploadCard />
       </section>
 
-      {/* Membership Card - Modern White Design */}
-      {membershipPlan && (
-        <section className="px-4 py-4">
-          <div className="rounded-2xl bg-white p-6 shadow-md border border-gray-100">
-            {/* Premium Badge */}
-            <div className="mb-4 inline-flex items-center rounded-full bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-700">
-              <Shield className="mr-1.5 h-3.5 w-3.5" />
-              Premium Membership
-            </div>
-            
-            {/* Title */}
-            <h2 className="text-xl font-bold text-gray-900">Monthly Membership</h2>
-            <p className="mt-1 text-sm text-gray-600">
-              Get {membershipPlan.discountPercent}% discount on all medicines for {membershipPlan.durationDays} days
-            </p>
-            
-            {/* Price and Subscribe Button Row */}
-            <div className="mt-4 flex items-center justify-between">
-              <div className="flex items-baseline">
-                <span className="text-3xl font-bold text-gray-900">৳{membershipPlan.price}</span>
-                <span className="ml-1 text-sm text-gray-500">/month</span>
-              </div>
-              <Link
-                href="/membership"
-                className="rounded-lg bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-700 transition-colors"
-              >
-                সাবস্ক্রাইব করুন
-              </Link>
-            </div>
-            
-            {/* Benefits List */}
-            <ul className="mt-4 space-y-2">
-              <li className="flex items-center text-sm text-gray-700">
-                <Check className="mr-2 h-4 w-4 text-teal-600" />
-                {membershipPlan.discountPercent}% discount on all medicines
-              </li>
-              <li className="flex items-center text-sm text-gray-700">
-                <Check className="mr-2 h-4 w-4 text-teal-600" />
-                Valid for {membershipPlan.durationDays} days
-              </li>
-            </ul>
-          </div>
-        </section>
-      )}
+      {/* Membership Banner - Admin Configurable */}
+      <MembershipBanner settings={membershipBannerSettings} variant="mobile" />
 
       {/* Home Sections - Horizontal Scrollable */}
       {homeSections.map(({ section, products }) => (

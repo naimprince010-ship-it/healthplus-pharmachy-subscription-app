@@ -799,6 +799,30 @@ model FooterSettings {
   updatedAt         DateTime @updatedAt
 }
 
+// Membership Banner Settings (singleton - only one row)
+// This controls the membership teaser banner on the homepage
+model MembershipBannerSettings {
+  id          String   @id @default(cuid())
+  isEnabled   Boolean  @default(true)
+  // Badge text (top label)
+  badge       String   @default("Premium Membership")
+  // Main headline
+  headline    String   @default("হালালজি প্রিমিয়াম মেম্বারশিপ")
+  // Sub-headline / description
+  subheadline String   @default("আনলিমিটেড ফ্রি ডেলিভারি, অতিরিক্ত ডিসকাউন্ট এবং ফ্রি ডাক্তার পরামর্শ—সবই এক ছাদের নিচে। আপনার এবং পরিবারের সুস্বাস্থ্যের জন্য সেরা ইনভেস্টমেন্ট।")
+  // Dynamic pricing text
+  priceText   String   @default("প্যাকেজ শুরু মাত্র ৯৯ টাকা থেকে!")
+  // CTA button
+  ctaLabel    String   @default("সব প্ল্যান দেখুন")
+  ctaHref     String   @default("/membership")
+  // Features list - stored as JSON array [{iconKey, text}]
+  features    Json     @default("[{\"iconKey\":\"delivery\",\"text\":\"আনলিমিটেড ফ্রি ডেলিভারি\"},{\"iconKey\":\"discount\",\"text\":\"ফ্ল্যাট ডিসকাউন্ট\"},{\"iconKey\":\"doctor\",\"text\":\"ডাক্তার কনসালটেশন\"}]")
+  // Styling
+  bgColor     String   @default("#0b3b32")
+  textColor   String   @default("#ffffff")
+  updatedAt   DateTime @updatedAt
+}
+
 // Cart Suggestions (cross-sell products shown in cart)
 model CartSuggestion {
   id        String   @id @default(cuid())

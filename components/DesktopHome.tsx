@@ -2,11 +2,12 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Shield, Package, Heart, Baby, Activity, Users, Upload, CheckCircle, Truck } from 'lucide-react'
+import { Package, Heart, Baby, Activity, Users, Upload, CheckCircle, Truck, Shield } from 'lucide-react'
 import PrescriptionUploadForm from '@/components/PrescriptionUploadForm'
 import { PrescriptionUploadModal } from '@/components/PrescriptionUploadModal'
 import { SectionSlider } from '@/components/SectionSlider'
-import type { SubscriptionPlan, MembershipPlan } from '@prisma/client'
+import { MembershipBanner, type MembershipBannerSettings } from '@/components/MembershipBanner'
+import type { SubscriptionPlan } from '@prisma/client'
 
 interface HomeSection {
   section: {
@@ -21,11 +22,11 @@ interface HomeSection {
 
 interface DesktopHomeProps {
   subscriptionPlans: SubscriptionPlan[]
-  membershipPlan: MembershipPlan | null
+  membershipBannerSettings: MembershipBannerSettings
   homeSections: HomeSection[]
 }
 
-export function DesktopHome({ subscriptionPlans, membershipPlan, homeSections }: DesktopHomeProps) {
+export function DesktopHome({ subscriptionPlans, membershipBannerSettings, homeSections }: DesktopHomeProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   return (
@@ -110,59 +111,8 @@ export function DesktopHome({ subscriptionPlans, membershipPlan, homeSections }:
         ))}
       </div>
 
-      {/* Membership Card - full width */}
-      {membershipPlan && (
-        <section className="w-full py-8 lg:py-12">
-          <div className="w-full px-2 sm:px-4">
-            <div className="rounded-2xl bg-gradient-to-r from-teal-600 to-teal-700 p-6 text-white shadow-xl sm:p-8 lg:p-12">
-              <div className="grid gap-6 lg:grid-cols-2 lg:gap-8">
-                <div>
-                  <div className="mb-3 inline-flex items-center rounded-full bg-white/20 px-3 py-1.5 text-sm font-semibold lg:mb-4 lg:px-4 lg:py-2">
-                    <Shield className="mr-2 h-4 w-4" />
-                    Premium Membership
-                  </div>
-                  <h2 className="text-2xl font-bold sm:text-3xl lg:text-4xl">{membershipPlan.name}</h2>
-                  <p className="mt-3 text-base text-teal-50 lg:mt-4 lg:text-lg">
-                    {membershipPlan.description || 'Get 10% discount on all medicines for 30 days'}
-                  </p>
-                  <div className="mt-4 flex items-baseline space-x-2 lg:mt-6">
-                    <span className="text-4xl font-bold lg:text-5xl">৳{membershipPlan.price}</span>
-                    <span className="text-lg text-teal-100 lg:text-xl">/month</span>
-                  </div>
-                  <ul className="mt-4 space-y-2 lg:mt-6 lg:space-y-3">
-                    <li className="flex items-center text-sm lg:text-base">
-                      <svg className="mr-2 h-4 w-4 text-teal-200 lg:mr-3 lg:h-5 lg:w-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      {membershipPlan.discountPercent}% discount on all medicines
-                    </li>
-                    <li className="flex items-center text-sm lg:text-base">
-                      <svg className="mr-2 h-4 w-4 text-teal-200 lg:mr-3 lg:h-5 lg:w-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      Valid for {membershipPlan.durationDays} days
-                    </li>
-                    <li className="flex items-center text-sm lg:text-base">
-                      <svg className="mr-2 h-4 w-4 text-teal-200 lg:mr-3 lg:h-5 lg:w-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      Priority customer support
-                    </li>
-                  </ul>
-                </div>
-                <div className="flex items-center justify-center">
-                  <Link
-                    href="/membership"
-                    className="rounded-lg bg-white px-6 py-3 text-base font-semibold text-teal-600 transition-transform hover:scale-105 lg:px-8 lg:py-4 lg:text-lg"
-                  >
-                    Join Now
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
+      {/* Membership Banner - Admin Configurable */}
+      <MembershipBanner settings={membershipBannerSettings} variant="desktop" />
 
       {/* Subscription Plans - full width */}
       <section className="w-full bg-gray-50 py-8 lg:py-12">
