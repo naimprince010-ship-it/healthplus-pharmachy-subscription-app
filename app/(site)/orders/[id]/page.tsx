@@ -3,7 +3,8 @@
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
-import { ArrowLeft, Phone, Loader2, CheckCircle, Circle, MapPin, Clock, RefreshCw, ShoppingCart } from 'lucide-react'
+import { ArrowLeft, Phone, Loader2, CheckCircle, Circle, MapPin, Clock, RefreshCw } from 'lucide-react'
+import { useCart } from '@/contexts/CartContext'
 import Image from 'next/image'
 
 interface OrderItem {
@@ -86,6 +87,7 @@ export default function OrderTrackingPage() {
   const params = useParams()
   const router = useRouter()
   const { status: sessionStatus } = useSession()
+  const { addItem } = useCart()
   const [order, setOrder] = useState<Order | null>(null)
   const [settings, setSettings] = useState<OrderTrackingSettings | null>(null)
   const [loading, setLoading] = useState(true)
@@ -197,7 +199,23 @@ export default function OrderTrackingPage() {
         throw new Error(data.error || 'রি-অর্ডার করতে সমস্যা হয়েছে')
       }
       
-      if (data.addedItems && data.addedItems.length > 0) {
+      if (data.cartItems && data.cartItems.length > 0) {
+        for (const item of data.cartItems) {
+          addItem({
+            id: item.id,
+            medicineId: item.medicineId,
+            productId: item.productId,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            image: item.image,
+            type: item.type,
+            category: item.category,
+            genericName: item.genericName,
+            slug: item.slug,
+          })
+        }
+        
         setReorderMessage({
           type: 'success',
           text: data.message,

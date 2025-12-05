@@ -9,9 +9,24 @@ interface RouteParams {
   params: Promise<{ id: string }>
 }
 
+interface CartItemData {
+  id: string
+  medicineId?: string
+  productId?: string
+  name: string
+  price: number
+  quantity: number
+  image?: string
+  type: 'MEDICINE' | 'PRODUCT'
+  category?: string
+  genericName?: string
+  slug?: string
+}
+
 /**
  * POST /api/orders/[id]/reorder
- * Add all items from a previous order to the cart
+ * Get all items from a previous order formatted for adding to cart
+ * The client-side code will add these items to the localStorage-based cart
  */
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
@@ -38,6 +53,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
                 sellingPrice: true,
                 stockQuantity: true,
                 isActive: true,
+                imageUrl: true,
+                slug: true,
+                genericName: true,
+                category: {
+                  select: {
+                    name: true,
+                  },
+                },
               },
             },
             product: {
@@ -47,6 +70,13 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
                 sellingPrice: true,
                 stockQuantity: true,
                 isActive: true,
+                imageUrl: true,
+                slug: true,
+                category: {
+                  select: {
+                    name: true,
+                  },
+                },
               },
             },
           },
@@ -68,11 +98,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    const addedItems: Array<{ name: string; quantity: number }> = []
+    const cartItems: CartItemData[] = []
     const unavailableItems: Array<{ name: string; reason: string }> = []
 
     for (const item of order.items) {
-      const itemData = item.medicine || item.product
+      const medicine = item.medicine
+      const product = item.product
+      const itemData = medicine || product
+      
       if (!itemData) continue
 
       if (!itemData.isActive) {
@@ -83,61 +116,50 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         continue
       }
 
+      if (itemData.stockQuantity === 0) {
+        unavailableItems.push({
+          name: itemData.name,
+          reason: 'স্টক শেষ',
+        })
+        continue
+      }
+
+      const quantityToAdd = Math.min(item.quantity, itemData.stockQuantity)
+      
       if (itemData.stockQuantity < item.quantity) {
-        if (itemData.stockQuantity === 0) {
-          unavailableItems.push({
-            name: itemData.name,
-            reason: 'স্টক শেষ',
-          })
-          continue
-        }
         unavailableItems.push({
           name: itemData.name,
           reason: `শুধুমাত্র ${itemData.stockQuantity} টি স্টকে আছে`,
         })
       }
 
-      const quantityToAdd = Math.min(item.quantity, itemData.stockQuantity)
-      if (quantityToAdd === 0) continue
-
-      const existingCartItem = await prisma.cartItem.findFirst({
-        where: {
-          userId: session.user.id,
-          ...(item.medicineId ? { medicineId: item.medicineId } : {}),
-          ...(item.productId ? { productId: item.productId } : {}),
-        },
-      })
-
-      if (existingCartItem) {
-        await prisma.cartItem.update({
-          where: { id: existingCartItem.id },
-          data: {
-            quantity: existingCartItem.quantity + quantityToAdd,
-          },
-        })
-      } else {
-        await prisma.cartItem.create({
-          data: {
-            userId: session.user.id,
-            medicineId: item.medicineId,
-            productId: item.productId,
-            quantity: quantityToAdd,
-          },
-        })
+      const cartItem: CartItemData = {
+        id: itemData.id,
+        name: itemData.name,
+        price: itemData.sellingPrice,
+        quantity: quantityToAdd,
+        image: itemData.imageUrl || undefined,
+        type: medicine ? 'MEDICINE' : 'PRODUCT',
+        category: itemData.category?.name,
+        slug: itemData.slug || undefined,
       }
 
-      addedItems.push({
-        name: itemData.name,
-        quantity: quantityToAdd,
-      })
+      if (medicine) {
+        cartItem.medicineId = medicine.id
+        cartItem.genericName = medicine.genericName || undefined
+      } else if (product) {
+        cartItem.productId = product.id
+      }
+
+      cartItems.push(cartItem)
     }
 
     return NextResponse.json({
       success: true,
-      addedItems,
+      cartItems,
       unavailableItems,
-      message: addedItems.length > 0
-        ? `${addedItems.length} টি পণ্য কার্টে যোগ করা হয়েছে`
+      message: cartItems.length > 0
+        ? `${cartItems.length} টি পণ্য কার্টে যোগ করা হবে`
         : 'কোনো পণ্য কার্টে যোগ করা যায়নি',
     })
   } catch (error) {
