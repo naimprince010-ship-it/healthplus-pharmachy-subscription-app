@@ -27,6 +27,9 @@ const DEFAULT_BANNER_SETTINGS: MembershipBannerSettings = {
   ],
   bgColor: '#0b3b32',
   textColor: '#ffffff',
+  imageUrl: null,
+  imageAlt: '',
+  imageSize: 'medium',
 }
 
 async function getSubscriptionPlans() {
@@ -67,6 +70,9 @@ async function getMembershipBannerSettings(): Promise<MembershipBannerSettings> 
       features,
       bgColor: settings.bgColor,
       textColor: settings.textColor,
+      imageUrl: settings.imageUrl || null,
+      imageAlt: settings.imageAlt || '',
+      imageSize: (settings.imageSize as 'small' | 'medium' | 'large') || 'medium',
     }
   } catch {
     return DEFAULT_BANNER_SETTINGS
