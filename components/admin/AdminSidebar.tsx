@@ -60,6 +60,8 @@ const navItems: NavItem[] = [
         { label: 'Users', href: '/admin/users', icon: Users },
   { label: 'Sales / Reports', href: '/admin/sales', icon: BarChart3 },
   { label: 'Membership Page', href: '/admin/membership-settings', icon: Shield },
+  { label: 'Membership Banner', href: '/admin/membership-banner', icon: Image },
+  { label: 'Footer Settings', href: '/admin/footer-settings', icon: FileText },
   { label: 'Settings', href: '/admin/settings', icon: Settings },
 ]
 
