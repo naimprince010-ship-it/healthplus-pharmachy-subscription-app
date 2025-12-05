@@ -8,6 +8,9 @@ interface Feature {
   text: string
 }
 
+type ImageSize = 'small' | 'medium' | 'large'
+type DisplayLocation = 'home' | 'dashboard' | 'membership'
+
 interface MembershipBannerSettings {
   id: string
   isEnabled: boolean
@@ -20,7 +23,23 @@ interface MembershipBannerSettings {
   features: Feature[]
   bgColor: string
   textColor: string
+  displayLocations: DisplayLocation[]
+  imageUrl: string | null
+  imageAlt: string
+  imageSize: ImageSize
 }
+
+const IMAGE_SIZE_OPTIONS: { value: ImageSize; label: string }[] = [
+  { value: 'small', label: 'Small (25%)' },
+  { value: 'medium', label: 'Medium (40%)' },
+  { value: 'large', label: 'Large (50%)' },
+]
+
+const DISPLAY_LOCATION_OPTIONS: { value: DisplayLocation; label: string }[] = [
+  { value: 'home', label: 'Home Page (হোম পেজ)' },
+  { value: 'dashboard', label: 'Dashboard (ড্যাশবোর্ড)' },
+  { value: 'membership', label: 'Membership Page (মেম্বারশিপ পেজ)' },
+]
 
 const DEFAULT_SETTINGS: Omit<MembershipBannerSettings, 'id'> = {
   isEnabled: true,
@@ -37,6 +56,10 @@ const DEFAULT_SETTINGS: Omit<MembershipBannerSettings, 'id'> = {
   ],
   bgColor: '#0b3b32',
   textColor: '#ffffff',
+  displayLocations: ['home'],
+  imageUrl: null,
+  imageAlt: '',
+  imageSize: 'medium',
 }
 
 const ICON_OPTIONS = [
@@ -76,12 +99,18 @@ export default function MembershipBannerSettingsPage() {
       const res = await fetch('/api/admin/membership-banner')
       const data = await res.json()
       if (data.settings) {
-        // Parse features if it's a string
+        // Parse features and displayLocations if they're strings
         const parsedSettings = {
           ...data.settings,
           features: typeof data.settings.features === 'string'
             ? JSON.parse(data.settings.features)
             : data.settings.features,
+          displayLocations: typeof data.settings.displayLocations === 'string'
+            ? JSON.parse(data.settings.displayLocations)
+            : (data.settings.displayLocations || ['home']),
+          imageUrl: data.settings.imageUrl || null,
+          imageAlt: data.settings.imageAlt || '',
+          imageSize: data.settings.imageSize || 'medium',
         }
         setSettings(parsedSettings)
       } else {
@@ -123,9 +152,18 @@ export default function MembershipBannerSettingsPage() {
     }
   }
 
-  const handleChange = (field: keyof MembershipBannerSettings, value: string | boolean) => {
+  const handleChange = (field: keyof MembershipBannerSettings, value: string | boolean | string[] | null) => {
     if (!settings) return
     setSettings({ ...settings, [field]: value })
+  }
+
+  const handleDisplayLocationToggle = (location: DisplayLocation) => {
+    if (!settings) return
+    const current = settings.displayLocations || []
+    const newLocations = current.includes(location)
+      ? current.filter((l) => l !== location)
+      : [...current, location]
+    setSettings({ ...settings, displayLocations: newLocations })
   }
 
   const handleFeatureChange = (index: number, field: 'iconKey' | 'text', value: string) => {
@@ -378,6 +416,99 @@ export default function MembershipBannerSettingsPage() {
                     />
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Banner Image Section */}
+            <div className="rounded-lg border border-gray-200 bg-white p-6">
+              <h2 className="mb-4 text-lg font-semibold text-gray-900">Banner Image (ব্যানার ছবি)</h2>
+              <p className="mb-4 text-sm text-gray-500">
+                ডান পাশে একটি ছবি যোগ করুন। ছবি না দিলে শুধু টেক্সট দেখাবে।
+              </p>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Image URL (ছবির লিংক)</label>
+                  <input
+                    type="text"
+                    value={settings.imageUrl || ''}
+                    onChange={(e) => handleChange('imageUrl', e.target.value || null)}
+                    placeholder="https://example.com/image.jpg or /images/banner.png"
+                    className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    ছবি আপলোড করতে Cloudinary বা অন্য কোনো image hosting service ব্যবহার করুন, অথবা /images/ ফোল্ডারে ছবি রাখুন
+                  </p>
+                </div>
+                {settings.imageUrl && (
+                  <div className="mt-2">
+                    <p className="mb-2 text-sm font-medium text-gray-700">Preview:</p>
+                    <div className="relative h-32 w-48 overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={settings.imageUrl}
+                        alt="Banner preview"
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleChange('imageUrl', null)}
+                      className="mt-2 text-sm text-red-600 hover:text-red-700"
+                    >
+                      Remove Image (ছবি মুছুন)
+                    </button>
+                  </div>
+                )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Alt Text (ছবির বর্ণনা)</label>
+                  <input
+                    type="text"
+                    value={settings.imageAlt}
+                    onChange={(e) => handleChange('imageAlt', e.target.value)}
+                    placeholder="e.g., Happy family with medicine delivery"
+                    className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Image Size (ছবির আকার)</label>
+                  <p className="mb-2 text-xs text-gray-500">ব্যানারে ছবি কতটুকু জায়গা নেবে</p>
+                  <div className="mt-1 space-y-2">
+                    {IMAGE_SIZE_OPTIONS.map((option) => (
+                      <label key={option.value} className="flex items-center gap-2 text-sm text-gray-700">
+                        <input
+                          type="radio"
+                          name="imageSize"
+                          value={option.value}
+                          checked={settings.imageSize === option.value}
+                          onChange={(e) => handleChange('imageSize', e.target.value)}
+                          className="h-4 w-4 border-gray-300 text-teal-600 focus:ring-teal-500"
+                        />
+                        {option.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Display Locations Section */}
+            <div className="rounded-lg border border-gray-200 bg-white p-6">
+              <h2 className="mb-4 text-lg font-semibold text-gray-900">Display Locations (কোথায় দেখাবে)</h2>
+              <p className="mb-4 text-sm text-gray-500">
+                ব্যানারটি কোন কোন পেজে দেখাবে সেটা সিলেক্ট করুন
+              </p>
+              <div className="space-y-3">
+                {DISPLAY_LOCATION_OPTIONS.map((option) => (
+                  <label key={option.value} className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={settings.displayLocations?.includes(option.value) || false}
+                      onChange={() => handleDisplayLocationToggle(option.value)}
+                      className="h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                    />
+                    <span className="text-sm text-gray-700">{option.label}</span>
+                  </label>
+                ))}
               </div>
             </div>
           </div>

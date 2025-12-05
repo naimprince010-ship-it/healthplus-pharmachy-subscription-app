@@ -820,10 +820,16 @@ model MembershipBannerSettings {
   // Styling
   bgColor     String   @default("#0b3b32")
   textColor   String   @default("#ffffff")
+  // Display locations - where to show the banner (home, dashboard, membership)
+  displayLocations Json @default("[\"home\"]")
+  // Banner image (optional) - shown on right side of desktop banner
+  imageUrl    String?  // URL of the banner image
+  imageAlt    String   @default("") // Alt text for accessibility
+  imageSize   String   @default("medium") // small | medium | large - controls image width
   updatedAt   DateTime @updatedAt
 }
 
-// Cart Suggestions (cross-sell products shown in cart)
+// Cart Suggestions(cross-sell products shown in cart)
 model CartSuggestion {
   id        String   @id @default(cuid())
   productId String
