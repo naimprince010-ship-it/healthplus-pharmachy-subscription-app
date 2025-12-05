@@ -822,6 +822,10 @@ model MembershipBannerSettings {
   textColor   String   @default("#ffffff")
   // Display locations - where to show the banner (home, dashboard, membership)
   displayLocations Json @default("[\"home\"]")
+  // Banner image (optional) - shown on right side of desktop banner
+  imageUrl    String?  // URL of the banner image
+  imageAlt    String   @default("") // Alt text for accessibility
+  imageSize   String   @default("medium") // small | medium | large - controls image width
   updatedAt   DateTime @updatedAt
 }
 

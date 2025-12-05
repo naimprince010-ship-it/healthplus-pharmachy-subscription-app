@@ -10,6 +10,8 @@ interface Feature {
 
 type DisplayLocation = 'home' | 'dashboard' | 'membership'
 
+type ImageSize = 'small' | 'medium' | 'large'
+
 interface MembershipBannerSettings {
   id: string
   isEnabled: boolean
@@ -23,12 +25,21 @@ interface MembershipBannerSettings {
   bgColor: string
   textColor: string
   displayLocations: DisplayLocation[]
+  imageUrl: string | null
+  imageAlt: string
+  imageSize: ImageSize
 }
 
 const DISPLAY_LOCATION_OPTIONS: { value: DisplayLocation; label: string }[] = [
   { value: 'home', label: 'Home Page (হোম পেজ)' },
   { value: 'dashboard', label: 'Dashboard (ড্যাশবোর্ড)' },
   { value: 'membership', label: 'Membership Page (মেম্বারশিপ পেজ)' },
+]
+
+const IMAGE_SIZE_OPTIONS: { value: ImageSize; label: string }[] = [
+  { value: 'small', label: 'Small (২৫% - ছোট)' },
+  { value: 'medium', label: 'Medium (৪০% - মাঝারি)' },
+  { value: 'large', label: 'Large (৫০% - বড়)' },
 ]
 
 const DEFAULT_SETTINGS: Omit<MembershipBannerSettings, 'id'> = {
@@ -47,6 +58,9 @@ const DEFAULT_SETTINGS: Omit<MembershipBannerSettings, 'id'> = {
   bgColor: '#0b3b32',
   textColor: '#ffffff',
   displayLocations: ['home'],
+  imageUrl: null,
+  imageAlt: '',
+  imageSize: 'medium',
 }
 
 const ICON_OPTIONS = [
@@ -390,47 +404,118 @@ export default function MembershipBannerSettingsPage() {
               </div>
             </div>
 
-            {/* Styling Section */}
-            <div className="rounded-lg border border-gray-200 bg-white p-6">
-              <h2 className="mb-4 text-lg font-semibold text-gray-900">Styling</h2>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Background Color</label>
-                  <div className="mt-1 flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={settings.bgColor}
-                      onChange={(e) => handleChange('bgColor', e.target.value)}
-                      className="h-10 w-10 cursor-pointer rounded border border-gray-300"
-                    />
-                    <input
-                      type="text"
-                      value={settings.bgColor}
-                      onChange={(e) => handleChange('bgColor', e.target.value)}
-                      className="flex-1 rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Text Color</label>
-                  <div className="mt-1 flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={settings.textColor}
-                      onChange={(e) => handleChange('textColor', e.target.value)}
-                      className="h-10 w-10 cursor-pointer rounded border border-gray-300"
-                    />
-                    <input
-                      type="text"
-                      value={settings.textColor}
-                      onChange={(e) => handleChange('textColor', e.target.value)}
-                      className="flex-1 rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+                      {/* Styling Section */}
+                      <div className="rounded-lg border border-gray-200 bg-white p-6">
+                        <h2 className="mb-4 text-lg font-semibold text-gray-900">Styling</h2>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Background Color</label>
+                            <div className="mt-1 flex items-center gap-2">
+                              <input
+                                type="color"
+                                value={settings.bgColor}
+                                onChange={(e) => handleChange('bgColor', e.target.value)}
+                                className="h-10 w-10 cursor-pointer rounded border border-gray-300"
+                              />
+                              <input
+                                type="text"
+                                value={settings.bgColor}
+                                onChange={(e) => handleChange('bgColor', e.target.value)}
+                                className="flex-1 rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Text Color</label>
+                            <div className="mt-1 flex items-center gap-2">
+                              <input
+                                type="color"
+                                value={settings.textColor}
+                                onChange={(e) => handleChange('textColor', e.target.value)}
+                                className="h-10 w-10 cursor-pointer rounded border border-gray-300"
+                              />
+                              <input
+                                type="text"
+                                value={settings.textColor}
+                                onChange={(e) => handleChange('textColor', e.target.value)}
+                                className="flex-1 rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Banner Image Section */}
+                      <div className="rounded-lg border border-gray-200 bg-white p-6">
+                        <h2 className="mb-4 text-lg font-semibold text-gray-900">Banner Image (ব্যানার ছবি)</h2>
+                        <p className="mb-4 text-sm text-gray-500">
+                          ডান পাশে একটি ছবি যোগ করুন। ছবি না দিলে শুধু টেক্সট দেখাবে।
+                        </p>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Image URL (ছবির লিংক)</label>
+                            <input
+                              type="text"
+                              value={settings.imageUrl || ''}
+                              onChange={(e) => handleChange('imageUrl', e.target.value || '')}
+                              placeholder="https://example.com/image.jpg"
+                              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                            />
+                            <p className="mt-1 text-xs text-gray-500">
+                              ছবি আপলোড করতে Cloudinary বা অন্য কোনো image hosting service ব্যবহার করুন
+                            </p>
+                          </div>
+                          {settings.imageUrl && (
+                            <div className="mt-2">
+                              <p className="mb-2 text-sm font-medium text-gray-700">Preview:</p>
+                              <div className="relative h-32 w-48 overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={settings.imageUrl}
+                                  alt="Banner preview"
+                                  className="h-full w-full object-contain"
+                                />
+                              </div>
+                              <button
+                                onClick={() => handleChange('imageUrl', '')}
+                                className="mt-2 text-sm text-red-600 hover:text-red-700"
+                              >
+                                Remove Image (ছবি মুছুন)
+                              </button>
+                            </div>
+                          )}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Alt Text (ছবির বর্ণনা)</label>
+                            <input
+                              type="text"
+                              value={settings.imageAlt}
+                              onChange={(e) => handleChange('imageAlt', e.target.value)}
+                              placeholder="e.g., Happy family with medicine"
+                              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Image Size (ছবির আকার)</label>
+                            <p className="mb-2 text-xs text-gray-500">ব্যানারে ছবি কতটুকু জায়গা নেবে</p>
+                            <div className="mt-1 space-y-2">
+                              {IMAGE_SIZE_OPTIONS.map((option) => (
+                                <label key={option.value} className="flex items-center gap-2 text-sm text-gray-700">
+                                  <input
+                                    type="radio"
+                                    name="imageSize"
+                                    value={option.value}
+                                    checked={settings.imageSize === option.value}
+                                    onChange={(e) => handleChange('imageSize', e.target.value)}
+                                    className="h-4 w-4 border-gray-300 text-teal-600 focus:ring-teal-500"
+                                  />
+                                  {option.label}
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
 
           {/* Live Preview */}
           {showPreview && (

@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { Shield, Truck, Percent, Stethoscope, Check } from 'lucide-react'
 
 interface Feature {
@@ -20,6 +21,9 @@ export interface MembershipBannerSettings {
   bgColor: string
   textColor: string
   displayLocations?: string[]
+  imageUrl?: string | null
+  imageAlt?: string
+  imageSize?: 'small' | 'medium' | 'large'
 }
 
 interface MembershipBannerProps {
@@ -93,16 +97,32 @@ export function MembershipBanner({ settings, variant = 'desktop' }: MembershipBa
     )
   }
 
-  // Desktop variant - full width with grid layout
+  // Desktop variant - full width with flex layout
+  // Determine image width class based on imageSize
+  const getImageWidthClass = () => {
+    switch (settings.imageSize) {
+      case 'small':
+        return 'lg:w-1/4'
+      case 'large':
+        return 'lg:w-1/2'
+      case 'medium':
+      default:
+        return 'lg:w-2/5'
+    }
+  }
+
+  const hasImage = settings.imageUrl && settings.imageUrl.trim() !== ''
+
   return (
     <section className="w-full py-8 lg:py-12">
       <div className="w-full px-2 sm:px-4">
         <div
-          className="rounded-2xl p-6 shadow-xl sm:p-8 lg:p-12"
+          className="overflow-hidden rounded-2xl p-6 shadow-xl sm:p-8 lg:p-12"
           style={{ backgroundColor: settings.bgColor, color: settings.textColor }}
         >
-          <div className="grid gap-6 lg:grid-cols-2 lg:gap-8">
-            <div>
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:gap-8">
+            {/* Text Content */}
+            <div className={hasImage ? 'flex-1' : 'w-full'}>
               {/* Badge */}
               <div className="mb-3 inline-flex items-center rounded-full bg-white/20 px-3 py-1.5 text-sm font-semibold lg:mb-4 lg:px-4 lg:py-2">
                 <Shield className="mr-2 h-4 w-4" />
@@ -129,17 +149,30 @@ export function MembershipBanner({ settings, variant = 'desktop' }: MembershipBa
                   </li>
                 ))}
               </ul>
-            </div>
 
-            {/* CTA Button - centered on right side */}
-            <div className="flex items-center justify-center">
+              {/* CTA Button */}
               <Link
                 href={settings.ctaHref}
-                className="rounded-lg bg-white px-6 py-3 text-base font-semibold text-teal-600 transition-transform hover:scale-105 lg:px-8 lg:py-4 lg:text-lg"
+                className="mt-6 inline-block rounded-lg bg-white px-6 py-3 text-base font-semibold text-teal-600 transition-transform hover:scale-105 lg:mt-8 lg:px-8 lg:py-4 lg:text-lg"
               >
                 {settings.ctaLabel}
               </Link>
             </div>
+
+            {/* Image - only shown if imageUrl exists */}
+            {hasImage && (
+              <div className={`relative hidden lg:block ${getImageWidthClass()}`}>
+                <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl">
+                  <Image
+                    src={settings.imageUrl!}
+                    alt={settings.imageAlt || settings.headline}
+                    fill
+                    className="object-contain"
+                    sizes="(min-width: 1024px) 40vw, 100vw"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

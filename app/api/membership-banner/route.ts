@@ -18,6 +18,9 @@ const DEFAULT_SETTINGS = {
   bgColor: '#0b3b32',
   textColor: '#ffffff',
   displayLocations: ['home'],
+  imageUrl: null,
+  imageAlt: '',
+  imageSize: 'medium',
 }
 
 export async function GET() {
