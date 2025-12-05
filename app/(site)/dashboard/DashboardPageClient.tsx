@@ -52,6 +52,15 @@ interface Product {
   discountPercentage: number | null
 }
 
+interface DashboardSection {
+  id: string
+  title: string
+  slug: string
+  bgColor: string | null
+  badgeText: string | null
+  products: Product[]
+}
+
 interface DashboardSettings {
   pageTitleBn: string
   welcomeTextBn: string
@@ -116,41 +125,46 @@ export default function DashboardPageClient() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
   const [membership, setMembership] = useState<Membership | null>(null)
   const [wishlistCount, setWishlistCount] = useState(0)
-  const [trendingProducts, setTrendingProducts] = useState<Product[]>([])
-  const [curatedProducts, setCuratedProducts] = useState<Product[]>([])
-  const [settings, setSettings] = useState<DashboardSettings>(DEFAULT_SETTINGS)
-  const [isLoading, setIsLoading] = useState(true)
+    const [trendingProducts, setTrendingProducts] = useState<Product[]>([])
+    const [curatedProducts, setCuratedProducts] = useState<Product[]>([])
+    const [dashboardSections, setDashboardSections] = useState<DashboardSection[]>([])
+    const [settings, setSettings] = useState<DashboardSettings>(DEFAULT_SETTINGS)
+    const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/signin')
-      return
-    }
+    useEffect(() => {
+      if (status === 'unauthenticated') {
+        router.push('/auth/signin')
+        return
+      }
 
-    if (status === 'authenticated') {
-      Promise.all([
-        fetch('/api/orders').then((res) => res.json()),
-        fetch('/api/subscriptions').then((res) => res.json()),
-        fetch('/api/membership').then((res) => res.json()).catch(() => ({ membership: null })),
-        fetch('/api/wishlist').then((res) => res.json()).catch(() => ({ items: [] })),
-        fetch('/api/dashboard/settings').then((res) => res.json()).catch(() => ({ settings: DEFAULT_SETTINGS })),
-        fetch('/api/products?limit=10&sort=popular').then((res) => res.json()).catch(() => ({ products: [] })),
-      ])
-        .then(([ordersData, subscriptionsData, membershipData, wishlistData, settingsData, productsData]) => {
-          if (ordersData.orders) setOrders(ordersData.orders)
-          if (subscriptionsData.subscriptions) setSubscriptions(subscriptionsData.subscriptions)
-          if (membershipData.membership) setMembership(membershipData.membership)
-          if (wishlistData.items) setWishlistCount(wishlistData.items.length)
-          if (settingsData.settings) setSettings({ ...DEFAULT_SETTINGS, ...settingsData.settings })
-          if (productsData.products) {
-            setTrendingProducts(productsData.products.slice(0, 10))
-            setCuratedProducts(productsData.products.slice(0, 10))
-          }
-        })
-        .catch((err) => console.error('Failed to fetch dashboard data:', err))
-        .finally(() => setIsLoading(false))
-    }
-  }, [status, router])
+      if (status === 'authenticated') {
+        Promise.all([
+          fetch('/api/orders').then((res) => res.json()),
+          fetch('/api/subscriptions').then((res) => res.json()),
+          fetch('/api/membership').then((res) => res.json()).catch(() => ({ membership: null })),
+          fetch('/api/wishlist').then((res) => res.json()).catch(() => ({ items: [] })),
+          fetch('/api/dashboard/settings').then((res) => res.json()).catch(() => ({ settings: DEFAULT_SETTINGS })),
+          fetch('/api/dashboard/sections').then((res) => res.json()).catch(() => ({ sections: [] })),
+          fetch('/api/products?limit=10&sort=popular').then((res) => res.json()).catch(() => ({ products: [] })),
+        ])
+          .then(([ordersData, subscriptionsData, membershipData, wishlistData, settingsData, sectionsData, productsData]) => {
+            if (ordersData.orders) setOrders(ordersData.orders)
+            if (subscriptionsData.subscriptions) setSubscriptions(subscriptionsData.subscriptions)
+            if (membershipData.membership) setMembership(membershipData.membership)
+            if (wishlistData.items) setWishlistCount(wishlistData.items.length)
+            if (settingsData.settings) setSettings({ ...DEFAULT_SETTINGS, ...settingsData.settings })
+            if (sectionsData.sections && sectionsData.sections.length > 0) {
+              setDashboardSections(sectionsData.sections)
+            }
+            if (productsData.products) {
+              setTrendingProducts(productsData.products.slice(0, 10))
+              setCuratedProducts(productsData.products.slice(0, 10))
+            }
+          })
+          .catch((err) => console.error('Failed to fetch dashboard data:', err))
+          .finally(() => setIsLoading(false))
+      }
+    }, [status, router])
 
   const handleAddToCart = (product: Product) => {
     addItem({
@@ -401,94 +415,152 @@ export default function DashboardPageClient() {
             </div>
           </div>
 
-          {/* Cross-Selling Sections */}
-          {settings.showCrossSellSections && (
-            <>
-              {/* Curated For You */}
-              <div className="mb-8">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl xl:text-2xl font-bold text-gray-900">{settings.curatedForYouTitleBn}</h2>
-                </div>
-                <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-                  {curatedProducts.map((product) => (
-                    <div key={product.id} className="flex-shrink-0 w-[200px] bg-white rounded-xl shadow-sm p-4 hover:shadow-md transition-shadow">
-                      <Link href={`/products/${product.slug}`}>
-                        <div className="relative aspect-square mb-3 rounded-lg bg-gray-100 overflow-hidden">
-                          {product.imageUrl ? (
-                            <Image
-                              src={product.imageUrl}
-                              alt={product.name}
-                              fill
-                              className="object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-full items-center justify-center text-gray-400">No image</div>
-                          )}
-                          {product.discountPercentage && product.discountPercentage > 0 && (
-                            <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
-                              -{product.discountPercentage}%
-                            </span>
-                          )}
-                        </div>
-                        <h3 className="text-sm font-medium text-gray-900 line-clamp-2 mb-2">{product.name}</h3>
-                      </Link>
-                      <div className="flex items-center justify-between">
-                        <p className="font-semibold text-[#0A9F6E]">৳{product.sellingPrice}</p>
-                        <button
-                          onClick={() => handleAddToCart(product)}
-                          className="rounded-full bg-[#0A9F6E] px-3 py-1 text-xs font-medium text-white hover:bg-[#088a5b] transition-colors"
-                        >
-                          Add
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+                    {/* Cross-Selling Sections */}
+                    {settings.showCrossSellSections && (
+                      <>
+                        {/* Dynamic Sections from Admin */}
+                        {dashboardSections.length > 0 ? (
+                          dashboardSections.map((section) => (
+                            <div key={section.id} className="mb-8">
+                              <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                  <h2 className="text-xl xl:text-2xl font-bold text-gray-900">{section.title}</h2>
+                                  {section.badgeText && (
+                                    <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
+                                      {section.badgeText}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <div 
+                                className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide rounded-xl p-4"
+                                style={{ backgroundColor: section.bgColor || 'transparent' }}
+                              >
+                                {section.products.map((product) => (
+                                  <div key={product.id} className="flex-shrink-0 w-[200px] bg-white rounded-xl shadow-sm p-4 hover:shadow-md transition-shadow">
+                                    <Link href={`/products/${product.slug}`}>
+                                      <div className="relative aspect-square mb-3 rounded-lg bg-gray-100 overflow-hidden">
+                                        {product.imageUrl ? (
+                                          <Image
+                                            src={product.imageUrl}
+                                            alt={product.name}
+                                            fill
+                                            className="object-cover"
+                                          />
+                                        ) : (
+                                          <div className="flex h-full items-center justify-center text-gray-400">No image</div>
+                                        )}
+                                        {product.discountPercentage && product.discountPercentage > 0 && (
+                                          <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
+                                            -{product.discountPercentage}%
+                                          </span>
+                                        )}
+                                      </div>
+                                      <h3 className="text-sm font-medium text-gray-900 line-clamp-2 mb-2">{product.name}</h3>
+                                    </Link>
+                                    <div className="flex items-center justify-between">
+                                      <p className="font-semibold text-[#0A9F6E]">৳{product.sellingPrice}</p>
+                                      <button
+                                        onClick={() => handleAddToCart(product)}
+                                        className="rounded-full bg-[#0A9F6E] px-3 py-1 text-xs font-medium text-white hover:bg-[#088a5b] transition-colors"
+                                      >
+                                        Add
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <>
+                            {/* Fallback: Curated For You */}
+                            <div className="mb-8">
+                              <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-xl xl:text-2xl font-bold text-gray-900">{settings.curatedForYouTitleBn}</h2>
+                              </div>
+                              <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+                                {curatedProducts.map((product) => (
+                                  <div key={product.id} className="flex-shrink-0 w-[200px] bg-white rounded-xl shadow-sm p-4 hover:shadow-md transition-shadow">
+                                    <Link href={`/products/${product.slug}`}>
+                                      <div className="relative aspect-square mb-3 rounded-lg bg-gray-100 overflow-hidden">
+                                        {product.imageUrl ? (
+                                          <Image
+                                            src={product.imageUrl}
+                                            alt={product.name}
+                                            fill
+                                            className="object-cover"
+                                          />
+                                        ) : (
+                                          <div className="flex h-full items-center justify-center text-gray-400">No image</div>
+                                        )}
+                                        {product.discountPercentage && product.discountPercentage > 0 && (
+                                          <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
+                                            -{product.discountPercentage}%
+                                          </span>
+                                        )}
+                                      </div>
+                                      <h3 className="text-sm font-medium text-gray-900 line-clamp-2 mb-2">{product.name}</h3>
+                                    </Link>
+                                    <div className="flex items-center justify-between">
+                                      <p className="font-semibold text-[#0A9F6E]">৳{product.sellingPrice}</p>
+                                      <button
+                                        onClick={() => handleAddToCart(product)}
+                                        className="rounded-full bg-[#0A9F6E] px-3 py-1 text-xs font-medium text-white hover:bg-[#088a5b] transition-colors"
+                                      >
+                                        Add
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
 
-              {/* Trending Now */}
-              <div className="mb-8">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl xl:text-2xl font-bold text-gray-900">{settings.trendingNowTitleBn}</h2>
-                </div>
-                <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-                  {trendingProducts.map((product) => (
-                    <div key={product.id} className="flex-shrink-0 w-[200px] bg-white rounded-xl shadow-sm p-4 hover:shadow-md transition-shadow">
-                      <Link href={`/products/${product.slug}`}>
-                        <div className="relative aspect-square mb-3 rounded-lg bg-gray-100 overflow-hidden">
-                          {product.imageUrl ? (
-                            <Image
-                              src={product.imageUrl}
-                              alt={product.name}
-                              fill
-                              className="object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-full items-center justify-center text-gray-400">No image</div>
-                          )}
-                          {product.discountPercentage && product.discountPercentage > 0 && (
-                            <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
-                              -{product.discountPercentage}%
-                            </span>
-                          )}
-                        </div>
-                        <h3 className="text-sm font-medium text-gray-900 line-clamp-2 mb-2">{product.name}</h3>
-                      </Link>
-                      <div className="flex items-center justify-between">
-                        <p className="font-semibold text-[#0A9F6E]">৳{product.sellingPrice}</p>
-                        <button
-                          onClick={() => handleAddToCart(product)}
-                          className="rounded-full bg-[#0A9F6E] px-3 py-1 text-xs font-medium text-white hover:bg-[#088a5b] transition-colors"
-                        >
-                          Add
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
+                            {/* Fallback: Trending Now */}
+                            <div className="mb-8">
+                              <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-xl xl:text-2xl font-bold text-gray-900">{settings.trendingNowTitleBn}</h2>
+                              </div>
+                              <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+                                {trendingProducts.map((product) => (
+                                  <div key={product.id} className="flex-shrink-0 w-[200px] bg-white rounded-xl shadow-sm p-4 hover:shadow-md transition-shadow">
+                                    <Link href={`/products/${product.slug}`}>
+                                      <div className="relative aspect-square mb-3 rounded-lg bg-gray-100 overflow-hidden">
+                                        {product.imageUrl ? (
+                                          <Image
+                                            src={product.imageUrl}
+                                            alt={product.name}
+                                            fill
+                                            className="object-cover"
+                                          />
+                                        ) : (
+                                          <div className="flex h-full items-center justify-center text-gray-400">No image</div>
+                                        )}
+                                        {product.discountPercentage && product.discountPercentage > 0 && (
+                                          <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
+                                            -{product.discountPercentage}%
+                                          </span>
+                                        )}
+                                      </div>
+                                      <h3 className="text-sm font-medium text-gray-900 line-clamp-2 mb-2">{product.name}</h3>
+                                    </Link>
+                                    <div className="flex items-center justify-between">
+                                      <p className="font-semibold text-[#0A9F6E]">৳{product.sellingPrice}</p>
+                                      <button
+                                        onClick={() => handleAddToCart(product)}
+                                        className="rounded-full bg-[#0A9F6E] px-3 py-1 text-xs font-medium text-white hover:bg-[#088a5b] transition-colors"
+                                      >
+                                        Add
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </>
+                    )}
         </div>
       </div>
 
@@ -607,78 +679,131 @@ export default function DashboardPageClient() {
             </div>
           </div>
 
-          {/* Cross-Selling - Mobile */}
-          {settings.showCrossSellSections && (
-            <>
-              <div className="mb-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-3">{settings.curatedForYouTitleBn}</h2>
-                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                  {curatedProducts.slice(0, 6).map((product) => (
-                    <div key={product.id} className="flex-shrink-0 w-[140px] bg-white rounded-xl shadow-sm p-3">
-                      <Link href={`/products/${product.slug}`}>
-                        <div className="relative aspect-square mb-2 rounded-lg bg-gray-100 overflow-hidden">
-                          {product.imageUrl ? (
-                            <Image
-                              src={product.imageUrl}
-                              alt={product.name}
-                              fill
-                              className="object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-full items-center justify-center text-gray-400 text-xs">No image</div>
-                          )}
-                        </div>
-                        <h3 className="text-xs font-medium text-gray-900 line-clamp-2 mb-1">{product.name}</h3>
-                      </Link>
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-semibold text-[#0A9F6E]">৳{product.sellingPrice}</p>
-                        <button
-                          onClick={() => handleAddToCart(product)}
-                          className="rounded-full bg-[#0A9F6E] px-2 py-1 text-xs text-white"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+                    {/* Cross-Selling - Mobile */}
+                    {settings.showCrossSellSections && (
+                      <>
+                        {/* Dynamic Sections from Admin - Mobile */}
+                        {dashboardSections.length > 0 ? (
+                          dashboardSections.map((section) => (
+                            <div key={section.id} className="mb-6">
+                              <div className="flex items-center gap-2 mb-3">
+                                <h2 className="text-lg font-semibold text-gray-900">{section.title}</h2>
+                                {section.badgeText && (
+                                  <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded">
+                                    {section.badgeText}
+                                  </span>
+                                )}
+                              </div>
+                              <div 
+                                className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide rounded-lg p-2"
+                                style={{ backgroundColor: section.bgColor || 'transparent' }}
+                              >
+                                {section.products.slice(0, 6).map((product) => (
+                                  <div key={product.id} className="flex-shrink-0 w-[140px] bg-white rounded-xl shadow-sm p-3">
+                                    <Link href={`/products/${product.slug}`}>
+                                      <div className="relative aspect-square mb-2 rounded-lg bg-gray-100 overflow-hidden">
+                                        {product.imageUrl ? (
+                                          <Image
+                                            src={product.imageUrl}
+                                            alt={product.name}
+                                            fill
+                                            className="object-cover"
+                                          />
+                                        ) : (
+                                          <div className="flex h-full items-center justify-center text-gray-400 text-xs">No image</div>
+                                        )}
+                                      </div>
+                                      <h3 className="text-xs font-medium text-gray-900 line-clamp-2 mb-1">{product.name}</h3>
+                                    </Link>
+                                    <div className="flex items-center justify-between">
+                                      <p className="text-sm font-semibold text-[#0A9F6E]">৳{product.sellingPrice}</p>
+                                      <button
+                                        onClick={() => handleAddToCart(product)}
+                                        className="rounded-full bg-[#0A9F6E] px-2 py-1 text-xs text-white"
+                                      >
+                                        +
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <>
+                            {/* Fallback: Curated For You - Mobile */}
+                            <div className="mb-6">
+                              <h2 className="text-lg font-semibold text-gray-900 mb-3">{settings.curatedForYouTitleBn}</h2>
+                              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                                {curatedProducts.slice(0, 6).map((product) => (
+                                  <div key={product.id} className="flex-shrink-0 w-[140px] bg-white rounded-xl shadow-sm p-3">
+                                    <Link href={`/products/${product.slug}`}>
+                                      <div className="relative aspect-square mb-2 rounded-lg bg-gray-100 overflow-hidden">
+                                        {product.imageUrl ? (
+                                          <Image
+                                            src={product.imageUrl}
+                                            alt={product.name}
+                                            fill
+                                            className="object-cover"
+                                          />
+                                        ) : (
+                                          <div className="flex h-full items-center justify-center text-gray-400 text-xs">No image</div>
+                                        )}
+                                      </div>
+                                      <h3 className="text-xs font-medium text-gray-900 line-clamp-2 mb-1">{product.name}</h3>
+                                    </Link>
+                                    <div className="flex items-center justify-between">
+                                      <p className="text-sm font-semibold text-[#0A9F6E]">৳{product.sellingPrice}</p>
+                                      <button
+                                        onClick={() => handleAddToCart(product)}
+                                        className="rounded-full bg-[#0A9F6E] px-2 py-1 text-xs text-white"
+                                      >
+                                        +
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
 
-              <div className="mb-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-3">{settings.trendingNowTitleBn}</h2>
-                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                  {trendingProducts.slice(0, 6).map((product) => (
-                    <div key={product.id} className="flex-shrink-0 w-[140px] bg-white rounded-xl shadow-sm p-3">
-                      <Link href={`/products/${product.slug}`}>
-                        <div className="relative aspect-square mb-2 rounded-lg bg-gray-100 overflow-hidden">
-                          {product.imageUrl ? (
-                            <Image
-                              src={product.imageUrl}
-                              alt={product.name}
-                              fill
-                              className="object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-full items-center justify-center text-gray-400 text-xs">No image</div>
-                          )}
-                        </div>
-                        <h3 className="text-xs font-medium text-gray-900 line-clamp-2 mb-1">{product.name}</h3>
-                      </Link>
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-semibold text-[#0A9F6E]">৳{product.sellingPrice}</p>
-                        <button
-                          onClick={() => handleAddToCart(product)}
-                          className="rounded-full bg-[#0A9F6E] px-2 py-1 text-xs text-white"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
+                            {/* Fallback: Trending Now - Mobile */}
+                            <div className="mb-6">
+                              <h2 className="text-lg font-semibold text-gray-900 mb-3">{settings.trendingNowTitleBn}</h2>
+                              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                                {trendingProducts.slice(0, 6).map((product) => (
+                                  <div key={product.id} className="flex-shrink-0 w-[140px] bg-white rounded-xl shadow-sm p-3">
+                                    <Link href={`/products/${product.slug}`}>
+                                      <div className="relative aspect-square mb-2 rounded-lg bg-gray-100 overflow-hidden">
+                                        {product.imageUrl ? (
+                                          <Image
+                                            src={product.imageUrl}
+                                            alt={product.name}
+                                            fill
+                                            className="object-cover"
+                                          />
+                                        ) : (
+                                          <div className="flex h-full items-center justify-center text-gray-400 text-xs">No image</div>
+                                        )}
+                                      </div>
+                                      <h3 className="text-xs font-medium text-gray-900 line-clamp-2 mb-1">{product.name}</h3>
+                                    </Link>
+                                    <div className="flex items-center justify-between">
+                                      <p className="text-sm font-semibold text-[#0A9F6E]">৳{product.sellingPrice}</p>
+                                      <button
+                                        onClick={() => handleAddToCart(product)}
+                                        className="rounded-full bg-[#0A9F6E] px-2 py-1 text-xs text-white"
+                                      >
+                                        +
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </>
+                    )}
         </div>
 
         {/* Floating Prescription Upload Button - Mobile Only */}
