@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Download, ExternalLink, AlertCircle, CheckCircle, Loader2, Sparkles } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { slugify } from '@/lib/slugify'
 
 interface Category {
   id: string
@@ -45,21 +46,22 @@ export default function ProductImportPage() {
   const [aiError, setAiError] = useState('')
   const [aiLanguage, setAiLanguage] = useState<'en' | 'bn'>('en')
   
-    const [editedProduct, setEditedProduct] = useState({
-      name: '',
-      manufacturerId: '',
-      description: '',
-      sellingPrice: '',
-      mrp: '',
-      stockQuantity: '100',
-      categoryId: '',
-      packSize: '',
-      keyFeatures: '',
-      specSummary: '',
-      seoTitle: '',
-      seoDescription: '',
-      seoKeywords: '',
-    })
+        const [editedProduct, setEditedProduct] = useState({
+          name: '',
+          manufacturerId: '',
+          description: '',
+          sellingPrice: '',
+          mrp: '',
+          stockQuantity: '100',
+          categoryId: '',
+          packSize: '',
+          keyFeatures: '',
+          specSummary: '',
+          seoTitle: '',
+          seoDescription: '',
+          seoKeywords: '',
+          slug: '',
+        })
 
     useEffect(() => {
       fetchCategories()
@@ -113,18 +115,24 @@ export default function ProductImportPage() {
 
       const data = await res.json()
 
-      if (res.ok) {
-        setEditedProduct(prev => ({
-          ...prev,
-          description: data.description || prev.description,
-          keyFeatures: data.keyFeatures?.join('\n') || prev.keyFeatures,
-          specSummary: data.specsSummary || prev.specSummary,
-          seoTitle: data.seoTitle || prev.seoTitle,
-          seoDescription: data.seoDescription || prev.seoDescription,
-          seoKeywords: data.seoKeywords?.join(', ') || prev.seoKeywords,
-        }))
-        setAiError('')
-        toast.success('AI content generated successfully!')
+            if (res.ok) {
+              setEditedProduct(prev => {
+                const baseSlug = prev.packSize 
+                  ? `${prev.name} ${prev.packSize}` 
+                  : prev.name
+                return {
+                  ...prev,
+                  description: data.description || prev.description,
+                  keyFeatures: data.keyFeatures?.join('\n') || prev.keyFeatures,
+                  specSummary: data.specsSummary || prev.specSummary,
+                  seoTitle: data.seoTitle || prev.seoTitle,
+                  seoDescription: data.seoDescription || prev.seoDescription,
+                  seoKeywords: data.seoKeywords?.join(', ') || prev.seoKeywords,
+                  slug: slugify(baseSlug),
+                }
+              })
+              setAiError('')
+              toast.success('AI content generated successfully!')
       } else {
         setAiError(data.error || 'AI generation failed')
       }
@@ -160,22 +168,23 @@ export default function ProductImportPage() {
         throw new Error(data.error || 'Failed to import product')
       }
       
-            setImportedProduct(data.product)
-            setEditedProduct({
-              name: data.product.name || '',
-              manufacturerId: '',
-              description: data.product.description || '',
-              sellingPrice: data.product.sellingPrice?.toString() || '',
-              mrp: data.product.mrp?.toString() || '',
-              stockQuantity: '100',
-              categoryId: '',
-              packSize: data.product.packSize || '',
-              keyFeatures: '',
-              specSummary: '',
-              seoTitle: '',
-              seoDescription: '',
-              seoKeywords: '',
-            })
+                        setImportedProduct(data.product)
+                        setEditedProduct({
+                          name: data.product.name || '',
+                          manufacturerId: '',
+                          description: data.product.description || '',
+                          sellingPrice: data.product.sellingPrice?.toString() || '',
+                          mrp: data.product.mrp?.toString() || '',
+                          stockQuantity: '100',
+                          categoryId: '',
+                          packSize: data.product.packSize || '',
+                          keyFeatures: '',
+                          specSummary: '',
+                          seoTitle: '',
+                          seoDescription: '',
+                          seoKeywords: '',
+                          slug: '',
+                        })
       
       toast.success('Product details fetched successfully!')
     } catch (err) {
@@ -206,24 +215,25 @@ export default function ProductImportPage() {
     setLoading(true)
     
     try {
-            const productData = {
-              type: 'GENERAL',
-              name: editedProduct.name.trim(),
-              manufacturerId: editedProduct.manufacturerId || undefined,
-              description: editedProduct.description.trim() || undefined,
-              sellingPrice: parseFloat(editedProduct.sellingPrice),
-              mrp: editedProduct.mrp ? parseFloat(editedProduct.mrp) : undefined,
-              stockQuantity: parseInt(editedProduct.stockQuantity) || 100,
-              imageUrl: importedProduct?.imageUrl || undefined,
-              isActive: true,
-              categoryId: editedProduct.categoryId,
-              sizeLabel: editedProduct.packSize.trim() || undefined,
-              keyFeatures: editedProduct.keyFeatures.trim() || undefined,
-              specSummary: editedProduct.specSummary.trim() || undefined,
-              seoTitle: editedProduct.seoTitle.trim() || undefined,
-              seoDescription: editedProduct.seoDescription.trim() || undefined,
-              seoKeywords: editedProduct.seoKeywords.trim() || undefined,
-            }
+                        const productData = {
+                          type: 'GENERAL',
+                          name: editedProduct.name.trim(),
+                          slug: editedProduct.slug.trim() || undefined,
+                          manufacturerId: editedProduct.manufacturerId || undefined,
+                          description: editedProduct.description.trim() || undefined,
+                          sellingPrice: parseFloat(editedProduct.sellingPrice),
+                          mrp: editedProduct.mrp ? parseFloat(editedProduct.mrp) : undefined,
+                          stockQuantity: parseInt(editedProduct.stockQuantity) || 100,
+                          imageUrl: importedProduct?.imageUrl || undefined,
+                          isActive: true,
+                          categoryId: editedProduct.categoryId,
+                          sizeLabel: editedProduct.packSize.trim() || undefined,
+                          keyFeatures: editedProduct.keyFeatures.trim() || undefined,
+                          specSummary: editedProduct.specSummary.trim() || undefined,
+                          seoTitle: editedProduct.seoTitle.trim() || undefined,
+                          seoDescription: editedProduct.seoDescription.trim() || undefined,
+                          seoKeywords: editedProduct.seoKeywords.trim() || undefined,
+                        }
       
       const res = await fetch('/api/admin/products', {
         method: 'POST',
@@ -604,26 +614,45 @@ export default function ProductImportPage() {
                     {aiLoading ? 'Generating...' : 'Regenerate with AI'}
                   </button>
 
-                  <p className="text-xs text-purple-700">
-                    <strong>Tip:</strong> Click to generate Description, Key Features, Specifications, and SEO fields.
-                  </p>
+                                    <p className="text-xs text-purple-700">
+                                      <strong>Tip:</strong> Click to generate Description, Key Features, Specifications, SEO URL, and SEO fields.
+                                    </p>
                 </div>
               </div>
 
-              <div className="rounded-lg border border-gray-200 bg-white p-4">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">SEO Settings</h3>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700">
-                      SEO Title
-                    </label>
-                    <input
-                      type="text"
-                      value={editedProduct.seoTitle}
-                      onChange={(e) => setEditedProduct({ ...editedProduct, seoTitle: e.target.value })}
-                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                    />
-                  </div>
+                            <div className="rounded-lg border border-gray-200 bg-white p-4">
+                              <h3 className="text-sm font-semibold text-gray-900 mb-3">SEO Settings</h3>
+                              <div className="space-y-3">
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700">
+                                    SEO URL (Slug)
+                                  </label>
+                                  <div className="mt-1 flex items-center gap-1">
+                                    <span className="text-xs text-gray-500">/products/</span>
+                                    <input
+                                      type="text"
+                                      value={editedProduct.slug}
+                                      onChange={(e) => setEditedProduct({ ...editedProduct, slug: e.target.value })}
+                                      placeholder="vim-dishwashing-liquid-pouch-200-ml"
+                                      className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                    />
+                                  </div>
+                                  <p className="mt-1 text-xs text-gray-500">
+                                    Auto-generated when you click &quot;Regenerate with AI&quot;
+                                  </p>
+                                </div>
+
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700">
+                                    SEO Title
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={editedProduct.seoTitle}
+                                    onChange={(e) => setEditedProduct({ ...editedProduct, seoTitle: e.target.value })}
+                                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                  />
+                                </div>
 
                   <div>
                     <label className="block text-xs font-medium text-gray-700">
