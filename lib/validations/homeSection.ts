@@ -1,5 +1,9 @@
 import { z } from 'zod'
 
+// Display location options for sections
+export const DISPLAY_LOCATIONS = ['home', 'dashboard', 'cart'] as const
+export type DisplayLocation = typeof DISPLAY_LOCATIONS[number]
+
 // Base schema for form validation (used by HomeSectionForm for both create and edit)
 export const baseHomeSectionSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -13,6 +17,7 @@ export const baseHomeSectionSchema = z.object({
   badgeText: z.string().optional().nullable(),
   sortOrder: z.number().int().default(0),
   isActive: z.boolean().default(true),
+  displayLocations: z.array(z.enum(['home', 'dashboard', 'cart'])).default(['home']),
 })
 
 // For API route validation (create doesn't need id, update does)

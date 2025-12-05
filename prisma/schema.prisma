@@ -513,21 +513,22 @@ model Banner {
 }
 
 model HomeSection {
-  id          String    @id @default(cuid())
-  title       String
-  slug        String    @unique
-  filterType  String // 'category' | 'brand' | 'manual'
-  categoryId  String?
-  brandName   String?
-  productIds  Json? // string[] of Product.id
-  maxProducts Int       @default(10)
-  bgColor     String?
-  badgeText   String?
-  sortOrder   Int       @default(0)
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  category    Category? @relation(fields: [categoryId], references: [id])
+  id               String    @id @default(cuid())
+  title            String
+  slug             String    @unique
+  filterType       String // 'category' | 'brand' | 'manual'
+  categoryId       String?
+  brandName        String?
+  productIds       Json? // string[] of Product.id
+  maxProducts      Int       @default(10)
+  bgColor          String?
+  badgeText        String?
+  sortOrder        Int       @default(0)
+  isActive         Boolean   @default(true)
+  displayLocations Json      @default("[\"home\"]") // string[] of 'home' | 'dashboard' | 'cart'
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  category         Category? @relation(fields: [categoryId], references: [id])
 
   @@index([sortOrder])
   @@index([isActive, sortOrder])
