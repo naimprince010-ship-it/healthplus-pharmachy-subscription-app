@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Download, ExternalLink, AlertCircle, CheckCircle, Loader2, Sparkles } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { slugify } from '@/lib/slugify'
+import { SearchableSelect } from '@/components/SearchableSelect'
 
 interface Category {
   id: string
@@ -361,23 +362,18 @@ export default function ProductImportPage() {
                 />
               </div>
               
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700">
-                                Manufacturer
-                              </label>
-                              <select
-                                value={editedProduct.manufacturerId}
-                                onChange={(e) => setEditedProduct({ ...editedProduct, manufacturerId: e.target.value })}
-                                className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                              >
-                                <option value="">Select Manufacturer</option>
-                                {manufacturers.map((mfr) => (
-                                  <option key={mfr.id} value={mfr.id}>
-                                    {mfr.name}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Manufacturer
+                </label>
+                <SearchableSelect
+                  options={manufacturers.map((mfr) => ({ value: mfr.id, label: mfr.name }))}
+                  value={editedProduct.manufacturerId}
+                  onChange={(value) => setEditedProduct({ ...editedProduct, manufacturerId: value })}
+                  placeholder="Select Manufacturer"
+                  className="mt-1"
+                />
+              </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -436,19 +432,13 @@ export default function ProductImportPage() {
                 <label className="block text-sm font-medium text-gray-700">
                   Category <span className="text-red-500">*</span>
                 </label>
-                <select
+                <SearchableSelect
+                  options={categories.map((cat) => ({ value: cat.id, label: cat.name }))}
                   value={editedProduct.categoryId}
-                  onChange={(e) => setEditedProduct({ ...editedProduct, categoryId: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  required
-                >
-                  <option value="">Select Category</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(value) => setEditedProduct({ ...editedProduct, categoryId: value })}
+                  placeholder="Select Category"
+                  className="mt-1"
+                />
               </div>
               
               <div>
