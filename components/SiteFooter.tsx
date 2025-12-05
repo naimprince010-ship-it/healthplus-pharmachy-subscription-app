@@ -2,8 +2,35 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { Footer } from '@/components/Footer'
 
+// Footer settings type
+interface FooterSettingsData {
+  brandName: string
+  brandDescription: string
+  drugLicense: string | null
+  tradeLicense: string | null
+  quickLinks: { label: string; href: string }[]
+  quickLinksTitle: string
+  supportLinks: { label: string; href: string }[]
+  supportLinksTitle: string
+  contactTitle: string
+  address: string
+  phone: string
+  email: string | null
+  socialLinks: { platform: string; url: string }[]
+  googlePlayUrl: string | null
+  appStoreUrl: string | null
+  copyrightText: string
+  developerCredit: string | null
+  paymentMethods: { name: string; iconKey: string }[]
+  bgColor: string
+  textColor: string
+  headingColor: string
+  hoverColor: string
+  copyrightBgColor: string
+}
+
 // Default footer settings (used when database table doesn't exist yet)
-const DEFAULT_SETTINGS = {
+const DEFAULT_SETTINGS: FooterSettingsData = {
   brandName: 'Halalzi',
   brandDescription: 'আপনার পরিবারের সুস্বাস্থ্যের বিশ্বস্ত সঙ্গী। আমরা ১০০% অথেনটিক ঔষধ এবং স্বাস্থ্যপণ্য নিশ্চিত করি।',
   drugLicense: null,
