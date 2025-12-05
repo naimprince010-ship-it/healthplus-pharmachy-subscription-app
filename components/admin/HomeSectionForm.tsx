@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { ArrowLeft, Save, Search } from 'lucide-react'
 import { useForm, type DefaultValues, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { baseHomeSectionSchema, type BaseHomeSectionInput } from '@/lib/validations/homeSection'
+import { baseHomeSectionSchema, type BaseHomeSectionInput, DISPLAY_LOCATIONS, type DisplayLocation } from '@/lib/validations/homeSection'
 
 interface HomeSectionFormProps {
   mode: 'create' | 'edit'
@@ -23,6 +23,9 @@ export function HomeSectionForm({ mode, sectionId, initialData }: HomeSectionFor
   const [productSearch, setProductSearch] = useState('')
   const [searchResults, setSearchResults] = useState<any[]>([])
   const [selectedProducts, setSelectedProducts] = useState<any[]>([])
+  const [selectedLocations, setSelectedLocations] = useState<DisplayLocation[]>(
+    (initialData?.displayLocations as DisplayLocation[]) || ['home']
+  )
 
   type FormValues = BaseHomeSectionInput
 
@@ -123,15 +126,16 @@ export function HomeSectionForm({ mode, sectionId, initialData }: HomeSectionFor
     setLoading(true)
     setError(null)
 
-    try {
-      const payload = {
-        ...data,
-        productIds: filterType === 'manual' ? selectedProducts.map(p => p.id) : null,
-        categoryId: filterType === 'category' ? data.categoryId : null,
-        brandName: filterType === 'brand' ? data.brandName : null,
-      }
+        try {
+          const payload = {
+            ...data,
+            productIds: filterType === 'manual' ? selectedProducts.map(p => p.id) : null,
+            categoryId: filterType === 'category' ? data.categoryId : null,
+            brandName: filterType === 'brand' ? data.brandName : null,
+            displayLocations: selectedLocations,
+          }
 
-      const url = mode === 'create' 
+          const url = mode === 'create'
         ? '/api/admin/home-sections'
         : `/api/admin/home-sections/${sectionId}`
       
@@ -392,27 +396,62 @@ export function HomeSectionForm({ mode, sectionId, initialData }: HomeSectionFor
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Sort Order
-                </label>
-                <input
-                  type="number"
-                  {...register('sortOrder', { valueAsNumber: true })}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
-                />
-              </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">
+                                Sort Order
+                              </label>
+                              <input
+                                type="number"
+                                {...register('sortOrder', { valueAsNumber: true })}
+                                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                              />
+                            </div>
 
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  {...register('isActive')}
-                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <label className="ml-2 block text-sm text-gray-700">
-                  Active
-                </label>
-              </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Display Locations *
+                              </label>
+                              <p className="text-xs text-gray-500 mb-2">
+                                Select where this section should appear
+                              </p>
+                              <div className="space-y-2">
+                                {DISPLAY_LOCATIONS.map((location) => (
+                                  <label key={location} className="flex items-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedLocations.includes(location)}
+                                      onChange={(e) => {
+                                        if (e.target.checked) {
+                                          setSelectedLocations([...selectedLocations, location])
+                                        } else {
+                                          setSelectedLocations(selectedLocations.filter(l => l !== location))
+                                        }
+                                      }}
+                                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    />
+                                    <span className="ml-2 text-sm text-gray-700">
+                                      {location === 'home' && 'Home Page (হোম পেজ)'}
+                                      {location === 'dashboard' && 'Dashboard (ড্যাশবোর্ড)'}
+                                      {location === 'cart' && 'Cart Page (কার্ট পেজ)'}
+                                    </span>
+                                  </label>
+                                ))}
+                              </div>
+                              {selectedLocations.length === 0 && (
+                                <p className="mt-1 text-sm text-red-600">At least one location is required</p>
+                              )}
+                            </div>
+
+                            <div className="flex items-center">
+                              <input
+                                type="checkbox"
+                                {...register('isActive')}
+                                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              />
+                              <label className="ml-2 block text-sm text-gray-700">
+                                Active
+                              </label>
+                            </div>
             </div>
           </div>
 

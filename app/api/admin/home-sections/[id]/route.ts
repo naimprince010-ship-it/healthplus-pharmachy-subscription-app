@@ -49,22 +49,23 @@ export async function PUT(
     const body = await req.json()
     const validatedData = updateHomeSectionSchema.parse({ ...body, id })
 
-    const section = await prisma.homeSection.update({
-      where: { id },
-      data: {
-        title: validatedData.title,
-        slug: validatedData.slug,
-        filterType: validatedData.filterType,
-        categoryId: validatedData.categoryId || null,
-        brandName: validatedData.brandName || null,
-        productIds: validatedData.productIds ? validatedData.productIds : undefined,
-        maxProducts: validatedData.maxProducts,
-        bgColor: validatedData.bgColor || null,
-        badgeText: validatedData.badgeText || null,
-        sortOrder: validatedData.sortOrder,
-        isActive: validatedData.isActive,
-      },
-    })
+        const section = await prisma.homeSection.update({
+          where: { id },
+          data: {
+            title: validatedData.title,
+            slug: validatedData.slug,
+            filterType: validatedData.filterType,
+            categoryId: validatedData.categoryId || null,
+            brandName: validatedData.brandName || null,
+            productIds: validatedData.productIds ? validatedData.productIds : undefined,
+            maxProducts: validatedData.maxProducts,
+            bgColor: validatedData.bgColor || null,
+            badgeText: validatedData.badgeText || null,
+            sortOrder: validatedData.sortOrder,
+            isActive: validatedData.isActive,
+            displayLocations: validatedData.displayLocations || ['home'],
+          },
+        })
 
     return NextResponse.json({ section })
   } catch (error: any) {

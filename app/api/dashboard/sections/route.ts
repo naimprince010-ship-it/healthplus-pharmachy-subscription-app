@@ -8,10 +8,11 @@ export const dynamic = 'force-dynamic'
  * GET /api/dashboard/sections
  * Public endpoint to fetch dashboard product sections
  * Returns active HomeSections with their products
+ * Only returns sections where displayLocations includes 'dashboard'
  */
 export async function GET() {
   try {
-    const sections = await prisma.homeSection.findMany({
+    const allSections = await prisma.homeSection.findMany({
       where: {
         isActive: true,
       },
@@ -21,6 +22,14 @@ export async function GET() {
       orderBy: {
         sortOrder: 'asc',
       },
+    })
+
+    // Filter sections that should appear on dashboard
+    const sections = allSections.filter((section) => {
+      const locations = section.displayLocations as string[] | null
+      // Default to ['home'] for backward compatibility
+      const displayLocations = locations || ['home']
+      return displayLocations.includes('dashboard')
     })
 
     const sectionsWithProducts = await Promise.all(
