@@ -33,7 +33,7 @@ export default async function EditHomeSectionPage({ params }: PageProps) {
     badgeText: section.badgeText,
     sortOrder: section.sortOrder,
     isActive: section.isActive,
-    displayLocations: section.displayLocations as string[] | null,
+    displayLocations: (section.displayLocations as ('home' | 'dashboard' | 'cart')[]) || undefined,
   }
 
   return <HomeSectionForm mode="edit" sectionId={id} initialData={initialData} />
