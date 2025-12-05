@@ -104,15 +104,15 @@ export function DesktopHome({ subscriptionPlans, membershipBannerSettings, homeS
         </div>
       </section>
 
+      {/* Membership Banner - Admin Configurable (above product sections) */}
+      <MembershipBanner settings={membershipBannerSettings} variant="desktop" />
+
       {/* Home Sections - compact spacing on desktop */}
       <div className="space-y-2 py-2 lg:space-y-1 lg:py-1">
         {homeSections.map(({ section, products }) => (
           <SectionSlider key={section.id} section={section} products={products} />
         ))}
       </div>
-
-      {/* Membership Banner - Admin Configurable */}
-      <MembershipBanner settings={membershipBannerSettings} variant="desktop" />
 
       {/* Subscription Plans - full width */}
       <section className="w-full bg-gray-50 py-8 lg:py-12">
