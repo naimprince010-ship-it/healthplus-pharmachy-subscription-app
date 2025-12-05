@@ -15,6 +15,7 @@ interface ProductCardProps {
   mrp: number | null
   stockQuantity: number
   imageUrl: string | null
+  sizeLabel?: string | null
   discountPercentage?: number | null
   flashSalePrice?: number | null
   flashSaleStart?: Date | string | null
@@ -115,7 +116,12 @@ export function ProductCard({ product, variant = 'default', className = '' }: Pr
         <h3 className={`font-semibold text-gray-900 line-clamp-2 ${isCompact ? 'text-sm' : ''}`}>
           {product.name}
         </h3>
-        {product.brandName && (
+        {product.sizeLabel && (
+          <p className={`text-gray-500 ${isCompact ? 'mt-0.5 text-xs' : 'mt-1 text-sm'}`}>
+            {product.sizeLabel}
+          </p>
+        )}
+        {product.brandName && !product.sizeLabel && (
           <p className={`text-gray-500 ${isCompact ? 'mt-0.5 text-xs' : 'mt-1 text-sm'}`}>
             {product.brandName}
           </p>

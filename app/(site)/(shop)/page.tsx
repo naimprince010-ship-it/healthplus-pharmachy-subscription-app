@@ -103,6 +103,7 @@ async function getHomeSections() {
             brandName: true,
             description: true,
             type: true,
+            sizeLabel: true,
             discountPercentage: true,
             flashSalePrice: true,
             flashSaleStart: true,

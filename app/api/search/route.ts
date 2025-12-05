@@ -87,6 +87,7 @@ function formatProduct(p: SearchableItem) {
     mrp: p.mrp,
     stockQuantity: p.stockQuantity,
     imageUrl: p.imageUrl,
+    sizeLabel: p.sizeLabel,
     discountPercentage: p.discountPercentage,
     category: {
       name: p.categoryName,
