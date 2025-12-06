@@ -117,6 +117,9 @@ export async function POST(request: NextRequest) {
         sidebarOrder: validatedData.sidebarOrder ?? 0,
         sidebarIconUrl: validatedData.sidebarIconUrl || null,
         sidebarLinkUrl: validatedData.sidebarLinkUrl || null,
+        seoTitle: validatedData.seoTitle || null,
+        seoDescription: validatedData.seoDescription || null,
+        seoKeywords: validatedData.seoKeywords || null,
       },
     })
 

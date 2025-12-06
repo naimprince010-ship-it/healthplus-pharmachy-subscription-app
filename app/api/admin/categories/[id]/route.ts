@@ -150,6 +150,9 @@ export async function PUT(
       sidebarOrder?: number
       sidebarIconUrl?: string | null
       sidebarLinkUrl?: string | null
+      seoTitle?: string | null
+      seoDescription?: string | null
+      seoKeywords?: string | null
     } = {}
     if (validatedData.name !== undefined) updateData.name = validatedData.name
     if (validatedData.slug !== undefined) updateData.slug = validatedData.slug
@@ -163,6 +166,9 @@ export async function PUT(
     if (validatedData.sidebarOrder !== undefined) updateData.sidebarOrder = validatedData.sidebarOrder
     if (validatedData.sidebarIconUrl !== undefined) updateData.sidebarIconUrl = validatedData.sidebarIconUrl
     if (validatedData.sidebarLinkUrl !== undefined) updateData.sidebarLinkUrl = validatedData.sidebarLinkUrl
+    if (validatedData.seoTitle !== undefined) updateData.seoTitle = validatedData.seoTitle
+    if (validatedData.seoDescription !== undefined) updateData.seoDescription = validatedData.seoDescription
+    if (validatedData.seoKeywords !== undefined) updateData.seoKeywords = validatedData.seoKeywords
 
     const category = await prisma.category.update({
       where: { id },
