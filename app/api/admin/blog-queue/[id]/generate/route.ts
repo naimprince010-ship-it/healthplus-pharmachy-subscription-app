@@ -40,13 +40,10 @@ export async function POST(
       )
     }
 
-    const availableProducts = await prisma.product.findMany({
+    // Fetch all active products - we'll derive aiTags from existing data
+    const rawProducts = await prisma.product.findMany({
       where: {
         isActive: true,
-        OR: [
-          { aiTags: { isEmpty: false } },
-          { isIngredient: true },
-        ],
       },
       select: {
         id: true,
@@ -57,9 +54,104 @@ export async function POST(
         isIngredient: true,
         ingredientType: true,
         budgetLevel: true,
-        category: { select: { name: true } },
+        category: { select: { name: true, slug: true } },
+        seoKeywords: true,
       },
     })
+
+    // Derive aiTags from existing product data (category, ingredientType, seoKeywords)
+    // This allows products to be matched even without manual aiTags
+    const availableProducts = rawProducts.map(p => {
+      const derivedTags: string[] = [...(p.aiTags || [])]
+      
+      // Add category-based tags
+      if (p.category?.name) {
+        const categoryName = p.category.name.toLowerCase()
+        derivedTags.push(categoryName)
+        // Map common category names to skincare/grocery tags
+        if (categoryName.includes('skin') || categoryName.includes('face') || categoryName.includes('beauty')) {
+          derivedTags.push('skincare', 'beauty')
+        }
+        if (categoryName.includes('cleanser') || categoryName.includes('face wash')) {
+          derivedTags.push('cleanser', 'face-wash')
+        }
+        if (categoryName.includes('moistur')) {
+          derivedTags.push('moisturizer', 'cream')
+        }
+        if (categoryName.includes('sunscreen') || categoryName.includes('spf')) {
+          derivedTags.push('sunscreen', 'spf')
+        }
+        if (categoryName.includes('serum')) {
+          derivedTags.push('serum')
+        }
+        if (categoryName.includes('toner')) {
+          derivedTags.push('toner')
+        }
+        if (categoryName.includes('rice') || categoryName.includes('চাল')) {
+          derivedTags.push('rice')
+        }
+        if (categoryName.includes('oil') || categoryName.includes('তেল')) {
+          derivedTags.push('oil', 'cooking-oil')
+        }
+        if (categoryName.includes('spice') || categoryName.includes('মশলা')) {
+          derivedTags.push('spice')
+        }
+        if (categoryName.includes('dal') || categoryName.includes('ডাল')) {
+          derivedTags.push('dal')
+        }
+        if (categoryName.includes('flour') || categoryName.includes('আটা')) {
+          derivedTags.push('flour')
+        }
+        if (categoryName.includes('grocery') || categoryName.includes('food')) {
+          derivedTags.push('grocery')
+        }
+      }
+      
+      // Add category slug as tag
+      if (p.category?.slug) {
+        derivedTags.push(p.category.slug.toLowerCase())
+      }
+      
+      // Add ingredientType as tag
+      if (p.ingredientType) {
+        derivedTags.push(p.ingredientType.toLowerCase())
+      }
+      
+      // Add budgetLevel as tag
+      if (p.budgetLevel) {
+        derivedTags.push(p.budgetLevel.toLowerCase())
+      }
+      
+      // Extract relevant keywords from seoKeywords
+      if (p.seoKeywords) {
+        const keywords = p.seoKeywords.split(',').map(k => k.trim().toLowerCase())
+        keywords.forEach(keyword => {
+          if (keyword.length > 2 && keyword.length < 30) {
+            derivedTags.push(keyword)
+          }
+        })
+      }
+      
+      // Mark ingredients
+      if (p.isIngredient) {
+        derivedTags.push('ingredient')
+      }
+      
+      // Remove duplicates
+      const uniqueTags = [...new Set(derivedTags)]
+      
+      return {
+        id: p.id,
+        name: p.name,
+        slug: p.slug,
+        sellingPrice: p.sellingPrice,
+        aiTags: uniqueTags,
+        isIngredient: p.isIngredient,
+        ingredientType: p.ingredientType,
+        budgetLevel: p.budgetLevel,
+        category: p.category ? { name: p.category.name } : null,
+      }
+    }).filter(p => p.aiTags.length > 0) // Only include products with at least one tag
 
     const existingBlogSlugs = await prisma.blog.findMany({
       where: { status: BlogStatus.PUBLISHED },
