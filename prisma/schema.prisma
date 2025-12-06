@@ -89,6 +89,47 @@ enum AiImageDraftStatus {
   MANUAL      // Image manually uploaded by admin
 }
 
+// AI Blog Engine enums
+enum BlogType {
+  BEAUTY
+  GROCERY
+  RECIPE
+  MONEY_SAVING
+}
+
+enum BlogStatus {
+  TOPIC_ONLY   // Just topic, not written yet
+  DRAFT        // AI written but not approved
+  QUEUED       // Ready to auto-publish at scheduledAt
+  PUBLISHED
+  REJECTED
+}
+
+enum TopicBlock {
+  BEAUTY
+  GROCERY
+}
+
+enum IngredientType {
+  RICE
+  OIL
+  SPICE
+  MEAT
+  VEG
+  DAL
+  FLOUR
+  DAIRY
+  SNACK
+  BEVERAGE
+  OTHER
+}
+
+enum BudgetLevel {
+  BUDGET
+  MID
+  PREMIUM
+}
+
 model User {
   id            String           @id @default(cuid())
   name          String
@@ -166,6 +207,7 @@ model Category {
   medicines          Medicine[]
   products           Product[]
   homeSections       HomeSection[]
+  blogs              Blog[] // Blogs with this category as primary
   // Phase 2: AI Import draft relations
   aiDraftsAsCategory    AiProductDraft[] // Drafts where this is the matched category
   aiDraftsAsSubcategory AiProductDraft[] @relation("SubcategoryDrafts") // Drafts where this is the matched subcategory
@@ -226,6 +268,12 @@ model Product {
   // Membership discount override
   excludeFromMembershipDiscount Boolean @default(false)
 
+  // AI Blog Engine Fields
+  aiTags         String[]        // Tags for AI matching: ["cleanser","oily-skin","rice","biryani"]
+  isIngredient   Boolean         @default(false) // True if usable in recipe
+  ingredientType IngredientType? // rice | oil | spice | meat | veg | dal | flour
+  budgetLevel    BudgetLevel?    // budget | mid | premium
+
   // Relations & Status
   categoryId     String
   category       Category      @relation(fields: [categoryId], references: [id])
@@ -244,6 +292,7 @@ model Product {
   cartSuggestions CartSuggestion[]
   wishlistItems   WishlistItem[]
   reviews         Review[]
+  blogProducts    BlogProduct[] // Products mentioned in blogs
 }
 
 model ProductVariant {
@@ -1022,4 +1071,103 @@ model DiscountLog {
   @@index([ruleId])
   @@index([productId])
   @@index([appliedAt])
+}
+
+// ==========================================
+// AI BLOG ENGINE MODELS
+// ==========================================
+
+model BlogTopic {
+  id          String     @id @default(cuid())
+  title       String     // Topic title/idea
+  description String?    // Optional description of the topic
+  block       TopicBlock // BEAUTY or GROCERY
+  type        BlogType   // BEAUTY, GROCERY, RECIPE, MONEY_SAVING
+  isActive    Boolean    @default(true)
+  lastUsedAt  DateTime?  // When this topic was last used
+  timesUsed   Int        @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // Relations
+  blogs Blog[]
+
+  @@index([block, isActive])
+  @@index([lastUsedAt])
+}
+
+model Blog {
+  id          String     @id @default(cuid())
+  slug        String     @unique
+  type        BlogType   // BEAUTY, GROCERY, RECIPE, MONEY_SAVING
+  block       TopicBlock // BEAUTY or GROCERY block
+  title       String     // Human-facing title (H1)
+  summary     String?    // Short intro/excerpt
+  contentMd   String?    // Markdown content
+  contentHtml String?    // Rendered HTML cache (optional)
+  imageUrl    String?    // Featured image URL
+
+  // SEO Fields
+  seoTitle        String?  // Meta title (50-60 chars)
+  seoDescription  String?  // Meta description (150-160 chars)
+  seoKeywords     String?  // Comma-separated keywords
+  faqJsonLd       Json?    // FAQ schema JSON-LD blob
+  internalLinkSlugs String[] // Related blog slugs for internal linking
+
+  // Topic relation
+  topicId String?
+  topic   BlogTopic? @relation(fields: [topicId], references: [id], onDelete: SetNull)
+
+  // Category relation (optional, for grouping)
+  primaryCategoryId String?
+  primaryCategory   Category? @relation(fields: [primaryCategoryId], references: [id], onDelete: SetNull)
+
+  // Status & Scheduling
+  status      BlogStatus @default(TOPIC_ONLY)
+  scheduledAt DateTime?  // When cron intends to publish
+  publishedAt DateTime?  // Actual publish time
+  viewCount   Int        @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  blogProducts    BlogProduct[]
+  missingProducts MissingProduct[]
+
+  @@index([status])
+  @@index([type])
+  @@index([block])
+  @@index([publishedAt])
+  @@index([slug])
+}
+
+model BlogProduct {
+  id        String  @id @default(cuid())
+  blogId    String
+  blog      Blog    @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  role      String  // "recommended", "ingredient", "alternative", "combo", "step"
+  stepOrder Int?    // For skincare routines: 1=cleanser, 2=toner, etc.
+  notes     String? // Optional notes about why this product is recommended
+
+  @@unique([blogId, productId, role])
+  @@index([blogId])
+  @@index([productId])
+}
+
+model MissingProduct {
+  id                 String   @id @default(cuid())
+  name               String   // Product name that was needed
+  categorySuggestion String?  // Suggested category for this product
+  reason             String   // Why it's needed: "Required in recipe", "Skincare step missing", etc.
+  blogId             String?  // Link to the blog that needed it
+  blog               Blog?    @relation(fields: [blogId], references: [id], onDelete: SetNull)
+  resolvedProductId  String?  // When admin adds the product, link it here
+  isResolved         Boolean  @default(false)
+  createdAt          DateTime @default(now())
+
+  @@index([isResolved])
+  @@index([blogId])
 }

@@ -27,6 +27,7 @@ import {
   Lightbulb,
   ImageOff,
   Percent,
+  BookOpen,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -38,9 +39,10 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-  { label: 'AI Assistant', href: '/admin/ai-assistant', icon: Sparkles },
-  { label: 'AI Import', href: '/admin/ai-import', icon: Upload },
-  { label: 'Product Import', href: '/admin/product-import', icon: Download },
+    { label: 'AI Assistant', href: '/admin/ai-assistant', icon: Sparkles },
+    { label: 'Blog Topics', href: '/admin/blog-topics', icon: BookOpen },
+    { label: 'AI Import', href: '/admin/ai-import', icon: Upload },
+    { label: 'Product Import', href: '/admin/product-import', icon: Download },
   { label: 'Medicines', href: '/admin/medicines', icon: Package },
   { label: 'Products', href: '/admin/products', icon: Box },
   { label: 'Categories', href: '/admin/categories', icon: FolderTree },
