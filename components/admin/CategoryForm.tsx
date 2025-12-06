@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Sparkles, Loader2 } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 interface Category {
   id: string
@@ -20,6 +21,9 @@ interface Category {
   sidebarOrder?: number
   sidebarIconUrl?: string | null
   sidebarLinkUrl?: string | null
+  seoTitle?: string | null
+  seoDescription?: string | null
+  seoKeywords?: string | null
 }
 
 interface CategoryOption {
@@ -51,7 +55,13 @@ export default function CategoryForm({ category, categories }: CategoryFormProps
     sidebarOrder: category?.sidebarOrder ?? 0,
     sidebarIconUrl: category?.sidebarIconUrl || '',
     sidebarLinkUrl: category?.sidebarLinkUrl || '',
+    seoTitle: category?.seoTitle || '',
+    seoDescription: category?.seoDescription || '',
+    seoKeywords: category?.seoKeywords || '',
   })
+
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiLanguage, setAiLanguage] = useState<'en' | 'bn'>('bn')
 
   const generateSlug = (name: string) => {
     return name
@@ -66,6 +76,49 @@ export default function CategoryForm({ category, categories }: CategoryFormProps
       name,
       slug: !category ? generateSlug(name) : prev.slug,
     }))
+  }
+
+  const handleAIGenerate = async () => {
+    if (!formData.name) {
+      toast.error('Please enter a category name first')
+      return
+    }
+
+    setAiLoading(true)
+
+    try {
+      const parentCategoryName = categories.find(c => c.id === formData.parentCategoryId)?.name
+      
+      const res = await fetch('/api/ai/category-seo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          categoryName: formData.name,
+          parentCategory: parentCategoryName,
+          description: formData.description || undefined,
+          language: aiLanguage,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        setFormData(prev => ({
+          ...prev,
+          description: data.description || prev.description,
+          seoTitle: data.seoTitle || prev.seoTitle,
+          seoDescription: data.seoDescription || prev.seoDescription,
+          seoKeywords: data.seoKeywords?.join(', ') || prev.seoKeywords,
+        }))
+        toast.success('AI content generated successfully!')
+      } else {
+        toast.error(data.error || 'AI generation failed')
+      }
+    } catch {
+      toast.error('AI generation failed. Please try again.')
+    } finally {
+      setAiLoading(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -92,6 +145,9 @@ export default function CategoryForm({ category, categories }: CategoryFormProps
           discountPercentage: formData.discountPercentage ? parseFloat(formData.discountPercentage) : null,
           sidebarIconUrl: formData.sidebarIconUrl || null,
           sidebarLinkUrl: formData.sidebarLinkUrl || null,
+          seoTitle: formData.seoTitle || null,
+          seoDescription: formData.seoDescription || null,
+          seoKeywords: formData.seoKeywords || null,
         }),
       })
 
@@ -357,6 +413,117 @@ export default function CategoryForm({ category, categories }: CategoryFormProps
             />
             <p className="mt-1 text-xs text-gray-500">
               Custom link URL for sidebar (e.g., /sections/women-s-choice). Leave empty to use default category filter.
+            </p>
+          </div>
+        </div>
+
+        {/* SEO Settings with AI Assistant */}
+        <div className="space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-900">SEO Settings</h3>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">Language:</span>
+              <button
+                type="button"
+                onClick={() => setAiLanguage('en')}
+                className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
+                  aiLanguage === 'en'
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                EN
+              </button>
+              <button
+                type="button"
+                onClick={() => setAiLanguage('bn')}
+                className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
+                  aiLanguage === 'bn'
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                বাংলা
+              </button>
+            </div>
+          </div>
+
+          {/* AI Generate Button */}
+          <button
+            type="button"
+            onClick={handleAIGenerate}
+            disabled={aiLoading || !formData.name}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {aiLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4" />
+                Generate SEO Content with AI
+              </>
+            )}
+          </button>
+          <p className="text-xs text-purple-700">
+            Click to auto-generate Description, SEO Title, Meta Description, and Keywords based on category name.
+          </p>
+
+          {/* SEO Title */}
+          <div>
+            <label htmlFor="seoTitle" className="block text-sm font-medium text-gray-700">
+              SEO Title
+            </label>
+            <input
+              type="text"
+              id="seoTitle"
+              value={formData.seoTitle}
+              onChange={(e) => setFormData({ ...formData, seoTitle: e.target.value })}
+              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+              placeholder="Category Name | Halalzi"
+              maxLength={60}
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              {formData.seoTitle.length}/60 characters (recommended max)
+            </p>
+          </div>
+
+          {/* SEO Description */}
+          <div>
+            <label htmlFor="seoDescription" className="block text-sm font-medium text-gray-700">
+              Meta Description
+            </label>
+            <textarea
+              id="seoDescription"
+              value={formData.seoDescription}
+              onChange={(e) => setFormData({ ...formData, seoDescription: e.target.value })}
+              rows={2}
+              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+              placeholder="Compelling description for search results..."
+              maxLength={160}
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              {formData.seoDescription.length}/160 characters (recommended max)
+            </p>
+          </div>
+
+          {/* SEO Keywords */}
+          <div>
+            <label htmlFor="seoKeywords" className="block text-sm font-medium text-gray-700">
+              SEO Keywords
+            </label>
+            <input
+              type="text"
+              id="seoKeywords"
+              value={formData.seoKeywords}
+              onChange={(e) => setFormData({ ...formData, seoKeywords: e.target.value })}
+              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+              placeholder="keyword1, keyword2, keyword3"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Comma-separated keywords for search optimization
             </p>
           </div>
         </div>

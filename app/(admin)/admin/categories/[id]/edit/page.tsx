@@ -30,6 +30,9 @@ export default async function EditCategoryPage({
       showInSidebar: true,
       sidebarOrder: true,
       sidebarIconUrl: true,
+      seoTitle: true,
+      seoDescription: true,
+      seoKeywords: true,
     },
   })
 
@@ -62,6 +65,9 @@ export default async function EditCategoryPage({
     showInSidebar: category.showInSidebar ?? false,
     sidebarOrder: category.sidebarOrder ?? 0,
     sidebarIconUrl: category.sidebarIconUrl ?? null,
+    seoTitle: category.seoTitle ?? null,
+    seoDescription: category.seoDescription ?? null,
+    seoKeywords: category.seoKeywords ?? null,
   }
 
   return (

@@ -15,6 +15,9 @@ export const categorySchema = z.object({
   sidebarOrder: z.coerce.number().int().min(0).default(0),
   sidebarIconUrl: z.string().trim().optional().nullable(),
   sidebarLinkUrl: z.string().trim().optional().nullable(),
+  seoTitle: z.string().max(60).optional().nullable(),
+  seoDescription: z.string().max(160).optional().nullable(),
+  seoKeywords: z.string().optional().nullable(),
 })
 
 export const createCategorySchema = categorySchema
