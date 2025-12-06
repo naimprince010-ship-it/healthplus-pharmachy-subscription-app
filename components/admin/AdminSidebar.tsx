@@ -28,6 +28,9 @@ import {
   ImageOff,
   Percent,
   BookOpen,
+  Tag,
+  List,
+  AlertCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -40,8 +43,11 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
     { label: 'AI Assistant', href: '/admin/ai-assistant', icon: Sparkles },
-    { label: 'Blog Topics', href: '/admin/blog-topics', icon: BookOpen },
-    { label: 'AI Import', href: '/admin/ai-import', icon: Upload },
+                { label: 'Blog Topics', href: '/admin/blog-topics', icon: BookOpen },
+                { label: 'Blog Queue', href: '/admin/blog-queue', icon: List },
+                { label: 'Missing Products', href: '/admin/missing-products', icon: AlertCircle },
+                { label: 'Product Tagging', href: '/admin/product-tagging', icon: Tag },
+                { label: 'AI Import', href: '/admin/ai-import', icon: Upload },
     { label: 'Product Import', href: '/admin/product-import', icon: Download },
   { label: 'Medicines', href: '/admin/medicines', icon: Package },
   { label: 'Products', href: '/admin/products', icon: Box },
