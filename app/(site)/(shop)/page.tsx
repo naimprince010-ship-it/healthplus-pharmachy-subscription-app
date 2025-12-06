@@ -108,6 +108,9 @@ async function getHomeSections() {
             flashSaleStart: true,
             flashSaleEnd: true,
             isFlashSale: true,
+            campaignPrice: true,
+            campaignStart: true,
+            campaignEnd: true,
             category: {
               select: {
                 id: true,
@@ -139,6 +142,9 @@ async function getHomeSections() {
             flashSaleStart: product.flashSaleStart,
             flashSaleEnd: product.flashSaleEnd,
             isFlashSale: product.isFlashSale,
+            campaignPrice: product.campaignPrice ? Number(product.campaignPrice) : null,
+            campaignStart: product.campaignStart,
+            campaignEnd: product.campaignEnd,
           })
           
           return {
@@ -149,6 +155,7 @@ async function getHomeSections() {
             effectiveMrp: effectivePrices.mrp,
             effectiveDiscountPercent: effectivePrices.discountPercent,
             isFlashSaleActive: effectivePrices.isFlashSale,
+            isCampaignActive: effectivePrices.isCampaign,
           }
         })
 

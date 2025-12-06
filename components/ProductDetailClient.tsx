@@ -32,6 +32,9 @@ interface ProductDetailClientProps {
   flashSaleStart?: Date | string | null
   flashSaleEnd?: Date | string | null
   isFlashSale?: boolean | null
+  campaignPrice?: number | null
+  campaignStart?: Date | string | null
+  campaignEnd?: Date | string | null
   slug: string
   variants?: ProductVariant[]
 }
@@ -50,6 +53,9 @@ export function ProductDetailClient({
   flashSaleStart,
   flashSaleEnd,
   isFlashSale,
+  campaignPrice,
+  campaignStart,
+  campaignEnd,
   slug,
   variants = [],
 }: ProductDetailClientProps) {
@@ -68,7 +74,7 @@ export function ProductDetailClient({
     return variants.find(v => v.id === selectedVariantId) || defaultVariant
   }, [variants, selectedVariantId, defaultVariant])
 
-  const { price, effectiveMrp, discountPercent, isFlashActive, unitLabel } = useMemo(() => {
+  const { price, effectiveMrp, discountPercent, isFlashActive, isCampaignActive, unitLabel } = useMemo(() => {
     if (currentVariant) {
       const variantDiscount = currentVariant.discountPercentage || 0
       const variantMrp = currentVariant.mrp || currentVariant.sellingPrice
@@ -81,6 +87,7 @@ export function ProductDetailClient({
         effectiveMrp: variantMrp,
         discountPercent: variantDiscount,
         isFlashActive: false,
+        isCampaignActive: false,
         unitLabel: currentVariant.unitLabel,
       }
     }
@@ -93,6 +100,9 @@ export function ProductDetailClient({
       flashSaleStart,
       flashSaleEnd,
       isFlashSale,
+      campaignPrice,
+      campaignStart,
+      campaignEnd,
     })
 
     return {
@@ -100,9 +110,10 @@ export function ProductDetailClient({
       effectiveMrp: computed.mrp,
       discountPercent: computed.discountPercent,
       isFlashActive: computed.isFlashSale,
+      isCampaignActive: computed.isCampaign,
       unitLabel: unit ? `/${unit}` : '',
     }
-  }, [currentVariant, sellingPrice, mrp, discountPercentage, flashSalePrice, flashSaleStart, flashSaleEnd, isFlashSale, unit])
+  }, [currentVariant, sellingPrice, mrp, discountPercentage, flashSalePrice, flashSaleStart, flashSaleEnd, isFlashSale, campaignPrice, campaignStart, campaignEnd, unit])
 
   const currentStock = currentVariant ? currentVariant.stockQuantity : stockQuantity
   const hasDiscount = discountPercent > 0
@@ -160,8 +171,8 @@ export function ProductDetailClient({
           <>
             <div className="flex items-center gap-2">
               <span className="text-gray-500 line-through">MRP ৳{effectiveMrp.toFixed(2)}</span>
-              <span className={`text-sm font-semibold ${isFlashActive ? 'text-orange-500' : 'text-red-500'}`}>
-                {Math.round(discountPercent)}% {isFlashActive ? 'OFF' : 'ডিস্কাউন্ট'}
+              <span className={`text-sm font-semibold ${isFlashActive ? 'text-orange-500' : isCampaignActive ? 'text-orange-500' : 'text-red-500'}`}>
+                {Math.round(discountPercent)}% {isFlashActive || isCampaignActive ? 'OFF' : 'ডিস্কাউন্ট'}
               </span>
             </div>
             <div className="flex items-baseline gap-1">

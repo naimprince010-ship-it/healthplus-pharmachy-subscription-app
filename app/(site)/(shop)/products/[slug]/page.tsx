@@ -72,6 +72,9 @@ async function getSimilarProducts(
         flashSaleStart: true,
         flashSaleEnd: true,
         isFlashSale: true,
+        campaignPrice: true,
+        campaignStart: true,
+        campaignEnd: true,
         category: {
           select: {
             id: true,
@@ -117,6 +120,9 @@ async function getSimilarProducts(
           flashSaleStart: p.flashSaleStart,
           flashSaleEnd: p.flashSaleEnd,
           isFlashSale: p.isFlashSale,
+          campaignPrice: p.campaignPrice != null ? Number(p.campaignPrice) : null,
+          campaignStart: p.campaignStart,
+          campaignEnd: p.campaignEnd,
         })
 
         return {
@@ -215,6 +221,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
         flashSaleStart: true,
         flashSaleEnd: true,
         isFlashSale: true,
+        campaignPrice: true,
+        campaignStart: true,
+        campaignEnd: true,
         category: {
           select: {
             id: true,
@@ -467,6 +476,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
               flashSaleStart={product.flashSaleStart}
               flashSaleEnd={product.flashSaleEnd}
               isFlashSale={product.isFlashSale}
+              campaignPrice={product.campaignPrice}
+              campaignStart={product.campaignStart}
+              campaignEnd={product.campaignEnd}
               slug={slug}
               variants={variants}
             />
