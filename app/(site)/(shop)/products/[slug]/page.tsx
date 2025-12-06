@@ -175,6 +175,15 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
       where: { slug },
       select: {
         name: true,
+        description: true,
+        seoTitle: true,
+        seoDescription: true,
+        seoKeywords: true,
+        category: {
+          select: {
+            name: true,
+          },
+        },
       },
     })
 
@@ -182,10 +191,23 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
       return {}
     }
 
+    const categoryName = product.category?.name || ''
+    const seoTitle = product.seoTitle || `${product.name}${categoryName ? ` - ${categoryName}` : ''} | Halalzi`
+    const seoDescription = product.seoDescription || product.description || `Buy ${product.name} online at best price from Halalzi. Fast delivery across Bangladesh.`
+
     return {
-      title: product.name,
+      title: seoTitle,
+      description: seoDescription,
+      keywords: product.seoKeywords || undefined,
       alternates: {
         canonical: `/products/${slug}`,
+      },
+      openGraph: {
+        title: seoTitle,
+        description: seoDescription,
+        url: `https://halalzi.com/products/${slug}`,
+        siteName: 'Halalzi',
+        type: 'website',
       },
     }
   } catch (error) {
