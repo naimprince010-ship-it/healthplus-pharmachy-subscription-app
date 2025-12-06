@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { AddToCartButton } from '@/components/AddToCartButton'
+import { getEffectivePrices } from '@/lib/pricing'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -116,6 +117,9 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     genericName?: string | null
     strength?: string | null
     discountPercentage?: number | null
+    campaignPrice?: number | null
+    campaignStart?: Date | null
+    campaignEnd?: Date | null
   }> = []
 
   if (category.isMedicineCategory) {
@@ -172,6 +176,9 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         stockQuantity: true,
         isFeatured: true,
         discountPercentage: true,
+        campaignPrice: true,
+        campaignStart: true,
+        campaignEnd: true,
       },
       orderBy: [
         { isFeatured: 'desc' },
@@ -183,7 +190,6 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     items = products.map((p) => ({
       ...p,
       requiresPrescription: false,
-      discountPercentage: p.discountPercentage,
     }))
   }
 
@@ -291,10 +297,18 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                 ? `/medicines/${item.slug}` 
                 : `/products/${item.slug}`
               
-              const hasDiscount = item.discountPercentage && item.discountPercentage > 0
-              const discountedPrice = hasDiscount 
-                ? item.sellingPrice * (1 - (item.discountPercentage || 0) / 100)
-                : item.sellingPrice
+              const pricing = getEffectivePrices({
+                sellingPrice: item.sellingPrice,
+                mrp: item.mrp,
+                discountPercentage: item.discountPercentage,
+                campaignPrice: item.campaignPrice,
+                campaignStart: item.campaignStart,
+                campaignEnd: item.campaignEnd,
+              })
+              
+              const hasDiscount = pricing.discountPercent > 0
+              const discountedPrice = pricing.price
+              const isCampaign = pricing.isCampaign
 
               return (
                 <div
@@ -316,8 +330,8 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                         </div>
                       )}
                       {hasDiscount && (
-                        <span className="absolute left-2 top-2 z-10 rounded bg-red-500 px-2 py-1 text-xs font-semibold text-white">
-                          {Math.round(item.discountPercentage || 0)}% ডিস্কাউন্ট
+                        <span className={`absolute left-2 top-2 z-10 rounded px-2 py-1 text-xs font-semibold text-white ${isCampaign ? 'bg-orange-500' : 'bg-red-500'}`}>
+                          {pricing.discountPercent}% {isCampaign ? 'OFF' : 'ডিস্কাউন্ট'}
                         </span>
                       )}
                       {item.isFeatured && !hasDiscount && (
@@ -349,7 +363,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                         </span>
                         {hasDiscount && (
                           <span className="text-sm text-gray-500 line-through">
-                            ৳{item.sellingPrice.toFixed(2)}
+                            ৳{pricing.mrp.toFixed(2)}
                           </span>
                         )}
                       </div>
