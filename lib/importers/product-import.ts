@@ -12,7 +12,7 @@ export interface ImportedProduct {
   dosageForm: string | null
   strength: string | null
   sourceUrl: string
-  source: 'arogga' | 'chaldal'
+  source: 'arogga' | 'chaldal' | 'medeasy'
 }
 
 const ALLOWED_HOSTS = [
@@ -20,6 +20,8 @@ const ALLOWED_HOSTS = [
   'www.arogga.com',
   'chaldal.com',
   'www.chaldal.com',
+  'medeasy.health',
+  'www.medeasy.health',
 ]
 
 function validateUrl(url: string): { valid: boolean; host: string | null; error?: string } {
@@ -33,7 +35,7 @@ function validateUrl(url: string): { valid: boolean; host: string | null; error?
     const host = parsed.hostname.toLowerCase()
     
     if (!ALLOWED_HOSTS.includes(host)) {
-      return { valid: false, host, error: 'Only Arogga and Chaldal URLs are supported' }
+      return { valid: false, host, error: 'Only Arogga, Chaldal, and MedEasy URLs are supported' }
     }
     
     if (host.includes('localhost') || host.match(/^(\d{1,3}\.){3}\d{1,3}$/)) {
@@ -226,6 +228,139 @@ async function importFromChaldal(url: string): Promise<ImportedProduct> {
   }
 }
 
+async function importFromMedeasy(url: string): Promise<ImportedProduct> {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.5',
+    },
+  })
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch page: ${response.status}`)
+  }
+  
+  const html = await response.text()
+  const $ = cheerio.load(html)
+  
+  // MedEasy uses JSON-LD structured data which is the most reliable source
+  let name = ''
+  let sellingPrice: number | null = null
+  let mrp: number | null = null
+  let imageUrl: string | null = null
+  let description: string | null = null
+  let brandName: string | null = null
+  let packSize: string | null = null
+  
+  // Try to extract from JSON-LD structured data first
+  $('script[type="application/ld+json"]').each((_, el) => {
+    try {
+      const jsonText = $(el).html()
+      if (jsonText) {
+        const data = JSON.parse(jsonText)
+        if (data['@type'] === 'Product') {
+          name = data.name || ''
+          description = data.description || null
+          imageUrl = data.image || null
+          if (data.offers?.price) {
+            sellingPrice = parseFloat(data.offers.price)
+          }
+        }
+      }
+    } catch {
+      // Ignore JSON parse errors
+    }
+  })
+  
+  // Fallback: Extract from HTML if JSON-LD didn't provide all data
+  if (!name) {
+    const h1Text = $('h1').first().text().trim()
+    // MedEasy h1 often includes pack size appended, e.g., "Product Name150ml+100ml"
+    name = h1Text.replace(/(\d+(?:ml|mg|gm?|kg|pcs?|pack|tablet|capsule)(?:\+\d+(?:ml|mg|gm?|kg|pcs?|pack|tablet|capsule))?)\s*$/i, '').trim()
+  }
+  
+  // Extract manufacturer/brand from the page
+  const manufacturerText = $('h3').filter((_, el) => {
+    const prevText = $(el).prev().text().toLowerCase()
+    return prevText.includes('manufacturer')
+  }).first().text().trim()
+  
+  if (manufacturerText) {
+    brandName = manufacturerText
+  } else {
+    // Try to find brand from any h3 that looks like a brand name (short, capitalized)
+    $('h3').each((_, el) => {
+      const text = $(el).text().trim()
+      if (text && text.length < 50 && !text.includes('Medicine') && !brandName) {
+        const prevSibling = $(el).prev().text().toLowerCase()
+        if (prevSibling.includes('manufacturer') || prevSibling.includes('brand')) {
+          brandName = text
+        }
+      }
+    })
+  }
+  
+  // Extract MRP (original price) from del tag
+  if (!mrp) {
+    const mrpText = $('del').first().text()
+    const mrpMatch = mrpText.match(/৳?\s*([\d,.]+)/)
+    if (mrpMatch) {
+      mrp = parseFloat(mrpMatch[1].replace(/,/g, ''))
+    }
+  }
+  
+  // Extract selling price from page if not from JSON-LD
+  if (!sellingPrice) {
+    const priceText = $('body').text()
+    const priceMatch = priceText.match(/Best\s*Price\s*(?:Tk|৳)?\s*([\d,.]+)/i)
+    if (priceMatch) {
+      sellingPrice = parseFloat(priceMatch[1].replace(/,/g, ''))
+    }
+  }
+  
+  // Extract pack size from the product name or URL
+  const packMatch = url.match(/(\d+(?:ml|mg|gm?|kg|pcs?|pack|tablet|capsule)(?:-\d+(?:ml|mg|gm?|kg|pcs?|pack|tablet|capsule))?)/i) ||
+                    $('h1').first().text().match(/(\d+(?:ml|mg|gm?|kg|pcs?|pack|tablet|capsule)(?:\+\d+(?:ml|mg|gm?|kg|pcs?|pack|tablet|capsule))?)/i)
+  if (packMatch) {
+    packSize = packMatch[1].replace(/-/g, ' ').replace(/\+/g, '+').trim()
+  }
+  
+  // Extract description from Medicine overview section
+  if (!description) {
+    const overviewSection = $('h2:contains("Medicine overview")').parent()
+    if (overviewSection.length) {
+      const overviewText = overviewSection.text().replace(/Medicine overview/i, '').trim()
+      if (overviewText) {
+        description = overviewText.substring(0, 500)
+      }
+    }
+  }
+  
+  // Clean up image URL if it's a Next.js image URL
+  if (imageUrl && imageUrl.includes('/_next/image')) {
+    const urlMatch = imageUrl.match(/url=([^&]+)/)
+    if (urlMatch) {
+      imageUrl = decodeURIComponent(urlMatch[1])
+    }
+  }
+  
+  return {
+    name,
+    brandName,
+    description,
+    sellingPrice,
+    mrp,
+    imageUrl,
+    packSize,
+    genericName: null,
+    dosageForm: null,
+    strength: null,
+    sourceUrl: url,
+    source: 'medeasy',
+  }
+}
+
 export async function importProductFromUrl(url: string): Promise<ImportedProduct> {
   const validation = validateUrl(url)
   
@@ -239,6 +374,8 @@ export async function importProductFromUrl(url: string): Promise<ImportedProduct
     return importFromArogga(url)
   } else if (host.includes('chaldal')) {
     return importFromChaldal(url)
+  } else if (host.includes('medeasy')) {
+    return importFromMedeasy(url)
   }
   
   throw new Error('Unsupported website')

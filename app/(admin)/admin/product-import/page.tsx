@@ -32,7 +32,7 @@ interface ImportedProduct {
   dosageForm: string | null
   strength: string | null
   sourceUrl: string
-  source: 'arogga' | 'chaldal'
+  source: 'arogga' | 'chaldal' | 'medeasy'
 }
 
 export default function ProductImportPage() {
@@ -263,7 +263,7 @@ export default function ProductImportPage() {
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Import Product</h1>
         <p className="mt-2 text-sm text-gray-600">
-          Import product details from Arogga or Chaldal by pasting a product URL
+          Import product details from Arogga, Chaldal, or MedEasy by pasting a product URL
         </p>
       </div>
 
@@ -273,9 +273,9 @@ export default function ProductImportPage() {
           <div className="text-sm text-yellow-800">
             <p className="font-medium">Important Notice</p>
             <p className="mt-1">
-              This feature imports product data from external websites. Please ensure you have 
-              permission to use the imported content (images, descriptions, etc.) before saving.
-              Only Arogga and Chaldal product URLs are supported.
+                This feature imports product data from external websites. Please ensure you have 
+                permission to use the imported content (images, descriptions, etc.) before saving.
+                Only Arogga, Chaldal, and MedEasy product URLs are supported.
             </p>
           </div>
         </div>
@@ -284,7 +284,7 @@ export default function ProductImportPage() {
       <div className="rounded-lg border border-gray-200 bg-white p-6">
         <h2 className="text-lg font-semibold text-gray-900">Step 1: Enter Product URL</h2>
         <p className="mt-1 text-sm text-gray-600">
-          Paste a product URL from Arogga or Chaldal
+          Paste a product URL from Arogga, Chaldal, or MedEasy
         </p>
         
         <form onSubmit={handleFetch} className="mt-4">
@@ -293,7 +293,7 @@ export default function ProductImportPage() {
               type="url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://www.arogga.com/product/... or https://chaldal.com/..."
+              placeholder="https://www.arogga.com/product/... or https://chaldal.com/... or https://medeasy.health/medicines/..."
               className="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
               disabled={loading}
             />
@@ -329,6 +329,7 @@ export default function ProductImportPage() {
           <ul className="mt-1 list-inside list-disc">
             <li>Arogga: https://www.arogga.com/product/...</li>
             <li>Chaldal: https://chaldal.com/...</li>
+            <li>MedEasy: https://medeasy.health/medicines/...</li>
           </ul>
         </div>
       </div>
