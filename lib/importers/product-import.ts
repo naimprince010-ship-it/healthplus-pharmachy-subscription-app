@@ -55,6 +55,17 @@ function parsePrice(priceText: string): number | null {
   return isNaN(price) ? null : price
 }
 
+function cleanNextImageUrl(url: string | null): string | null {
+  if (!url) return url
+  if (!url.includes('/_next/image')) return url
+  
+  const urlMatch = url.match(/url=([^&]+)/)
+  if (urlMatch) {
+    return decodeURIComponent(urlMatch[1])
+  }
+  return url
+}
+
 async function importFromArogga(url: string): Promise<ImportedProduct> {
   const response = await fetch(url, {
     headers: {
@@ -338,12 +349,7 @@ async function importFromMedeasy(url: string): Promise<ImportedProduct> {
   }
   
   // Clean up image URL if it's a Next.js image URL
-  if (imageUrl && imageUrl.includes('/_next/image')) {
-    const urlMatch = imageUrl.match(/url=([^&]+)/)
-    if (urlMatch) {
-      imageUrl = decodeURIComponent(urlMatch[1])
-    }
-  }
+  const finalImageUrl = cleanNextImageUrl(imageUrl)
   
   return {
     name,
@@ -351,7 +357,7 @@ async function importFromMedeasy(url: string): Promise<ImportedProduct> {
     description,
     sellingPrice,
     mrp,
-    imageUrl,
+    imageUrl: finalImageUrl,
     packSize,
     genericName: null,
     dosageForm: null,
