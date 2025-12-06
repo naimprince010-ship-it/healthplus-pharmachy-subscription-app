@@ -32,7 +32,7 @@
     "date-fns": "^4.1.0",
     "fuse.js": "^7.1.0",
     "lucide-react": "^0.554.0",
-    "next": "16.0.3",
+    "next": "^16.0.7",
     "next-auth": "^5.0.0-beta.30",
     "openai": "^6.9.1",
     "pg": "^8.16.3",
@@ -54,7 +54,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.0.3",
+    "eslint-config-next": "^16.0.7",
     "tailwindcss": "^4",
     "tsx": "^4.20.6",
     "typescript": "^5"
