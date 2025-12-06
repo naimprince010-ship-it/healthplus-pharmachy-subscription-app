@@ -10,6 +10,9 @@ export interface ProductWithPricing {
   flashSaleStart?: Date | string | null
   flashSaleEnd?: Date | string | null
   isFlashSale?: boolean | null
+  campaignPrice?: number | null
+  campaignStart?: Date | string | null
+  campaignEnd?: Date | string | null
 }
 
 export interface EffectivePrices {
@@ -18,6 +21,7 @@ export interface EffectivePrices {
   discountAmount: number
   discountPercent: number
   isFlashSale: boolean
+  isCampaign: boolean
 }
 
 export function getEffectivePrices(product: ProductWithPricing): EffectivePrices {
@@ -35,10 +39,26 @@ export function getEffectivePrices(product: ProductWithPricing): EffectivePrices
     (!flashEnd || flashEnd >= now) &&
     product.flashSalePrice < baseMrp
 
+  const campaignStart = product.campaignStart ? new Date(product.campaignStart) : null
+  const campaignEnd = product.campaignEnd ? new Date(product.campaignEnd) : null
+
+  const campaignActive =
+    product.campaignPrice != null &&
+    product.campaignPrice > 0 &&
+    (!campaignStart || campaignStart <= now) &&
+    (!campaignEnd || campaignEnd >= now) &&
+    product.campaignPrice < baseMrp
+
   let price: number
+  let isFlashSale = false
+  let isCampaign = false
 
   if (flashActive && product.flashSalePrice != null) {
     price = product.flashSalePrice
+    isFlashSale = true
+  } else if (campaignActive && product.campaignPrice != null) {
+    price = product.campaignPrice
+    isCampaign = true
   } else if (product.discountPercentage && product.discountPercentage > 0) {
     price = Math.round(product.sellingPrice * (1 - product.discountPercentage / 100))
   } else {
@@ -53,7 +73,8 @@ export function getEffectivePrices(product: ProductWithPricing): EffectivePrices
     mrp: baseMrp,
     discountAmount,
     discountPercent,
-    isFlashSale: flashActive,
+    isFlashSale,
+    isCampaign,
   }
 }
 

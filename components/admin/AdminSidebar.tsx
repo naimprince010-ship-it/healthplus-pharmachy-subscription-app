@@ -26,6 +26,7 @@ import {
   ShoppingCart,
   Lightbulb,
   ImageOff,
+  Percent,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -60,8 +61,9 @@ const navItems: NavItem[] = [
                 { label: 'Cart Suggestions', href: '/admin/cart-suggestions', icon: Lightbulb },
         { label: 'Fix Images', href: '/admin/fix-images', icon: ImageOff },
         { label: 'Users', href: '/admin/users', icon: Users },
-  { label: 'Sales / Reports', href: '/admin/sales', icon: BarChart3 },
-  { label: 'Membership Page', href: '/admin/membership-settings', icon: Shield },
+    { label: 'Sales / Reports', href: '/admin/sales', icon: BarChart3 },
+    { label: 'Discount Manager', href: '/admin/discounts', icon: Percent },
+    { label: 'Membership Page', href: '/admin/membership-settings', icon: Shield },
   { label: 'Membership Banner', href: '/admin/membership-banner', icon: Image },
   { label: 'Footer Settings', href: '/admin/footer-settings', icon: FileText },
   { label: 'Settings', href: '/admin/settings', icon: Settings },

@@ -42,6 +42,18 @@ enum PageGroup {
   NONE
 }
 
+enum DiscountRuleType {
+  CATEGORY
+  BRAND
+  CART_AMOUNT
+  USER_GROUP
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
 // AI Import Wizard enums
 enum AiImportJobStatus {
   PENDING
@@ -182,6 +194,12 @@ model Product {
   flashSalePrice   Float?
   flashSaleStart   DateTime?
   flashSaleEnd     DateTime?
+
+  // Campaign/Rule-based Discount Fields (set by discount engine)
+  campaignPrice    Float?    // Discounted price set by discount rule
+  campaignStart    DateTime? // When the campaign discount starts
+  campaignEnd      DateTime? // When the campaign discount ends
+  campaignRuleId   String?   // Reference to the DiscountRule that applied this price
 
   // General Product Fields
   brandName    String? // Brand name (optional for medicines, common for general products)
@@ -921,4 +939,83 @@ model WishlistItem {
 
   @@unique([userId, productId])
   @@index([userId])
+}
+
+// Discount Engine Models
+
+model DiscountRule {
+  id             String           @id @default(cuid())
+  name           String           // Rule name for admin reference
+  ruleType       DiscountRuleType // CATEGORY, BRAND, CART_AMOUNT, USER_GROUP
+  targetValue    String?          // categoryId, manufacturerId, amount threshold, or user group
+  discountType   DiscountType     // PERCENTAGE or FIXED
+  discountAmount Float            // Discount value (percentage 0-100 or fixed amount)
+  minCartAmount  Float?           // Minimum cart amount for CART_AMOUNT rules
+  startDate      DateTime         // When the rule becomes active
+  endDate        DateTime         // When the rule expires
+  priority       Int              @default(0) // Higher priority rules override lower ones
+  isActive       Boolean          @default(true)
+  description    String?          // Optional description
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  // Relations
+  logs DiscountLog[]
+
+  @@index([isActive, startDate, endDate])
+  @@index([ruleType])
+  @@index([priority])
+}
+
+model Coupon {
+  id             String       @id @default(cuid())
+  code           String       @unique // Coupon code (e.g., "SAVE20")
+  discountType   DiscountType // PERCENTAGE or FIXED
+  discountAmount Float        // Discount value
+  minCartAmount  Float?       // Minimum cart amount to apply coupon
+  maxDiscount    Float?       // Maximum discount amount (for percentage coupons)
+  usageLimit     Int?         // Total number of times coupon can be used
+  usageCount     Int          @default(0) // Current usage count
+  perUserLimit   Int?         // Max uses per user
+  startDate      DateTime     // When the coupon becomes active
+  endDate        DateTime     // When the coupon expires
+  isActive       Boolean      @default(true)
+  description    String?      // Optional description
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  // Relations
+  usages CouponUsage[]
+
+  @@index([code])
+  @@index([isActive, startDate, endDate])
+}
+
+model CouponUsage {
+  id        String   @id @default(cuid())
+  couponId  String
+  coupon    Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  userId    String   // User who used the coupon
+  orderId   String?  // Order where coupon was applied
+  discount  Float    // Actual discount amount applied
+  usedAt    DateTime @default(now())
+
+  @@index([couponId])
+  @@index([userId])
+  @@index([couponId, userId])
+}
+
+model DiscountLog {
+  id             String   @id @default(cuid())
+  ruleId         String?
+  rule           DiscountRule? @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+  productId      String   // Product that was discounted
+  oldPrice       Float    // Original price before discount
+  newPrice       Float    // Price after discount
+  discountAmount Float    // Amount discounted
+  appliedAt      DateTime @default(now())
+
+  @@index([ruleId])
+  @@index([productId])
+  @@index([appliedAt])
 }
