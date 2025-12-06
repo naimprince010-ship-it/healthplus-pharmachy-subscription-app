@@ -206,7 +206,7 @@ export default function MissingProductsPage() {
                         {!product.isResolved && (
                           <>
                             <Link
-                              href={`/admin/products/create?name=${encodeURIComponent(product.name)}&category=${encodeURIComponent(product.categorySuggestion || '')}`}
+                              href={`/admin/products/new?name=${encodeURIComponent(product.name)}&category=${encodeURIComponent(product.categorySuggestion || '')}`}
                               className="inline-flex items-center gap-1 rounded-lg bg-teal-600 px-3 py-1 text-sm font-medium text-white hover:bg-teal-700"
                             >
                               <Plus className="h-3 w-3" />
