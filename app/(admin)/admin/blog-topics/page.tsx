@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Plus, Search, Edit, Trash2, RefreshCw } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, RefreshCw, FileText } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 
 interface BlogTopic {
@@ -18,6 +19,7 @@ interface BlogTopic {
 }
 
 export default function BlogTopicsPage() {
+  const router = useRouter()
   const [topics, setTopics] = useState<BlogTopic[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -25,6 +27,7 @@ export default function BlogTopicsPage() {
   const [typeFilter, setTypeFilter] = useState<string>('ALL')
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingTopic, setEditingTopic] = useState<BlogTopic | null>(null)
+  const [creatingBlog, setCreatingBlog] = useState<string | null>(null)
 
   const fetchTopics = async () => {
     try {
@@ -76,24 +79,51 @@ export default function BlogTopicsPage() {
     }
   }
 
-  const handleToggleActive = async (topic: BlogTopic) => {
-    try {
-      const res = await fetch(`/api/admin/blog-topics/${topic.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isActive: !topic.isActive }),
-      })
-      if (res.ok) {
-        toast.success(topic.isActive ? 'Topic deactivated' : 'Topic activated')
-        fetchTopics()
-      } else {
-        const data = await res.json()
-        toast.error(data.error || 'Failed to update topic')
+    const handleToggleActive = async (topic: BlogTopic) => {
+      try {
+        const res = await fetch(`/api/admin/blog-topics/${topic.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isActive: !topic.isActive }),
+        })
+        if (res.ok) {
+          toast.success(topic.isActive ? 'Topic deactivated' : 'Topic activated')
+          fetchTopics()
+        } else {
+          const data = await res.json()
+          toast.error(data.error || 'Failed to update topic')
+        }
+      } catch {
+        toast.error('Failed to update topic')
       }
-    } catch {
-      toast.error('Failed to update topic')
     }
-  }
+
+    const handleCreateBlog = async (topicId: string) => {
+      setCreatingBlog(topicId)
+      try {
+        const res = await fetch(`/api/admin/blog-topics/${topicId}/create-blog`, {
+          method: 'POST',
+        })
+        const data = await res.json()
+        if (res.ok) {
+          if (data.alreadyExists) {
+            toast.success('Blog already exists! Redirecting to Blog Queue...')
+          } else {
+            toast.success('Blog created! Redirecting to Blog Queue...')
+          }
+          fetchTopics()
+          setTimeout(() => {
+            router.push('/admin/blog-queue')
+          }, 1000)
+        } else {
+          toast.error(data.error || 'Failed to create blog')
+        }
+      } catch {
+        toast.error('Failed to create blog')
+      } finally {
+        setCreatingBlog(null)
+      }
+    }
 
   const getBlockBadgeColor = (block: string) => {
     return block === 'BEAUTY' ? 'bg-pink-100 text-pink-800' : 'bg-green-100 text-green-800'
@@ -265,22 +295,36 @@ export default function BlogTopicsPage() {
                         {topic.isActive ? 'Active' : 'Inactive'}
                       </button>
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => setEditingTopic(topic)}
-                          className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(topic.id)}
-                          className="rounded p-1 text-gray-400 hover:bg-red-100 hover:text-red-600"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
+                                        <td className="px-6 py-4 text-right">
+                                          <div className="flex justify-end gap-2">
+                                            <button
+                                              onClick={() => handleCreateBlog(topic.id)}
+                                              disabled={creatingBlog === topic.id || !topic.isActive}
+                                              className="rounded p-1 text-teal-500 hover:bg-teal-100 hover:text-teal-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                              title={topic.isActive ? 'Create Blog' : 'Topic is inactive'}
+                                            >
+                                              {creatingBlog === topic.id ? (
+                                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-teal-500 border-t-transparent" />
+                                              ) : (
+                                                <FileText className="h-4 w-4" />
+                                              )}
+                                            </button>
+                                            <button
+                                              onClick={() => setEditingTopic(topic)}
+                                              className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                                              title="Edit Topic"
+                                            >
+                                              <Edit className="h-4 w-4" />
+                                            </button>
+                                            <button
+                                              onClick={() => handleDelete(topic.id)}
+                                              className="rounded p-1 text-gray-400 hover:bg-red-100 hover:text-red-600"
+                                              title="Delete Topic"
+                                            >
+                                              <Trash2 className="h-4 w-4" />
+                                            </button>
+                                          </div>
+                                        </td>
                   </tr>
                 ))}
               </tbody>
