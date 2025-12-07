@@ -9,6 +9,7 @@ import PricingSection from './sections/PricingSection'
 import TestimonialsSection from './sections/TestimonialsSection'
 import FAQSection from './sections/FAQSection'
 import FinalCTASection from './sections/FinalCTASection'
+import AIAssistantWidget from './components/AIAssistantWidget'
 import content from './content.json'
 
 export const metadata: Metadata = {
@@ -99,10 +100,13 @@ export default function HalalziOfferPage() {
         ctaLink={content.finalCta.ctaLink}
       />
       
-      {/* Minimal Footer */}
-      <footer className="py-6 bg-gray-900 text-center">
-        <p className="text-gray-400 text-sm">{content.footer.copyright}</p>
-      </footer>
-    </main>
+          {/* Minimal Footer */}
+          <footer className="py-6 bg-gray-900 text-center">
+            <p className="text-gray-400 text-sm">{content.footer.copyright}</p>
+          </footer>
+      
+          {/* AI Assistant Widget */}
+          <AIAssistantWidget />
+        </main>
   )
 }
