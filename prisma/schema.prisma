@@ -1189,3 +1189,92 @@ model CompetitorProduct {
   @@index([category, trendScore])
   @@index([collectedAt])
 }
+
+// Market Intelligence - Phase 2: Price Alerts
+model PriceAlert {
+  id              String   @id @default(cuid())
+  category        String   // Category to monitor
+  siteName        String?  // Optional: specific site, null = all sites
+  thresholdType   String   // 'below' | 'above' | 'drop_percent' | 'rise_percent'
+  thresholdValue  Float    // Price threshold or percentage
+  isActive        Boolean  @default(true)
+  lastTriggeredAt DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  alerts          PriceAlertLog[]
+
+  @@index([category, isActive])
+  @@index([isActive])
+}
+
+model PriceAlertLog {
+  id            String     @id @default(cuid())
+  alertId       String
+  alert         PriceAlert @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  productName   String
+  siteName      String
+  oldPrice      Float?
+  newPrice      Float
+  changePercent Float?
+  triggeredAt   DateTime   @default(now())
+  isRead        Boolean    @default(false)
+
+  @@index([alertId])
+  @@index([triggeredAt])
+  @@index([isRead])
+}
+
+// Market Intelligence - Phase 3: Demand Forecasting
+model DemandForecast {
+  id              String   @id @default(cuid())
+  category        String
+  siteName        String?
+  productName     String?  // Optional: specific product forecast
+  forecastDate    DateTime // Date this forecast is for
+  predictedDemand Float    // Predicted demand score (0-100)
+  confidence      Float    // Confidence level (0-1)
+  factors         String?  // JSON: factors contributing to forecast
+  createdAt       DateTime @default(now())
+
+  @@index([category, forecastDate])
+  @@index([forecastDate])
+}
+
+// Market Intelligence - Phase 4: Product Recommendations
+model ProductRecommendation {
+  id              String   @id @default(cuid())
+  productName     String   // Recommended product name
+  category        String
+  sourceSite      String   // Where this product was found
+  reason          String   // Why this is recommended
+  priority        Int      @default(0) // Higher = more important
+  estimatedDemand Float?   // Estimated demand score
+  competitorPrice Float?   // Price at competitor
+  status          String   @default("pending") // 'pending' | 'approved' | 'rejected' | 'added'
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([category, status])
+  @@index([status])
+  @@index([priority])
+}
+
+// Market Intelligence - Phase 4: Gap Analysis
+model ProductGap {
+  id                String   @id @default(cuid())
+  competitorProduct String   // Product name at competitor
+  category          String
+  siteName          String   // Which competitor has it
+  competitorPrice   Float
+  reviewCount       Int      @default(0)
+  gapScore          Float    // How important is this gap (higher = more important)
+  matchedProductId  String?  // If we have a similar product, link it
+  status            String   @default("open") // 'open' | 'filled' | 'ignored'
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([category, status])
+  @@index([gapScore])
+  @@index([status])
+}
