@@ -23,7 +23,11 @@ interface HeatMapCell {
   count: number
 }
 
-const CATEGORIES = ['rice', 'oil', 'paracetamol', 'cough-syrup', 'face-wash']
+const CATEGORIES = [
+  'rice', 'oil', 'paracetamol', 'cough-syrup', 'face-wash',
+  'baby-food', 'diapers', 'milk', 'tea-coffee', 'biscuits',
+  'snacks', 'soap', 'shampoo', 'toothpaste', 'detergent'
+]
 const SITES = ['chaldal', 'arogga', 'shajgoj']
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -32,6 +36,16 @@ const CATEGORY_LABELS: Record<string, string> = {
   'paracetamol': 'Paracetamol',
   'cough-syrup': 'Cough Syrup',
   'face-wash': 'Face Wash',
+  'baby-food': 'Baby Food',
+  'diapers': 'Diapers',
+  'milk': 'Milk',
+  'tea-coffee': 'Tea & Coffee',
+  'biscuits': 'Biscuits',
+  'snacks': 'Snacks',
+  'soap': 'Soap',
+  'shampoo': 'Shampoo',
+  'toothpaste': 'Toothpaste',
+  'detergent': 'Detergent',
 }
 
 const SITE_LABELS: Record<string, string> = {
