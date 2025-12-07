@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Download, ExternalLink, AlertCircle, CheckCircle, Loader2, Sparkles, FolderOpen, Package, ChevronDown, ChevronUp, Trash2, Save } from 'lucide-react'
+import { Download, ExternalLink, AlertCircle, CheckCircle, Loader2, Sparkles, FolderOpen, Package, ChevronDown, ChevronUp, Trash2, Save, Plus, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { slugify } from '@/lib/slugify'
 import { SearchableSelect } from '@/components/SearchableSelect'
@@ -87,6 +87,14 @@ export default function ProductImportPage() {
         const [draftProducts, setDraftProducts] = useState<DraftProduct[]>([])
         const [editingDraftId, setEditingDraftId] = useState<string | null>(null)
         const [draftAiLoading, setDraftAiLoading] = useState<string | null>(null)
+        
+        const [showManufacturerModal, setShowManufacturerModal] = useState(false)
+        const [showCategoryModal, setShowCategoryModal] = useState(false)
+        const [activeDraftIdForModal, setActiveDraftIdForModal] = useState<string | null>(null)
+        const [newManufacturerName, setNewManufacturerName] = useState('')
+        const [newCategoryName, setNewCategoryName] = useState('')
+        const [creatingManufacturer, setCreatingManufacturer] = useState(false)
+        const [creatingCategory, setCreatingCategory] = useState(false)
   
         const [editedProduct, setEditedProduct] = useState({
           name: '',
@@ -132,6 +140,110 @@ export default function ProductImportPage() {
       } catch (error) {
         console.error('Failed to fetch manufacturers:', error)
       }
+    }
+
+    const handleCreateManufacturer = async () => {
+      if (!newManufacturerName.trim()) {
+        toast.error('Manufacturer name is required')
+        return
+      }
+
+      setCreatingManufacturer(true)
+      try {
+        const manufacturerSlug = slugify(newManufacturerName.trim())
+        const res = await fetch('/api/admin/manufacturers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: newManufacturerName.trim(),
+            slug: manufacturerSlug,
+          }),
+        })
+
+        const data = await res.json()
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to create manufacturer')
+        }
+
+        const newManufacturer = data.manufacturer
+        setManufacturers(prev => [...prev, newManufacturer].sort((a, b) => a.name.localeCompare(b.name)))
+
+        if (activeDraftIdForModal) {
+          updateDraftProduct(activeDraftIdForModal, 'manufacturerId', newManufacturer.id)
+        } else {
+          setEditedProduct(prev => ({ ...prev, manufacturerId: newManufacturer.id }))
+        }
+
+        setShowManufacturerModal(false)
+        setNewManufacturerName('')
+        setActiveDraftIdForModal(null)
+        toast.success(`Manufacturer "${newManufacturer.name}" created!`)
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to create manufacturer'
+        toast.error(message)
+      } finally {
+        setCreatingManufacturer(false)
+      }
+    }
+
+    const handleCreateCategory = async () => {
+      if (!newCategoryName.trim()) {
+        toast.error('Category name is required')
+        return
+      }
+
+      setCreatingCategory(true)
+      try {
+        const categorySlug = slugify(newCategoryName.trim())
+        const res = await fetch('/api/admin/categories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: newCategoryName.trim(),
+            slug: categorySlug,
+            isActive: true,
+            isMedicineCategory: false,
+          }),
+        })
+
+        const data = await res.json()
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to create category')
+        }
+
+        const newCategory = data.category
+        setCategories(prev => [...prev, newCategory].sort((a, b) => a.name.localeCompare(b.name)))
+
+        if (activeDraftIdForModal) {
+          updateDraftProduct(activeDraftIdForModal, 'categoryId', newCategory.id)
+        } else {
+          setEditedProduct(prev => ({ ...prev, categoryId: newCategory.id }))
+        }
+
+        setShowCategoryModal(false)
+        setNewCategoryName('')
+        setActiveDraftIdForModal(null)
+        toast.success(`Category "${newCategory.name}" created!`)
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to create category'
+        toast.error(message)
+      } finally {
+        setCreatingCategory(false)
+      }
+    }
+
+    const openManufacturerModal = (draftId: string | null = null) => {
+      setActiveDraftIdForModal(draftId)
+      setNewManufacturerName('')
+      setShowManufacturerModal(true)
+    }
+
+    const openCategoryModal = (draftId: string | null = null) => {
+      setActiveDraftIdForModal(draftId)
+      setNewCategoryName('')
+      setShowCategoryModal(true)
     }
 
   const handleAIGenerate = async () => {
@@ -919,13 +1031,23 @@ export default function ProductImportPage() {
                                   </div>
                                   <div>
                                     <label className="block text-xs font-medium text-gray-700">Category *</label>
-                                    <SearchableSelect
-                                      options={categories.map((cat) => ({ value: cat.id, label: cat.name }))}
-                                      value={draft.editedData.categoryId}
-                                      onChange={(value) => updateDraftProduct(draft.id, 'categoryId', value)}
-                                      placeholder="Select Category"
-                                      className="mt-1"
-                                    />
+                                    <div className="mt-1 flex gap-2">
+                                      <SearchableSelect
+                                        options={categories.map((cat) => ({ value: cat.id, label: cat.name }))}
+                                        value={draft.editedData.categoryId}
+                                        onChange={(value) => updateDraftProduct(draft.id, 'categoryId', value)}
+                                        placeholder="Select Category"
+                                        className="flex-1"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); openCategoryModal(draft.id); }}
+                                        className="flex items-center justify-center rounded-lg border border-gray-300 px-2 text-gray-600 hover:bg-gray-50 hover:text-teal-600"
+                                        title="Add new category"
+                                      >
+                                        <Plus className="h-4 w-4" />
+                                      </button>
+                                    </div>
                                   </div>
                                   <div>
                                     <label className="block text-xs font-medium text-gray-700">Selling Price (BDT) *</label>
@@ -949,13 +1071,23 @@ export default function ProductImportPage() {
                                   </div>
                                   <div>
                                     <label className="block text-xs font-medium text-gray-700">Manufacturer</label>
-                                    <SearchableSelect
-                                      options={manufacturers.map((mfr) => ({ value: mfr.id, label: mfr.name }))}
-                                      value={draft.editedData.manufacturerId}
-                                      onChange={(value) => updateDraftProduct(draft.id, 'manufacturerId', value)}
-                                      placeholder="Select Manufacturer"
-                                      className="mt-1"
-                                    />
+                                    <div className="mt-1 flex gap-2">
+                                      <SearchableSelect
+                                        options={manufacturers.map((mfr) => ({ value: mfr.id, label: mfr.name }))}
+                                        value={draft.editedData.manufacturerId}
+                                        onChange={(value) => updateDraftProduct(draft.id, 'manufacturerId', value)}
+                                        placeholder="Select Manufacturer"
+                                        className="flex-1"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); openManufacturerModal(draft.id); }}
+                                        className="flex items-center justify-center rounded-lg border border-gray-300 px-2 text-gray-600 hover:bg-gray-50 hover:text-teal-600"
+                                        title="Add new manufacturer"
+                                      >
+                                        <Plus className="h-4 w-4" />
+                                      </button>
+                                    </div>
                                   </div>
                                   <div>
                                     <label className="block text-xs font-medium text-gray-700">Pack Size</label>
@@ -1081,13 +1213,23 @@ export default function ProductImportPage() {
                 <label className="block text-sm font-medium text-gray-700">
                   Manufacturer
                 </label>
-                <SearchableSelect
-                  options={manufacturers.map((mfr) => ({ value: mfr.id, label: mfr.name }))}
-                  value={editedProduct.manufacturerId}
-                  onChange={(value) => setEditedProduct({ ...editedProduct, manufacturerId: value })}
-                  placeholder="Select Manufacturer"
-                  className="mt-1"
-                />
+                <div className="mt-1 flex gap-2">
+                  <SearchableSelect
+                    options={manufacturers.map((mfr) => ({ value: mfr.id, label: mfr.name }))}
+                    value={editedProduct.manufacturerId}
+                    onChange={(value) => setEditedProduct({ ...editedProduct, manufacturerId: value })}
+                    placeholder="Select Manufacturer"
+                    className="flex-1"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => openManufacturerModal(null)}
+                    className="flex items-center justify-center rounded-lg border border-gray-300 px-3 text-gray-600 hover:bg-gray-50 hover:text-teal-600"
+                    title="Add new manufacturer"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
@@ -1147,13 +1289,23 @@ export default function ProductImportPage() {
                 <label className="block text-sm font-medium text-gray-700">
                   Category <span className="text-red-500">*</span>
                 </label>
-                <SearchableSelect
-                  options={categories.map((cat) => ({ value: cat.id, label: cat.name }))}
-                  value={editedProduct.categoryId}
-                  onChange={(value) => setEditedProduct({ ...editedProduct, categoryId: value })}
-                  placeholder="Select Category"
-                  className="mt-1"
-                />
+                <div className="mt-1 flex gap-2">
+                  <SearchableSelect
+                    options={categories.map((cat) => ({ value: cat.id, label: cat.name }))}
+                    value={editedProduct.categoryId}
+                    onChange={(value) => setEditedProduct({ ...editedProduct, categoryId: value })}
+                    placeholder="Select Category"
+                    className="flex-1"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => openCategoryModal(null)}
+                    className="flex items-center justify-center rounded-lg border border-gray-300 px-3 text-gray-600 hover:bg-gray-50 hover:text-teal-600"
+                    title="Add new category"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
               
               <div>
@@ -1409,6 +1561,122 @@ export default function ProductImportPage() {
                 'Save Product'
               )}
             </button>
+          </div>
+        </div>
+      )}
+
+      {showManufacturerModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Add New Manufacturer</h3>
+              <button
+                onClick={() => { setShowManufacturerModal(false); setNewManufacturerName(''); }}
+                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Manufacturer Name *</label>
+                <input
+                  type="text"
+                  value={newManufacturerName}
+                  onChange={(e) => setNewManufacturerName(e.target.value)}
+                  placeholder="Enter manufacturer name"
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  autoFocus
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleCreateManufacturer(); }}
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Slug will be auto-generated: {newManufacturerName ? slugify(newManufacturerName) : 'manufacturer-slug'}
+                </p>
+              </div>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => { setShowManufacturerModal(false); setNewManufacturerName(''); }}
+                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreateManufacturer}
+                  disabled={creatingManufacturer || !newManufacturerName.trim()}
+                  className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 disabled:bg-gray-400"
+                >
+                  {creatingManufacturer ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4" />
+                      Create
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCategoryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Add New Category</h3>
+              <button
+                onClick={() => { setShowCategoryModal(false); setNewCategoryName(''); }}
+                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Category Name *</label>
+                <input
+                  type="text"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  placeholder="Enter category name"
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  autoFocus
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleCreateCategory(); }}
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Slug will be auto-generated: {newCategoryName ? slugify(newCategoryName) : 'category-slug'}
+                </p>
+              </div>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => { setShowCategoryModal(false); setNewCategoryName(''); }}
+                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreateCategory}
+                  disabled={creatingCategory || !newCategoryName.trim()}
+                  className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 disabled:bg-gray-400"
+                >
+                  {creatingCategory ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4" />
+                      Create
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
