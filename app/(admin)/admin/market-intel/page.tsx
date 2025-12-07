@@ -24,28 +24,87 @@ interface HeatMapCell {
 }
 
 const CATEGORIES = [
-  'rice', 'oil', 'paracetamol', 'cough-syrup', 'face-wash',
-  'baby-food', 'diapers', 'milk', 'tea-coffee', 'biscuits',
-  'snacks', 'soap', 'shampoo', 'toothpaste', 'detergent'
+  // Food & Grocery
+  'rice', 'oil', 'spices', 'dal', 'flour', 'sugar-salt', 'noodles-pasta', 'sauce-condiments', 'ready-mix',
+  // Beverages
+  'milk', 'tea-coffee', 'juice', 'soft-drinks', 'water',
+  // Snacks & Biscuits
+  'biscuits', 'snacks', 'chips', 'chocolates', 'candy',
+  // Baby Care
+  'baby-food', 'diapers', 'baby-bath', 'baby-accessories',
+  // Personal Care
+  'soap', 'shampoo', 'toothpaste', 'face-wash', 'body-lotion', 'hair-oil', 'deodorant',
+  // Health & Wellness
+  'paracetamol', 'cough-syrup', 'vitamins', 'first-aid',
+  // Cleaning & Household
+  'detergent', 'dishwash', 'floor-cleaner', 'toilet-cleaner', 'air-freshener',
+  // Fresh Items
+  'fruits', 'vegetables', 'meat', 'fish', 'eggs',
+  // Kitchen & Home
+  'kitchen-tools', 'storage',
+  // Pet Care
+  'pet-food'
 ]
 const SITES = ['chaldal', 'arogga', 'shajgoj']
 
 const CATEGORY_LABELS: Record<string, string> = {
+  // Food & Grocery
   'rice': 'Rice',
   'oil': 'Cooking Oil',
-  'paracetamol': 'Paracetamol',
-  'cough-syrup': 'Cough Syrup',
-  'face-wash': 'Face Wash',
-  'baby-food': 'Baby Food',
-  'diapers': 'Diapers',
+  'spices': 'Spices',
+  'dal': 'Dal & Pulses',
+  'flour': 'Flour & Atta',
+  'sugar-salt': 'Sugar & Salt',
+  'noodles-pasta': 'Noodles & Pasta',
+  'sauce-condiments': 'Sauce & Condiments',
+  'ready-mix': 'Ready Mix',
+  // Beverages
   'milk': 'Milk',
   'tea-coffee': 'Tea & Coffee',
+  'juice': 'Juice',
+  'soft-drinks': 'Soft Drinks',
+  'water': 'Water',
+  // Snacks & Biscuits
   'biscuits': 'Biscuits',
   'snacks': 'Snacks',
+  'chips': 'Chips',
+  'chocolates': 'Chocolates',
+  'candy': 'Candy',
+  // Baby Care
+  'baby-food': 'Baby Food',
+  'diapers': 'Diapers',
+  'baby-bath': 'Baby Bath',
+  'baby-accessories': 'Baby Accessories',
+  // Personal Care
   'soap': 'Soap',
   'shampoo': 'Shampoo',
   'toothpaste': 'Toothpaste',
+  'face-wash': 'Face Wash',
+  'body-lotion': 'Body Lotion',
+  'hair-oil': 'Hair Oil',
+  'deodorant': 'Deodorant',
+  // Health & Wellness
+  'paracetamol': 'Paracetamol',
+  'cough-syrup': 'Cough Syrup',
+  'vitamins': 'Vitamins',
+  'first-aid': 'First Aid',
+  // Cleaning & Household
   'detergent': 'Detergent',
+  'dishwash': 'Dishwash',
+  'floor-cleaner': 'Floor Cleaner',
+  'toilet-cleaner': 'Toilet Cleaner',
+  'air-freshener': 'Air Freshener',
+  // Fresh Items
+  'fruits': 'Fruits',
+  'vegetables': 'Vegetables',
+  'meat': 'Meat',
+  'fish': 'Fish',
+  'eggs': 'Eggs',
+  // Kitchen & Home
+  'kitchen-tools': 'Kitchen Tools',
+  'storage': 'Storage',
+  // Pet Care
+  'pet-food': 'Pet Food',
 }
 
 const SITE_LABELS: Record<string, string> = {

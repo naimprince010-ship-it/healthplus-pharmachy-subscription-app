@@ -2,21 +2,63 @@ import * as cheerio from 'cheerio'
 
 export type SiteName = 'chaldal' | 'arogga' | 'shajgoj'
 export type CategoryKey = 
+  // Food & Grocery
   | 'rice' 
   | 'oil' 
-  | 'paracetamol' 
-  | 'cough-syrup' 
-  | 'face-wash'
-  | 'baby-food'
-  | 'diapers'
+  | 'spices'
+  | 'dal'
+  | 'flour'
+  | 'sugar-salt'
+  | 'noodles-pasta'
+  | 'sauce-condiments'
+  | 'ready-mix'
+  // Beverages
   | 'milk'
   | 'tea-coffee'
+  | 'juice'
+  | 'soft-drinks'
+  | 'water'
+  // Snacks & Biscuits
   | 'biscuits'
   | 'snacks'
+  | 'chips'
+  | 'chocolates'
+  | 'candy'
+  // Baby Care
+  | 'baby-food'
+  | 'diapers'
+  | 'baby-bath'
+  | 'baby-accessories'
+  // Personal Care
   | 'soap'
   | 'shampoo'
   | 'toothpaste'
+  | 'face-wash'
+  | 'body-lotion'
+  | 'hair-oil'
+  | 'deodorant'
+  // Health & Wellness
+  | 'paracetamol'
+  | 'cough-syrup'
+  | 'vitamins'
+  | 'first-aid'
+  // Cleaning & Household
   | 'detergent'
+  | 'dishwash'
+  | 'floor-cleaner'
+  | 'toilet-cleaner'
+  | 'air-freshener'
+  // Fresh Items
+  | 'fruits'
+  | 'vegetables'
+  | 'meat'
+  | 'fish'
+  | 'eggs'
+  // Kitchen & Home
+  | 'kitchen-tools'
+  | 'storage'
+  // Pet Care
+  | 'pet-food'
 
 export interface ScrapedCompetitorProduct {
   siteName: SiteName
@@ -36,55 +78,87 @@ const HEADERS = {
 
 const CATEGORY_URLS: Record<SiteName, Record<CategoryKey, string>> = {
   chaldal: {
+    // Food & Grocery
     'rice': 'https://chaldal.com/search/rice',
     'oil': 'https://chaldal.com/search/cooking%20oil',
-    'paracetamol': 'https://chaldal.com/search/napa',
-    'cough-syrup': 'https://chaldal.com/search/syrup',
-    'face-wash': 'https://chaldal.com/search/face%20wash',
-    'baby-food': 'https://chaldal.com/search/baby%20food',
-    'diapers': 'https://chaldal.com/search/diapers',
+    'spices': 'https://chaldal.com/search/spices',
+    'dal': 'https://chaldal.com/search/dal',
+    'flour': 'https://chaldal.com/search/flour%20atta',
+    'sugar-salt': 'https://chaldal.com/search/sugar',
+    'noodles-pasta': 'https://chaldal.com/search/noodles',
+    'sauce-condiments': 'https://chaldal.com/search/sauce',
+    'ready-mix': 'https://chaldal.com/search/ready%20mix',
+    // Beverages
     'milk': 'https://chaldal.com/search/milk',
     'tea-coffee': 'https://chaldal.com/search/tea',
+    'juice': 'https://chaldal.com/search/juice',
+    'soft-drinks': 'https://chaldal.com/search/soft%20drinks',
+    'water': 'https://chaldal.com/search/mineral%20water',
+    // Snacks & Biscuits
     'biscuits': 'https://chaldal.com/search/biscuits',
-    'snacks': 'https://chaldal.com/search/chips',
+    'snacks': 'https://chaldal.com/search/snacks',
+    'chips': 'https://chaldal.com/search/chips',
+    'chocolates': 'https://chaldal.com/search/chocolate',
+    'candy': 'https://chaldal.com/search/candy',
+    // Baby Care
+    'baby-food': 'https://chaldal.com/search/baby%20food',
+    'diapers': 'https://chaldal.com/search/diapers',
+    'baby-bath': 'https://chaldal.com/search/baby%20bath',
+    'baby-accessories': 'https://chaldal.com/search/baby%20accessories',
+    // Personal Care
     'soap': 'https://chaldal.com/search/soap',
     'shampoo': 'https://chaldal.com/search/shampoo',
     'toothpaste': 'https://chaldal.com/search/toothpaste',
+    'face-wash': 'https://chaldal.com/search/face%20wash',
+    'body-lotion': 'https://chaldal.com/search/body%20lotion',
+    'hair-oil': 'https://chaldal.com/search/hair%20oil',
+    'deodorant': 'https://chaldal.com/search/deodorant',
+    // Health & Wellness
+    'paracetamol': 'https://chaldal.com/search/napa',
+    'cough-syrup': 'https://chaldal.com/search/syrup',
+    'vitamins': 'https://chaldal.com/search/vitamins',
+    'first-aid': 'https://chaldal.com/search/first%20aid',
+    // Cleaning & Household
     'detergent': 'https://chaldal.com/search/detergent',
+    'dishwash': 'https://chaldal.com/search/dishwash',
+    'floor-cleaner': 'https://chaldal.com/search/floor%20cleaner',
+    'toilet-cleaner': 'https://chaldal.com/search/toilet%20cleaner',
+    'air-freshener': 'https://chaldal.com/search/air%20freshener',
+    // Fresh Items
+    'fruits': 'https://chaldal.com/search/fruits',
+    'vegetables': 'https://chaldal.com/search/vegetables',
+    'meat': 'https://chaldal.com/search/meat',
+    'fish': 'https://chaldal.com/search/fish',
+    'eggs': 'https://chaldal.com/search/eggs',
+    // Kitchen & Home
+    'kitchen-tools': 'https://chaldal.com/search/kitchen',
+    'storage': 'https://chaldal.com/search/storage%20container',
+    // Pet Care
+    'pet-food': 'https://chaldal.com/search/pet%20food',
   },
   arogga: {
-    'rice': '',
-    'oil': '',
-    'paracetamol': '',
-    'cough-syrup': '',
-    'face-wash': '',
-    'baby-food': '',
-    'diapers': '',
-    'milk': '',
-    'tea-coffee': '',
-    'biscuits': '',
-    'snacks': '',
-    'soap': '',
-    'shampoo': '',
-    'toothpaste': '',
-    'detergent': '',
+    'rice': '', 'oil': '', 'spices': '', 'dal': '', 'flour': '', 'sugar-salt': '',
+    'noodles-pasta': '', 'sauce-condiments': '', 'ready-mix': '', 'milk': '',
+    'tea-coffee': '', 'juice': '', 'soft-drinks': '', 'water': '', 'biscuits': '',
+    'snacks': '', 'chips': '', 'chocolates': '', 'candy': '', 'baby-food': '',
+    'diapers': '', 'baby-bath': '', 'baby-accessories': '', 'soap': '', 'shampoo': '',
+    'toothpaste': '', 'face-wash': '', 'body-lotion': '', 'hair-oil': '', 'deodorant': '',
+    'paracetamol': '', 'cough-syrup': '', 'vitamins': '', 'first-aid': '', 'detergent': '',
+    'dishwash': '', 'floor-cleaner': '', 'toilet-cleaner': '', 'air-freshener': '',
+    'fruits': '', 'vegetables': '', 'meat': '', 'fish': '', 'eggs': '',
+    'kitchen-tools': '', 'storage': '', 'pet-food': '',
   },
   shajgoj: {
-    'rice': '',
-    'oil': '',
-    'paracetamol': '',
-    'cough-syrup': '',
-    'face-wash': '',
-    'baby-food': '',
-    'diapers': '',
-    'milk': '',
-    'tea-coffee': '',
-    'biscuits': '',
-    'snacks': '',
-    'soap': '',
-    'shampoo': '',
-    'toothpaste': '',
-    'detergent': '',
+    'rice': '', 'oil': '', 'spices': '', 'dal': '', 'flour': '', 'sugar-salt': '',
+    'noodles-pasta': '', 'sauce-condiments': '', 'ready-mix': '', 'milk': '',
+    'tea-coffee': '', 'juice': '', 'soft-drinks': '', 'water': '', 'biscuits': '',
+    'snacks': '', 'chips': '', 'chocolates': '', 'candy': '', 'baby-food': '',
+    'diapers': '', 'baby-bath': '', 'baby-accessories': '', 'soap': '', 'shampoo': '',
+    'toothpaste': '', 'face-wash': '', 'body-lotion': '', 'hair-oil': '', 'deodorant': '',
+    'paracetamol': '', 'cough-syrup': '', 'vitamins': '', 'first-aid': '', 'detergent': '',
+    'dishwash': '', 'floor-cleaner': '', 'toilet-cleaner': '', 'air-freshener': '',
+    'fruits': '', 'vegetables': '', 'meat': '', 'fish': '', 'eggs': '',
+    'kitchen-tools': '', 'storage': '', 'pet-food': '',
   },
 }
 
@@ -203,9 +277,26 @@ export async function scrapeAllSitesOnce(): Promise<ScrapedCompetitorProduct[]> 
   const allProducts: ScrapedCompetitorProduct[] = []
   const sites: SiteName[] = ['chaldal', 'arogga', 'shajgoj']
   const categories: CategoryKey[] = [
-    'rice', 'oil', 'paracetamol', 'cough-syrup', 'face-wash',
-    'baby-food', 'diapers', 'milk', 'tea-coffee', 'biscuits',
-    'snacks', 'soap', 'shampoo', 'toothpaste', 'detergent'
+    // Food & Grocery
+    'rice', 'oil', 'spices', 'dal', 'flour', 'sugar-salt', 'noodles-pasta', 'sauce-condiments', 'ready-mix',
+    // Beverages
+    'milk', 'tea-coffee', 'juice', 'soft-drinks', 'water',
+    // Snacks & Biscuits
+    'biscuits', 'snacks', 'chips', 'chocolates', 'candy',
+    // Baby Care
+    'baby-food', 'diapers', 'baby-bath', 'baby-accessories',
+    // Personal Care
+    'soap', 'shampoo', 'toothpaste', 'face-wash', 'body-lotion', 'hair-oil', 'deodorant',
+    // Health & Wellness
+    'paracetamol', 'cough-syrup', 'vitamins', 'first-aid',
+    // Cleaning & Household
+    'detergent', 'dishwash', 'floor-cleaner', 'toilet-cleaner', 'air-freshener',
+    // Fresh Items
+    'fruits', 'vegetables', 'meat', 'fish', 'eggs',
+    // Kitchen & Home
+    'kitchen-tools', 'storage',
+    // Pet Care
+    'pet-food'
   ]
 
   for (const site of sites) {
