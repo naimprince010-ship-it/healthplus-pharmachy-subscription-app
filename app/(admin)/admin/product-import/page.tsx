@@ -793,13 +793,17 @@ export default function ProductImportPage() {
                               className="flex items-center gap-3 p-4 cursor-pointer"
                               onClick={() => setEditingDraftId(editingDraftId === draft.id ? null : draft.id)}
                             >
-                              {draft.data.imageUrl && (
-                                <img
-                                  src={draft.data.imageUrl}
-                                  alt={draft.editedData.name}
-                                  className="h-12 w-12 rounded object-cover bg-gray-100"
-                                />
-                              )}
+                                                            {draft.data.imageUrl ? (
+                                                              <img
+                                                                src={draft.data.imageUrl}
+                                                                alt={draft.editedData.name}
+                                                                className="h-12 w-12 rounded object-cover bg-gray-100"
+                                                              />
+                                                            ) : (
+                                                              <div className="h-12 w-12 rounded bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
+                                                                No img
+                                                              </div>
+                                                            )}
                               <div className="flex-1 min-w-0">
                                 <p className="truncate text-sm font-medium text-gray-900">{draft.editedData.name}</p>
                                 <p className="text-xs text-gray-500">
