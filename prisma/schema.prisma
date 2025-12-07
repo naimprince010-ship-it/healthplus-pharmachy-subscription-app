@@ -649,6 +649,29 @@ model Page {
   @@index([group, isPublished, sortOrder])
 }
 
+// Landing Page Builder - Dynamic promotional landing pages
+enum LandingPageStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model LandingPage {
+  id              String            @id @default(cuid())
+  title           String
+  slug            String            @unique
+  status          LandingPageStatus @default(DRAFT)
+  sections        Json              // Array of section configs with type, order, and config
+  metaTitle       String?
+  metaDescription String?
+  primaryColor    String?           @default("#036666")
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  publishedAt     DateTime?
+
+  @@index([status])
+  @@index([slug, status])
+}
+
 // Generic admin settings storage system
 // No previous settings model existed in this codebase.
 // This unified model stores all admin settings as JSON by key.

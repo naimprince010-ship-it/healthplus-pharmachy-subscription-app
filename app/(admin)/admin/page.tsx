@@ -1,4 +1,4 @@
-import { Package, Users, ShoppingBag, FileText, Shield, Image } from 'lucide-react'
+import { Package, Users, ShoppingBag, FileText, Shield, Image, Layout } from 'lucide-react'
 import Link from 'next/link'
 
 export default async function AdminDashboard() {
@@ -73,15 +73,24 @@ export default async function AdminDashboard() {
             <p className="mt-2 text-gray-600">Manage customer accounts</p>
           </Link>
 
-          <Link
-            href="/admin/prescriptions"
-            className="rounded-lg bg-white p-6 shadow transition-transform hover:scale-105"
-          >
-            <FileText className="h-12 w-12 text-teal-600" />
-            <h2 className="mt-4 text-xl font-bold text-gray-900">Prescriptions</h2>
-            <p className="mt-2 text-gray-600">Review uploaded prescriptions</p>
-          </Link>
-        </div>
+                  <Link
+                    href="/admin/prescriptions"
+                    className="rounded-lg bg-white p-6 shadow transition-transform hover:scale-105"
+                  >
+                    <FileText className="h-12 w-12 text-teal-600" />
+                    <h2 className="mt-4 text-xl font-bold text-gray-900">Prescriptions</h2>
+                    <p className="mt-2 text-gray-600">Review uploaded prescriptions</p>
+                  </Link>
+
+                  <Link
+                    href="/admin/landing-pages"
+                    className="rounded-lg bg-white p-6 shadow transition-transform hover:scale-105"
+                  >
+                    <Layout className="h-12 w-12 text-teal-600" />
+                    <h2 className="mt-4 text-xl font-bold text-gray-900">Landing Pages</h2>
+                    <p className="mt-2 text-gray-600">Create promotional landing pages</p>
+                  </Link>
+                </div>
     </div>
   )
 }
