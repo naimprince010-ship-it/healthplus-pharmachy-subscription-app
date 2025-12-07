@@ -44,8 +44,7 @@ export default async function CampaignPage({ params }: PageProps) {
     notFound()
   }
 
-  // Parse sections from JSON
-  const sections = landingPage.sections as LandingPageSection[]
+    const sections = landingPage.sections as unknown as LandingPageSection[]
   const primaryColor = landingPage.primaryColor || '#036666'
 
   return (

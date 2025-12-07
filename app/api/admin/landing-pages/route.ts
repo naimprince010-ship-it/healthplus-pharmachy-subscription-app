@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { Prisma } from '@prisma/client'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -96,17 +97,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const landingPage = await prisma.landingPage.create({
-      data: {
-        title: validatedData.title,
-        slug: validatedData.slug,
-        sections: validatedData.sections,
-        metaTitle: validatedData.metaTitle || null,
-        metaDescription: validatedData.metaDescription || null,
-        primaryColor: validatedData.primaryColor || '#036666',
-        status: 'DRAFT',
-      },
-    })
+        const landingPage = await prisma.landingPage.create({
+          data: {
+            title: validatedData.title,
+            slug: validatedData.slug,
+            sections: validatedData.sections as Prisma.InputJsonValue,
+            metaTitle: validatedData.metaTitle || null,
+            metaDescription: validatedData.metaDescription || null,
+            primaryColor: validatedData.primaryColor || '#036666',
+            status: 'DRAFT',
+          },
+        })
 
     return NextResponse.json({ landingPage }, { status: 201 })
   } catch (error) {

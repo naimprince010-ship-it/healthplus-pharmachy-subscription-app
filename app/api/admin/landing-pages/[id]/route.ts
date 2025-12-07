@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { Prisma } from '@prisma/client'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -93,7 +94,7 @@ export async function PUT(
     const updateData: Record<string, unknown> = {}
     if (validatedData.title !== undefined) updateData.title = validatedData.title
     if (validatedData.slug !== undefined) updateData.slug = validatedData.slug
-    if (validatedData.sections !== undefined) updateData.sections = validatedData.sections
+    if (validatedData.sections !== undefined) updateData.sections = validatedData.sections as Prisma.InputJsonValue
     if (validatedData.metaTitle !== undefined) updateData.metaTitle = validatedData.metaTitle
     if (validatedData.metaDescription !== undefined) updateData.metaDescription = validatedData.metaDescription
     if (validatedData.primaryColor !== undefined) updateData.primaryColor = validatedData.primaryColor
