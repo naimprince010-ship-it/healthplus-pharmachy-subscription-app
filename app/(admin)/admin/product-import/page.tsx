@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Download, ExternalLink, AlertCircle, CheckCircle, Loader2, Sparkles, FolderOpen, Package } from 'lucide-react'
+import { Download, ExternalLink, AlertCircle, CheckCircle, Loader2, Sparkles, FolderOpen, Package, ChevronDown, ChevronUp, Trash2, Save } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { slugify } from '@/lib/slugify'
 import { SearchableSelect } from '@/components/SearchableSelect'
@@ -43,6 +43,29 @@ interface CategoryProduct {
   selected?: boolean
 }
 
+interface DraftProduct {
+  id: string
+  data: ImportedProduct
+  editedData: {
+    name: string
+    manufacturerId: string
+    description: string
+    sellingPrice: string
+    mrp: string
+    stockQuantity: string
+    categoryId: string
+    packSize: string
+    keyFeatures: string
+    specSummary: string
+    seoTitle: string
+    seoDescription: string
+    seoKeywords: string
+    slug: string
+  }
+  status: 'pending' | 'saving' | 'saved' | 'error'
+  error?: string
+}
+
 export default function ProductImportPage() {
   const router = useRouter()
   const [importMode, setImportMode] = useState<'single' | 'bulk'>('single')
@@ -56,11 +79,13 @@ export default function ProductImportPage() {
   const [aiError, setAiError] = useState('')
   const [aiLanguage, setAiLanguage] = useState<'en' | 'bn'>('en')
   
-  const [categoryUrl, setCategoryUrl] = useState('')
-  const [categoryProducts, setCategoryProducts] = useState<CategoryProduct[]>([])
-  const [bulkLoading, setBulkLoading] = useState(false)
-  const [bulkImporting, setBulkImporting] = useState(false)
-  const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0, success: 0, failed: 0 })
+    const [categoryUrl, setCategoryUrl] = useState('')
+    const [categoryProducts, setCategoryProducts] = useState<CategoryProduct[]>([])
+    const [bulkLoading, setBulkLoading] = useState(false)
+    const [bulkImporting, setBulkImporting] = useState(false)
+    const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0, success: 0, failed: 0 })
+    const [draftProducts, setDraftProducts] = useState<DraftProduct[]>([])
+    const [editingDraftId, setEditingDraftId] = useState<string | null>(null)
   
         const [editedProduct, setEditedProduct] = useState({
           name: '',
@@ -259,47 +284,162 @@ export default function ProductImportPage() {
       setCategoryProducts(prev => prev.map(p => ({ ...p, selected })))
     }
 
-    const handleBulkImport = async () => {
-      const selectedProducts = categoryProducts.filter(p => p.selected)
-      if (selectedProducts.length === 0) {
-        toast.error('Please select at least one product to import')
-        return
-      }
-    
-      setBulkImporting(true)
-      setBulkProgress({ current: 0, total: selectedProducts.length, success: 0, failed: 0 })
-    
-      let success = 0
-      let failed = 0
-    
-      for (let i = 0; i < selectedProducts.length; i++) {
-        const product = selectedProducts[i]
-        setBulkProgress(prev => ({ ...prev, current: i + 1 }))
-      
-        try {
-          const res = await fetch('/api/admin/product-import', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url: product.url }),
-          })
-        
-          if (res.ok) {
-            success++
-          } else {
-            failed++
+        const handleBulkImport = async () => {
+          const selectedProducts = categoryProducts.filter(p => p.selected)
+          if (selectedProducts.length === 0) {
+            toast.error('Please select at least one product to import')
+            return
           }
-        } catch {
-          failed++
-        }
-      
-        setBulkProgress(prev => ({ ...prev, success, failed }))
-      }
     
-      setBulkImporting(false)
-      toast.success(`Imported ${success} products, ${failed} failed`)
-    }
+          setBulkImporting(true)
+          setBulkProgress({ current: 0, total: selectedProducts.length, success: 0, failed: 0 })
+          setDraftProducts([])
+    
+          let success = 0
+          let failed = 0
+          const newDrafts: DraftProduct[] = []
+    
+          for (let i = 0; i < selectedProducts.length; i++) {
+            const product = selectedProducts[i]
+            setBulkProgress(prev => ({ ...prev, current: i + 1 }))
+      
+            try {
+              const res = await fetch('/api/admin/product-import', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: product.url }),
+              })
+        
+              if (res.ok) {
+                const data = await res.json()
+                const importedProduct = data.product as ImportedProduct
+            
+                newDrafts.push({
+                  id: `draft-${Date.now()}-${i}`,
+                  data: importedProduct,
+                  editedData: {
+                    name: importedProduct.name || '',
+                    manufacturerId: '',
+                    description: importedProduct.description || '',
+                    sellingPrice: importedProduct.sellingPrice?.toString() || '',
+                    mrp: importedProduct.mrp?.toString() || '',
+                    stockQuantity: '100',
+                    categoryId: '',
+                    packSize: importedProduct.packSize || '',
+                    keyFeatures: '',
+                    specSummary: '',
+                    seoTitle: '',
+                    seoDescription: '',
+                    seoKeywords: '',
+                    slug: '',
+                  },
+                  status: 'pending',
+                })
+                success++
+              } else {
+                failed++
+              }
+            } catch {
+              failed++
+            }
+      
+            setBulkProgress(prev => ({ ...prev, success, failed }))
+          }
+    
+              setDraftProducts(newDrafts)
+              setBulkImporting(false)
+              setCategoryProducts([])
+              toast.success(`Fetched ${success} products to draft list. ${failed} failed.`)
+            }
 
-    const handleSaveProduct = async () => {
+        const updateDraftProduct = (draftId: string, field: string, value: string) => {
+          setDraftProducts(prev => prev.map(draft => 
+            draft.id === draftId 
+              ? { ...draft, editedData: { ...draft.editedData, [field]: value } }
+              : draft
+          ))
+        }
+
+        const saveDraftProduct = async (draftId: string) => {
+          const draft = draftProducts.find(d => d.id === draftId)
+          if (!draft) return
+
+          if (!draft.editedData.name.trim()) {
+            toast.error('Product name is required')
+            return
+          }
+          if (!draft.editedData.sellingPrice || parseFloat(draft.editedData.sellingPrice) <= 0) {
+            toast.error('Valid selling price is required')
+            return
+          }
+          if (!draft.editedData.categoryId) {
+            toast.error('Please select a category')
+            return
+          }
+
+          setDraftProducts(prev => prev.map(d => 
+            d.id === draftId ? { ...d, status: 'saving' } : d
+          ))
+
+          try {
+            const productData = {
+              type: 'GENERAL',
+              name: draft.editedData.name.trim(),
+              slug: draft.editedData.slug.trim() || undefined,
+              manufacturerId: draft.editedData.manufacturerId || undefined,
+              description: draft.editedData.description.trim() || undefined,
+              sellingPrice: parseFloat(draft.editedData.sellingPrice),
+              mrp: draft.editedData.mrp ? parseFloat(draft.editedData.mrp) : undefined,
+              stockQuantity: parseInt(draft.editedData.stockQuantity) || 100,
+              imageUrl: draft.data.imageUrl || undefined,
+              isActive: true,
+              categoryId: draft.editedData.categoryId,
+              sizeLabel: draft.editedData.packSize.trim() || undefined,
+              keyFeatures: draft.editedData.keyFeatures.trim() || undefined,
+              specSummary: draft.editedData.specSummary.trim() || undefined,
+              seoTitle: draft.editedData.seoTitle.trim() || undefined,
+              seoDescription: draft.editedData.seoDescription.trim() || undefined,
+              seoKeywords: draft.editedData.seoKeywords.trim() || undefined,
+            }
+
+            const res = await fetch('/api/admin/products', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(productData),
+            })
+
+            if (!res.ok) {
+              const data = await res.json()
+              throw new Error(data.error || 'Failed to save product')
+            }
+
+            setDraftProducts(prev => prev.map(d => 
+              d.id === draftId ? { ...d, status: 'saved' } : d
+            ))
+            toast.success(`${draft.editedData.name} saved successfully!`)
+          } catch (err) {
+            const message = err instanceof Error ? err.message : 'Failed to save product'
+            setDraftProducts(prev => prev.map(d => 
+              d.id === draftId ? { ...d, status: 'error', error: message } : d
+            ))
+            toast.error(message)
+          }
+        }
+
+        const removeDraftProduct = (draftId: string) => {
+          setDraftProducts(prev => prev.filter(d => d.id !== draftId))
+        }
+
+        const saveAllDrafts = async () => {
+          const pendingDrafts = draftProducts.filter(d => d.status === 'pending')
+          for (const draft of pendingDrafts) {
+            if (draft.editedData.categoryId && draft.editedData.sellingPrice) {
+              await saveDraftProduct(draft.id)
+            }
+          }
+        }
+
+        const handleSaveProduct = async () => {
       if (!editedProduct.name.trim()) {
         toast.error('Product name is required')
         return
@@ -610,13 +750,179 @@ export default function ProductImportPage() {
                       />
                     </div>
                   </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+                      )}
+                    </div>
+                  )}
 
-      {importedProduct && (
+                  {draftProducts.length > 0 && (
+                    <div className="rounded-lg border border-gray-200 bg-white p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h2 className="text-lg font-semibold text-gray-900">Step 3: Review & Save Products</h2>
+                          <p className="mt-1 text-sm text-gray-600">
+                            Edit each product and save to database. {draftProducts.filter(d => d.status === 'saved').length} of {draftProducts.length} saved.
+                          </p>
+                        </div>
+                        <button
+                          onClick={saveAllDrafts}
+                          disabled={draftProducts.filter(d => d.status === 'pending' && d.editedData.categoryId).length === 0}
+                          className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-700 disabled:bg-gray-400"
+                        >
+                          <Save className="h-4 w-4" />
+                          Save All Ready
+                        </button>
+                      </div>
+
+                      <div className="mt-4 space-y-3">
+                        {draftProducts.map((draft) => (
+                          <div
+                            key={draft.id}
+                            className={`rounded-lg border ${
+                              draft.status === 'saved' 
+                                ? 'border-green-200 bg-green-50' 
+                                : draft.status === 'error'
+                                ? 'border-red-200 bg-red-50'
+                                : 'border-gray-200 bg-white'
+                            }`}
+                          >
+                            <div 
+                              className="flex items-center gap-3 p-4 cursor-pointer"
+                              onClick={() => setEditingDraftId(editingDraftId === draft.id ? null : draft.id)}
+                            >
+                              {draft.data.imageUrl && (
+                                <img
+                                  src={draft.data.imageUrl}
+                                  alt={draft.editedData.name}
+                                  className="h-12 w-12 rounded object-cover bg-gray-100"
+                                />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="truncate text-sm font-medium text-gray-900">{draft.editedData.name}</p>
+                                <p className="text-xs text-gray-500">
+                                  {draft.editedData.sellingPrice ? `৳${draft.editedData.sellingPrice}` : 'No price'} 
+                                  {draft.editedData.categoryId ? '' : ' • No category selected'}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {draft.status === 'saved' && (
+                                  <span className="flex items-center gap-1 text-xs text-green-600">
+                                    <CheckCircle className="h-4 w-4" />
+                                    Saved
+                                  </span>
+                                )}
+                                {draft.status === 'saving' && (
+                                  <Loader2 className="h-4 w-4 animate-spin text-teal-600" />
+                                )}
+                                {draft.status === 'error' && (
+                                  <span className="text-xs text-red-600">{draft.error}</span>
+                                )}
+                                {draft.status === 'pending' && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); saveDraftProduct(draft.id); }}
+                                    disabled={!draft.editedData.categoryId || !draft.editedData.sellingPrice}
+                                    className="flex items-center gap-1 rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-teal-700 disabled:bg-gray-400"
+                                  >
+                                    <Save className="h-3 w-3" />
+                                    Save
+                                  </button>
+                                )}
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); removeDraftProduct(draft.id); }}
+                                  className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-red-600"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                                {editingDraftId === draft.id ? (
+                                  <ChevronUp className="h-5 w-5 text-gray-400" />
+                                ) : (
+                                  <ChevronDown className="h-5 w-5 text-gray-400" />
+                                )}
+                              </div>
+                            </div>
+
+                            {editingDraftId === draft.id && draft.status !== 'saved' && (
+                              <div className="border-t border-gray-200 p-4">
+                                <div className="grid gap-4 md:grid-cols-2">
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700">Product Name *</label>
+                                    <input
+                                      type="text"
+                                      value={draft.editedData.name}
+                                      onChange={(e) => updateDraftProduct(draft.id, 'name', e.target.value)}
+                                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700">Category *</label>
+                                    <SearchableSelect
+                                      options={categories.map((cat) => ({ value: cat.id, label: cat.name }))}
+                                      value={draft.editedData.categoryId}
+                                      onChange={(value) => updateDraftProduct(draft.id, 'categoryId', value)}
+                                      placeholder="Select Category"
+                                      className="mt-1"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700">Selling Price (BDT) *</label>
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      value={draft.editedData.sellingPrice}
+                                      onChange={(e) => updateDraftProduct(draft.id, 'sellingPrice', e.target.value)}
+                                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700">MRP (BDT)</label>
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      value={draft.editedData.mrp}
+                                      onChange={(e) => updateDraftProduct(draft.id, 'mrp', e.target.value)}
+                                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700">Manufacturer</label>
+                                    <SearchableSelect
+                                      options={manufacturers.map((mfr) => ({ value: mfr.id, label: mfr.name }))}
+                                      value={draft.editedData.manufacturerId}
+                                      onChange={(value) => updateDraftProduct(draft.id, 'manufacturerId', value)}
+                                      placeholder="Select Manufacturer"
+                                      className="mt-1"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700">Pack Size</label>
+                                    <input
+                                      type="text"
+                                      value={draft.editedData.packSize}
+                                      onChange={(e) => updateDraftProduct(draft.id, 'packSize', e.target.value)}
+                                      placeholder="e.g., 500 ml, 300 gm"
+                                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                    />
+                                  </div>
+                                  <div className="md:col-span-2">
+                                    <label className="block text-xs font-medium text-gray-700">Description</label>
+                                    <textarea
+                                      rows={2}
+                                      value={draft.editedData.description}
+                                      onChange={(e) => updateDraftProduct(draft.id, 'description', e.target.value)}
+                                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+            {importedProduct && (
         <div className="rounded-lg border border-gray-200 bg-white p-6">
           <div className="flex items-center justify-between">
             <div>
