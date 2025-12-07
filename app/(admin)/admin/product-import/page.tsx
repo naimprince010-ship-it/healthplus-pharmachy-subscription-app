@@ -84,8 +84,9 @@ export default function ProductImportPage() {
     const [bulkLoading, setBulkLoading] = useState(false)
     const [bulkImporting, setBulkImporting] = useState(false)
     const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0, success: 0, failed: 0 })
-    const [draftProducts, setDraftProducts] = useState<DraftProduct[]>([])
-    const [editingDraftId, setEditingDraftId] = useState<string | null>(null)
+        const [draftProducts, setDraftProducts] = useState<DraftProduct[]>([])
+        const [editingDraftId, setEditingDraftId] = useState<string | null>(null)
+        const [draftAiLoading, setDraftAiLoading] = useState<string | null>(null)
   
         const [editedProduct, setEditedProduct] = useState({
           name: '',
@@ -434,16 +435,72 @@ export default function ProductImportPage() {
           setDraftProducts(prev => prev.filter(d => d.id !== draftId))
         }
 
-        const saveAllDrafts = async () => {
-          const pendingDrafts = draftProducts.filter(d => d.status === 'pending')
-          for (const draft of pendingDrafts) {
-            if (draft.editedData.categoryId && draft.editedData.sellingPrice) {
-              await saveDraftProduct(draft.id)
-            }
-          }
-        }
+                const saveAllDrafts = async () => {
+                  const pendingDrafts = draftProducts.filter(d => d.status === 'pending')
+                  for (const draft of pendingDrafts) {
+                    if (draft.editedData.categoryId && draft.editedData.sellingPrice) {
+                      await saveDraftProduct(draft.id)
+                    }
+                  }
+                }
 
-        const handleSaveProduct = async () => {
+                const handleDraftAIGenerate = async (draftId: string) => {
+                  const draft = draftProducts.find(d => d.id === draftId)
+                  if (!draft || !draft.editedData.name) {
+                    toast.error('Product name is required for AI generation')
+                    return
+                  }
+
+                  setDraftAiLoading(draftId)
+
+                  try {
+                    const res = await fetch('/api/ai/product-helper', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        productName: draft.editedData.name,
+                        brandName: manufacturers.find(m => m.id === draft.editedData.manufacturerId)?.name || undefined,
+                        category: categories.find(c => c.id === draft.editedData.categoryId)?.name || undefined,
+                        language: 'en',
+                      }),
+                    })
+
+                    const data = await res.json()
+
+                    if (res.ok) {
+                      const baseSlug = draft.editedData.packSize 
+                        ? `${draft.editedData.name} ${draft.editedData.packSize}` 
+                        : draft.editedData.name
+              
+                      setDraftProducts(prev => prev.map(d => 
+                        d.id === draftId 
+                          ? { 
+                              ...d, 
+                              editedData: {
+                                ...d.editedData,
+                                description: data.description || d.editedData.description,
+                                keyFeatures: data.keyFeatures?.join('\n') || d.editedData.keyFeatures,
+                                specSummary: data.specsSummary || d.editedData.specSummary,
+                                seoTitle: data.seoTitle || d.editedData.seoTitle,
+                                seoDescription: data.seoDescription || d.editedData.seoDescription,
+                                seoKeywords: data.seoKeywords?.join(', ') || d.editedData.seoKeywords,
+                                slug: slugify(baseSlug),
+                              }
+                            }
+                          : d
+                      ))
+                      toast.success('AI content generated!')
+                    } else {
+                      toast.error(data.error || 'AI generation failed')
+                    }
+                  } catch {
+                    toast.error('AI generation failed. Please try again.')
+                  } finally {
+                    setDraftAiLoading(null)
+                  }
+                }
+
+                const handleSaveProduct = async () => {
       if (!editedProduct.name.trim()) {
         toast.error('Product name is required')
         return
@@ -910,18 +967,79 @@ export default function ProductImportPage() {
                                       className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
                                     />
                                   </div>
-                                  <div className="md:col-span-2">
-                                    <label className="block text-xs font-medium text-gray-700">Description</label>
-                                    <textarea
-                                      rows={2}
-                                      value={draft.editedData.description}
-                                      onChange={(e) => updateDraftProduct(draft.id, 'description', e.target.value)}
-                                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                            )}
+                                                              <div className="md:col-span-2">
+                                                                <label className="block text-xs font-medium text-gray-700">Description</label>
+                                                                <textarea
+                                                                  rows={2}
+                                                                  value={draft.editedData.description}
+                                                                  onChange={(e) => updateDraftProduct(draft.id, 'description', e.target.value)}
+                                                                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                                                />
+                                                              </div>
+                                  
+                                                              <div className="md:col-span-2 border-t border-gray-200 pt-4 mt-2">
+                                                                <div className="flex items-center justify-between mb-3">
+                                                                  <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">SEO Content</h4>
+                                                                  <button
+                                                                    type="button"
+                                                                    onClick={(e) => { e.stopPropagation(); handleDraftAIGenerate(draft.id); }}
+                                                                    disabled={draftAiLoading === draft.id || !draft.editedData.name}
+                                                                    className="flex items-center gap-1.5 rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-700 disabled:bg-gray-400"
+                                                                  >
+                                                                    {draftAiLoading === draft.id ? (
+                                                                      <Loader2 className="h-3 w-3 animate-spin" />
+                                                                    ) : (
+                                                                      <Sparkles className="h-3 w-3" />
+                                                                    )}
+                                                                    AI Generate SEO
+                                                                  </button>
+                                                                </div>
+                                                                <div className="grid gap-3 md:grid-cols-2">
+                                                                  <div>
+                                                                    <label className="block text-xs font-medium text-gray-700">SEO Title</label>
+                                                                    <input
+                                                                      type="text"
+                                                                      value={draft.editedData.seoTitle}
+                                                                      onChange={(e) => updateDraftProduct(draft.id, 'seoTitle', e.target.value)}
+                                                                      placeholder="SEO optimized title"
+                                                                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                                                    />
+                                                                  </div>
+                                                                  <div>
+                                                                    <label className="block text-xs font-medium text-gray-700">URL Slug</label>
+                                                                    <input
+                                                                      type="text"
+                                                                      value={draft.editedData.slug}
+                                                                      onChange={(e) => updateDraftProduct(draft.id, 'slug', e.target.value)}
+                                                                      placeholder="product-url-slug"
+                                                                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                                                    />
+                                                                  </div>
+                                                                  <div className="md:col-span-2">
+                                                                    <label className="block text-xs font-medium text-gray-700">SEO Description</label>
+                                                                    <textarea
+                                                                      rows={2}
+                                                                      value={draft.editedData.seoDescription}
+                                                                      onChange={(e) => updateDraftProduct(draft.id, 'seoDescription', e.target.value)}
+                                                                      placeholder="Meta description for search engines"
+                                                                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                                                    />
+                                                                  </div>
+                                                                  <div className="md:col-span-2">
+                                                                    <label className="block text-xs font-medium text-gray-700">SEO Keywords</label>
+                                                                    <input
+                                                                      type="text"
+                                                                      value={draft.editedData.seoKeywords}
+                                                                      onChange={(e) => updateDraftProduct(draft.id, 'seoKeywords', e.target.value)}
+                                                                      placeholder="keyword1, keyword2, keyword3"
+                                                                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                                                    />
+                                                                  </div>
+                                                                </div>
+                                                              </div>
+                                                            </div>
+                                                          </div>
+                                                        )}
                           </div>
                         ))}
                       </div>
