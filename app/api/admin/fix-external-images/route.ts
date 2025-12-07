@@ -7,9 +7,12 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
+// External image domains to check (not hosted on Supabase)
+const EXTERNAL_IMAGE_DOMAINS = ['chaldn.com', 'arogga.com', 'medeasy.health']
+
 /**
  * GET /api/admin/fix-external-images
- * List all products with external (chaldn.com) image URLs
+ * List all products with external image URLs (Chaldal, Arogga, MedEasy, etc.)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -18,11 +21,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
+    // Find products with external image URLs from any of the known domains
     const products = await prisma.product.findMany({
       where: {
-        imageUrl: {
-          contains: 'chaldn.com',
-        },
+        OR: EXTERNAL_IMAGE_DOMAINS.map(domain => ({
+          imageUrl: {
+            contains: domain,
+          },
+        })),
       },
       select: {
         id: true,
@@ -60,10 +66,15 @@ export async function POST(request: NextRequest) {
     const productId = body.productId as string | undefined
     const fixAll = body.fixAll as boolean | undefined
 
+    // Build OR clause for all external domains
+    const externalDomainsFilter = EXTERNAL_IMAGE_DOMAINS.map(domain => ({
+      imageUrl: { contains: domain },
+    }))
+
     // Get products with external images
     const whereClause = productId
-      ? { id: productId, imageUrl: { contains: 'chaldn.com' } }
-      : { imageUrl: { contains: 'chaldn.com' } }
+      ? { id: productId, OR: externalDomainsFilter }
+      : { OR: externalDomainsFilter }
 
     const products = await prisma.product.findMany({
       where: whereClause,
