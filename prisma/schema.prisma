@@ -1171,3 +1171,21 @@ model MissingProduct {
   @@index([isResolved])
   @@index([blogId])
 }
+
+// Market Intelligence - Phase 1
+model CompetitorProduct {
+  id          String   @id @default(cuid())
+  siteName    String   // 'chaldal' | 'arogga' | 'shajgoj'
+  category    String   // 'rice' | 'oil' | 'paracetamol' | 'cough-syrup' | 'face-wash'
+  productName String
+  price       Float
+  reviewCount Int      @default(0)
+  trendScore  Float    // Computed: reviewCount - (price * 0.01)
+  productUrl  String?  // URL to the product page
+  imageUrl    String?  // Product image URL
+  collectedAt DateTime @default(now())
+
+  @@index([siteName, category, collectedAt])
+  @@index([category, trendScore])
+  @@index([collectedAt])
+}
