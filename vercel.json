@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/cron/market-intel",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
