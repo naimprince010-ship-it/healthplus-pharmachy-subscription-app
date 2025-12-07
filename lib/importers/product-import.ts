@@ -425,9 +425,20 @@ async function extractProductsFromMedeasyCategory(url: string, maxPages: number 
       const priceMatch = priceText.match(/৳([\d,.]+)/)
       const price = priceMatch ? parseFloat(priceMatch[1].replace(/,/g, '')) : null
       
-      const img = article.find('img[src*="medeasy"]').first()
-      let imageUrl = img.attr('src') || null
-      imageUrl = cleanNextImageUrl(imageUrl)
+            let imageUrl: string | null = null
+            const img = article.find('img[alt="Product Image"]').first()
+            if (img.length) {
+              const srcSet = img.attr('srcset') || img.attr('srcSet')
+              const src = img.attr('src')
+              if (srcSet && srcSet.includes('medeasy')) {
+                const match = srcSet.match(/url=([^&]+)/)
+                if (match) {
+                  imageUrl = decodeURIComponent(match[1])
+                }
+              } else if (src && src.includes('medeasy')) {
+                imageUrl = cleanNextImageUrl(src)
+              }
+            }
       
       const fullUrl = `https://medeasy.health${href}`
       

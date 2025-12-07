@@ -310,35 +310,39 @@ export default function ProductImportPage() {
                 body: JSON.stringify({ url: product.url }),
               })
         
-              if (res.ok) {
-                const data = await res.json()
-                const importedProduct = data.product as ImportedProduct
+                            if (res.ok) {
+                              const data = await res.json()
+                              const importedProduct = data.product as ImportedProduct
+                
+                              const finalPrice = importedProduct.sellingPrice ?? importedProduct.mrp ?? product.price ?? null
+                              const finalMrp = importedProduct.mrp ?? null
+                              const finalImageUrl = importedProduct.imageUrl || product.imageUrl || null
             
-                newDrafts.push({
-                  id: `draft-${Date.now()}-${i}`,
-                  data: importedProduct,
-                  editedData: {
-                    name: importedProduct.name || '',
-                    manufacturerId: '',
-                    description: importedProduct.description || '',
-                    sellingPrice: importedProduct.sellingPrice?.toString() || '',
-                    mrp: importedProduct.mrp?.toString() || '',
-                    stockQuantity: '100',
-                    categoryId: '',
-                    packSize: importedProduct.packSize || '',
-                    keyFeatures: '',
-                    specSummary: '',
-                    seoTitle: '',
-                    seoDescription: '',
-                    seoKeywords: '',
-                    slug: '',
-                  },
-                  status: 'pending',
-                })
-                success++
-              } else {
-                failed++
-              }
+                              newDrafts.push({
+                                id: `draft-${Date.now()}-${i}`,
+                                data: { ...importedProduct, imageUrl: finalImageUrl, sellingPrice: finalPrice },
+                                editedData: {
+                                  name: importedProduct.name || product.name || '',
+                                  manufacturerId: '',
+                                  description: importedProduct.description || '',
+                                  sellingPrice: finalPrice?.toString() || '',
+                                  mrp: finalMrp?.toString() || '',
+                                  stockQuantity: '100',
+                                  categoryId: '',
+                                  packSize: importedProduct.packSize || '',
+                                  keyFeatures: '',
+                                  specSummary: '',
+                                  seoTitle: '',
+                                  seoDescription: '',
+                                  seoKeywords: '',
+                                  slug: '',
+                                },
+                                status: 'pending',
+                              })
+                              success++
+                            } else {
+                              failed++
+                            }
             } catch {
               failed++
             }
@@ -789,13 +793,17 @@ export default function ProductImportPage() {
                               className="flex items-center gap-3 p-4 cursor-pointer"
                               onClick={() => setEditingDraftId(editingDraftId === draft.id ? null : draft.id)}
                             >
-                              {draft.data.imageUrl && (
-                                <img
-                                  src={draft.data.imageUrl}
-                                  alt={draft.editedData.name}
-                                  className="h-12 w-12 rounded object-cover bg-gray-100"
-                                />
-                              )}
+                                                            {draft.data.imageUrl ? (
+                                                              <img
+                                                                src={draft.data.imageUrl}
+                                                                alt={draft.editedData.name}
+                                                                className="h-12 w-12 rounded object-cover bg-gray-100"
+                                                              />
+                                                            ) : (
+                                                              <div className="h-12 w-12 rounded bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
+                                                                No img
+                                                              </div>
+                                                            )}
                               <div className="flex-1 min-w-0">
                                 <p className="truncate text-sm font-medium text-gray-900">{draft.editedData.name}</p>
                                 <p className="text-xs text-gray-500">
