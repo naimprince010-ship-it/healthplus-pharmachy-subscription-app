@@ -1,7 +1,22 @@
 import * as cheerio from 'cheerio'
 
 export type SiteName = 'chaldal' | 'arogga' | 'shajgoj'
-export type CategoryKey = 'rice' | 'oil' | 'paracetamol' | 'cough-syrup' | 'face-wash'
+export type CategoryKey = 
+  | 'rice' 
+  | 'oil' 
+  | 'paracetamol' 
+  | 'cough-syrup' 
+  | 'face-wash'
+  | 'baby-food'
+  | 'diapers'
+  | 'milk'
+  | 'tea-coffee'
+  | 'biscuits'
+  | 'snacks'
+  | 'soap'
+  | 'shampoo'
+  | 'toothpaste'
+  | 'detergent'
 
 export interface ScrapedCompetitorProduct {
   siteName: SiteName
@@ -23,23 +38,53 @@ const CATEGORY_URLS: Record<SiteName, Record<CategoryKey, string>> = {
   chaldal: {
     'rice': 'https://chaldal.com/search/rice',
     'oil': 'https://chaldal.com/search/cooking%20oil',
-    'paracetamol': 'https://chaldal.com/search/napa', // Use "napa" as paracetamol brand
-    'cough-syrup': 'https://chaldal.com/search/syrup', // Use "syrup" as search term
+    'paracetamol': 'https://chaldal.com/search/napa',
+    'cough-syrup': 'https://chaldal.com/search/syrup',
     'face-wash': 'https://chaldal.com/search/face%20wash',
+    'baby-food': 'https://chaldal.com/search/baby%20food',
+    'diapers': 'https://chaldal.com/search/diapers',
+    'milk': 'https://chaldal.com/search/milk',
+    'tea-coffee': 'https://chaldal.com/search/tea',
+    'biscuits': 'https://chaldal.com/search/biscuits',
+    'snacks': 'https://chaldal.com/search/chips',
+    'soap': 'https://chaldal.com/search/soap',
+    'shampoo': 'https://chaldal.com/search/shampoo',
+    'toothpaste': 'https://chaldal.com/search/toothpaste',
+    'detergent': 'https://chaldal.com/search/detergent',
   },
   arogga: {
-    'rice': 'https://www.arogga.com/category/rice',
-    'oil': 'https://www.arogga.com/category/oil',
-    'paracetamol': 'https://www.arogga.com/products?_generics=paracetamol',
-    'cough-syrup': 'https://www.arogga.com/products?_generics=dextromethorphan',
-    'face-wash': 'https://www.arogga.com/category/beauty/6032/cleansers',
+    'rice': '',
+    'oil': '',
+    'paracetamol': '',
+    'cough-syrup': '',
+    'face-wash': '',
+    'baby-food': '',
+    'diapers': '',
+    'milk': '',
+    'tea-coffee': '',
+    'biscuits': '',
+    'snacks': '',
+    'soap': '',
+    'shampoo': '',
+    'toothpaste': '',
+    'detergent': '',
   },
   shajgoj: {
-    'rice': '', // Shajgoj doesn't sell rice
-    'oil': '', // Shajgoj doesn't sell cooking oil
-    'paracetamol': '', // Shajgoj doesn't sell medicine
-    'cough-syrup': '', // Shajgoj doesn't sell medicine
-    'face-wash': 'https://shop.shajgoj.com/product-category/face',
+    'rice': '',
+    'oil': '',
+    'paracetamol': '',
+    'cough-syrup': '',
+    'face-wash': '',
+    'baby-food': '',
+    'diapers': '',
+    'milk': '',
+    'tea-coffee': '',
+    'biscuits': '',
+    'snacks': '',
+    'soap': '',
+    'shampoo': '',
+    'toothpaste': '',
+    'detergent': '',
   },
 }
 
@@ -157,7 +202,11 @@ export async function scrapeSiteCategory(site: SiteName, category: CategoryKey):
 export async function scrapeAllSitesOnce(): Promise<ScrapedCompetitorProduct[]> {
   const allProducts: ScrapedCompetitorProduct[] = []
   const sites: SiteName[] = ['chaldal', 'arogga', 'shajgoj']
-  const categories: CategoryKey[] = ['rice', 'oil', 'paracetamol', 'cough-syrup', 'face-wash']
+  const categories: CategoryKey[] = [
+    'rice', 'oil', 'paracetamol', 'cough-syrup', 'face-wash',
+    'baby-food', 'diapers', 'milk', 'tea-coffee', 'biscuits',
+    'snacks', 'soap', 'shampoo', 'toothpaste', 'detergent'
+  ]
 
   for (const site of sites) {
     for (const category of categories) {
