@@ -23,8 +23,8 @@ const CATEGORY_URLS: Record<SiteName, Record<CategoryKey, string>> = {
   chaldal: {
     'rice': 'https://chaldal.com/search/rice',
     'oil': 'https://chaldal.com/search/cooking%20oil',
-    'paracetamol': 'https://chaldal.com/search/paracetamol',
-    'cough-syrup': 'https://chaldal.com/search/cough%20syrup',
+    'paracetamol': 'https://chaldal.com/search/napa', // Use "napa" as paracetamol brand
+    'cough-syrup': 'https://chaldal.com/search/syrup', // Use "syrup" as search term
     'face-wash': 'https://chaldal.com/search/face%20wash',
   },
   arogga: {
@@ -62,48 +62,60 @@ async function scrapeChaldalCategory(category: CategoryKey): Promise<ScrapedComp
 
   try {
     const response = await fetch(url, { headers: HEADERS })
-    if (!response.ok) return []
+    if (!response.ok) {
+      console.error(`Chaldal ${category}: HTTP ${response.status}`)
+      return []
+    }
 
     const html = await response.text()
     const $ = cheerio.load(html)
 
-    $('a[href^="/"]').each((_, el) => {
+    // Find all product links with btnShowDetails class
+    $('a.btnShowDetails').each((_, el) => {
       const href = $(el).attr('href')
       if (!href || href.length < 5) return
 
-      const text = $(el).text().trim()
-      if (text !== 'Details  >' && text !== 'Details >') return
+      // Navigate up to find the product container with price info
+      let productContainer = $(el).parent()
+      for (let i = 0; i < 10; i++) {
+        const text = productContainer.text()
+        if (text.includes('৳') && text.length > 50) break
+        productContainer = productContainer.parent()
+      }
 
-      const productDiv = $(el).closest('div').parent()
-      const name = productDiv.contents().filter(function() {
-        return this.type === 'text'
-      }).first().text().trim()
+      // Extract product name from href (e.g., /foodela-chinigura-rice-1-kg -> Foodela Chinigura Rice 1 Kg)
+      const nameFromHref = href
+        .replace(/^\//, '')
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ')
 
-      if (!name || name.length < 3) return
-
-      const priceText = productDiv.find('div').filter((_, div) => $(div).text().includes('৳')).first().text()
-      const priceMatch = priceText.match(/৳\s*([\d,.]+)/)
+      // Try to find price in the container
+      const containerText = productContainer.text()
+      const priceMatch = containerText.match(/৳\s*([\d,]+)/)
       const price = priceMatch ? parseFloat(priceMatch[1].replace(/,/g, '')) : null
 
-      if (!price) return
-
-      const img = productDiv.find('img[src*="chaldn.com"]').first()
+      // Find image
+      const img = productContainer.find('img[src*="chaldn.com"]').first()
       const imageUrl = img.attr('src') || null
 
-      const fullUrl = `https://chaldal.com${href}`
-
-      if (!products.some(p => p.productUrl === fullUrl)) {
-        products.push({
-          siteName: 'chaldal',
-          category,
-          productName: name,
-          price,
-          reviewCount: 0, // Chaldal doesn't show review counts on listing pages
-          productUrl: fullUrl,
-          imageUrl,
-        })
+      if (price && nameFromHref.length > 3) {
+        const fullUrl = `https://chaldal.com${href}`
+        if (!products.some(p => p.productUrl === fullUrl)) {
+          products.push({
+            siteName: 'chaldal',
+            category,
+            productName: nameFromHref,
+            price,
+            reviewCount: 0, // Chaldal doesn't show review counts on listing pages
+            productUrl: fullUrl,
+            imageUrl,
+          })
+        }
       }
     })
+    
+    console.log(`Chaldal ${category}: found ${products.length} products`)
   } catch (error) {
     console.error(`Error scraping Chaldal ${category}:`, error)
   }
@@ -115,135 +127,25 @@ async function scrapeAroggaCategory(category: CategoryKey): Promise<ScrapedCompe
   const url = CATEGORY_URLS.arogga[category]
   if (!url) return []
 
-  const products: ScrapedCompetitorProduct[] = []
-
-  try {
-    const response = await fetch(url, { headers: HEADERS })
-    if (!response.ok) return []
-
-    const html = await response.text()
-    const $ = cheerio.load(html)
-
-    $('a[href^="/product/"]').each((_, el) => {
-      const href = $(el).attr('href')
-      if (!href) return
-
-      const h3 = $(el).find('h3').first()
-      const name = h3.length ? h3.text().trim() : $(el).text().trim()
-      if (!name || name.length < 3) return
-
-      const parent = $(el).parent()
-      const priceText = parent.text()
-      const priceMatch = priceText.match(/৳([\d,.]+)/)
-      const price = priceMatch ? parseFloat(priceMatch[1].replace(/,/g, '')) : null
-
-      if (!price) return
-
-      // Extract review count - Arogga shows it as "(15)" or similar
-      const reviewMatch = parent.text().match(/\((\d+)\)/)
-      const reviewCount = reviewMatch ? parseInt(reviewMatch[1], 10) : 0
-
-      const img = parent.find('img[src*="cdn2.arogga.com"]').first()
-      const imageUrl = img.attr('src') || null
-
-      const fullUrl = `https://www.arogga.com${href}`
-
-      if (!products.some(p => p.productUrl === fullUrl)) {
-        products.push({
-          siteName: 'arogga',
-          category,
-          productName: name,
-          price,
-          reviewCount,
-          productUrl: fullUrl,
-          imageUrl,
-        })
-      }
-    })
-  } catch (error) {
-    console.error(`Error scraping Arogga ${category}:`, error)
-  }
-
-  return products.slice(0, 50) // Limit to top 50 products
+  // Note: Arogga is a Next.js SPA that renders products client-side via JavaScript.
+  // Cheerio can only parse the initial HTML which doesn't contain product data.
+  // This scraper will return 0 products until Arogga adds server-side rendering
+  // or we find a JSON API endpoint.
+  console.log(`Arogga ${category}: Site uses client-side rendering, scraping not supported`)
+  return []
 }
 
 async function scrapeShajgojCategory(category: CategoryKey): Promise<ScrapedCompetitorProduct[]> {
   const url = CATEGORY_URLS.shajgoj[category]
   if (!url) return []
 
-  const products: ScrapedCompetitorProduct[] = []
-
-  try {
-    const response = await fetch(url, { headers: HEADERS })
-    if (!response.ok) return []
-
-    const html = await response.text()
-    const $ = cheerio.load(html)
-
-    // Shajgoj uses Next.js with product cards in <li> elements
-    $('main ul li a[href^="/product/"]').each((_, el) => {
-      const href = $(el).attr('href')
-      if (!href) return
-
-      const productDiv = $(el).find('div').first()
-      const name = productDiv.contents().filter(function() {
-        return this.type === 'text'
-      }).first().text().trim()
-
-      if (!name || name.length < 3) return
-
-      // Extract price - Shajgoj shows sale price in second span
-      const priceSpans = $(el).find('span')
-      let price: number | null = null
-      priceSpans.each((_, span) => {
-        const text = $(span).text()
-        if (text.includes('৳') && !price) {
-          const match = text.match(/৳\s*([\d,.]+)/)
-          if (match) {
-            price = parseFloat(match[1].replace(/,/g, ''))
-          }
-        }
-      })
-
-      if (!price) return
-
-      // Extract star rating and convert to review count estimate
-      // Shajgoj shows "4.4 Stars" - we'll use the rating * 10 as a proxy for popularity
-      const ratingDiv = $(el).find('div[title*="Stars"]')
-      const ratingTitle = ratingDiv.attr('title') || ''
-      const ratingMatch = ratingTitle.match(/([\d.]+)\s*Stars?/)
-      const rating = ratingMatch ? parseFloat(ratingMatch[1]) : 0
-      const reviewCount = Math.round(rating * 10) // Convert rating to a popularity score
-
-      const img = $(el).find('img').first()
-      let imageUrl = img.attr('src') || null
-      // Clean Next.js image URL if needed
-      if (imageUrl && imageUrl.includes('/_next/image')) {
-        const urlMatch = imageUrl.match(/url=([^&]+)/)
-        if (urlMatch) {
-          imageUrl = decodeURIComponent(urlMatch[1])
-        }
-      }
-
-      const fullUrl = `https://shop.shajgoj.com${href}`
-
-      if (!products.some(p => p.productUrl === fullUrl)) {
-        products.push({
-          siteName: 'shajgoj',
-          category,
-          productName: name,
-          price,
-          reviewCount,
-          productUrl: fullUrl,
-          imageUrl,
-        })
-      }
-    })
-  } catch (error) {
-    console.error(`Error scraping Shajgoj ${category}:`, error)
-  }
-
-  return products.slice(0, 50) // Limit to top 50 products
+  // Note: Shajgoj is a Next.js SPA that renders products client-side via JavaScript.
+  // The __NEXT_DATA__ script contains category metadata but not product data.
+  // Cheerio can only parse the initial HTML which doesn't contain product listings.
+  // This scraper will return 0 products until Shajgoj adds server-side rendering
+  // or we find a JSON API endpoint.
+  console.log(`Shajgoj ${category}: Site uses client-side rendering, scraping not supported`)
+  return []
 }
 
 export async function scrapeSiteCategory(site: SiteName, category: CategoryKey): Promise<ScrapedCompetitorProduct[]> {
