@@ -1,40 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { scrapeAllSitesOnce, calculateTrendScore } from '@/lib/market-intel/scrapers'
+import { runMarketIntelSync } from '@/lib/market-intel/sync'
 
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get('token')
   const cronSecret = process.env.MARKET_INTEL_CRON_SECRET
 
+  // Only require token if MARKET_INTEL_CRON_SECRET is set
   if (cronSecret && token !== cronSecret) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   try {
-    const scraped = await scrapeAllSitesOnce()
+    const result = await runMarketIntelSync()
 
-    if (!scraped.length) {
-      return NextResponse.json({ inserted: 0, message: 'No products scraped' })
+    if (!result.success) {
+      return NextResponse.json(
+        { error: 'Sync failed', details: result.error },
+        { status: 500 }
+      )
     }
 
-    const now = new Date()
-    const data = scraped.map(item => ({
-      siteName: item.siteName,
-      category: item.category,
-      productName: item.productName,
-      price: item.price,
-      reviewCount: item.reviewCount,
-      trendScore: calculateTrendScore(item.reviewCount, item.price),
-      productUrl: item.productUrl,
-      imageUrl: item.imageUrl,
-      collectedAt: now,
-    }))
-
-    await prisma.competitorProduct.createMany({ data })
-
     return NextResponse.json({ 
-      inserted: scraped.length,
-      timestamp: now.toISOString(),
+      inserted: result.inserted,
+      timestamp: result.timestamp.toISOString(),
+      logId: result.logId,
     })
   } catch (error) {
     console.error('Market intel sync error:', error)
