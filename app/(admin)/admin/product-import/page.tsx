@@ -310,35 +310,39 @@ export default function ProductImportPage() {
                 body: JSON.stringify({ url: product.url }),
               })
         
-              if (res.ok) {
-                const data = await res.json()
-                const importedProduct = data.product as ImportedProduct
+                            if (res.ok) {
+                              const data = await res.json()
+                              const importedProduct = data.product as ImportedProduct
+                
+                              const finalPrice = importedProduct.sellingPrice ?? importedProduct.mrp ?? product.price ?? null
+                              const finalMrp = importedProduct.mrp ?? null
+                              const finalImageUrl = importedProduct.imageUrl || product.imageUrl || null
             
-                newDrafts.push({
-                  id: `draft-${Date.now()}-${i}`,
-                  data: importedProduct,
-                  editedData: {
-                    name: importedProduct.name || '',
-                    manufacturerId: '',
-                    description: importedProduct.description || '',
-                    sellingPrice: importedProduct.sellingPrice?.toString() || '',
-                    mrp: importedProduct.mrp?.toString() || '',
-                    stockQuantity: '100',
-                    categoryId: '',
-                    packSize: importedProduct.packSize || '',
-                    keyFeatures: '',
-                    specSummary: '',
-                    seoTitle: '',
-                    seoDescription: '',
-                    seoKeywords: '',
-                    slug: '',
-                  },
-                  status: 'pending',
-                })
-                success++
-              } else {
-                failed++
-              }
+                              newDrafts.push({
+                                id: `draft-${Date.now()}-${i}`,
+                                data: { ...importedProduct, imageUrl: finalImageUrl, sellingPrice: finalPrice },
+                                editedData: {
+                                  name: importedProduct.name || product.name || '',
+                                  manufacturerId: '',
+                                  description: importedProduct.description || '',
+                                  sellingPrice: finalPrice?.toString() || '',
+                                  mrp: finalMrp?.toString() || '',
+                                  stockQuantity: '100',
+                                  categoryId: '',
+                                  packSize: importedProduct.packSize || '',
+                                  keyFeatures: '',
+                                  specSummary: '',
+                                  seoTitle: '',
+                                  seoDescription: '',
+                                  seoKeywords: '',
+                                  slug: '',
+                                },
+                                status: 'pending',
+                              })
+                              success++
+                            } else {
+                              failed++
+                            }
             } catch {
               failed++
             }
