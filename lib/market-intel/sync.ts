@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import { scrapeAllSitesOnce, calculateTrendScoresForBatch } from './scrapers'
 
 export interface SyncResult {
@@ -64,7 +65,8 @@ export async function runMarketIntelSync(): Promise<SyncResult> {
       reviewCount: item.reviewCount,
       position: item.position,
       trendScore: item.trendScore,
-      rawScoreComponents: item.rawScoreComponents,
+      // Cast to InputJsonValue for Prisma compatibility
+      rawScoreComponents: item.rawScoreComponents as unknown as Prisma.InputJsonValue,
       productUrl: item.productUrl,
       imageUrl: item.imageUrl,
       collectedAt: now,
