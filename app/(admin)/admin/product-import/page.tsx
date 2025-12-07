@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Download, ExternalLink, AlertCircle, CheckCircle, Loader2, Sparkles } from 'lucide-react'
+import { Download, ExternalLink, AlertCircle, CheckCircle, Loader2, Sparkles, FolderOpen, Package } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { slugify } from '@/lib/slugify'
 import { SearchableSelect } from '@/components/SearchableSelect'
@@ -35,17 +35,32 @@ interface ImportedProduct {
   source: 'arogga' | 'chaldal' | 'medeasy'
 }
 
+interface CategoryProduct {
+  name: string
+  url: string
+  price: number | null
+  imageUrl: string | null
+  selected?: boolean
+}
+
 export default function ProductImportPage() {
   const router = useRouter()
+  const [importMode, setImportMode] = useState<'single' | 'bulk'>('single')
   const [url, setUrl] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [importedProduct, setImportedProduct] = useState<ImportedProduct | null>(null)
-    const [categories, setCategories] = useState<Category[]>([])
-    const [manufacturers, setManufacturers] = useState<Manufacturer[]>([])
-    const [aiLoading, setAiLoading] = useState(false)
+  const [categories, setCategories] = useState<Category[]>([])
+  const [manufacturers, setManufacturers] = useState<Manufacturer[]>([])
+  const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState('')
   const [aiLanguage, setAiLanguage] = useState<'en' | 'bn'>('en')
+  
+  const [categoryUrl, setCategoryUrl] = useState('')
+  const [categoryProducts, setCategoryProducts] = useState<CategoryProduct[]>([])
+  const [bulkLoading, setBulkLoading] = useState(false)
+  const [bulkImporting, setBulkImporting] = useState(false)
+  const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0, success: 0, failed: 0 })
   
         const [editedProduct, setEditedProduct] = useState({
           name: '',
@@ -197,25 +212,112 @@ export default function ProductImportPage() {
     }
   }
 
-  const handleSaveProduct = async () => {
-    if (!editedProduct.name.trim()) {
-      toast.error('Product name is required')
-      return
+    const handleFetchCategory = async (e: React.FormEvent) => {
+      e.preventDefault()
+    
+      if (!categoryUrl.trim()) {
+        setError('Category URL is required')
+        return
+      }
+    
+      setBulkLoading(true)
+      setError(null)
+      setCategoryProducts([])
+    
+      try {
+        const res = await fetch('/api/admin/product-import/category', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: categoryUrl.trim() }),
+        })
+      
+        const data = await res.json()
+      
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to fetch category products')
+        }
+      
+        const productsWithSelection = data.products.map((p: CategoryProduct) => ({ ...p, selected: true }))
+        setCategoryProducts(productsWithSelection)
+        toast.success(`Found ${data.count} products in category`)
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to fetch category'
+        setError(message)
+        toast.error(message)
+      } finally {
+        setBulkLoading(false)
+      }
     }
-    
-    if (!editedProduct.sellingPrice || parseFloat(editedProduct.sellingPrice) <= 0) {
-      toast.error('Valid selling price is required')
-      return
+
+    const toggleProductSelection = (url: string) => {
+      setCategoryProducts(prev => 
+        prev.map(p => p.url === url ? { ...p, selected: !p.selected } : p)
+      )
     }
-    
-    if (!editedProduct.categoryId) {
-      toast.error('Please select a category')
-      return
+
+    const toggleAllProducts = (selected: boolean) => {
+      setCategoryProducts(prev => prev.map(p => ({ ...p, selected })))
     }
+
+    const handleBulkImport = async () => {
+      const selectedProducts = categoryProducts.filter(p => p.selected)
+      if (selectedProducts.length === 0) {
+        toast.error('Please select at least one product to import')
+        return
+      }
     
-    setLoading(true)
+      setBulkImporting(true)
+      setBulkProgress({ current: 0, total: selectedProducts.length, success: 0, failed: 0 })
     
-    try {
+      let success = 0
+      let failed = 0
+    
+      for (let i = 0; i < selectedProducts.length; i++) {
+        const product = selectedProducts[i]
+        setBulkProgress(prev => ({ ...prev, current: i + 1 }))
+      
+        try {
+          const res = await fetch('/api/admin/product-import', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: product.url }),
+          })
+        
+          if (res.ok) {
+            success++
+          } else {
+            failed++
+          }
+        } catch {
+          failed++
+        }
+      
+        setBulkProgress(prev => ({ ...prev, success, failed }))
+      }
+    
+      setBulkImporting(false)
+      toast.success(`Imported ${success} products, ${failed} failed`)
+    }
+
+    const handleSaveProduct = async () => {
+      if (!editedProduct.name.trim()) {
+        toast.error('Product name is required')
+        return
+      }
+    
+      if (!editedProduct.sellingPrice || parseFloat(editedProduct.sellingPrice) <= 0) {
+        toast.error('Valid selling price is required')
+        return
+      }
+    
+      if (!editedProduct.categoryId) {
+        toast.error('Please select a category')
+        return
+      }
+    
+      setLoading(true)
+    
+      try {
                         const productData = {
                           type: 'GENERAL',
                           name: editedProduct.name.trim(),
@@ -258,81 +360,261 @@ export default function ProductImportPage() {
     }
   }
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Import Product</h1>
-        <p className="mt-2 text-sm text-gray-600">
-          Import product details from Arogga, Chaldal, or MedEasy by pasting a product URL
-        </p>
-      </div>
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Import Product</h1>
+          <p className="mt-2 text-sm text-gray-600">
+            Import product details from Arogga, Chaldal, or MedEasy
+          </p>
+        </div>
 
-      <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-        <div className="flex items-start gap-3">
-          <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-yellow-600" />
-          <div className="text-sm text-yellow-800">
-            <p className="font-medium">Important Notice</p>
-            <p className="mt-1">
-                This feature imports product data from external websites. Please ensure you have 
-                permission to use the imported content (images, descriptions, etc.) before saving.
-                Only Arogga, Chaldal, and MedEasy product URLs are supported.
-            </p>
+        <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-yellow-600" />
+            <div className="text-sm text-yellow-800">
+              <p className="font-medium">Important Notice</p>
+              <p className="mt-1">
+                  This feature imports product data from external websites. Please ensure you have 
+                  permission to use the imported content (images, descriptions, etc.) before saving.
+                  Only Arogga, Chaldal, and MedEasy URLs are supported.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="rounded-lg border border-gray-200 bg-white p-6">
-        <h2 className="text-lg font-semibold text-gray-900">Step 1: Enter Product URL</h2>
-        <p className="mt-1 text-sm text-gray-600">
-          Paste a product URL from Arogga, Chaldal, or MedEasy
-        </p>
-        
-        <form onSubmit={handleFetch} className="mt-4">
-          <div className="flex gap-3">
-            <input
-              type="url"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://www.arogga.com/product/... or https://chaldal.com/... or https://medeasy.health/medicines/..."
-              className="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-              disabled={loading}
-            />
-            <button
-              type="submit"
-              disabled={loading || !url.trim()}
-              className="flex items-center gap-2 rounded-lg bg-teal-600 px-6 py-2 font-semibold text-white transition-colors hover:bg-teal-700 disabled:bg-gray-400"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Fetching...
-                </>
-              ) : (
-                <>
-                  <Download className="h-4 w-4" />
-                  Fetch Details
-                </>
-              )}
-            </button>
+        <div className="flex gap-2 border-b border-gray-200">
+          <button
+            onClick={() => setImportMode('single')}
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
+              importMode === 'single'
+                ? 'border-b-2 border-teal-600 text-teal-600'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Package className="h-4 w-4" />
+            Single Product
+          </button>
+          <button
+            onClick={() => setImportMode('bulk')}
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
+              importMode === 'bulk'
+                ? 'border-b-2 border-teal-600 text-teal-600'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <FolderOpen className="h-4 w-4" />
+            Bulk Import (Category)
+          </button>
+        </div>
+
+        {importMode === 'single' ? (
+          <div className="rounded-lg border border-gray-200 bg-white p-6">
+            <h2 className="text-lg font-semibold text-gray-900">Step 1: Enter Product URL</h2>
+            <p className="mt-1 text-sm text-gray-600">
+              Paste a product URL from Arogga, Chaldal, or MedEasy
+            </p>
+          
+            <form onSubmit={handleFetch} className="mt-4">
+              <div className="flex gap-3">
+                <input
+                  type="url"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder="https://www.arogga.com/product/... or https://chaldal.com/... or https://medeasy.health/medicines/..."
+                  className="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  disabled={loading}
+                />
+                <button
+                  type="submit"
+                  disabled={loading || !url.trim()}
+                  className="flex items-center gap-2 rounded-lg bg-teal-600 px-6 py-2 font-semibold text-white transition-colors hover:bg-teal-700 disabled:bg-gray-400"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Fetching...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-4 w-4" />
+                      Fetch Details
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          
+            {error && (
+              <div className="mt-4 flex items-center gap-2 text-sm text-red-600">
+                <AlertCircle className="h-4 w-4" />
+                {error}
+              </div>
+            )}
+          
+            <div className="mt-4 text-xs text-gray-500">
+              <p>Supported URLs:</p>
+              <ul className="mt-1 list-inside list-disc">
+                <li>Arogga: https://www.arogga.com/product/...</li>
+                <li>Chaldal: https://chaldal.com/...</li>
+                <li>MedEasy: https://medeasy.health/medicines/...</li>
+              </ul>
+            </div>
           </div>
-        </form>
-        
-        {error && (
-          <div className="mt-4 flex items-center gap-2 text-sm text-red-600">
-            <AlertCircle className="h-4 w-4" />
-            {error}
+        ) : (
+          <div className="space-y-6">
+            <div className="rounded-lg border border-gray-200 bg-white p-6">
+              <h2 className="text-lg font-semibold text-gray-900">Step 1: Enter Category URL</h2>
+              <p className="mt-1 text-sm text-gray-600">
+                Paste a category page URL to extract all products from that category
+              </p>
+            
+              <form onSubmit={handleFetchCategory} className="mt-4">
+                <div className="flex gap-3">
+                  <input
+                    type="url"
+                    value={categoryUrl}
+                    onChange={(e) => setCategoryUrl(e.target.value)}
+                    placeholder="https://www.arogga.com/category/... or https://chaldal.com/soaps or https://medeasy.health/skin-care"
+                    className="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    disabled={bulkLoading}
+                  />
+                  <button
+                    type="submit"
+                    disabled={bulkLoading || !categoryUrl.trim()}
+                    className="flex items-center gap-2 rounded-lg bg-teal-600 px-6 py-2 font-semibold text-white transition-colors hover:bg-teal-700 disabled:bg-gray-400"
+                  >
+                    {bulkLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Scanning...
+                      </>
+                    ) : (
+                      <>
+                        <FolderOpen className="h-4 w-4" />
+                        Scan Category
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            
+              {error && (
+                <div className="mt-4 flex items-center gap-2 text-sm text-red-600">
+                  <AlertCircle className="h-4 w-4" />
+                  {error}
+                </div>
+              )}
+            
+              <div className="mt-4 text-xs text-gray-500">
+                <p>Supported Category URLs:</p>
+                <ul className="mt-1 list-inside list-disc">
+                  <li>Arogga: https://www.arogga.com/category/beauty/6980/skincare</li>
+                  <li>Chaldal: https://chaldal.com/soaps</li>
+                  <li>MedEasy: https://medeasy.health/skin-care</li>
+                </ul>
+              </div>
+            </div>
+
+            {categoryProducts.length > 0 && (
+              <div className="rounded-lg border border-gray-200 bg-white p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">Step 2: Select Products to Import</h2>
+                    <p className="mt-1 text-sm text-gray-600">
+                      Found {categoryProducts.length} products. Select which ones to import.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => toggleAllProducts(true)}
+                      className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      Select All
+                    </button>
+                    <button
+                      onClick={() => toggleAllProducts(false)}
+                      className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      Deselect All
+                    </button>
+                  </div>
+                </div>
+              
+                <div className="mt-4 max-h-96 overflow-y-auto rounded-lg border border-gray-200">
+                  {categoryProducts.map((product, index) => (
+                    <div
+                      key={product.url}
+                      className={`flex items-center gap-3 p-3 ${index !== 0 ? 'border-t border-gray-100' : ''}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={product.selected}
+                        onChange={() => toggleProductSelection(product.url)}
+                        className="h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                      />
+                      {product.imageUrl && (
+                        <img
+                          src={product.imageUrl}
+                          alt={product.name}
+                          className="h-12 w-12 rounded object-cover bg-gray-100"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="truncate text-sm font-medium text-gray-900">{product.name}</p>
+                        <p className="text-xs text-gray-500 truncate">{product.url}</p>
+                      </div>
+                      {product.price && (
+                        <span className="text-sm font-medium text-gray-900">৳{product.price}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              
+                <div className="mt-4 flex items-center justify-between border-t border-gray-200 pt-4">
+                  <p className="text-sm text-gray-600">
+                    {categoryProducts.filter(p => p.selected).length} of {categoryProducts.length} products selected
+                  </p>
+                  <button
+                    onClick={handleBulkImport}
+                    disabled={bulkImporting || categoryProducts.filter(p => p.selected).length === 0}
+                    className="flex items-center gap-2 rounded-lg bg-teal-600 px-6 py-2 font-semibold text-white transition-colors hover:bg-teal-700 disabled:bg-gray-400"
+                  >
+                    {bulkImporting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Importing {bulkProgress.current}/{bulkProgress.total}...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="h-4 w-4" />
+                        Import Selected ({categoryProducts.filter(p => p.selected).length})
+                      </>
+                    )}
+                  </button>
+                </div>
+              
+                {bulkImporting && (
+                  <div className="mt-4 rounded-lg bg-gray-50 p-4">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Progress: {bulkProgress.current}/{bulkProgress.total}</span>
+                      <span className="text-green-600">{bulkProgress.success} success</span>
+                      {bulkProgress.failed > 0 && (
+                        <span className="text-red-600">{bulkProgress.failed} failed</span>
+                      )}
+                    </div>
+                    <div className="mt-2 h-2 w-full rounded-full bg-gray-200">
+                      <div
+                        className="h-2 rounded-full bg-teal-600 transition-all"
+                        style={{ width: `${(bulkProgress.current / bulkProgress.total) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
-        
-        <div className="mt-4 text-xs text-gray-500">
-          <p>Supported URLs:</p>
-          <ul className="mt-1 list-inside list-disc">
-            <li>Arogga: https://www.arogga.com/product/...</li>
-            <li>Chaldal: https://chaldal.com/...</li>
-            <li>MedEasy: https://medeasy.health/medicines/...</li>
-          </ul>
-        </div>
-      </div>
 
       {importedProduct && (
         <div className="rounded-lg border border-gray-200 bg-white p-6">

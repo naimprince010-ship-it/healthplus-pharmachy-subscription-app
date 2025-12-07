@@ -386,3 +386,170 @@ export async function importProductFromUrl(url: string): Promise<ImportedProduct
   
   throw new Error('Unsupported website')
 }
+
+export interface CategoryProduct {
+  name: string
+  url: string
+  price: number | null
+  imageUrl: string | null
+}
+
+async function extractProductsFromMedeasyCategory(url: string, maxPages: number = 3): Promise<CategoryProduct[]> {
+  const products: CategoryProduct[] = []
+  const baseUrl = new URL(url)
+  
+  for (let page = 1; page <= maxPages; page++) {
+    baseUrl.searchParams.set('page', page.toString())
+    
+    const response = await fetch(baseUrl.toString(), {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+      },
+    })
+    
+    if (!response.ok) break
+    
+    const html = await response.text()
+    const $ = cheerio.load(html)
+    
+    $('a[href^="/medicines/"]').each((_, el) => {
+      const href = $(el).attr('href')
+      if (!href || href === '/medicines/') return
+      
+      const article = $(el).find('article')
+      if (!article.length) return
+      
+      const name = article.find('h4').text().trim()
+      const priceText = article.find('div').filter((_, div) => $(div).text().includes('৳')).first().text()
+      const priceMatch = priceText.match(/৳([\d,.]+)/)
+      const price = priceMatch ? parseFloat(priceMatch[1].replace(/,/g, '')) : null
+      
+      const img = article.find('img[src*="medeasy"]').first()
+      let imageUrl = img.attr('src') || null
+      imageUrl = cleanNextImageUrl(imageUrl)
+      
+      const fullUrl = `https://medeasy.health${href}`
+      
+      if (name && !products.some(p => p.url === fullUrl)) {
+        products.push({ name, url: fullUrl, price, imageUrl })
+      }
+    })
+    
+    const hasNextPage = $(`a[aria-label="Page ${page + 1}"]`).length > 0
+    if (!hasNextPage) break
+  }
+  
+  return products
+}
+
+async function extractProductsFromAroggaCategory(url: string): Promise<CategoryProduct[]> {
+  const products: CategoryProduct[] = []
+  
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+    },
+  })
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch page: ${response.status}`)
+  }
+  
+  const html = await response.text()
+  const $ = cheerio.load(html)
+  
+  $('a[href^="/product/"]').each((_, el) => {
+    const href = $(el).attr('href')
+    if (!href) return
+    
+    const h3 = $(el).find('h3').first()
+    const name = h3.length ? h3.text().trim() : $(el).text().trim()
+    if (!name || name.length < 3) return
+    
+    const parent = $(el).parent()
+    const priceText = parent.text()
+    const priceMatch = priceText.match(/৳([\d,.]+)/)
+    const price = priceMatch ? parseFloat(priceMatch[1].replace(/,/g, '')) : null
+    
+    const img = parent.find('img[src*="cdn2.arogga.com"]').first()
+    const imageUrl = img.attr('src') || null
+    
+    const fullUrl = `https://www.arogga.com${href}`
+    
+    if (!products.some(p => p.url === fullUrl)) {
+      products.push({ name, url: fullUrl, price, imageUrl })
+    }
+  })
+  
+  return products
+}
+
+async function extractProductsFromChaldalCategory(url: string): Promise<CategoryProduct[]> {
+  const products: CategoryProduct[] = []
+  
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+    },
+  })
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch page: ${response.status}`)
+  }
+  
+  const html = await response.text()
+  const $ = cheerio.load(html)
+  
+  $('a[href^="/"]').each((_, el) => {
+    const href = $(el).attr('href')
+    if (!href || href.length < 5) return
+    
+    const text = $(el).text().trim()
+    if (text !== 'Details  >' && text !== 'Details >') return
+    
+    const productDiv = $(el).closest('div').parent()
+    const name = productDiv.contents().filter(function() {
+      return this.type === 'text'
+    }).first().text().trim()
+    
+    if (!name || name.length < 3) return
+    
+    const priceText = productDiv.find('div').filter((_, div) => $(div).text().includes('৳')).first().text()
+    const priceMatch = priceText.match(/৳\s*([\d,.]+)/)
+    const price = priceMatch ? parseFloat(priceMatch[1].replace(/,/g, '')) : null
+    
+    const img = productDiv.find('img[src*="chaldn.com"]').first()
+    const imageUrl = img.attr('src') || null
+    
+    const fullUrl = `https://chaldal.com${href}`
+    
+    if (!products.some(p => p.url === fullUrl)) {
+      products.push({ name, url: fullUrl, price, imageUrl })
+    }
+  })
+  
+  return products
+}
+
+export async function extractProductsFromCategory(url: string): Promise<CategoryProduct[]> {
+  const validation = validateUrl(url)
+  
+  if (!validation.valid) {
+    throw new Error(validation.error || 'Invalid URL')
+  }
+  
+  const host = validation.host!
+  
+  if (host.includes('medeasy')) {
+    return extractProductsFromMedeasyCategory(url)
+  } else if (host.includes('arogga')) {
+    return extractProductsFromAroggaCategory(url)
+  } else if (host.includes('chaldal')) {
+    return extractProductsFromChaldalCategory(url)
+  }
+  
+  throw new Error('Unsupported website for category extraction')
+}
