@@ -514,31 +514,36 @@ async function extractProductsFromChaldalCategory(url: string): Promise<Category
   const html = await response.text()
   const $ = cheerio.load(html)
   
-  $('a[href^="/"]').each((_, el) => {
+  $('a.btnShowDetails').each((_, el) => {
     const href = $(el).attr('href')
     if (!href || href.length < 5) return
     
-    const text = $(el).text().trim()
-    if (text !== 'Details  >' && text !== 'Details >') return
+    let productContainer = $(el).parent()
+    for (let i = 0; i < 10 && productContainer.length; i++) {
+      const text = productContainer.text()
+      if (text.includes('৳') && text.length > 50) break
+      productContainer = productContainer.parent()
+    }
     
-    const productDiv = $(el).closest('div').parent()
-    const name = productDiv.contents().filter(function() {
-      return this.type === 'text'
-    }).first().text().trim()
+    const nameFromHref = href
+      .replace(/^\//, '')
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
     
-    if (!name || name.length < 3) return
+    if (nameFromHref.length < 3) return
     
-    const priceText = productDiv.find('div').filter((_, div) => $(div).text().includes('৳')).first().text()
-    const priceMatch = priceText.match(/৳\s*([\d,.]+)/)
+    const containerText = productContainer.text()
+    const priceMatch = containerText.match(/৳\s*([\d,]+)/)
     const price = priceMatch ? parseFloat(priceMatch[1].replace(/,/g, '')) : null
     
-    const img = productDiv.find('img[src*="chaldn.com"]').first()
+    const img = productContainer.find('img[src*="chaldn.com"]').first()
     const imageUrl = img.attr('src') || null
     
     const fullUrl = `https://chaldal.com${href}`
     
     if (!products.some(p => p.url === fullUrl)) {
-      products.push({ name, url: fullUrl, price, imageUrl })
+      products.push({ name: nameFromHref, url: fullUrl, price, imageUrl })
     }
   })
   
