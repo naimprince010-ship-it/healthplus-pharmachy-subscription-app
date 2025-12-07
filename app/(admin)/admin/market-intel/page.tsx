@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { RefreshCw, TrendingUp, BarChart3, ExternalLink, AlertCircle, CheckCircle } from 'lucide-react'
+import { RefreshCw, TrendingUp, BarChart3, ExternalLink, AlertCircle, CheckCircle, Clock, Filter, Calendar } from 'lucide-react'
 
 interface CompetitorProduct {
   id: string
@@ -10,7 +10,16 @@ interface CompetitorProduct {
   productName: string
   price: number
   reviewCount: number
+  position: number | null
   trendScore: number
+  rawScoreComponents: {
+    priceScore: number
+    positionScore: number
+    reviewScore: number
+    weights: { price: number; position: number; review: number }
+    minPrice: number
+    maxPrice: number
+  } | null
   productUrl: string | null
   imageUrl: string | null
   collectedAt: string
@@ -21,6 +30,16 @@ interface HeatMapCell {
   siteName: string
   avgTrendScore: number
   count: number
+}
+
+interface SyncLog {
+  id: string
+  startedAt: string
+  finishedAt: string | null
+  status: 'running' | 'success' | 'error'
+  siteName: string | null
+  totalProducts: number | null
+  errorMessage: string | null
 }
 
 const CATEGORIES = [
@@ -54,6 +73,12 @@ const SITE_LABELS: Record<string, string> = {
   'shajgoj': 'Shajgoj',
 }
 
+const DATE_RANGES = [
+  { value: 7, label: 'Last 7 days' },
+  { value: 30, label: 'Last 30 days' },
+  { value: 90, label: 'Last 90 days' },
+]
+
 function getTrendScoreColor(score: number): string {
   if (score >= 50) return 'bg-green-500 text-white'
   if (score >= 20) return 'bg-green-300 text-green-900'
@@ -65,23 +90,36 @@ function getTrendScoreColor(score: number): string {
 export default function MarketIntelPage() {
   const [trendingProducts, setTrendingProducts] = useState<CompetitorProduct[]>([])
   const [heatMapData, setHeatMapData] = useState<HeatMapCell[]>([])
+  const [syncLogs, setSyncLogs] = useState<SyncLog[]>([])
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [lastSync, setLastSync] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  
+  // Filter state
+  const [dateRange, setDateRange] = useState(7)
+  const [categoryFilter, setCategoryFilter] = useState<string>('')
 
   const fetchData = async () => {
     setLoading(true)
     setError('')
     try {
-      const res = await fetch('/api/admin/market-intel')
+      // Build query string with filters
+      const params = new URLSearchParams()
+      params.set('range', dateRange.toString())
+      if (categoryFilter) {
+        params.set('category', categoryFilter)
+      }
+      
+      const res = await fetch(`/api/admin/market-intel?${params.toString()}`)
       const data = await res.json()
       
       if (res.ok) {
         setTrendingProducts(data.trending || [])
         setHeatMapData(data.heatMap || [])
         setLastSync(data.lastSync || null)
+        setSyncLogs(data.syncLogs || [])
       } else {
         setError(data.error || 'Failed to fetch data')
       }
@@ -113,9 +151,10 @@ export default function MarketIntelPage() {
     }
   }
 
+  // Refetch data when filters change
   useEffect(() => {
     fetchData()
-  }, [])
+  }, [dateRange, categoryFilter])
 
   const getHeatMapValue = (category: string, site: string): HeatMapCell | null => {
     return heatMapData.find(cell => cell.category === category && cell.siteName === site) || null
@@ -125,9 +164,9 @@ export default function MarketIntelPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Market Intelligence (MVP)</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Market Intelligence</h1>
             <p className="text-sm text-gray-500 mt-1">
-              Competitor analysis for Rice, Oil, Paracetamol, Cough Syrup, Face Wash
+              Competitor analysis across 15 categories from Chaldal
             </p>
           </div>
           <div className="flex items-center gap-4">
@@ -144,6 +183,47 @@ export default function MarketIntelPage() {
               <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
               {syncing ? 'Syncing...' : 'Sync Now'}
             </button>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="rounded-lg border border-gray-200 bg-white p-4">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700">Date Range:</span>
+              <select
+                value={dateRange}
+                onChange={(e) => setDateRange(Number(e.target.value))}
+                className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+              >
+                {DATE_RANGES.map(range => (
+                  <option key={range.value} value={range.value}>{range.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700">Category:</span>
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+              >
+                <option value="">All Categories</option>
+                {CATEGORIES.map(cat => (
+                  <option key={cat} value={cat}>{CATEGORY_LABELS[cat]}</option>
+                ))}
+              </select>
+            </div>
+            {categoryFilter && (
+              <button
+                onClick={() => setCategoryFilter('')}
+                className="text-sm text-teal-600 hover:text-teal-800"
+              >
+                Clear filter
+              </button>
+            )}
           </div>
         </div>
 
@@ -238,12 +318,19 @@ export default function MarketIntelPage() {
 
       {/* Trending Products Table */}
       <div className="rounded-lg border border-gray-200 bg-white p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <TrendingUp className="h-5 w-5 text-teal-600" />
-          <h2 className="text-lg font-semibold text-gray-900">Trending Products</h2>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-teal-600" />
+            <h2 className="text-lg font-semibold text-gray-900">Trending Products</h2>
+          </div>
+          {categoryFilter && (
+            <span className="text-sm text-teal-600 bg-teal-50 px-3 py-1 rounded-full">
+              Filtered: {CATEGORY_LABELS[categoryFilter]}
+            </span>
+          )}
         </div>
         <p className="text-sm text-gray-500 mb-4">
-          Top 50 products by trend score (reviews - price * 0.01) from the last 7 days.
+          Top 50 products by trend score from the last {dateRange} days. Score is calculated using relative price (70%), listing position (22%), and reviews (8%) within each category.
         </p>
 
         {loading ? (
@@ -321,6 +408,64 @@ export default function MarketIntelPage() {
                           <ExternalLink className="h-4 w-4" />
                         </a>
                       )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Sync Logs */}
+      <div className="rounded-lg border border-gray-200 bg-white p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Clock className="h-5 w-5 text-teal-600" />
+          <h2 className="text-lg font-semibold text-gray-900">Recent Sync Logs</h2>
+        </div>
+        <p className="text-sm text-gray-500 mb-4">
+          Last 5 sync operations. Automatic sync runs every 6 hours.
+        </p>
+
+        {syncLogs.length === 0 ? (
+          <div className="text-center py-6 text-gray-500">
+            <p>No sync logs available yet.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Started</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Finished</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Products</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {syncLogs.map((log) => (
+                  <tr key={log.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-sm text-gray-900">
+                      {new Date(log.startedAt).toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-500">
+                      {log.finishedAt ? new Date(log.finishedAt).toLocaleString() : '-'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        log.status === 'success' ? 'bg-green-100 text-green-800' :
+                        log.status === 'error' ? 'bg-red-100 text-red-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {log.status === 'success' ? 'Success' : log.status === 'error' ? 'Error' : 'Running'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-900 text-right">
+                      {log.totalProducts !== null ? log.totalProducts.toLocaleString() : '-'}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-500">
+                      {log.errorMessage || (log.siteName ? `Site: ${log.siteName}` : 'All sites')}
                     </td>
                   </tr>
                 ))}

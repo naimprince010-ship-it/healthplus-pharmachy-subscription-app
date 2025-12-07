@@ -1172,20 +1172,36 @@ model MissingProduct {
   @@index([blogId])
 }
 
-// Market Intelligence - Phase 1
+// Market Intelligence - Phase 1 & 2
 model CompetitorProduct {
-  id          String   @id @default(cuid())
-  siteName    String   // 'chaldal' | 'arogga' | 'shajgoj'
-  category    String   // 'rice' | 'oil' | 'paracetamol' | 'cough-syrup' | 'face-wash'
-  productName String
-  price       Float
-  reviewCount Int      @default(0)
-  trendScore  Float    // Computed: reviewCount - (price * 0.01)
-  productUrl  String?  // URL to the product page
-  imageUrl    String?  // Product image URL
-  collectedAt DateTime @default(now())
+  id                 String   @id @default(cuid())
+  siteName           String   // 'chaldal' | 'arogga' | 'shajgoj'
+  category           String   // 'rice' | 'oil' | 'paracetamol' | 'cough-syrup' | 'face-wash'
+  productName        String
+  price              Float
+  reviewCount        Int      @default(0)
+  position           Int?     // Position in listing (0 = top, higher = lower on page)
+  trendScore         Float    // Phase 2: weighted score from priceScore + positionScore + reviewScore
+  rawScoreComponents Json?    // { priceScore, positionScore, reviewScore, weights, minPrice, maxPrice }
+  productUrl         String?  // URL to the product page
+  imageUrl           String?  // Product image URL
+  collectedAt        DateTime @default(now())
 
   @@index([siteName, category, collectedAt])
   @@index([category, trendScore])
   @@index([collectedAt])
+}
+
+// Market Intelligence - Phase 2: Sync Logs
+model MarketIntelSyncLog {
+  id            String    @id @default(cuid())
+  startedAt     DateTime  @default(now())
+  finishedAt    DateTime?
+  status        String    // 'running' | 'success' | 'error'
+  siteName      String?   // Optional: specific site, null = all sites
+  totalProducts Int?      // Number of products synced
+  errorMessage  String?   // Error details if status = 'error'
+
+  @@index([startedAt])
+  @@index([status])
 }
