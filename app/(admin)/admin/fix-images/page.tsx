@@ -103,7 +103,7 @@ export default function FixImagesPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Fix External Images</h1>
         <p className="mt-1 text-sm text-gray-600">
-          এই page-এ chaldn.com থেকে আসা broken images fix করতে পারবেন। Images automatically download হয়ে Supabase-এ upload হবে।
+          এই page-এ Chaldal, Arogga, MedEasy থেকে আসা external images fix করতে পারবেন। Images automatically download হয়ে Supabase-এ upload হবে।
         </p>
       </div>
 
