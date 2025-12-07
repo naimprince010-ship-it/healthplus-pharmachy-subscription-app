@@ -73,11 +73,13 @@ export default function LandingPageEditor({ initialData, isEdit = false }: Landi
     setSections(newSections)
   }
 
-  const handleUpdateSectionConfig = (index: number, config: Record<string, unknown>) => {
-    const newSections = [...sections]
-    newSections[index] = { ...newSections[index], config } as LandingPageSection
-    setSections(newSections)
-  }
+    const handleUpdateSectionConfig = (index: number, config: Record<string, unknown>) => {
+      const newSections = [...sections]
+      // We know at runtime that `config` matches section.config's shape
+      // because each SectionConfigEditor enforces that shape.
+      newSections[index] = { ...newSections[index], config } as unknown as LandingPageSection
+      setSections(newSections)
+    }
 
   const generateSlug = (title: string) => {
     return title
@@ -414,29 +416,29 @@ interface SectionConfigEditorProps {
 }
 
 function SectionConfigEditor({ section, onUpdateConfig }: SectionConfigEditorProps) {
-  const config = section.config as Record<string, unknown>
-
   const updateField = (field: string, value: unknown) => {
-    onUpdateConfig({ ...config, [field]: value })
+    const currentConfig = section.config as unknown as Record<string, unknown>
+    onUpdateConfig({ ...currentConfig, [field]: value })
   }
 
+  // Use type narrowing based on section.type to pass the correct config type
   switch (section.type) {
     case 'hero':
-      return <HeroConfigEditor config={config as HeroSectionConfig} updateField={updateField} />
+      return <HeroConfigEditor config={section.config} updateField={updateField} />
     case 'problem':
-      return <ProblemConfigEditor config={config as ProblemSectionConfig} updateField={updateField} />
+      return <ProblemConfigEditor config={section.config} updateField={updateField} />
     case 'benefits':
-      return <BenefitsConfigEditor config={config as BenefitsSectionConfig} updateField={updateField} />
+      return <BenefitsConfigEditor config={section.config} updateField={updateField} />
     case 'howItWorks':
-      return <HowItWorksConfigEditor config={config as HowItWorksSectionConfig} updateField={updateField} />
+      return <HowItWorksConfigEditor config={section.config} updateField={updateField} />
     case 'pricing':
-      return <PricingConfigEditor config={config as PricingSectionConfig} updateField={updateField} />
+      return <PricingConfigEditor config={section.config} updateField={updateField} />
     case 'testimonials':
-      return <TestimonialsConfigEditor config={config as TestimonialsSectionConfig} updateField={updateField} />
+      return <TestimonialsConfigEditor config={section.config} updateField={updateField} />
     case 'faq':
-      return <FAQConfigEditor config={config as FAQSectionConfig} updateField={updateField} />
+      return <FAQConfigEditor config={section.config} updateField={updateField} />
     case 'finalCta':
-      return <FinalCTAConfigEditor config={config as FinalCTASectionConfig} updateField={updateField} />
+      return <FinalCTAConfigEditor config={section.config} updateField={updateField} />
     default:
       return <div className="text-gray-500">Unknown section type</div>
   }

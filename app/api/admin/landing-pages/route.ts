@@ -14,7 +14,7 @@ const landingPageSchema = z.object({
     id: z.string(),
     type: z.enum(['hero', 'problem', 'benefits', 'howItWorks', 'pricing', 'testimonials', 'faq', 'finalCta']),
     order: z.number(),
-    config: z.record(z.unknown()),
+    config: z.record(z.string(), z.unknown()),
   })).default([]),
   metaTitle: z.string().optional().nullable(),
   metaDescription: z.string().optional().nullable(),
