@@ -32,6 +32,7 @@ import {
   List,
   AlertCircle,
   TrendingUp,
+  Megaphone,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -61,9 +62,10 @@ const navItems: NavItem[] = [
   { label: 'Prescriptions', href: '/admin/prescriptions', icon: FileText },
   { label: 'Delivery Zones', href: '/admin/delivery-zones', icon: MapPin },
     { label: 'Home Sections', href: '/admin/home-sections', icon: LayoutGrid },
-    { label: 'Banners', href: '/admin/banners', icon: Image },
-    { label: 'Pages', href: '/admin/pages', icon: FileText },
-        { label: 'Cart Settings', href: '/admin/cart-settings', icon: ShoppingCart },
+        { label: 'Banners', href: '/admin/banners', icon: Image },
+        { label: 'Pages', href: '/admin/pages', icon: FileText },
+        { label: 'Landing Pages', href: '/admin/landing-pages', icon: Megaphone },
+            { label: 'Cart Settings', href: '/admin/cart-settings', icon: ShoppingCart },
         { label: 'Checkout Settings', href: '/admin/checkout-settings', icon: ShoppingBag },
                 { label: 'Order Tracking Settings', href: '/admin/order-tracking-settings', icon: MapPin },
                 { label: 'Dashboard Settings', href: '/admin/dashboard-settings', icon: LayoutDashboard },
