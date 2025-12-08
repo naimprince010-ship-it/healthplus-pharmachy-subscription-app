@@ -509,7 +509,18 @@ export default function ProductImportPage() {
               sellingPrice: parseFloat(draft.editedData.sellingPrice),
               mrp: draft.editedData.mrp ? parseFloat(draft.editedData.mrp) : undefined,
               stockQuantity: parseInt(draft.editedData.stockQuantity) || 100,
-              imageUrl: draft.data.imageUrl || undefined,
+              imageUrl: (() => {
+                const url = draft.data.imageUrl
+                if (!url) return undefined
+                try {
+                  // Validate that it's a proper absolute URL
+                  new URL(url)
+                  return url
+                } catch {
+                  // Invalid URL format, skip it
+                  return undefined
+                }
+              })(),
               isActive: true,
               categoryId: draft.editedData.categoryId,
               sizeLabel: draft.editedData.packSize.trim() || undefined,

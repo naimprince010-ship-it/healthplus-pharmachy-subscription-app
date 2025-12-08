@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { ProductType } from '@prisma/client'
+import { ProductType, Prisma } from '@prisma/client'
 import { z } from 'zod'
 
 export const runtime = 'nodejs'
@@ -280,8 +280,45 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, product }, { status: 201 })
   } catch (error) {
     console.error('Create product error:', error)
+    
+    // Handle Prisma-specific errors with detailed messages
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        // Unique constraint violation
+        const target = (error.meta?.target as string[])?.join(', ') || 'field'
+        return NextResponse.json(
+          { error: `A product with this ${target} already exists` },
+          { status: 409 }
+        )
+      }
+      if (error.code === 'P2003') {
+        // Foreign key constraint violation
+        return NextResponse.json(
+          { error: 'Invalid category or manufacturer reference' },
+          { status: 400 }
+        )
+      }
+      if (error.code === 'P2025') {
+        // Record not found
+        return NextResponse.json(
+          { error: 'Referenced record not found' },
+          { status: 404 }
+        )
+      }
+    }
+    
+    // Handle validation errors from Zod that might have slipped through
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: error.flatten().fieldErrors },
+        { status: 400 }
+      )
+    }
+    
+    // Generic error with more details
+    const errorMessage = error instanceof Error ? error.message : 'Failed to create product'
     return NextResponse.json(
-      { error: 'Failed to create product' },
+      { error: errorMessage },
       { status: 500 }
     )
   }
