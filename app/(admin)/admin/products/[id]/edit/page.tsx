@@ -272,17 +272,18 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       }
     }
 
-    const fetchManufacturers = async () => {
-      try {
-        const res = await fetch('/api/admin/manufacturers')
-        const data = await res.json()
-        if (res.ok) {
-          setManufacturers(data.manufacturers || [])
+        const fetchManufacturers = async () => {
+          try {
+            // Fetch all manufacturers (limit=1000) to ensure all are available for search
+            const res = await fetch('/api/admin/manufacturers?limit=1000')
+            const data = await res.json()
+            if (res.ok) {
+              setManufacturers(data.manufacturers || [])
+            }
+          } catch (error) {
+            console.error('Failed to fetch manufacturers:', error)
+          }
         }
-      } catch (error) {
-        console.error('Failed to fetch manufacturers:', error)
-      }
-    }
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]

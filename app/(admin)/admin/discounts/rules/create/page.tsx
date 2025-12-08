@@ -51,15 +51,16 @@ export default function CreateDiscountRulePage() {
     }
   }
 
-  const fetchManufacturers = async () => {
-    try {
-      const res = await fetch('/api/admin/manufacturers')
-      const data = await res.json()
-      setManufacturers(data.manufacturers || [])
-    } catch (error) {
-      console.error('Failed to fetch manufacturers:', error)
+    const fetchManufacturers = async () => {
+      try {
+        // Fetch all manufacturers (limit=1000) to ensure all are available for search
+        const res = await fetch('/api/admin/manufacturers?limit=1000')
+        const data = await res.json()
+        setManufacturers(data.manufacturers || [])
+      } catch (error) {
+        console.error('Failed to fetch manufacturers:', error)
+      }
     }
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
