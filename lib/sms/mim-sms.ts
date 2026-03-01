@@ -27,18 +27,35 @@ export async function sendMIMSMS(phone: string, message: string): Promise<boolea
         url.searchParams.append('TransactionType', 'T')
         url.searchParams.append('Message', message)
 
-        const response = await fetch(url.toString(), {
-            method: 'GET',
-        })
+        const response = await fetch(
+            "https://api.mimsms.com/api/SmsSending/SMS",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                },
+                body: JSON.stringify({
+                    ApiKey: MIM_SMS_API_KEY,
+                    MobileNumber: bdPhoneFormat,
+                    SenderName: MIM_SMS_SENDER_ID,
+                    UserName: MIM_SMS_USERNAME,
+                    TransactionType: "T",
+                    Message: message,
+                }),
+            }
+        );
 
-        const textResponse = await response.text()
+        const textResponse = await response.text();
 
-        // If response is OK and doesn't contain error keywords (or if we can parse a success JSON)
+        // Let's print out the response to debug any issues precisely
+        console.log(`[MIM SMS Raw Response] for ${bdPhoneFormat}:`, textResponse);
+
         if (response.ok && !textResponse.toLowerCase().includes('error') && !textResponse.toLowerCase().includes('invalid')) {
-            console.log(`[MIM SMS] Successfully sent SMS to ${bdPhoneFormat}. Response: ${textResponse}`)
+            console.log(`[MIM SMS] Successfully sending via JSON POST to ${bdPhoneFormat}.`)
             return true
         } else {
-            console.error(`[MIM SMS] Failed to send SMS to ${bdPhoneFormat}. Response: ${textResponse}`)
+            console.error(`[MIM SMS] Failed to send JSON POST SMS.`)
             return false
         }
     } catch (error) {

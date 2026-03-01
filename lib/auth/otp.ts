@@ -45,7 +45,7 @@ export async function sendOTP(phone: string): Promise<{ sessionId: string; messa
       verified: false,
     })
 
-    const smsMessage = `Your HealthPlus verification code is: ${otp}. It expires in 5 minutes.`
+    const smsMessage = `Your OTP is ${otp}. Valid for 5 minutes.`
 
     const isSent = await sendMIMSMS(normalizedPhone, smsMessage)
 
