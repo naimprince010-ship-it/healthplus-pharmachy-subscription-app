@@ -7,6 +7,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   pages: {
     signIn: '/auth/signin',
@@ -16,21 +17,43 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       name: 'Credentials',
       credentials: {
         identifier: { label: 'Phone or Email', type: 'text' },
-        phone: { label: 'Phone (legacy)', type: 'text' },
-        password: { label: 'Password', type: 'password' },
+        password: { label: 'Password (Admin only)', type: 'password' },
+        sessionId: { label: 'OTP Session ID', type: 'text' },
+        otp: { label: 'OTP Code', type: 'text' }
       },
       async authorize(credentials) {
         console.log('[AUTH] authorize() called')
-        
-        const input = (credentials?.identifier as string | undefined) ?? (credentials?.phone as string | undefined)
-        
+
+        // 1. OTP Verification Flow (Users)
+        if (credentials?.sessionId && credentials?.otp) {
+          console.log('[AUTH] Attempting OTP verification')
+          try {
+            const { verifyOTP } = await import('@/lib/auth/otp')
+            const result = await verifyOTP(
+              credentials.sessionId as string,
+              credentials.otp as string
+            )
+
+            if (result && result.user) {
+              console.log('[AUTH] OTP verified successfully for user:', result.user.id)
+              return result.user
+            }
+          } catch (error) {
+            console.error('[AUTH] OTP verification failed:', error)
+            return null
+          }
+        }
+
+        // 2. Password Verification Flow (Admins / Legacy)
+        const input = credentials?.identifier as string | undefined
+
         if (!input || !credentials?.password) {
-          console.log('[AUTH] Missing credentials')
+          console.log('[AUTH] Missing credentials for password login')
           return null
         }
 
-        console.log('[AUTH] Verifying credentials for input:', input.substring(0, 6) + '***')
-        
+        console.log('[AUTH] Verifying password credentials for input:', input.substring(0, 6) + '***')
+
         const user = await verifyCredentials(
           input,
           credentials.password as string
@@ -86,7 +109,7 @@ function normalizeBdPhone(input: string): string | null {
   const bdLocal = /^01[3-9]\d{8}$/
   const bdNoPlus = /^8801[3-9]\d{8}$/
   const bdPlus = /^\+8801[3-9]\d{8}$/
-  
+
   if (bdLocal.test(raw)) return `+88${raw}`
   if (bdNoPlus.test(raw)) return `+${raw}`
   if (bdPlus.test(raw)) return raw
@@ -95,11 +118,11 @@ function normalizeBdPhone(input: string): string | null {
 
 export async function verifyCredentials(identifier: string, password: string) {
   console.log('[AUTH] verifyCredentials() called')
-  
+
   const { prisma } = await import('./prisma')
-  
+
   let user = null
-  
+
   const maybePhone = normalizeBdPhone(identifier)
   if (maybePhone) {
     console.log('[AUTH] Attempting phone lookup')
@@ -107,11 +130,11 @@ export async function verifyCredentials(identifier: string, password: string) {
       where: { phone: maybePhone },
     })
   }
-  
+
   if (!user) {
     const email = identifier.trim().toLowerCase()
     const looksLikeEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-    
+
     if (looksLikeEmail) {
       console.log('[AUTH] Attempting email lookup')
       user = await prisma.user.findUnique({
