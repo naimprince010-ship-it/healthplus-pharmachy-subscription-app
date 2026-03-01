@@ -172,12 +172,19 @@ DEFAULT_ADMIN_EMAIL="admin@healthplus.com"
 Configure your SMS provider for OTP and notifications:
 
 ```env
+# MIM SMS variables
+MIM_SMS_API_KEY="your-mim-sms-api-key"
+MIM_SMS_API_URL="https://sms.mimsms.com/smsapi"
+MIM_SMS_SENDER_ID="your-sender-id"
+
+# General SMS variables (fallback or legacy)
 SMS_API_KEY="your-sms-api-key"
 SMS_API_URL="https://api.sms-provider.com/send"
 SMS_SENDER_ID="HealthPlus"
 ```
 
 **Recommended SMS Providers for Bangladesh:**
+- MIM SMS (Currently Integrated)
 - SSL Wireless
 - Banglalink SMS API
 - Robi SMS Gateway

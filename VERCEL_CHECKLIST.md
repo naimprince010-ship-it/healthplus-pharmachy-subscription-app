@@ -107,9 +107,30 @@ DEFAULT_ADMIN_EMAIL
 #### 🟢 OPTIONAL (Notifications)
 
 ```
+MIM_SMS_API_KEY
+```
+- **Value:** Your MIM SMS API key
+- **Example:** `HGY5QT4ZBSD2ZXACDOZ0PXLEJ`
+- **Environment:** Production, Preview, Development
+
+```
+MIM_SMS_API_URL
+```
+- **Value:** MIM SMS API endpoint
+- **Example:** `https://sms.mimsms.com/smsapi`
+- **Environment:** Production, Preview, Development
+
+```
+MIM_SMS_SENDER_ID
+```
+- **Value:** Sender ID for MIM SMS
+- **Example:** `8809617623081`
+- **Environment:** Production, Preview, Development
+
+```
 SMS_API_KEY
 ```
-- **Value:** Your SMS provider API key
+- **Value:** Your default SMS provider API key
 - **Example:** `sk_live_abc123...`
 - **Environment:** Production, Preview (optional), Development (optional)
 
