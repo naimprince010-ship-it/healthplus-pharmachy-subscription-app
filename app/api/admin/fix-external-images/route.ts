@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
 // External image domains to check (not hosted on Supabase)
-const EXTERNAL_IMAGE_DOMAINS = ['chaldn.com', 'arogga.com', 'medeasy.health']
+const EXTERNAL_IMAGE_DOMAINS = ['chaldn.com', 'arogga.com', 'medeasy.health', 'othoba.com']
 
 /**
  * GET /api/admin/fix-external-images

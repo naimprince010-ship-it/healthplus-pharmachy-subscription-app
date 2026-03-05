@@ -103,7 +103,7 @@ export default function FixImagesPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Fix External Images</h1>
         <p className="mt-1 text-sm text-gray-600">
-          এই page-এ Chaldal, Arogga, MedEasy থেকে আসা external images fix করতে পারবেন। Images automatically download হয়ে Supabase-এ upload হবে।
+          এই page-এ Chaldal, Arogga, MedEasy এবং Othoba থেকে আসা external images fix করতে পারবেন। Images automatically download হয়ে Supabase-এ upload হবে।
         </p>
       </div>
 
@@ -161,9 +161,8 @@ export default function FixImagesPage() {
             {results.map((result) => (
               <div
                 key={result.id}
-                className={`flex items-center gap-3 rounded-lg p-3 ${
-                  result.status === 'success' ? 'bg-green-50' : 'bg-red-50'
-                }`}
+                className={`flex items-center gap-3 rounded-lg p-3 ${result.status === 'success' ? 'bg-green-50' : 'bg-red-50'
+                  }`}
               >
                 {result.status === 'success' ? (
                   <CheckCircle className="h-5 w-5 text-green-600" />
@@ -227,7 +226,7 @@ export default function FixImagesPage() {
                             className="h-full w-full object-cover"
                             onError={(e) => {
                               (e.target as HTMLImageElement).src = ''
-                              ;(e.target as HTMLImageElement).alt = 'Broken'
+                                ; (e.target as HTMLImageElement).alt = 'Broken'
                             }}
                           />
                         ) : (
