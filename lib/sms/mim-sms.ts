@@ -19,42 +19,29 @@ export async function sendMIMSMS(phone: string, message: string): Promise<boolea
         // MIM SMS API expects the 880 format usually, normalizeBDPhone returns +880
         const bdPhoneFormat = normalizedPhone.replace('+', '')
 
-        // We'll use the specific URL for JSON POST from their documentation
-        const apiUrl = "https://api.mimsms.com/api/SmsSending/SMS"
+        // Construct the GET URL
+        const url = new URL("https://api.mimsms.com/api/SmsSending/Send")
+        url.searchParams.append('UserName', MIM_SMS_USERNAME)
+        url.searchParams.append('Apikey', MIM_SMS_API_KEY)
+        url.searchParams.append('MobileNumber', bdPhoneFormat)
+        url.searchParams.append('SenderName', MIM_SMS_SENDER_ID)
+        url.searchParams.append('TransactionType', 'T')
+        url.searchParams.append('Message', message)
 
-        const payload = {
-            UserName: MIM_SMS_USERNAME,
-            Apikey: MIM_SMS_API_KEY,
-            MobileNumber: bdPhoneFormat,
-            SenderName: MIM_SMS_SENDER_ID,
-            TransactionType: "T",
-            Message: message,
-        }
+        const apiUrl = url.toString()
+        console.log(`[MIM SMS Payload] Sending GET request to:`, apiUrl.replace(MIM_SMS_API_KEY, '***'))
 
-        console.log(`[MIM SMS Payload] Sending to ${apiUrl}:`, { ...payload, Apikey: '***' })
-
-        const response = await fetch(
-            apiUrl,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Accept: "application/json",
-                },
-                body: JSON.stringify(payload),
-            }
-        );
-
+        const response = await fetch(apiUrl, { method: "GET" })
         const textResponse = await response.text();
 
         // Let's print out the response to debug any issues precisely
         console.log(`[MIM SMS Raw Response] for ${bdPhoneFormat}:`, textResponse);
 
         if (response.ok && !textResponse.toLowerCase().includes('error') && !textResponse.toLowerCase().includes('invalid')) {
-            console.log(`[MIM SMS] Successfully sending via JSON POST to ${bdPhoneFormat}.`)
+            console.log(`[MIM SMS] Successfully sending via GET to ${bdPhoneFormat}.`)
             return true
         } else {
-            console.error(`[MIM SMS] Failed to send JSON POST SMS.`)
+            console.error(`[MIM SMS] Failed to send GET SMS.`)
             return false
         }
     } catch (error) {
