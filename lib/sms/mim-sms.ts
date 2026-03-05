@@ -22,6 +22,17 @@ export async function sendMIMSMS(phone: string, message: string): Promise<boolea
         // We'll use the specific URL for JSON POST from their documentation
         const apiUrl = "https://api.mimsms.com/api/SmsSending/SMS"
 
+        const payload = {
+            UserName: MIM_SMS_USERNAME,
+            Apikey: MIM_SMS_API_KEY,
+            MobileNumber: bdPhoneFormat,
+            SenderName: MIM_SMS_SENDER_ID,
+            TransactionType: "T",
+            Message: message,
+        }
+
+        console.log(`[MIM SMS Payload] Sending to ${apiUrl}:`, { ...payload, Apikey: '***' })
+
         const response = await fetch(
             apiUrl,
             {
@@ -30,14 +41,7 @@ export async function sendMIMSMS(phone: string, message: string): Promise<boolea
                     "Content-Type": "application/json",
                     Accept: "application/json",
                 },
-                body: JSON.stringify({
-                    UserName: MIM_SMS_USERNAME,
-                    Apikey: MIM_SMS_API_KEY,
-                    MobileNumber: bdPhoneFormat,
-                    SenderName: MIM_SMS_SENDER_ID,
-                    TransactionType: "T",
-                    Message: message,
-                }),
+                body: JSON.stringify(payload),
             }
         );
 
