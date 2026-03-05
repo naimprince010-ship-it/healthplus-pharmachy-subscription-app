@@ -19,16 +19,11 @@ export async function sendMIMSMS(phone: string, message: string): Promise<boolea
         // MIM SMS API expects the 880 format usually, normalizeBDPhone returns +880
         const bdPhoneFormat = normalizedPhone.replace('+', '')
 
-        const url = new URL(MIM_SMS_API_URL)
-        url.searchParams.append('UserName', MIM_SMS_USERNAME)
-        url.searchParams.append('Apikey', MIM_SMS_API_KEY)
-        url.searchParams.append('MobileNumber', bdPhoneFormat)
-        url.searchParams.append('SenderName', MIM_SMS_SENDER_ID)
-        url.searchParams.append('TransactionType', 'T')
-        url.searchParams.append('Message', message)
+        // We'll use the specific URL for JSON POST from their documentation
+        const apiUrl = "https://api.mimsms.com/api/SmsSending/SMS"
 
         const response = await fetch(
-            "https://api.mimsms.com/api/SmsSending/SMS",
+            apiUrl,
             {
                 method: "POST",
                 headers: {
@@ -36,10 +31,10 @@ export async function sendMIMSMS(phone: string, message: string): Promise<boolea
                     Accept: "application/json",
                 },
                 body: JSON.stringify({
-                    ApiKey: MIM_SMS_API_KEY,
+                    UserName: MIM_SMS_USERNAME,
+                    Apikey: MIM_SMS_API_KEY,
                     MobileNumber: bdPhoneFormat,
                     SenderName: MIM_SMS_SENDER_ID,
-                    UserName: MIM_SMS_USERNAME,
                     TransactionType: "T",
                     Message: message,
                 }),
