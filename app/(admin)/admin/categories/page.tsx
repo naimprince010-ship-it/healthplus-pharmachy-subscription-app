@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Edit, Plus } from 'lucide-react'
 import CategoryFilters from '@/components/admin/CategoryFilters'
 import DeleteCategoryButton from '@/components/admin/DeleteCategoryButton'
+import FixCategoryIconsButton from '@/components/admin/FixCategoryIconsButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -67,13 +68,16 @@ export default async function CategoriesPage({
       <div className="mx-auto max-w-7xl">
         <div className="mb-8 flex items-center justify-between">
           <h1 className="text-3xl font-bold text-gray-900">Categories</h1>
-          <Link
-            href="/admin/categories/new"
-            className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700"
-          >
-            <Plus className="h-4 w-4" />
-            Add Category
-          </Link>
+          <div className="flex items-center gap-3">
+            <FixCategoryIconsButton />
+            <Link
+              href="/admin/categories/new"
+              className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700"
+            >
+              <Plus className="h-4 w-4" />
+              Add Category
+            </Link>
+          </div>
         </div>
 
         <CategoryFilters />
@@ -115,11 +119,10 @@ export default async function CategoriesPage({
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm">
                     <span
-                      className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                        category.isActive
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}
+                      className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${category.isActive
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                        }`}
                     >
                       {category.isActive ? 'Active' : 'Inactive'}
                     </span>
