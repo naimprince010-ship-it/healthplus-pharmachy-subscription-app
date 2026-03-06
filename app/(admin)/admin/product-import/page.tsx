@@ -671,6 +671,68 @@ export default function ProductImportPage() {
     toast.success('Bulk AI generation completed')
   }
 
+  const handleAutoFixDrafts = () => {
+    setDraftProducts(prev => {
+      const updated = [...prev]
+      const usedSlugs = new Set<string>()
+
+      return updated.map(draft => {
+        if (draft.status !== 'pending') return draft
+
+        // 1. Clean name using backend utility logic (simulated here)
+        let cleanedName = draft.editedData.name.trim()
+
+        // Use the same regex logic as backend cleanProductName
+        const unitPattern = '(?:ml|mg|gm?|g|kg|pcs?|pack|piece|tablet|capsule|stick|sachet|softgel|iu|mcg|unit|wt|oz)'
+        const sizePattern = `(?:\\d+x)?\\d+\\s*${unitPattern}`
+        const combinedPattern = `${sizePattern}(?:\\s*\\+\\s*${sizePattern})*`
+        const packSizeRegex = new RegExp(`(?:\\s+|-|^)${combinedPattern}\\s*$`, 'i')
+
+        let prevCleaned = ''
+        while (cleanedName !== prevCleaned) {
+          prevCleaned = cleanedName
+          cleanedName = cleanedName.replace(packSizeRegex, '').trim()
+        }
+
+        // 2. Resolve Slug Duplicates within this list
+        let newSlug = slugify(draft.editedData.packSize ? `${cleanedName} ${draft.editedData.packSize}` : cleanedName)
+        let originalSlug = newSlug
+        let counter = 1
+        while (usedSlugs.has(newSlug)) {
+          newSlug = `${originalSlug}-${counter}`
+          counter++
+        }
+        usedSlugs.add(newSlug)
+
+        return {
+          ...draft,
+          editedData: {
+            ...draft.editedData,
+            name: cleanedName,
+            slug: newSlug
+          }
+        }
+      })
+    })
+    toast.success('Names cleaned and slugs deduplicated!')
+  }
+
+  // Helper to find duplicates
+  const duplicateIssues = React.useMemo(() => {
+    const nameMap = new Map<string, number>()
+    const slugMap = new Map<string, number>()
+
+    draftProducts.forEach(d => {
+      if (d.status === 'saved') return
+      const name = d.editedData.name.toLowerCase().trim()
+      const slug = d.editedData.slug.toLowerCase().trim()
+      nameMap.set(name, (nameMap.get(name) || 0) + 1)
+      slugMap.set(slug, (slugMap.get(slug) || 0) + 1)
+    })
+
+    return { nameMap, slugMap }
+  }, [draftProducts])
+
   const handleSaveProduct = async () => {
     if (!editedProduct.name.trim()) {
       toast.error('Product name is required')
@@ -1006,7 +1068,7 @@ export default function ProductImportPage() {
 
               {/* Bulk Actions Section */}
               <div className="mt-6 rounded-xl border-2 border-dashed border-teal-100 bg-teal-50/50 p-4">
-                <div className="flex flex-col gap-4 md:flex-row md:items-end">
+                <div className="flex flex-col gap-6 md:flex-row md:items-end">
                   <div className="flex-1">
                     <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-teal-700">
                       Bulk Category Assignment
@@ -1029,6 +1091,21 @@ export default function ProductImportPage() {
                       </button>
                     </div>
                   </div>
+
+                  <div className="flex flex-col gap-2 min-w-[200px]">
+                    <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-amber-700">
+                      Cleanup Tools
+                    </label>
+                    <button
+                      onClick={handleAutoFixDrafts}
+                      disabled={draftProducts.length === 0}
+                      className="flex items-center justify-center gap-2 rounded-lg bg-amber-100 border border-amber-200 px-4 py-2 text-sm font-semibold text-amber-800 transition-colors hover:bg-amber-200 disabled:bg-gray-100 disabled:text-gray-400"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      Auto Fix All Names & Slugs
+                    </button>
+                  </div>
+
                   <div className="flex flex-col gap-2 min-w-[240px]">
                     <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-purple-700">
                       Bulk AI SEO Content
@@ -1084,13 +1161,23 @@ export default function ProductImportPage() {
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="truncate text-sm font-medium text-gray-900">
+                        <p className="truncate text-sm font-medium text-gray-900 flex items-center gap-2">
                           {draft.editedData.name} {(() => {
                             const cleanRegex = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, '')
                             const cleanName = cleanRegex(draft.editedData.name)
                             const cleanPack = cleanRegex(draft.editedData.packSize)
                             return (draft.editedData.packSize && !cleanName.includes(cleanPack)) ? draft.editedData.packSize : null
                           })()}
+                          {duplicateIssues.nameMap.get(draft.editedData.name.toLowerCase().trim())! > 1 && (
+                            <span className="px-1.5 py-0.5 text-[10px] bg-amber-100 text-amber-700 border border-amber-200 rounded font-bold">
+                              DUPLICATE NAME
+                            </span>
+                          )}
+                          {duplicateIssues.slugMap.get(draft.editedData.slug.toLowerCase().trim())! > 1 && (
+                            <span className="px-1.5 py-0.5 text-[10px] bg-red-100 text-red-700 border border-red-200 rounded font-bold">
+                              DUPLICATE SLUG
+                            </span>
+                          )}
                         </p>
                         <p className="text-xs text-gray-500">
                           {draft.editedData.sellingPrice ? `৳${draft.editedData.sellingPrice}` : 'No price'}
