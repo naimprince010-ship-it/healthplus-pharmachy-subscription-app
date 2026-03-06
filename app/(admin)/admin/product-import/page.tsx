@@ -993,13 +993,23 @@ export default function ProductImportPage() {
                     <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-teal-700">
                       Bulk Category Assignment
                     </label>
-                    <SearchableSelect
-                      options={categories.map((cat) => ({ value: cat.id, label: cat.name }))}
-                      value=""
-                      onChange={handleBulkAssignCategory}
-                      placeholder="Select category for ALL pending products..."
-                      className="w-full"
-                    />
+                    <div className="flex gap-2">
+                      <SearchableSelect
+                        options={categories.map((cat) => ({ value: cat.id, label: cat.name }))}
+                        value=""
+                        onChange={handleBulkAssignCategory}
+                        placeholder="Select category for ALL pending products..."
+                        className="flex-1"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => openCategoryModal(null)}
+                        className="flex items-center justify-center rounded-lg border border-teal-200 bg-white px-3 text-teal-600 hover:bg-teal-50 hover:text-teal-700"
+                        title="Add new category"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                   <div className="flex flex-col gap-2 min-w-[240px]">
                     <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-purple-700">
