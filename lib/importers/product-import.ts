@@ -687,59 +687,83 @@ async function extractProductsFromMedeasyCategory(url: string, maxPages: number 
 async function extractProductsFromAroggaCategory(url: string): Promise<CategoryProduct[]> {
   const products: CategoryProduct[] = []
 
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-    },
-  })
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch page: ${response.status}`)
+  // Extract category ID from URL: https://www.arogga.com/category/medicine/6568/anesthetics-neuromuscular-blocking
+  const categoryIdMatch = url.match(/\/category\/[^\/]+\/(\d+)/)
+  if (!categoryIdMatch) {
+    throw new Error('Could not identify Arogga category ID from URL')
   }
+  const categoryId = categoryIdMatch[1]
 
-  const html = await response.text()
-  const $ = cheerio.load(html)
+  let page = 1
+  const perPage = 20
+  let totalItems = 0
 
-  $('a[href^="/product/"]').each((_, el) => {
-    const href = $(el).attr('href')
-    if (!href) return
+  try {
+    do {
+      const apiUrl = `https://api.arogga.com/general/v3/search/?_page=${page}&_perPage=${perPage}&_product_category_id=${categoryId}&_type=web`
 
-    const h4 = $(el).find('h4, h3').first()
-    let name = h4.length ? h4.text().trim() : $(el).text().trim()
+      const response = await fetch(apiUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'application/json, text/plain, */*',
+          'Referer': url,
+        },
+      })
 
-    // Clean up Arogga specific noise
-    name = name
-      .replace(/\d+%?\s*OFF/i, '')
-      .replace(/\d+-\d+\s*HOURS/i, '')
-      .replace(/৳\s*[\d,.]+/g, '')
-      .replace(/Loading\s*ADD/i, '')
-      .replace(/\s+/g, ' ')
-      .trim()
-
-    if (!name || name.length < 3) return
-
-    const parent = $(el).parent()
-    const priceText = parent.text()
-    const priceMatches = priceText.match(/৳\s*([\d,.]+)/g)
-    let price: number | null = null
-
-    if (priceMatches && priceMatches.length > 0) {
-      const prices = priceMatches.map(p => parsePrice(p)).filter((p): p is number => p !== null)
-      if (prices.length > 0) {
-        price = Math.max(...prices)
+      if (!response.ok) {
+        console.error(`Arogga API error: ${response.status}`)
+        break
       }
-    }
 
-    const img = parent.find('img[src*="cdn2.arogga.com"]').first()
-    const imageUrl = img.attr('src') || null
+      const result = await response.json()
+      if (!result || !result.data || !Array.isArray(result.data)) break
 
-    const fullUrl = `https://www.arogga.com${href}`
+      totalItems = parseInt(result.total) || 0
+      const items = result.data
 
-    if (!products.some(p => p.url === fullUrl)) {
-      products.push({ name, url: fullUrl, price, imageUrl })
-    }
-  })
+      items.forEach((item: any) => {
+        // Map API fields: item.p_name, item.p_strength, and price/image from multiple possible locations
+        const name = cleanProductName(`${item.p_name} ${item.p_strength || ''}`.trim())
+        const slugFallback = slugify(name)
+        const productUrl = `https://www.arogga.com/product/${item.p_id}/${item.p_slug || slugFallback}`
+
+        // Prices and images are often inside the first variant (pv[0])
+        const firstVariant = (item.pv && Array.isArray(item.pv) && item.pv.length > 0) ? item.pv[0] : (item.pv || {});
+
+        // Price can be in pv_b2c_price or inside firstVariant
+        const sellingPrice = item.pv_b2c_price || firstVariant.pv_b2c_price || item.p_price || firstVariant.p_price
+
+        // Image can be p_f_image or in attachedFiles_p_images or firstVariant
+        let imageUrl = item.p_f_image || firstVariant.p_f_image
+        if (!imageUrl && item.attachedFiles_p_images && item.attachedFiles_p_images.length > 0) {
+          imageUrl = item.attachedFiles_p_images[0].src || item.attachedFiles_p_images[0]
+        }
+        if (!imageUrl && firstVariant.attachedFiles_pv_images && firstVariant.attachedFiles_pv_images.length > 0) {
+          imageUrl = firstVariant.attachedFiles_pv_images[0].src || firstVariant.attachedFiles_pv_images[0]
+        }
+
+        const product = {
+          name,
+          url: productUrl,
+          price: sellingPrice ? parseFloat(sellingPrice.toString()) : null,
+          imageUrl: imageUrl || null,
+        }
+
+        if (!products.some(p => p.url === productUrl)) {
+          products.push(product)
+        }
+      })
+
+      // Safety break
+      if (products.length >= totalItems || products.length >= 500 || items.length === 0) {
+        break
+      }
+
+      page++
+    } while (products.length < totalItems)
+  } catch (error) {
+    console.error('Arogga pagination error:', error)
+  }
 
   return products
 }
