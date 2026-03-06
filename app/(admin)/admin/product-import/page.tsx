@@ -434,25 +434,32 @@ export default function ProductImportPage() {
           const finalPrice = importedProduct.mrp ?? importedProduct.sellingPrice ?? product.price ?? null
           const finalMrp = importedProduct.mrp ?? null
           const finalImageUrl = importedProduct.imageUrl || product.imageUrl || null
+          const finalPackSize = importedProduct.packSize || ''
+          const finalName = importedProduct.name || product.name || ''
+
+          const hasPackSize = finalPackSize && finalName.toLowerCase().includes(finalPackSize.toLowerCase().trim())
+          const baseSlug = (finalPackSize && !hasPackSize)
+            ? `${finalName} ${finalPackSize}`
+            : finalName
 
           newDrafts.push({
             id: `draft-${Date.now()}-${i}`,
             data: { ...importedProduct, imageUrl: finalImageUrl, sellingPrice: finalPrice },
             editedData: {
-              name: importedProduct.name || product.name || '',
+              name: finalName,
               manufacturerId: '',
               description: importedProduct.description || '',
               sellingPrice: finalPrice?.toString() || '',
               mrp: finalMrp?.toString() || '',
               stockQuantity: '100',
               categoryId: '',
-              packSize: importedProduct.packSize || '',
+              packSize: finalPackSize,
               keyFeatures: '',
               specSummary: '',
               seoTitle: '',
               seoDescription: '',
               seoKeywords: '',
-              slug: '',
+              slug: slugify(baseSlug),
             },
             status: 'pending',
           })
@@ -1073,7 +1080,9 @@ export default function ProductImportPage() {
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="truncate text-sm font-medium text-gray-900">{draft.editedData.name}</p>
+                        <p className="truncate text-sm font-medium text-gray-900">
+                          {draft.editedData.name} {(draft.editedData.packSize && !draft.editedData.name.toLowerCase().includes(draft.editedData.packSize.toLowerCase().trim())) && draft.editedData.packSize}
+                        </p>
                         <p className="text-xs text-gray-500">
                           {draft.editedData.sellingPrice ? `৳${draft.editedData.sellingPrice}` : 'No price'}
                           {draft.editedData.categoryId ? '' : ' • No category selected'}

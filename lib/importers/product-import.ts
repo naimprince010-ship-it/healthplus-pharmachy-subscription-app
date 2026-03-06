@@ -65,12 +65,13 @@ function cleanProductName(name: string): string {
   if (!name) return ''
 
   // Regex to match pack sizes like 100ml, 500 g, 10 PCS, 2x100mg, etc.
-  // We look for these at the end of the string or preceded by a space/hyphen
-  const packSizeRegex = /(?:\s+|-)?(?:\d+x)?\d+\s*(?:ml|mg|gm?|kg|pcs?|pack|piece|tablet|capsule|stick|sachet|softgel|iu|mcg|unit|wt|oz)(?:\s*\+\s*(?:\d+x)?\d+\s*(?:ml|mg|gm?|kg|pcs?|pack|piece|tablet|capsule|stick|sachet|softgel|iu|mcg|unit|wt|oz))*\s*$/i
+  // Made it more aggressive by making the prefix (space/hyphen) optional
+  // and adding more variations for grams/milliliters
+  const packSizeRegex = /(?:\s+|-|^)?(?:\d+x)?\d+\s*(?:ml|mg|gm?|g|kg|pcs?|pack|piece|tablet|capsule|stick|sachet|softgel|iu|mcg|unit|wt|oz)(?:\s*\+\s*(?:\d+x)?\d+\s*(?:ml|mg|gm?|g|kg|pcs?|pack|piece|tablet|capsule|stick|sachet|softgel|iu|mcg|unit|wt|oz))*\s*$/i
 
   let cleaned = name.trim()
 
-  // Apply multiple times in case it's repeated
+  // Apply multiple times in case it's repeated (e.g. "Name 100ml 100ml")
   let prevCleaned = ''
   while (cleaned !== prevCleaned) {
     prevCleaned = cleaned
