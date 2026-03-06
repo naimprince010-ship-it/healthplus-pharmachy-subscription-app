@@ -52,8 +52,18 @@ function validateUrl(url: string): { valid: boolean; host: string | null; error?
 
 function parsePrice(priceText: string | number | null | undefined): number | null {
   if (priceText === undefined || priceText === null) return null
-  const str = priceText.toString().trim()
+  let str = priceText.toString().trim()
   if (!str) return null
+
+  // Handle Bengali digits
+  const bnToEn: { [key: string]: string } = {
+    '০': '0', '১': '1', '২': '2', '৩': '3', '৪': '4',
+    '৫': '5', '৬': '6', '৭': '7', '৮': '8', '৯': '9'
+  }
+
+  for (const [bn, en] of Object.entries(bnToEn)) {
+    str = str.replace(new RegExp(bn, 'g'), en)
+  }
 
   // Remove commas and any other characters except digits and the first period
   const cleaned = str.replace(/,/g, '').replace(/[^\d.]/g, '')
@@ -301,7 +311,7 @@ async function importFromMedeasy(url: string): Promise<ImportedProduct> {
   // Extract manufacturer/brand from the page
   const manufacturerText = $('h3').filter((_, el) => {
     const prevText = $(el).prev().text().toLowerCase()
-    return prevText.includes('manufacturer')
+    return prevText.includes('manufacturer') || prevText.includes('প্রস্তুতকারক')
   }).first().text().trim()
 
   if (manufacturerText) {
@@ -312,7 +322,7 @@ async function importFromMedeasy(url: string): Promise<ImportedProduct> {
       const text = $(el).text().trim()
       if (text && text.length < 50 && !text.includes('Medicine') && !brandName) {
         const prevSibling = $(el).prev().text().toLowerCase()
-        if (prevSibling.includes('manufacturer') || prevSibling.includes('brand')) {
+        if (prevSibling.includes('manufacturer') || prevSibling.includes('brand') || prevSibling.includes('প্রস্তুতকারক') || prevSibling.includes('ব্র্যান্ড')) {
           brandName = text
         }
       }
@@ -346,9 +356,17 @@ async function importFromMedeasy(url: string): Promise<ImportedProduct> {
 
   // Extract description from Medicine overview section
   if (!description) {
-    const overviewSection = $('h2:contains("Medicine overview")').parent()
+    const overviewSection = $('h2').filter((_, el) => {
+      const text = $(el).text().toLowerCase()
+      return text.includes('medicine overview') || text.includes('মেডিসিন ওভারভিউ') || text.includes('ওভারভিউ')
+    }).parent()
+
     if (overviewSection.length) {
-      const overviewText = overviewSection.text().replace(/Medicine overview/i, '').trim()
+      const overviewText = overviewSection.text()
+        .replace(/Medicine overview/i, '')
+        .replace(/মেডিসিন ওভারভিউ/i, '')
+        .replace(/ওভারভিউ/i, '')
+        .trim()
       if (overviewText) {
         description = overviewText.substring(0, 500)
       }
@@ -562,9 +580,15 @@ async function extractProductsFromMedeasyCategory(url: string, maxPages: number 
 
     let itemsFoundOnThisPage = 0
 
-    $('a[href^="/medicines/"]').each((_, el) => {
+    $('a').each((_, el) => {
       const href = $(el).attr('href')
-      if (!href || href === '/medicines/') return
+      if (!href || !href.includes('/medicines/')) return
+
+      // Ensure it's a product link, not just a category or search link
+      // Product links usually look like /medicines/[slug] or /bn/medicines/[slug]
+      const parts = href.split('/')
+      const medicinesIndex = parts.indexOf('medicines')
+      if (medicinesIndex === -1 || medicinesIndex === parts.length - 1) return
 
       const article = $(el).find('article')
       if (!article.length) return
@@ -573,11 +597,12 @@ async function extractProductsFromMedeasyCategory(url: string, maxPages: number 
       name = cleanProductName(name)
 
       const priceText = article.find('div').filter((_, div) => $(div).text().includes('৳')).first().text()
-      const priceMatches = priceText.match(/৳\s*([\d,.]+)/g)
+      // Use regex to find anything that looks like a price with currency symbol, 
+      // supporting both English and Bengali digits
+      const priceMatches = priceText.match(/[৳$]\s*([\d,.০-৯]+)/g) || priceText.match(/([\d,.০-৯]+)\s*[৳$]/g)
       let price: number | null = null
 
       if (priceMatches && priceMatches.length > 0) {
-        // Extract all numeric values and pick the highest one (MRP)
         const prices = priceMatches.map(p => parsePrice(p)).filter((p): p is number => p !== null)
         if (prices.length > 0) {
           price = Math.max(...prices)
