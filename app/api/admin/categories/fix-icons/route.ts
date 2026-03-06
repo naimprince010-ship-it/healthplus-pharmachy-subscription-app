@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
         }
 
         const iconMapping = {
-            'womens-choice': '/images/category-icons/womens-choice.png',
+            'women-s-choice': '/images/category-icons/womens-choice.png',
             'sexual-wellness': '/images/category-icons/sexual-wellness.png',
             'cream-and-moisturizer': '/images/category-icons/cream-and-moisturizer.png',
             'personal-care': '/images/category-icons/personal-care.png',
