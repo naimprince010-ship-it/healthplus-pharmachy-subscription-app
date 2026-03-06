@@ -274,7 +274,8 @@ export default function ProductImportPage() {
 
       if (res.ok) {
         setEditedProduct(prev => {
-          const baseSlug = prev.packSize
+          const hasPackSize = prev.packSize && prev.name.toLowerCase().includes(prev.packSize.toLowerCase().trim())
+          const baseSlug = (prev.packSize && !hasPackSize)
             ? `${prev.name} ${prev.packSize}`
             : prev.name
           return {
@@ -598,9 +599,14 @@ export default function ProductImportPage() {
           ? `${draft.editedData.name} ${draft.editedData.packSize}`
           : draft.editedData.name
 
-        setDraftProducts(prev => prev.map(d =>
-          d.id === draftId
-            ? {
+        setDraftProducts(prev => prev.map(d => {
+          if (d.id === draftId) {
+            const hasPackSize = d.editedData.packSize && d.editedData.name.toLowerCase().includes(d.editedData.packSize.toLowerCase().trim())
+            const baseSlug = (d.editedData.packSize && !hasPackSize)
+              ? `${d.editedData.name} ${d.editedData.packSize}`
+              : d.editedData.name
+
+            return {
               ...d,
               editedData: {
                 ...d.editedData,
@@ -613,8 +619,9 @@ export default function ProductImportPage() {
                 slug: slugify(baseSlug),
               }
             }
-            : d
-        ))
+          }
+          return d
+        }))
         toast.success('AI content generated!')
       } else {
         toast.error(data.error || 'AI generation failed')

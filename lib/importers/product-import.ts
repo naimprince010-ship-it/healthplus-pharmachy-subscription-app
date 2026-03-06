@@ -61,6 +61,25 @@ function parsePrice(priceText: string | number | null | undefined): number | nul
   return isNaN(price) ? null : price
 }
 
+function cleanProductName(name: string): string {
+  if (!name) return ''
+
+  // Regex to match pack sizes like 100ml, 500 g, 10 PCS, 2x100mg, etc.
+  // We look for these at the end of the string or preceded by a space/hyphen
+  const packSizeRegex = /(?:\s+|-)?(?:\d+x)?\d+\s*(?:ml|mg|gm?|kg|pcs?|pack|piece|tablet|capsule|stick|sachet|softgel|iu|mcg|unit|wt|oz)(?:\s*\+\s*(?:\d+x)?\d+\s*(?:ml|mg|gm?|kg|pcs?|pack|piece|tablet|capsule|stick|sachet|softgel|iu|mcg|unit|wt|oz))*\s*$/i
+
+  let cleaned = name.trim()
+
+  // Apply multiple times in case it's repeated
+  let prevCleaned = ''
+  while (cleaned !== prevCleaned) {
+    prevCleaned = cleaned
+    cleaned = cleaned.replace(packSizeRegex, '').trim()
+  }
+
+  return cleaned
+}
+
 function cleanNextImageUrl(url: string | null): string | null {
   if (!url) return url
   if (!url.includes('/_next/image')) return url
@@ -293,8 +312,7 @@ async function importFromMedeasy(url: string): Promise<ImportedProduct> {
   // Fallback: Extract from HTML if JSON-LD didn't provide all data
   if (!name) {
     const h1Text = $('h1').first().text().trim()
-    // MedEasy h1 often includes pack size appended, e.g., "Product Name150ml+100ml"
-    name = h1Text.replace(/(\d+(?:ml|mg|gm?|kg|pcs?|pack|tablet|capsule)(?:\+\d+(?:ml|mg|gm?|kg|pcs?|pack|tablet|capsule))?)\s*$/i, '').trim()
+    name = cleanProductName(h1Text)
   }
 
   // Extract manufacturer/brand from the page
@@ -558,7 +576,9 @@ async function extractProductsFromMedeasyCategory(url: string, maxPages: number 
       const article = $(el).find('article')
       if (!article.length) return
 
-      const name = article.find('h4').text().trim()
+      let name = article.find('h4').text().trim()
+      name = cleanProductName(name)
+
       const priceText = article.find('div').filter((_, div) => $(div).text().includes('৳')).first().text()
       const priceMatches = priceText.match(/৳\s*([\d,.]+)/g)
       let price: number | null = null
