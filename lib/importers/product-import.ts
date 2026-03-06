@@ -1,4 +1,4 @@
-import * as cheerio from 'cheerio'
+import { slugify, cleanProductName } from '@/lib/slugify'
 
 export interface ImportedProduct {
   name: string
@@ -61,29 +61,7 @@ function parsePrice(priceText: string | number | null | undefined): number | nul
   return isNaN(price) ? null : price
 }
 
-function cleanProductName(name: string): string {
-  if (!name) return ''
-
-  // Regex for pack sizes: 100ml, 500g, 10 PCS, 2x100mg, 150ml+50ml, etc.
-  // Prefix: space, hyphen, or start of string
-  // Pattern: number (with optional 'x' prefix), then unit, with optional '+' combos
-  // Support common units: ml, mg, g, gm, kg, pcs, pack, piece, tablet, capsule, etc.
-  const unitPattern = '(?:ml|mg|gm?|g|kg|pcs?|pack|piece|tablet|capsule|stick|sachet|softgel|iu|mcg|unit|wt|oz)'
-  const sizePattern = `(?:\\d+x)?\\d+\\s*${unitPattern}`
-  const combinedPattern = `${sizePattern}(?:\\s*\\+\\s*${sizePattern})*`
-  const packSizeRegex = new RegExp(`(?:\\s+|-|^)${combinedPattern}\\s*$`, 'i')
-
-  let cleaned = name.trim()
-
-  // Apply multiple times in case it's repeated (e.g. "Name 100ml 100ml")
-  let prevCleaned = ''
-  while (cleaned !== prevCleaned) {
-    prevCleaned = cleaned
-    cleaned = cleaned.replace(packSizeRegex, '').trim()
-  }
-
-  return cleaned
-}
+import * as cheerio from 'cheerio'
 
 function cleanNextImageUrl(url: string | null): string | null {
   if (!url) return url
