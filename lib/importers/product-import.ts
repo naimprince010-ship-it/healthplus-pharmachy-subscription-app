@@ -64,10 +64,14 @@ function parsePrice(priceText: string | number | null | undefined): number | nul
 function cleanProductName(name: string): string {
   if (!name) return ''
 
-  // Regex to match pack sizes like 100ml, 500 g, 10 PCS, 2x100mg, etc.
-  // Made it more aggressive by making the prefix (space/hyphen) optional
-  // and adding more variations for grams/milliliters
-  const packSizeRegex = /(?:\s+|-|^)?(?:\d+x)?\d+\s*(?:ml|mg|gm?|g|kg|pcs?|pack|piece|tablet|capsule|stick|sachet|softgel|iu|mcg|unit|wt|oz)(?:\s*\+\s*(?:\d+x)?\d+\s*(?:ml|mg|gm?|g|kg|pcs?|pack|piece|tablet|capsule|stick|sachet|softgel|iu|mcg|unit|wt|oz))*\s*$/i
+  // Regex for pack sizes: 100ml, 500g, 10 PCS, 2x100mg, 150ml+50ml, etc.
+  // Prefix: space, hyphen, or start of string
+  // Pattern: number (with optional 'x' prefix), then unit, with optional '+' combos
+  // Support common units: ml, mg, g, gm, kg, pcs, pack, piece, tablet, capsule, etc.
+  const unitPattern = '(?:ml|mg|gm?|g|kg|pcs?|pack|piece|tablet|capsule|stick|sachet|softgel|iu|mcg|unit|wt|oz)'
+  const sizePattern = `(?:\\d+x)?\\d+\\s*${unitPattern}`
+  const combinedPattern = `${sizePattern}(?:\\s*\\+\\s*${sizePattern})*`
+  const packSizeRegex = new RegExp(`(?:\\s+|-|^)${combinedPattern}\\s*$`, 'i')
 
   let cleaned = name.trim()
 
@@ -108,7 +112,7 @@ async function importFromArogga(url: string): Promise<ImportedProduct> {
   const html = await response.text()
   const $ = cheerio.load(html)
 
-  const name = $('h1').first().text().trim() || ''
+  const name = cleanProductName($('h1').first().text().trim() || '')
 
   let brandName: string | null = null
   $('a[href*="/brand/"]').each((_, el) => {
@@ -197,7 +201,7 @@ async function importFromChaldal(url: string): Promise<ImportedProduct> {
   const $ = cheerio.load(html)
 
   const pageTitle = $('title').text()
-  const name = pageTitle.replace(/ - Online Grocery.*$/i, '').replace(/ \| Buy.*$/i, '').trim() || ''
+  const name = cleanProductName(pageTitle.replace(/ - Online Grocery.*$/i, '').replace(/ \| Buy.*$/i, '').trim() || '')
 
   let brandName: string | null = null
   const nameParts = name.split(' ')
@@ -297,7 +301,7 @@ async function importFromMedeasy(url: string): Promise<ImportedProduct> {
       if (jsonText) {
         const data = JSON.parse(jsonText)
         if (data['@type'] === 'Product') {
-          name = data.name || ''
+          name = cleanProductName(data.name || '')
           description = data.description || null
           imageUrl = data.image || null
           if (data.offers?.price) {
@@ -456,7 +460,9 @@ async function importFromOthoba(url: string): Promise<ImportedProduct> {
 
   // Fallback: Extract from HTML if JSON-LD didn't provide all data
   if (!name) {
-    name = $('h1').first().text().trim() || $('meta[property="og:title"]').attr('content')?.trim() || ''
+    name = cleanProductName($('h1').first().text().trim() || $('meta[property="og:title"]').attr('content')?.trim() || '')
+  } else {
+    name = cleanProductName(name)
   }
 
   if (!brandName) {

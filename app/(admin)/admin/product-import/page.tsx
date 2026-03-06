@@ -437,7 +437,11 @@ export default function ProductImportPage() {
           const finalPackSize = importedProduct.packSize || ''
           const finalName = importedProduct.name || product.name || ''
 
-          const hasPackSize = finalPackSize && finalName.toLowerCase().includes(finalPackSize.toLowerCase().trim())
+          const cleanRegex = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, '')
+          const cleanName = cleanRegex(finalName)
+          const cleanPack = cleanRegex(finalPackSize)
+          const hasPackSize = cleanPack && cleanName.includes(cleanPack)
+
           const baseSlug = (finalPackSize && !hasPackSize)
             ? `${finalName} ${finalPackSize}`
             : finalName
@@ -1081,7 +1085,12 @@ export default function ProductImportPage() {
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="truncate text-sm font-medium text-gray-900">
-                          {draft.editedData.name} {(draft.editedData.packSize && !draft.editedData.name.toLowerCase().includes(draft.editedData.packSize.toLowerCase().trim())) && draft.editedData.packSize}
+                          {draft.editedData.name} {(() => {
+                            const cleanRegex = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, '')
+                            const cleanName = cleanRegex(draft.editedData.name)
+                            const cleanPack = cleanRegex(draft.editedData.packSize)
+                            return (draft.editedData.packSize && !cleanName.includes(cleanPack)) ? draft.editedData.packSize : null
+                          })()}
                         </p>
                         <p className="text-xs text-gray-500">
                           {draft.editedData.sellingPrice ? `৳${draft.editedData.sellingPrice}` : 'No price'}
