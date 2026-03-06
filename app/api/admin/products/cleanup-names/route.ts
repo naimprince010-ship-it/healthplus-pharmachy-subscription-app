@@ -93,11 +93,13 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // Execute all updates in a transaction
-        if (updates.length > 0) {
-            // If the transaction is too large, we might need to batch it.
-            // For ~270 products, it should be fine.
-            await prisma.$transaction(updates)
+        // Execute all updates in batches to avoid transaction timeouts
+        const BATCH_SIZE = 50
+        for (let i = 0; i < updates.length; i += BATCH_SIZE) {
+            const batch = updates.slice(i, i + BATCH_SIZE)
+            await prisma.$transaction(batch, {
+                timeout: 30000 // 30 seconds per batch
+            })
         }
 
         return NextResponse.json({
