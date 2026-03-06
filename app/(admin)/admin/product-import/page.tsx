@@ -95,6 +95,8 @@ export default function ProductImportPage() {
   const [newCategoryName, setNewCategoryName] = useState('')
   const [creatingManufacturer, setCreatingManufacturer] = useState(false)
   const [creatingCategory, setCreatingCategory] = useState(false)
+  const [bulkAiGenerating, setBulkAiGenerating] = useState(false)
+  const [bulkAiProgress, setBulkAiProgress] = useState({ current: 0, total: 0 })
 
   const [editedProduct, setEditedProduct] = useState({
     name: '',
@@ -624,6 +626,33 @@ export default function ProductImportPage() {
     }
   }
 
+  const handleBulkAssignCategory = (categoryId: string) => {
+    if (!categoryId) return
+    setDraftProducts(prev => prev.map(d =>
+      d.status === 'pending' ? { ...d, editedData: { ...d.editedData, categoryId } } : d
+    ))
+    toast.success('Category assigned to all pending products')
+  }
+
+  const handleBulkAiGenerate = async () => {
+    const pendingDrafts = draftProducts.filter(d => d.status === 'pending')
+    if (pendingDrafts.length === 0) {
+      toast.error('No pending products to process')
+      return
+    }
+
+    setBulkAiGenerating(true)
+    setBulkAiProgress({ current: 0, total: pendingDrafts.length })
+
+    for (let i = 0; i < pendingDrafts.length; i++) {
+      setBulkAiProgress(prev => ({ ...prev, current: i + 1 }))
+      await handleDraftAIGenerate(pendingDrafts[i].id)
+    }
+
+    setBulkAiGenerating(false)
+    toast.success('Bulk AI generation completed')
+  }
+
   const handleSaveProduct = async () => {
     if (!editedProduct.name.trim()) {
       toast.error('Product name is required')
@@ -712,8 +741,8 @@ export default function ProductImportPage() {
         <button
           onClick={() => setImportMode('single')}
           className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${importMode === 'single'
-              ? 'border-b-2 border-teal-600 text-teal-600'
-              : 'text-gray-500 hover:text-gray-700'
+            ? 'border-b-2 border-teal-600 text-teal-600'
+            : 'text-gray-500 hover:text-gray-700'
             }`}
         >
           <Package className="h-4 w-4" />
@@ -722,8 +751,8 @@ export default function ProductImportPage() {
         <button
           onClick={() => setImportMode('bulk')}
           className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${importMode === 'bulk'
-              ? 'border-b-2 border-teal-600 text-teal-600'
-              : 'text-gray-500 hover:text-gray-700'
+            ? 'border-b-2 border-teal-600 text-teal-600'
+            : 'text-gray-500 hover:text-gray-700'
             }`}
         >
           <FolderOpen className="h-4 w-4" />
@@ -957,15 +986,58 @@ export default function ProductImportPage() {
                 </button>
               </div>
 
+              {/* Bulk Actions Section */}
+              <div className="mt-6 rounded-xl border-2 border-dashed border-teal-100 bg-teal-50/50 p-4">
+                <div className="flex flex-col gap-4 md:flex-row md:items-end">
+                  <div className="flex-1">
+                    <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-teal-700">
+                      Bulk Category Assignment
+                    </label>
+                    <SearchableSelect
+                      options={categories.map((cat) => ({ value: cat.id, label: cat.name }))}
+                      value=""
+                      onChange={handleBulkAssignCategory}
+                      placeholder="Select category for ALL pending products..."
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2 min-w-[240px]">
+                    <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-purple-700">
+                      Bulk AI SEO Content
+                    </label>
+                    <button
+                      onClick={handleBulkAiGenerate}
+                      disabled={bulkAiGenerating || draftProducts.filter(d => d.status === 'pending').length === 0}
+                      className="flex items-center justify-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-purple-700 disabled:bg-gray-400"
+                    >
+                      {bulkAiGenerating ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Processing {bulkAiProgress.current}/{bulkAiProgress.total}
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4" />
+                          AI Generate For All Pending
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+                <p className="mt-2 text-[10px] text-gray-500 italic">
+                  Note: Bulk actions will only apply to products marked as &quot;Pending&quot;.
+                </p>
+              </div>
+
               <div className="mt-4 space-y-3">
                 {draftProducts.map((draft) => (
                   <div
                     key={draft.id}
                     className={`rounded-lg border ${draft.status === 'saved'
-                        ? 'border-green-200 bg-green-50'
-                        : draft.status === 'error'
-                          ? 'border-red-200 bg-red-50'
-                          : 'border-gray-200 bg-white'
+                      ? 'border-green-200 bg-green-50'
+                      : draft.status === 'error'
+                        ? 'border-red-200 bg-red-50'
+                        : 'border-gray-200 bg-white'
                       }`}
                   >
                     <div
@@ -1450,8 +1522,8 @@ export default function ProductImportPage() {
                         type="button"
                         onClick={() => setAiLanguage('en')}
                         className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${aiLanguage === 'en'
-                            ? 'bg-purple-600 text-white'
-                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                           }`}
                       >
                         English
@@ -1460,8 +1532,8 @@ export default function ProductImportPage() {
                         type="button"
                         onClick={() => setAiLanguage('bn')}
                         className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${aiLanguage === 'bn'
-                            ? 'bg-purple-600 text-white'
-                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                           }`}
                       >
                         বাংলা
