@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
         })
 
         let fixedCount = 0
-        const updates = []
+        const updateTasks = []
 
         // Track slugs used during THIS cleanup session to avoid internal collisions
         const sessionUsedSlugs = new Set<string>()
@@ -48,11 +48,6 @@ export async function POST(request: NextRequest) {
                 let newSlug = slugify(cleanedName)
                 const baseSlug = newSlug
 
-                // If the slug changed or we just want to be sure it's unique
-                // We must ensure it doesn't collide with:
-                // 1. Slugs already in DB (except our own current slug if we are not changing name)
-                // 2. Slugs we just assigned to other products in this loop
-
                 let counter = 1
                 while (
                     (dbSlugs.has(newSlug) && newSlug !== product.slug) ||
@@ -65,40 +60,42 @@ export async function POST(request: NextRequest) {
                 sessionUsedSlugs.add(newSlug)
                 dbSlugs.add(newSlug)
 
-                updates.push(
-                    prisma.product.update({
-                        where: { id: product.id },
-                        data: {
-                            name: cleanedName,
-                            slug: newSlug
-                        }
-                    })
-                )
+                updateTasks.push({
+                    productId: product.id,
+                    medicineId: product.medicine?.id,
+                    data: {
+                        name: cleanedName,
+                        slug: newSlug
+                    }
+                })
 
-                if (product.medicine) {
-                    updates.push(
-                        prisma.medicine.update({
-                            where: { id: product.medicine.id },
-                            data: {
-                                name: cleanedName,
-                                slug: newSlug
-                            }
-                        })
-                    )
-                }
                 fixedCount++
             } else {
-                // If name didn't change, still add its slug to used set to prevent others from taking it
                 sessionUsedSlugs.add(product.slug)
             }
         }
 
         // Execute all updates in batches to avoid transaction timeouts
         const BATCH_SIZE = 50
-        for (let i = 0; i < updates.length; i += BATCH_SIZE) {
-            const batch = updates.slice(i, i + BATCH_SIZE)
-            await prisma.$transaction(batch, {
-                timeout: 30000 // 30 seconds per batch
+        for (let i = 0; i < updateTasks.length; i += BATCH_SIZE) {
+            const batch = updateTasks.slice(i, i + BATCH_SIZE)
+
+            await prisma.$transaction(async (tx) => {
+                for (const task of batch) {
+                    await tx.product.update({
+                        where: { id: task.productId },
+                        data: task.data
+                    })
+
+                    if (task.medicineId) {
+                        await tx.medicine.update({
+                            where: { id: task.medicineId },
+                            data: task.data
+                        })
+                    }
+                }
+            }, {
+                timeout: 30000 // 30 seconds for 50 updates
             })
         }
 
