@@ -550,14 +550,20 @@ export interface CategoryProduct {
   imageUrl: string | null
 }
 
-async function extractProductsFromMedeasyCategory(url: string, maxPages: number = 3): Promise<CategoryProduct[]> {
+async function extractProductsFromMedeasyCategory(url: string, maxPages: number = 10): Promise<CategoryProduct[]> {
   const products: CategoryProduct[] = []
+  const inputUrl = new URL(url)
+
+  // Detect starting page from URL or default to 1
+  const startPage = parseInt(inputUrl.searchParams.get('page') || '1')
   const baseUrl = new URL(url)
+  baseUrl.searchParams.delete('page') // Remove to avoid conflicts in loop
 
-  for (let page = 1; page <= maxPages; page++) {
-    baseUrl.searchParams.set('page', page.toString())
+  for (let page = startPage; page < startPage + maxPages; page++) {
+    const currentUrl = new URL(baseUrl.toString())
+    currentUrl.searchParams.set('page', page.toString())
 
-    const response = await fetch(baseUrl.toString(), {
+    const response = await fetch(currentUrl.toString(), {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -568,6 +574,8 @@ async function extractProductsFromMedeasyCategory(url: string, maxPages: number 
 
     const html = await response.text()
     const $ = cheerio.load(html)
+
+    let itemsFoundOnThisPage = 0
 
     $('a[href^="/medicines/"]').each((_, el) => {
       const href = $(el).attr('href')
@@ -610,8 +618,11 @@ async function extractProductsFromMedeasyCategory(url: string, maxPages: number 
 
       if (name && !products.some(p => p.url === fullUrl)) {
         products.push({ name, url: fullUrl, price, imageUrl })
+        itemsFoundOnThisPage++
       }
     })
+
+    if (itemsFoundOnThisPage === 0) break
 
     const hasNextPage = $(`a[aria-label="Page ${page + 1}"]`).length > 0
     if (!hasNextPage) break
