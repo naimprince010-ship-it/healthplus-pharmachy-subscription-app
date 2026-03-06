@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Download, ExternalLink, AlertCircle, CheckCircle, Loader2, Sparkles, FolderOpen, Package, ChevronDown, ChevronUp, Trash2, Save, Plus, X } from 'lucide-react'
@@ -718,7 +718,7 @@ export default function ProductImportPage() {
   }
 
   // Helper to find duplicates
-  const duplicateIssues = React.useMemo(() => {
+  const duplicateIssues = useMemo(() => {
     const nameMap = new Map<string, number>()
     const slugMap = new Map<string, number>()
 
