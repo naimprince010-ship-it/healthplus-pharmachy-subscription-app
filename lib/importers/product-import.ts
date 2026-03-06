@@ -50,9 +50,13 @@ function validateUrl(url: string): { valid: boolean; host: string | null; error?
   }
 }
 
-function parsePrice(priceText: string): number | null {
-  if (!priceText) return null
-  const cleaned = priceText.replace(/[^\d.]/g, '')
+function parsePrice(priceText: string | number | null | undefined): number | null {
+  if (priceText === undefined || priceText === null) return null
+  const str = priceText.toString().trim()
+  if (!str) return null
+
+  // Remove commas and any other characters except digits and the first period
+  const cleaned = str.replace(/,/g, '').replace(/[^\d.]/g, '')
   const price = parseFloat(cleaned)
   return isNaN(price) ? null : price
 }
@@ -277,7 +281,7 @@ async function importFromMedeasy(url: string): Promise<ImportedProduct> {
           description = data.description || null
           imageUrl = data.image || null
           if (data.offers?.price) {
-            sellingPrice = parseFloat(data.offers.price)
+            sellingPrice = parsePrice(data.offers.price)
           }
         }
       }
@@ -319,7 +323,7 @@ async function importFromMedeasy(url: string): Promise<ImportedProduct> {
     const mrpText = $('del').first().text()
     const mrpMatch = mrpText.match(/৳?\s*([\d,.]+)/)
     if (mrpMatch) {
-      mrp = parseFloat(mrpMatch[1].replace(/,/g, ''))
+      mrp = parsePrice(mrpMatch[1])
     }
   }
 
@@ -328,7 +332,7 @@ async function importFromMedeasy(url: string): Promise<ImportedProduct> {
     const priceText = $('body').text()
     const priceMatch = priceText.match(/Best\s*Price\s*(?:Tk|৳)?\s*([\d,.]+)/i)
     if (priceMatch) {
-      sellingPrice = parseFloat(priceMatch[1].replace(/,/g, ''))
+      sellingPrice = parsePrice(priceMatch[1])
     }
   }
 
@@ -412,13 +416,16 @@ async function importFromOthoba(url: string): Promise<ImportedProduct> {
           if (productData.offers) {
             const offers = Array.isArray(productData.offers) ? productData.offers[0] : productData.offers
             if (offers.price) {
-              sellingPrice = parseFloat(offers.price)
+              sellingPrice = parsePrice(offers.price)
             } else if (offers.lowPrice) {
-              sellingPrice = parseFloat(offers.lowPrice)
+              sellingPrice = parsePrice(offers.lowPrice)
             }
 
-            if (offers.highPrice && (!sellingPrice || parseFloat(offers.highPrice) > sellingPrice)) {
-              mrp = parseFloat(offers.highPrice)
+            if (offers.highPrice) {
+              const highPrice = parsePrice(offers.highPrice)
+              if (highPrice && (!sellingPrice || highPrice > sellingPrice)) {
+                mrp = highPrice
+              }
             }
           }
         }
@@ -553,8 +560,8 @@ async function extractProductsFromMedeasyCategory(url: string, maxPages: number 
 
       const name = article.find('h4').text().trim()
       const priceText = article.find('div').filter((_, div) => $(div).text().includes('৳')).first().text()
-      const priceMatch = priceText.match(/৳([\d,.]+)/)
-      const price = priceMatch ? parseFloat(priceMatch[1].replace(/,/g, '')) : null
+      const priceMatch = priceText.match(/৳\s*([\d,.]+)/)
+      const price = priceMatch ? parsePrice(priceMatch[1]) : null
 
       let imageUrl: string | null = null
       const img = article.find('img[alt="Product Image"]').first()
@@ -612,8 +619,8 @@ async function extractProductsFromAroggaCategory(url: string): Promise<CategoryP
 
     const parent = $(el).parent()
     const priceText = parent.text()
-    const priceMatch = priceText.match(/৳([\d,.]+)/)
-    const price = priceMatch ? parseFloat(priceMatch[1].replace(/,/g, '')) : null
+    const priceMatch = priceText.match(/৳\s*([\d,.]+)/)
+    const price = priceMatch ? parsePrice(priceMatch[1]) : null
 
     const img = parent.find('img[src*="cdn2.arogga.com"]').first()
     const imageUrl = img.attr('src') || null
@@ -665,8 +672,8 @@ async function extractProductsFromChaldalCategory(url: string): Promise<Category
     if (nameFromHref.length < 3) return
 
     const containerText = productContainer.text()
-    const priceMatch = containerText.match(/৳\s*([\d,]+)/)
-    const price = priceMatch ? parseFloat(priceMatch[1].replace(/,/g, '')) : null
+    const priceMatch = containerText.match(/৳\s*([\d,.]+)/)
+    const price = priceMatch ? parsePrice(priceMatch[1]) : null
 
     const img = productContainer.find('img[src*="chaldn.com"]').first()
     const imageUrl = img.attr('src') || null
