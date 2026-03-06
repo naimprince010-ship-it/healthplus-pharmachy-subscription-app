@@ -1,4 +1,3 @@
-import Fuse, { IFuseOptions } from 'fuse.js'
 import { prisma } from '@/lib/prisma'
 
 export interface SearchableProduct {
@@ -25,131 +24,178 @@ export interface SearchableProduct {
   sizeLabel: string | null
 }
 
-let searchIndex: Fuse<SearchableProduct> | null = null
-let indexedProducts: SearchableProduct[] = []
-let lastIndexTime = 0
-const INDEX_TTL_MS = 60 * 1000
-
-const fuseOptions: IFuseOptions<SearchableProduct> = {
-  keys: [
-    { name: 'name', weight: 0.4 },
-    { name: 'brandName', weight: 0.2 },
-    { name: 'genericName', weight: 0.25 },
-    { name: 'manufacturer', weight: 0.1 },
-    { name: 'categoryName', weight: 0.05 },
-  ],
-  threshold: 0.4,
-  distance: 100,
-  minMatchCharLength: 2,
-  includeScore: true,
-  ignoreLocation: true,
-  useExtendedSearch: false,
+export interface SearchResult {
+  item: SearchableProduct
+  score: number // Kept for compatibility, though PG FTS score might be different or we can mock it
+  combinedScore: number
 }
 
-async function loadProducts(): Promise<SearchableProduct[]> {
-  const products = await prisma.product.findMany({
-    where: {
-      isActive: true,
-      deletedAt: null,
-    },
-    include: {
-      category: true,
-      medicine: true,
-    },
-    orderBy: [
-      { isFeatured: 'desc' },
-      { name: 'asc' },
-    ],
-  })
-
-  return products.map((p) => {
-    const rawProduct = p as typeof p & { popularityScore?: number }
-        return {
-          id: p.id,
-          type: p.type,
-          name: p.name,
-          slug: p.slug,
-          brandName: p.medicine?.manufacturer || p.medicine?.brandName || p.brandName || null,
-          genericName: p.medicine?.genericName || null,
-          manufacturer: p.medicine?.manufacturer || null,
-          categoryName: p.category.name,
-          categorySlug: p.category.slug,
-          description: p.description,
-          sellingPrice: p.sellingPrice,
-          mrp: p.mrp,
-          stockQuantity: p.stockQuantity,
-          imageUrl: p.imageUrl,
-          discountPercentage: p.discountPercentage || p.medicine?.discountPercentage || null,
-          popularityScore: rawProduct.popularityScore ?? 0,
-          isFeatured: p.isFeatured,
-          isMedicine: p.type === 'MEDICINE',
-          medicineId: p.medicine?.id || null,
-          href: `/products/${p.slug}`,
-          sizeLabel: p.sizeLabel || null,
-        }
-  })
-}
-
-export async function getSearchIndex(): Promise<{
-  fuse: Fuse<SearchableProduct>
-  products: SearchableProduct[]
-}> {
-  const now = Date.now()
-
-  if (searchIndex && indexedProducts.length > 0 && now - lastIndexTime < INDEX_TTL_MS) {
-    return { fuse: searchIndex, products: indexedProducts }
+function mapToSearchableProduct(p: any): SearchableProduct {
+  return {
+    id: p.id,
+    type: p.type,
+    name: p.name,
+    slug: p.slug,
+    brandName: p.medicine?.manufacturer || p.medicine?.brandName || p.brandName || null,
+    genericName: p.medicine?.genericName || null,
+    manufacturer: p.medicine?.manufacturer || null,
+    categoryName: p.category.name,
+    categorySlug: p.category.slug,
+    description: p.description,
+    sellingPrice: p.sellingPrice,
+    mrp: p.mrp,
+    stockQuantity: p.stockQuantity,
+    imageUrl: p.imageUrl,
+    discountPercentage: p.discountPercentage || p.medicine?.discountPercentage || null,
+    popularityScore: p.popularityScore ?? 0,
+    isFeatured: p.isFeatured,
+    isMedicine: p.type === 'MEDICINE',
+    medicineId: p.medicine?.id || null,
+    href: `/products/${p.slug}`,
+    sizeLabel: p.sizeLabel || null,
   }
+}
 
-  indexedProducts = await loadProducts()
-  searchIndex = new Fuse(indexedProducts, fuseOptions)
-  lastIndexTime = now
+// Replaces getSearchIndex() for the no-query fallback
+export async function getTopProducts(limit: number = 40): Promise<{ products: SearchableProduct[] }> {
+  try {
+    const products = await prisma.product.findMany({
+      where: {
+        isActive: true,
+        deletedAt: null,
+      },
+      include: {
+        category: true,
+        medicine: true,
+      },
+      orderBy: [
+        { isFeatured: 'desc' },
+        { popularityScore: 'desc' },
+        { name: 'asc' },
+      ],
+      take: limit,
+    })
 
-  return { fuse: searchIndex, products: indexedProducts }
+    return { products: products.map(mapToSearchableProduct) }
+  } catch (error) {
+    console.error('Error fetching top products:', error)
+    return { products: [] }
+  }
+}
+
+/**
+ * Kept for backward compatibility with route.js that might call getSearchIndex instead of getTopProducts
+ */
+export async function getSearchIndex(): Promise<{ products: SearchableProduct[] }> {
+  return getTopProducts(40)
 }
 
 export function invalidateSearchIndex(): void {
-  lastIndexTime = 0
-}
-
-export interface SearchResult {
-  item: SearchableProduct
-  score: number
-  combinedScore: number
+  // No-op. Prisma handles real-time queries.
 }
 
 export async function searchProducts(
   query: string,
   limit: number = 40
 ): Promise<SearchResult[]> {
-  const { fuse, products } = await getSearchIndex()
-
   if (!query || query.length < 2) {
-    return products.slice(0, limit).map((item) => ({
+    const { products } = await getTopProducts(limit)
+    return products.map((item) => ({
       item,
-      score: 0,
+      score: 1, // Max score for exact
       combinedScore: item.popularityScore,
     }))
   }
 
-  const fuseResults = fuse.search(query, { limit: limit * 2 })
+  // Sanitize query to break into valid Postgres FTS term
+  // Format query as word1 | word2 | word3:* for prefix searching
+  const terms = query
+    .trim()
+    .split(/\s+/)
+    .filter((word) => word.length > 0)
+    .map((word) => word.replace(/[^a-zA-Z0-9]/g, ''))
+    .filter((word) => word.length > 0)
 
-  const maxPopularity = Math.max(...products.map((p) => p.popularityScore), 1)
+  if (terms.length === 0) {
+    const { products } = await getTopProducts(limit)
+    return products.map((item) => ({ item, score: 1, combinedScore: item.popularityScore }))
+  }
 
-  const results: SearchResult[] = fuseResults.map((result) => {
-    const fuseScore = 1 - (result.score ?? 0)
-    const normalizedPopularity = result.item.popularityScore / maxPopularity
-    const featuredBonus = result.item.isFeatured ? 0.1 : 0
+  // Join with OR (|) and add prefix matching (:*) to each term
+  const ftsQuery = terms.map((term) => `${term}:*`).join(' | ')
 
-    const combinedScore = fuseScore * 0.6 + normalizedPopularity * 0.3 + featuredBonus
+  try {
+    const products = await prisma.product.findMany({
+      where: {
+        isActive: true,
+        deletedAt: null,
+        OR: [
+          { name: { search: ftsQuery } },
+          { brandName: { search: ftsQuery } },
+          { description: { search: ftsQuery } },
+          { medicine: { genericName: { search: ftsQuery } } },
+          { medicine: { manufacturer: { search: ftsQuery } } },
+        ],
+      },
+      include: {
+        category: true,
+        medicine: true,
+      },
+      take: limit * 2, // Fetch more to post-sort by our combined score
+    })
 
-    return {
-      item: result.item,
-      score: result.score ?? 0,
-      combinedScore,
+    // If FTS fails to find anything (maybe language issue or strictly formatted prefixes), fallback to basic ILIKE
+    if (products.length === 0) {
+      const fallbackProducts = await prisma.product.findMany({
+        where: {
+          isActive: true,
+          deletedAt: null,
+          OR: [
+            ...terms.map((term) => ({
+              name: { contains: term, mode: 'insensitive' as const }
+            })),
+            ...terms.map((term) => ({
+              medicine: { genericName: { contains: term, mode: 'insensitive' as const } }
+            }))
+          ]
+        },
+        include: {
+          category: true,
+          medicine: true,
+        },
+        take: limit * 2,
+      })
+      products.push(...fallbackProducts)
     }
-  })
 
-  results.sort((a, b) => b.combinedScore - a.combinedScore)
+    const maxPopularity = Math.max(...products.map((p: any) => p.popularityScore ?? 0), 1)
 
-  return results.slice(0, limit)
+    const searchResults: SearchResult[] = products.map((p) => {
+      const item = mapToSearchableProduct(p)
+
+      // Calculate a pseudo-score (Postgres FTS doesn't return score in standard Prisma client yet)
+      const rawPopularity = (p as any).popularityScore ?? 0
+      const normalizedPopularity = rawPopularity / maxPopularity
+      const featuredBonus = item.isFeatured ? 0.1 : 0
+
+      // Match quality heuristic (exact startsWith > contains)
+      const exactMatch = item.name.toLowerCase().startsWith(query.toLowerCase()) ? 0.9 : 0.6
+
+      const combinedScore = exactMatch * 0.6 + normalizedPopularity * 0.3 + featuredBonus
+
+      return {
+        item,
+        score: exactMatch,
+        combinedScore,
+      }
+    })
+
+    // Sort by combined score
+    searchResults.sort((a, b) => b.combinedScore - a.combinedScore)
+
+    return searchResults.slice(0, limit)
+  } catch (error) {
+    console.error('Search failed:', error)
+    return []
+  }
 }
