@@ -120,8 +120,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
     }
   }
 
-  const handleSuggestionClick = (suggestion: SearchSuggestion) => {
-    router.push(suggestion.href)
+  const handleSuggestionClick = () => {
     setShowSuggestions(false)
     setMobileSearchOpen(false)
     setSearchQuery('')
@@ -177,10 +176,11 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                     ) : suggestions.length > 0 ? (
                       <div className="max-h-80 overflow-y-auto">
                         {suggestions.map((item) => (
-                          <button
+                          <Link
                             key={item.id}
-                            type="button"
-                            onClick={() => handleSuggestionClick(item)}
+                            href={item.href}
+                            onClick={handleSuggestionClick}
+                            prefetch={true}
                             className="flex w-full items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
                           >
                             <div className="h-12 w-12 flex-shrink-0 rounded-lg bg-gray-100 overflow-hidden">
@@ -199,7 +199,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                             <div className="flex-shrink-0 text-sm font-semibold text-teal-600">
                               ৳{item.price}
                             </div>
-                          </button>
+                          </Link>
                         ))}
                       </div>
                     ) : debouncedQuery.length >= 2 ? (
@@ -373,10 +373,11 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
             ) : suggestions.length > 0 ? (
               <div>
                 {suggestions.map((item) => (
-                  <button
+                  <Link
                     key={item.id}
-                    type="button"
-                    onClick={() => handleSuggestionClick(item)}
+                    href={item.href}
+                    onClick={handleSuggestionClick}
+                    prefetch={true}
                     className="flex w-full items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left border-b border-gray-100"
                   >
                     <div className="h-14 w-14 flex-shrink-0 rounded-lg bg-gray-100 overflow-hidden">
@@ -395,7 +396,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                     <div className="flex-shrink-0 text-sm font-semibold text-teal-600">
                       ৳{item.price}
                     </div>
-                  </button>
+                  </Link>
                 ))}
               </div>
             ) : debouncedQuery.length >= 2 ? (
