@@ -97,6 +97,8 @@ export default function ProductImportPage() {
   const [creatingCategory, setCreatingCategory] = useState(false)
   const [bulkAiGenerating, setBulkAiGenerating] = useState(false)
   const [bulkAiProgress, setBulkAiProgress] = useState({ current: 0, total: 0 })
+  const [isExtractingMedicine, setIsExtractingMedicine] = useState(false)
+  const [bulkExtractingMedicine, setBulkExtractingMedicine] = useState(false)
 
   const [editedProduct, setEditedProduct] = useState({
     name: '',
@@ -302,6 +304,41 @@ export default function ProductImportPage() {
       setAiError('AI generation failed. Please try again.')
     } finally {
       setAiLoading(false)
+    }
+  }
+
+  const handleExtractMedicineFields = async () => {
+    if (!editedProduct.name) {
+      toast.error('Product name is required')
+      return
+    }
+
+    setIsExtractingMedicine(true)
+    try {
+      const res = await fetch('/api/ai/medicine-extractor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productName: editedProduct.name }),
+      })
+
+      const data = await res.json()
+      if (res.ok) {
+        setEditedProduct(prev => ({
+          ...prev,
+          genericName: data.genericName || prev.genericName,
+          strength: data.strength || prev.strength,
+          dosageForm: data.dosageForm || prev.dosageForm,
+          manufacturerName: data.brandName || prev.manufacturerName,
+          packSize: data.packSize || prev.packSize,
+        }))
+        toast.success('Medicine fields extracted!')
+      } else {
+        toast.error(data.error || 'Extraction failed')
+      }
+    } catch (error) {
+      toast.error('Medicine extraction failed')
+    } finally {
+      setIsExtractingMedicine(false)
     }
   }
 
@@ -534,10 +571,11 @@ export default function ProductImportPage() {
 
     try {
       const productData = {
-        type: 'GENERAL',
+        type: categories.find(c => c.id === draft.editedData.categoryId)?.isMedicineCategory ? 'MEDICINE' : 'GENERAL',
         name: draft.editedData.name.trim(),
         slug: draft.editedData.slug.trim() || undefined,
         manufacturerId: draft.editedData.manufacturerId || undefined,
+        manufacturerName: draft.editedData.manufacturerId ? undefined : draft.data.brandName,
         description: draft.editedData.description.trim() || undefined,
         sellingPrice: parseFloat(draft.editedData.sellingPrice),
         mrp: draft.editedData.mrp ? parseFloat(draft.editedData.mrp) : undefined,
@@ -546,17 +584,18 @@ export default function ProductImportPage() {
           const url = draft.data.imageUrl
           if (!url) return undefined
           try {
-            // Validate that it's a proper absolute URL
             new URL(url)
             return url
           } catch {
-            // Invalid URL format, skip it
             return undefined
           }
         })(),
         isActive: true,
         categoryId: draft.editedData.categoryId,
         sizeLabel: draft.editedData.packSize.trim() || undefined,
+        genericName: draft.data.genericName?.trim() || undefined,
+        dosageForm: draft.data.dosageForm?.trim() || undefined,
+        strength: draft.data.strength?.trim() || undefined,
         keyFeatures: draft.editedData.keyFeatures.trim() || undefined,
         specSummary: draft.editedData.specSummary.trim() || undefined,
         seoTitle: draft.editedData.seoTitle.trim() || undefined,
@@ -669,6 +708,70 @@ export default function ProductImportPage() {
       d.status === 'pending' ? { ...d, editedData: { ...d.editedData, categoryId } } : d
     ))
     toast.success('Category assigned to all pending products')
+  }
+
+  const handleDraftMedicineExtract = async (draftId: string) => {
+    const draft = draftProducts.find(d => d.id === draftId)
+    if (!draft || !draft.editedData.name) return
+
+    setDraftAiLoading(draftId)
+    try {
+      const res = await fetch('/api/ai/medicine-extractor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productName: draft.editedData.name }),
+      })
+
+      const data = await res.json()
+      if (res.ok) {
+        setDraftProducts(prev => prev.map(d => {
+          if (d.id === draftId) {
+            return {
+              ...d,
+              editedData: {
+                ...d.editedData,
+                packSize: data.packSize || d.editedData.packSize,
+              },
+              data: {
+                ...d.data,
+                genericName: data.genericName || d.data.genericName,
+                strength: data.strength || d.data.strength,
+                dosageForm: data.dosageForm || d.data.dosageForm,
+                brandName: data.brandName || d.data.brandName,
+              }
+            }
+          }
+          return d
+        }))
+      }
+    } catch (error) {
+      console.error('Draft medicine extraction failed:', error)
+    } finally {
+      setDraftAiLoading(null)
+    }
+  }
+
+  const handleBulkMedicineExtract = async () => {
+    const pendingDrafts = draftProducts.filter(d =>
+      d.status === 'pending' &&
+      categories.find(c => c.id === d.editedData.categoryId)?.isMedicineCategory
+    )
+
+    if (pendingDrafts.length === 0) {
+      toast.error('No pending medicines found with category selected')
+      return
+    }
+
+    setBulkExtractingMedicine(true)
+    setBulkAiProgress({ current: 0, total: pendingDrafts.length })
+
+    for (let i = 0; i < pendingDrafts.length; i++) {
+      setBulkAiProgress(prev => ({ ...prev, current: i + 1 }))
+      await handleDraftMedicineExtract(pendingDrafts[i].id)
+    }
+
+    setBulkExtractingMedicine(false)
+    toast.success('Bulk medicine extraction completed')
   }
 
   const handleBulkAiGenerate = async () => {
@@ -1131,25 +1234,44 @@ export default function ProductImportPage() {
 
                   <div className="flex flex-col gap-2 min-w-[240px]">
                     <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-purple-700">
-                      Bulk AI SEO Content
+                      Bulk AI Content
                     </label>
-                    <button
-                      onClick={handleBulkAiGenerate}
-                      disabled={bulkAiGenerating || draftProducts.filter(d => d.status === 'pending').length === 0}
-                      className="flex items-center justify-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-purple-700 disabled:bg-gray-400"
-                    >
-                      {bulkAiGenerating ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Processing {bulkAiProgress.current}/{bulkAiProgress.total}
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="h-4 w-4" />
-                          AI Generate For All Pending
-                        </>
-                      )}
-                    </button>
+                    <div className="flex flex-col gap-2">
+                      <button
+                        onClick={handleBulkAiGenerate}
+                        disabled={bulkAiGenerating || draftProducts.filter(d => d.status === 'pending').length === 0}
+                        className="flex items-center justify-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-purple-700 disabled:bg-gray-400"
+                      >
+                        {bulkAiGenerating ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            SEO Processing {bulkAiProgress.current}/{bulkAiProgress.total}
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="h-4 w-4" />
+                            AI SEO (All Pending)
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={handleBulkMedicineExtract}
+                        disabled={bulkExtractingMedicine || draftProducts.filter(d => d.status === 'pending' && categories.find(c => c.id === d.editedData.categoryId)?.isMedicineCategory).length === 0}
+                        className="flex items-center justify-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-700 disabled:bg-gray-400"
+                      >
+                        {bulkExtractingMedicine ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Extracting {bulkAiProgress.current}/{bulkAiProgress.total}
+                          </>
+                        ) : (
+                          <>
+                            <Package className="h-4 w-4" />
+                            AI Extract Meds (All Pending)
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <p className="mt-2 text-[10px] text-gray-500 italic">
@@ -1340,22 +1462,70 @@ export default function ProductImportPage() {
                             />
                           </div>
 
+                          {categories.find(c => c.id === draft.editedData.categoryId)?.isMedicineCategory && (
+                            <div className="md:col-span-2 rounded-lg bg-teal-50/50 p-3 border border-teal-100">
+                              <h4 className="text-[10px] font-bold text-teal-700 uppercase mb-2">Medicine Fields</h4>
+                              <div className="grid gap-3 md:grid-cols-3">
+                                <div>
+                                  <label className="block text-[10px] font-medium text-gray-700">Generic Name</label>
+                                  <input
+                                    type="text"
+                                    value={draft.data.genericName || ''}
+                                    onChange={(e) => setDraftProducts(prev => prev.map(d => d.id === draft.id ? { ...d, data: { ...d.data, genericName: e.target.value } } : d))}
+                                    className="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-xs focus:border-teal-500 focus:outline-none"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] font-medium text-gray-700">Dosage Form</label>
+                                  <input
+                                    type="text"
+                                    value={draft.data.dosageForm || ''}
+                                    onChange={(e) => setDraftProducts(prev => prev.map(d => d.id === draft.id ? { ...d, data: { ...d.data, dosageForm: e.target.value } } : d))}
+                                    className="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-xs focus:border-teal-500 focus:outline-none"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] font-medium text-gray-700">Strength</label>
+                                  <input
+                                    type="text"
+                                    value={draft.data.strength || ''}
+                                    onChange={(e) => setDraftProducts(prev => prev.map(d => d.id === draft.id ? { ...d, data: { ...d.data, strength: e.target.value } } : d))}
+                                    className="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-xs focus:border-teal-500 focus:outline-none"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
                           <div className="md:col-span-2 border-t border-gray-200 pt-4 mt-2">
                             <div className="flex items-center justify-between mb-3">
-                              <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">SEO Content</h4>
-                              <button
-                                type="button"
-                                onClick={(e) => { e.stopPropagation(); handleDraftAIGenerate(draft.id); }}
-                                disabled={draftAiLoading === draft.id || !draft.editedData.name}
-                                className="flex items-center gap-1.5 rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-700 disabled:bg-gray-400"
-                              >
-                                {draftAiLoading === draft.id ? (
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                ) : (
-                                  <Sparkles className="h-3 w-3" />
+                              <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">AI Tools</h4>
+                              <div className="flex gap-2">
+                                {categories.find(c => c.id === draft.editedData.categoryId)?.isMedicineCategory && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); handleDraftMedicineExtract(draft.id); }}
+                                    disabled={draftAiLoading === draft.id}
+                                    className="flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-teal-700 disabled:bg-gray-400"
+                                  >
+                                    <Package className="h-3 w-3" />
+                                    AI Extract Med Info
+                                  </button>
                                 )}
-                                AI Generate SEO
-                              </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); handleDraftAIGenerate(draft.id); }}
+                                  disabled={draftAiLoading === draft.id || !draft.editedData.name}
+                                  className="flex items-center gap-1.5 rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-700 disabled:bg-gray-400"
+                                >
+                                  {draftAiLoading === draft.id ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                  ) : (
+                                    <Sparkles className="h-3 w-3" />
+                                  )}
+                                  AI SEO Content
+                                </button>
+                              </div>
                             </div>
                             <div className="grid gap-3 md:grid-cols-2">
                               <div>
@@ -1477,7 +1647,22 @@ export default function ProductImportPage() {
 
               {categories.find(c => c.id === editedProduct.categoryId)?.isMedicineCategory && (
                 <div className="space-y-4 rounded-lg bg-teal-50 p-4 border border-teal-100">
-                  <h3 className="text-sm font-bold text-teal-800 uppercase tracking-wider">Medicine Information</h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-bold text-teal-800 uppercase tracking-wider">Medicine Information</h3>
+                    <button
+                      type="button"
+                      onClick={handleExtractMedicineFields}
+                      disabled={isExtractingMedicine || !editedProduct.name}
+                      className="flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-teal-700 disabled:bg-gray-400"
+                    >
+                      {isExtractingMedicine ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-3 w-3" />
+                      )}
+                      AI Extract Fields
+                    </button>
+                  </div>
 
                   <div>
                     <label className="block text-xs font-medium text-gray-700">Generic Name</label>

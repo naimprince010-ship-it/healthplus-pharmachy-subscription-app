@@ -705,8 +705,18 @@ async function extractProductsFromAroggaCategory(url: string): Promise<CategoryP
     const href = $(el).attr('href')
     if (!href) return
 
-    const h3 = $(el).find('h3').first()
-    const name = h3.length ? h3.text().trim() : $(el).text().trim()
+    const h4 = $(el).find('h4, h3').first()
+    let name = h4.length ? h4.text().trim() : $(el).text().trim()
+
+    // Clean up Arogga specific noise
+    name = name
+      .replace(/\d+%?\s*OFF/i, '')
+      .replace(/\d+-\d+\s*HOURS/i, '')
+      .replace(/৳\s*[\d,.]+/g, '')
+      .replace(/Loading\s*ADD/i, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+
     if (!name || name.length < 3) return
 
     const parent = $(el).parent()

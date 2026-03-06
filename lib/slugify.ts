@@ -36,7 +36,16 @@ export function cleanProductName(name: string): string {
 
   let cleaned = name.trim()
 
-  // Apply multiple times in case it's repeated (e.g. "Name 100ml 100ml")
+  // Clean common scraper noise first
+  cleaned = cleaned
+    .replace(/\d+%?\s*OFF/gi, '')
+    .replace(/\d+-\d+\s*HOURS/gi, '')
+    .replace(/৳\s*[\d,.]+/g, '')
+    .replace(/Loading\s*ADD/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  // Apply pack size removal multiple times in case it's repeated
   let prevCleaned = ''
   while (cleaned !== prevCleaned) {
     prevCleaned = cleaned
