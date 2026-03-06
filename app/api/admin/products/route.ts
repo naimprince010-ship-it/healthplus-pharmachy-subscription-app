@@ -19,21 +19,27 @@ const productListQuerySchema = z.object({
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 })
 
+import { slugify } from '@/lib/slugify'
+
 const createProductSchema = z.object({
-  type: z.enum(['GENERAL']).default('GENERAL'),
+  type: z.enum(['GENERAL', 'MEDICINE']).default('GENERAL'),
   name: z.string().min(1),
   slug: z.string().optional(),
   description: z.string().optional(),
   brandName: z.string().optional(),
   categoryId: z.string().min(1),
   manufacturerId: z.string().nullable().optional(),
-  mrp: z.number().positive().optional(),
-  sellingPrice: z.number().positive(),
+  manufacturerName: z.string().optional(), // For auto-creation
+  genericName: z.string().optional(),     // For auto-creation and Medicine record
+  dosageForm: z.string().optional(),
+  strength: z.string().optional(),
+  mrp: z.number().nonnegative().optional(),
+  sellingPrice: z.number().nonnegative(),
   stockQuantity: z.number().int().min(0).default(0),
   minStockAlert: z.number().int().min(0).optional(),
   unit: z.string().default('pcs'),
-  imageUrl: z.string().url().optional(),
-  imagePath: z.string().optional(),
+  imageUrl: z.string().url().optional().nullable(),
+  imagePath: z.string().optional().nullable(),
   seoTitle: z.string().optional(),
   seoDescription: z.string().optional(),
   seoKeywords: z.string().optional(),
@@ -65,7 +71,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    
+
     // Handle fetching products by specific IDs (used by HomeSectionForm)
     const idsParam = searchParams.get('ids')
     if (idsParam) {
@@ -84,13 +90,14 @@ export async function GET(request: NextRequest) {
                 slug: true,
               },
             },
+            medicine: true,
           },
         })
         return NextResponse.json({ products })
       }
       return NextResponse.json({ products: [] })
     }
-    
+
     const queryResult = productListQuerySchema.safeParse({
       page: searchParams.get('page') || '1',
       limit: searchParams.get('limit') || '20',
@@ -153,6 +160,7 @@ export async function GET(request: NextRequest) {
             slug: true,
           },
         },
+        medicine: true,
       },
       orderBy: { [query.sortBy]: query.sortOrder },
       skip,
@@ -215,15 +223,66 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const productType: ProductType = category.isMedicineCategory ? 'MEDICINE' : 'GENERAL'
+    const isMedicine = category.isMedicineCategory || data.type === 'MEDICINE'
+    const productType: ProductType = isMedicine ? 'MEDICINE' : 'GENERAL'
+
+    let manufacturerId = data.manufacturerId
+
+    // Auto-create manufacturer if name provided and ID missing
+    if (!manufacturerId && data.manufacturerName) {
+      const mfrSlug = slugify(data.manufacturerName)
+      const existingMfr = await prisma.manufacturer.findFirst({
+        where: {
+          OR: [
+            { name: { equals: data.manufacturerName, mode: 'insensitive' } },
+            { slug: mfrSlug }
+          ]
+        }
+      })
+
+      if (existingMfr) {
+        manufacturerId = existingMfr.id
+      } else {
+        const newMfr = await prisma.manufacturer.create({
+          data: {
+            name: data.manufacturerName,
+            slug: mfrSlug,
+          }
+        })
+        manufacturerId = newMfr.id
+      }
+    }
+
+    // Auto-create Generic if name provided
+    let genericMatchId: string | null = null
+    if (data.genericName) {
+      const genSlug = slugify(data.genericName)
+      const existingGen = await prisma.generic.findFirst({
+        where: {
+          OR: [
+            { name: { equals: data.genericName, mode: 'insensitive' } },
+            { slug: genSlug }
+          ]
+        }
+      })
+
+      if (existingGen) {
+        genericMatchId = existingGen.id
+      } else {
+        const newGen = await prisma.generic.create({
+          data: {
+            name: data.genericName,
+            slug: genSlug,
+          }
+        })
+        genericMatchId = newGen.id
+      }
+    }
 
     let slug = data.slug
     if (!slug) {
-      slug = data.name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '')
-      
+      slug = slugify(data.name)
+
       let counter = 1
       let uniqueSlug = slug
       while (await prisma.product.findUnique({ where: { slug: uniqueSlug } })) {
@@ -233,16 +292,16 @@ export async function POST(request: NextRequest) {
       slug = uniqueSlug
     }
 
-        const product = await prisma.product.create({
-          data: {
-            type: productType,
-            name: data.name,
-            slug,
-            description: data.description,
-            brandName: data.brandName,
-            categoryId: data.categoryId,
-            manufacturerId: data.manufacturerId || null,
-            mrp: data.mrp,
+    const product = await prisma.product.create({
+      data: {
+        type: productType,
+        name: data.name,
+        slug,
+        description: data.description,
+        brandName: data.brandName || data.manufacturerName,
+        categoryId: data.categoryId,
+        manufacturerId: manufacturerId || null,
+        mrp: data.mrp,
         sellingPrice: data.sellingPrice,
         stockQuantity: data.stockQuantity,
         minStockAlert: data.minStockAlert,
@@ -265,6 +324,28 @@ export async function POST(request: NextRequest) {
         flashSalePrice: data.flashSalePrice,
         flashSaleStart: data.flashSaleStart ? new Date(data.flashSaleStart) : null,
         flashSaleEnd: data.flashSaleEnd ? new Date(data.flashSaleEnd) : null,
+        // Create medicine record if needed
+        ...(isMedicine ? {
+          medicine: {
+            create: {
+              name: data.name,
+              slug: slug,
+              genericName: data.genericName,
+              brandName: data.brandName || data.manufacturerName,
+              manufacturer: data.manufacturerName || 'Unknown',
+              dosageForm: data.dosageForm,
+              strength: data.strength,
+              packSize: data.sizeLabel,
+              mrp: data.mrp,
+              sellingPrice: data.sellingPrice,
+              price: data.sellingPrice,
+              stockQuantity: data.stockQuantity,
+              categoryId: data.categoryId,
+              imageUrl: data.imageUrl,
+              description: data.description,
+            }
+          }
+        } : {})
       },
       include: {
         category: {
@@ -274,13 +355,14 @@ export async function POST(request: NextRequest) {
             slug: true,
           },
         },
+        medicine: true,
       },
     })
 
     return NextResponse.json({ success: true, product }, { status: 201 })
   } catch (error) {
     console.error('Create product error:', error)
-    
+
     // Handle Prisma-specific errors with detailed messages
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2002') {
@@ -306,7 +388,7 @@ export async function POST(request: NextRequest) {
         )
       }
     }
-    
+
     // Handle validation errors from Zod that might have slipped through
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -314,7 +396,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-    
+
     // Generic error with more details
     const errorMessage = error instanceof Error ? error.message : 'Failed to create product'
     return NextResponse.json(

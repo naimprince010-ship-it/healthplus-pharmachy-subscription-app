@@ -418,10 +418,59 @@ export default function CartPage() {
                   </div>
                 )}
 
+                {promoApplied && discount > 0 && (
+                  <div className="flex justify-between text-sm py-1 border-y border-dashed border-green-200 my-1">
+                    <span className="text-green-600">কুপন ডিসকাউন্ট:</span>
+                    <span className="font-semibold text-green-600">- ৳ {discount.toFixed(0)}</span>
+                  </div>
+                )}
+
                 <div className="flex justify-between border-t pt-3">
                   <span className="font-bold text-gray-900">{settings.grandTotalLabelBn}</span>
-                  <span className="text-xl font-bold text-gray-900">৳ {total.toFixed(0)}</span>
+                  <span className="text-xl font-bold text-gray-900">৳ {(total - discount).toFixed(0)}</span>
                 </div>
+              </div>
+
+              {/* Desktop Promo Code */}
+              <div className="mt-6 pt-6 border-t">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-lg">🎫</span>
+                  <span className="text-sm font-semibold text-gray-700">{settings.promoLabelBn}</span>
+                </div>
+
+                {!promoApplied ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={promoCode}
+                      onChange={(e) => setPromoCode(e.target.value)}
+                      placeholder="কোডটি লিখুন"
+                      className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#00A651] focus:outline-none"
+                    />
+                    <button
+                      onClick={handleApplyPromo}
+                      disabled={isApplyingPromo}
+                      className="rounded-lg bg-[#00A651] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                    >
+                      {isApplyingPromo ? '...' : settings.promoApplyTextBn.replace('[', '').replace(']', '')}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between rounded-lg bg-green-50 px-3 py-2 border border-green-100">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded">
+                        {appliedCoupon?.code}
+                      </span>
+                      <span className="text-xs text-green-600">Applied</span>
+                    </div>
+                    <button
+                      onClick={handleRemovePromo}
+                      className="text-xs font-bold text-red-500 hover:text-red-700"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="mt-6">

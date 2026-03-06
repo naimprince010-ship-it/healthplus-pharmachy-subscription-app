@@ -101,12 +101,16 @@ export default function ProductImportPage() {
   const [editedProduct, setEditedProduct] = useState({
     name: '',
     manufacturerId: '',
+    manufacturerName: '', // For auto-creation
     description: '',
     sellingPrice: '',
     mrp: '',
     stockQuantity: '100',
     categoryId: '',
     packSize: '',
+    genericName: '',
+    dosageForm: '',
+    strength: '',
     keyFeatures: '',
     specSummary: '',
     seoTitle: '',
@@ -327,15 +331,30 @@ export default function ProductImportPage() {
       }
 
       setImportedProduct(data.product)
+
+      // Auto-match manufacturer
+      let matchedMfrId = ''
+      if (data.product.brandName) {
+        const matched = manufacturers.find(m =>
+          m.name.toLowerCase() === data.product.brandName.toLowerCase() ||
+          m.slug === slugify(data.product.brandName)
+        )
+        if (matched) matchedMfrId = matched.id
+      }
+
       setEditedProduct({
         name: data.product.name || '',
-        manufacturerId: '',
+        manufacturerId: matchedMfrId,
+        manufacturerName: matchedMfrId ? '' : (data.product.brandName || ''),
         description: data.product.description || '',
         sellingPrice: data.product.sellingPrice?.toString() || '',
         mrp: data.product.mrp?.toString() || '',
         stockQuantity: '100',
         categoryId: '',
         packSize: data.product.packSize || '',
+        genericName: data.product.genericName || '',
+        dosageForm: data.product.dosageForm || '',
+        strength: data.product.strength || '',
         keyFeatures: '',
         specSummary: '',
         seoTitle: '',
@@ -753,10 +772,11 @@ export default function ProductImportPage() {
 
     try {
       const productData = {
-        type: 'GENERAL',
+        type: categories.find(c => c.id === editedProduct.categoryId)?.isMedicineCategory ? 'MEDICINE' : 'GENERAL',
         name: editedProduct.name.trim(),
         slug: editedProduct.slug.trim() || undefined,
         manufacturerId: editedProduct.manufacturerId || undefined,
+        manufacturerName: editedProduct.manufacturerId ? undefined : editedProduct.manufacturerName,
         description: editedProduct.description.trim() || undefined,
         sellingPrice: parseFloat(editedProduct.sellingPrice),
         mrp: editedProduct.mrp ? parseFloat(editedProduct.mrp) : undefined,
@@ -765,6 +785,9 @@ export default function ProductImportPage() {
         isActive: true,
         categoryId: editedProduct.categoryId,
         sizeLabel: editedProduct.packSize.trim() || undefined,
+        genericName: editedProduct.genericName.trim() || undefined,
+        dosageForm: editedProduct.dosageForm.trim() || undefined,
+        strength: editedProduct.strength.trim() || undefined,
         keyFeatures: editedProduct.keyFeatures.trim() || undefined,
         specSummary: editedProduct.specSummary.trim() || undefined,
         seoTitle: editedProduct.seoTitle.trim() || undefined,
@@ -1419,26 +1442,78 @@ export default function ProductImportPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Manufacturer
+                  Manufacturer {editedProduct.manufacturerName && !editedProduct.manufacturerId && (
+                    <span className="ml-2 text-[10px] bg-teal-100 text-teal-700 px-1 rounded uppercase font-bold">New</span>
+                  )}
                 </label>
                 <div className="mt-1 flex gap-2">
-                  <SearchableSelect
-                    options={manufacturers.map((mfr) => ({ value: mfr.id, label: mfr.name }))}
-                    value={editedProduct.manufacturerId}
-                    onChange={(value) => setEditedProduct({ ...editedProduct, manufacturerId: value })}
-                    placeholder="Select Manufacturer"
-                    className="flex-1"
-                  />
+                  <div className="flex-1">
+                    <SearchableSelect
+                      options={manufacturers.map((mfr) => ({ value: mfr.id, label: mfr.name }))}
+                      value={editedProduct.manufacturerId}
+                      onChange={(value) => setEditedProduct({ ...editedProduct, manufacturerId: value, manufacturerName: value ? '' : editedProduct.manufacturerName })}
+                      placeholder="Select Manufacturer"
+                    />
+                    {!editedProduct.manufacturerId && (
+                      <input
+                        type="text"
+                        value={editedProduct.manufacturerName}
+                        onChange={(e) => setEditedProduct({ ...editedProduct, manufacturerName: e.target.value })}
+                        placeholder="Or enter new manufacturer name"
+                        className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-teal-500 focus:outline-none"
+                      />
+                    )}
+                  </div>
                   <button
                     type="button"
                     onClick={() => openManufacturerModal(null)}
-                    className="flex items-center justify-center rounded-lg border border-gray-300 px-3 text-gray-600 hover:bg-gray-50 hover:text-teal-600"
+                    className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 hover:text-teal-600"
                     title="Add new manufacturer"
                   >
                     <Plus className="h-4 w-4" />
                   </button>
                 </div>
               </div>
+
+              {categories.find(c => c.id === editedProduct.categoryId)?.isMedicineCategory && (
+                <div className="space-y-4 rounded-lg bg-teal-50 p-4 border border-teal-100">
+                  <h3 className="text-sm font-bold text-teal-800 uppercase tracking-wider">Medicine Information</h3>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700">Generic Name</label>
+                    <input
+                      type="text"
+                      value={editedProduct.genericName}
+                      onChange={(e) => setEditedProduct({ ...editedProduct, genericName: e.target.value })}
+                      placeholder="e.g. Paracetamol"
+                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700">Dosage Form</label>
+                      <input
+                        type="text"
+                        value={editedProduct.dosageForm}
+                        onChange={(e) => setEditedProduct({ ...editedProduct, dosageForm: e.target.value })}
+                        placeholder="e.g. Tablet"
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700">Strength</label>
+                      <input
+                        type="text"
+                        value={editedProduct.strength}
+                        onChange={(e) => setEditedProduct({ ...editedProduct, strength: e.target.value })}
+                        placeholder="e.g. 500mg"
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div>

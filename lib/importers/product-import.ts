@@ -103,6 +103,7 @@ async function importFromArogga(url: string): Promise<ImportedProduct> {
   const name = cleanProductName($('h1').first().text().trim() || '')
 
   let brandName: string | null = null
+  // Arogga usually has brand link like /brand/100063/eskayef-pharmaceuticals-ltd
   $('a[href*="/brand/"]').each((_, el) => {
     const text = $(el).text().trim()
     if (text && !brandName) {
@@ -113,12 +114,27 @@ async function importFromArogga(url: string): Promise<ImportedProduct> {
   let sellingPrice: number | null = null
   let mrp: number | null = null
 
-  const priceText = $('body').text()
-  const priceMatch = priceText.match(/৳\s*([\d,.]+)/g)
-  if (priceMatch && priceMatch.length >= 1) {
-    sellingPrice = parsePrice(priceMatch[0])
-    if (priceMatch.length >= 2) {
-      mrp = parsePrice(priceMatch[1])
+  // Try to find price in structured way first
+  const priceContainer = $('.price-container, .product-price-section').first()
+  if (priceContainer.length) {
+    const prices = priceContainer.text().match(/৳\s*([\d,.]+)/g)
+    if (prices && prices.length >= 1) {
+      sellingPrice = parsePrice(prices[0])
+      if (prices.length >= 2) {
+        mrp = parsePrice(prices[1])
+      }
+    }
+  }
+
+  // Fallback price extraction
+  if (!sellingPrice) {
+    const priceText = $('body').text()
+    const priceMatch = priceText.match(/৳\s*([\d,.]+)/g)
+    if (priceMatch && priceMatch.length >= 1) {
+      sellingPrice = parsePrice(priceMatch[0])
+      if (priceMatch.length >= 2) {
+        mrp = parsePrice(priceMatch[1])
+      }
     }
   }
 
@@ -131,29 +147,56 @@ async function importFromArogga(url: string): Promise<ImportedProduct> {
   })
 
   let genericName: string | null = null
-  const genericMatch = $('body').text().match(/Generic:\s*([^\n]+)/i)
-  if (genericMatch) {
-    genericName = genericMatch[1].trim()
+  // Arogga has generic link like /generic/123/vitamin-b-complex-zinc
+  $('a[href*="/generic/"]').each((_, el) => {
+    const text = $(el).text().trim()
+    if (text && !genericName) {
+      genericName = text
+    }
+  })
+
+  // Fallback for generic
+  if (!genericName) {
+    const genericMatch = $('body').text().match(/Generic:\s*([^\n]+)/i)
+    if (genericMatch) {
+      genericName = genericMatch[1].trim()
+    }
   }
 
   let dosageForm: string | null = null
   let strength: string | null = null
-  const formMatch = $('body').text().match(/(\d+mg|\d+ml|\d+g)\s*-\s*(Tablet|Syrup|Capsule|Injection|Cream|Ointment|Drops|Suppository)/i)
+
+  // Try to find form and strength from the sub-header (e.g. "Tablet", "Capsule")
+  const subHeaderText = $('h1').first().next().text().trim()
+  if (subHeaderText && subHeaderText.length < 50) {
+    dosageForm = subHeaderText
+  }
+
+  const formMatch = $('body').text().match(/(\d+mg|\d+ml|\d+g|\d+mcg|\d+iu)\s*-\s*(Tablet|Syrup|Capsule|Injection|Cream|Ointment|Drops|Suppository|Suspension|Gel|Spray)/i)
   if (formMatch) {
     strength = formMatch[1]
-    dosageForm = formMatch[2]
+    if (!dosageForm) dosageForm = formMatch[2]
   }
 
   let packSize: string | null = null
-  const packMatch = $('body').text().match(/(\d+\s*(?:Tablets?|Capsules?|ml|g|pcs?|Strip|Bottle)(?:\s*\([^)]+\))?)/i)
+  // Look for patterns like "30 Tablets (1 Box)" or "10's Strip"
+  const packMatch = $('body').text().match(/(\d+\s*(?:Tablets?|Capsules?|ml|g|pcs?|Strip|Bottle|Pads?|Sachets?)(?:\s*\([^)]+\))?)/i)
   if (packMatch) {
     packSize = packMatch[1].trim()
   }
 
   let description: string | null = null
-  const introMatch = $('body').text().match(/Introduction\s+([\s\S]*?)(?:Uses of|Side effects|$)/i)
+  const introMatch = $('body').text().match(/Introduction\s+([\s\S]*?)(?:Uses of|Side effects|Indication|Therapeutic Class|$)/i)
   if (introMatch) {
-    description = introMatch[1].trim().substring(0, 500)
+    description = introMatch[1].trim().substring(0, 1000)
+  }
+
+  // If still no description, look for Indication
+  if (!description || description.length < 10) {
+    const indicationMatch = $('body').text().match(/Indication\s+([\s\S]*?)(?:Side effects|Pharmacology|$)/i)
+    if (indicationMatch) {
+      description = indicationMatch[1].trim().substring(0, 1000)
+    }
   }
 
   return {
@@ -166,7 +209,7 @@ async function importFromArogga(url: string): Promise<ImportedProduct> {
     packSize,
     genericName,
     dosageForm,
-    strength,
+    strength: strength || null,
     sourceUrl: url,
     source: 'arogga',
   }
