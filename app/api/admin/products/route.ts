@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ProductType, Prisma } from '@prisma/client'
 import { z } from 'zod'
+import { invalidateSearchIndex } from '@/lib/search-index'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -358,6 +359,9 @@ export async function POST(request: NextRequest) {
         medicine: true,
       },
     })
+
+    // Invalidate the search cache to reflect the new product globally
+    invalidateSearchIndex()
 
     return NextResponse.json({ success: true, product }, { status: 201 })
   } catch (error) {

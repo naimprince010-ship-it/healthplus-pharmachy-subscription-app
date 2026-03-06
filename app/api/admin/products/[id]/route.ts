@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { invalidateSearchIndex } from '@/lib/search-index'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -55,25 +56,25 @@ export async function GET(
 
     const { id } = await params
 
-        const product = await prisma.product.findUnique({
-          where: { id },
-          include: {
-            category: {
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-              },
-            },
-            manufacturer: {
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-              },
-            },
+    const product = await prisma.product.findUnique({
+      where: { id },
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
           },
-        })
+        },
+        manufacturer: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+    })
 
     if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 })
@@ -140,20 +141,20 @@ export async function PATCH(
     }
 
     const updateData: any = { ...data }
-    
+
     if (data.categoryId && data.categoryId !== existingProduct.categoryId) {
       const category = await prisma.category.findUnique({
         where: { id: data.categoryId },
         select: { isMedicineCategory: true },
       })
-      
+
       if (!category) {
         return NextResponse.json(
           { error: 'Category not found' },
           { status: 400 }
         )
       }
-      
+
       updateData.type = category.isMedicineCategory ? 'MEDICINE' : 'GENERAL'
     }
     if (data.stockQuantity !== undefined) {
@@ -179,6 +180,8 @@ export async function PATCH(
         },
       },
     })
+
+    invalidateSearchIndex()
 
     return NextResponse.json({ success: true, product })
   } catch (error) {
@@ -221,6 +224,8 @@ export async function DELETE(
         isActive: false,
       },
     })
+
+    invalidateSearchIndex()
 
     return NextResponse.json({ success: true })
   } catch (error) {

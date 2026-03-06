@@ -1,4 +1,10 @@
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
+import { getCachedData, setCachedData, invalidateCache } from '@/lib/cache'
+
+const CACHE_KEY_TOP_PRODUCTS = 'search:top-products'
+const CACHE_TTL_TOP_PRODUCTS = 60 * 60 * 24 // 24 hours
+const CACHE_TTL_SEARCH = 60 * 60 // 1 hour
 
 export interface SearchableProduct {
   id: string
@@ -59,6 +65,12 @@ function mapToSearchableProduct(p: any): SearchableProduct {
 // Replaces getSearchIndex() for the no-query fallback
 export async function getTopProducts(limit: number = 40): Promise<{ products: SearchableProduct[] }> {
   try {
+    const cached = await getCachedData<{ products: SearchableProduct[] }>(CACHE_KEY_TOP_PRODUCTS)
+    if (cached && cached.products && cached.products.length > 0) {
+      // Respect the limit even with cached data
+      return { products: cached.products.slice(0, limit) }
+    }
+
     const products = await prisma.product.findMany({
       where: {
         isActive: true,
@@ -76,7 +88,11 @@ export async function getTopProducts(limit: number = 40): Promise<{ products: Se
       take: limit,
     })
 
-    return { products: products.map(mapToSearchableProduct) }
+    const result = { products: products.map(mapToSearchableProduct) }
+    await setCachedData(CACHE_KEY_TOP_PRODUCTS, result, CACHE_TTL_TOP_PRODUCTS)
+
+    // Always return slice of the whole mapped array
+    return { products: result.products.slice(0, limit) }
   } catch (error) {
     console.error('Error fetching top products:', error)
     return { products: [] }
@@ -91,7 +107,9 @@ export async function getSearchIndex(): Promise<{ products: SearchableProduct[] 
 }
 
 export function invalidateSearchIndex(): void {
-  // No-op. Prisma handles real-time queries.
+  // Clear the top products cache.
+  // We can't easily clear all search permutations, but they expire in 1 hr.
+  invalidateCache(CACHE_KEY_TOP_PRODUCTS).catch(console.error)
 }
 
 export async function searchProducts(
@@ -114,12 +132,17 @@ export async function searchProducts(
     .split(/\s+/)
     .filter((word) => word.length > 0)
     .map((word) => word.replace(/[^a-zA-Z0-9]/g, ''))
+    .map((word) => word.replace(/[^a-zA-Z0-9]/g, ''))
     .filter((word) => word.length > 0)
 
   if (terms.length === 0) {
     const { products } = await getTopProducts(limit)
     return products.map((item) => ({ item, score: 1, combinedScore: item.popularityScore }))
   }
+
+  const cacheKey = `search:query:${terms.join('-').toLowerCase()}:${limit}`
+  const cachedResults = await getCachedData<SearchResult[]>(cacheKey)
+  if (cachedResults) return cachedResults
 
   // Join with OR (|) and add prefix matching (:*) to each term
   const ftsQuery = terms.map((term) => `${term}:*`).join(' | ')
@@ -130,11 +153,11 @@ export async function searchProducts(
         isActive: true,
         deletedAt: null,
         OR: [
-          { name: { search: ftsQuery } },
-          { brandName: { search: ftsQuery } },
-          { description: { search: ftsQuery } },
-          { medicine: { genericName: { search: ftsQuery } } },
-          { medicine: { manufacturer: { search: ftsQuery } } },
+          { name: { search: ftsQuery } } as any,
+          { brandName: { search: ftsQuery } } as any,
+          { description: { search: ftsQuery } } as any,
+          { medicine: { genericName: { search: ftsQuery } } } as any,
+          { medicine: { manufacturer: { search: ftsQuery } } } as any,
         ],
       },
       include: {
@@ -192,8 +215,12 @@ export async function searchProducts(
 
     // Sort by combined score
     searchResults.sort((a, b) => b.combinedScore - a.combinedScore)
+    const finalResults = searchResults.slice(0, limit)
 
-    return searchResults.slice(0, limit)
+    // Store in Redis
+    await setCachedData(cacheKey, finalResults, CACHE_TTL_SEARCH)
+
+    return finalResults
   } catch (error) {
     console.error('Search failed:', error)
     return []
