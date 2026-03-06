@@ -45,39 +45,38 @@ export default async function LeftCategorySidebar() {
         </Link>
 
         {/* Category List */}
-        <div className="divide-y divide-gray-100">
+        <div className="divide-y divide-gray-50 bg-white">
           {categories.map((category) => {
-            // Use custom sidebarLinkUrl if set, otherwise use dynamic category page
             const href = category.sidebarLinkUrl || `/category/${category.slug}`
-            
+
             return (
               <Link
                 key={category.id}
                 href={href}
-                className="flex items-center justify-between px-4 py-3 transition-all hover:bg-gray-50 hover:shadow-sm"
+                className="group flex items-center justify-between px-4 py-3.5 transition-all duration-200 hover:bg-teal-50/40 hover:pl-5"
               >
-              <div className="flex items-center gap-3">
-                {category.sidebarIconUrl ? (
-                  <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-gray-100">
-                    <img
-                      src={category.sidebarIconUrl}
-                      alt={category.name}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                ) : (
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-100">
-                    <span className="text-xs font-semibold text-teal-600">
-                      {category.name.charAt(0)}
-                    </span>
-                  </div>
-                )}
-                <span className="text-sm font-medium text-gray-700">
-                  {category.name}
-                </span>
-              </div>
-              <ChevronRight className="h-4 w-4 text-gray-400" />
-            </Link>
+                <div className="flex items-center gap-3.5">
+                  {category.sidebarIconUrl ? (
+                    <div className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-gray-100 bg-white shadow-sm transition-transform duration-300 group-hover:scale-110 group-hover:shadow-md">
+                      <img
+                        src={category.sidebarIconUrl}
+                        alt={category.name}
+                        className="h-full w-full object-cover p-0.5"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-teal-50 to-teal-100 text-teal-600 shadow-sm transition-transform duration-300 group-hover:scale-110 group-hover:shadow-md">
+                      <span className="text-sm font-bold uppercase">
+                        {category.name.charAt(0)}
+                      </span>
+                    </div>
+                  )}
+                  <span className="text-[15px] font-medium text-gray-700 transition-colors duration-200 group-hover:text-teal-700">
+                    {category.name}
+                  </span>
+                </div>
+                <ChevronRight className="h-4 w-4 text-gray-300 transition-all duration-200 group-hover:translate-x-1 group-hover:text-teal-500" />
+              </Link>
             )
           })}
         </div>
