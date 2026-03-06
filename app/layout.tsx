@@ -7,6 +7,8 @@ import { WishlistProvider } from "@/contexts/WishlistContext";
 import { SessionProvider } from "next-auth/react";
 import { PWAProvider } from "@/components/PWAProvider";
 import { InstallPrompt, UpdatePrompt } from "@/components/InstallPrompt";
+import { AuthModalProvider } from "@/contexts/AuthModalContext";
+import { LoginModal } from "@/components/auth/LoginModal";
 
 export const runtime = 'nodejs'
 
@@ -79,18 +81,21 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} font-sans antialiased`}>
-                <SessionProvider>
-                  <CartProvider>
-                    <WishlistProvider>
-                      <PWAProvider>
-                        <Tracking />
-                        {children}
-                        <UpdatePrompt />
-                        <InstallPrompt />
-                      </PWAProvider>
-                    </WishlistProvider>
-                  </CartProvider>
-                </SessionProvider>
+        <SessionProvider>
+          <AuthModalProvider>
+            <CartProvider>
+              <WishlistProvider>
+                <PWAProvider>
+                  <Tracking />
+                  {children}
+                  <UpdatePrompt />
+                  <InstallPrompt />
+                  <LoginModal />
+                </PWAProvider>
+              </WishlistProvider>
+            </CartProvider>
+          </AuthModalProvider>
+        </SessionProvider>
       </body>
     </html>
   );

@@ -7,12 +7,14 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { UserMenu } from './UserMenu'
 import { useCart } from '@/contexts/CartContext'
+import { useAuthModal } from '@/contexts/AuthModalContext'
 
 export function Navbar() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { data: session } = useSession()
   const { itemCount } = useCart()
+  const { openModal } = useAuthModal()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -21,11 +23,11 @@ export function Navbar() {
 
   const isActive = (path: string) => pathname === path
 
-  const profileHref = !session 
-    ? '/auth/signin' 
-    : session.user?.role === 'ADMIN' 
-    ? '/admin' 
-    : '/dashboard'
+  const profileHref = !session
+    ? '/auth/signin'
+    : session.user?.role === 'ADMIN'
+      ? '/admin'
+      : '/dashboard'
 
   return (
     <nav className="sticky top-0 z-40 w-full border-b border-gray-200 bg-white shadow-sm">
@@ -43,33 +45,29 @@ export function Navbar() {
           <div className="hidden md:flex md:items-center md:space-x-6">
             <Link
               href="/"
-              className={`text-sm font-medium transition-colors hover:text-teal-600 ${
-                isActive('/') ? 'text-teal-600' : 'text-gray-700'
-              }`}
+              className={`text-sm font-medium transition-colors hover:text-teal-600 ${isActive('/') ? 'text-teal-600' : 'text-gray-700'
+                }`}
             >
               Home
             </Link>
             <Link
               href="/medicines"
-              className={`text-sm font-medium transition-colors hover:text-teal-600 ${
-                isActive('/medicines') ? 'text-teal-600' : 'text-gray-700'
-              }`}
+              className={`text-sm font-medium transition-colors hover:text-teal-600 ${isActive('/medicines') ? 'text-teal-600' : 'text-gray-700'
+                }`}
             >
               Medicines
             </Link>
             <Link
               href="/subscriptions"
-              className={`text-sm font-medium transition-colors hover:text-teal-600 ${
-                isActive('/subscriptions') ? 'text-teal-600' : 'text-gray-700'
-              }`}
+              className={`text-sm font-medium transition-colors hover:text-teal-600 ${isActive('/subscriptions') ? 'text-teal-600' : 'text-gray-700'
+                }`}
             >
               Subscriptions
             </Link>
             <Link
               href="/membership"
-              className={`text-sm font-medium transition-colors hover:text-teal-600 ${
-                isActive('/membership') ? 'text-teal-600' : 'text-gray-700'
-              }`}
+              className={`text-sm font-medium transition-colors hover:text-teal-600 ${isActive('/membership') ? 'text-teal-600' : 'text-gray-700'
+                }`}
             >
               Membership
             </Link>
@@ -80,7 +78,7 @@ export function Navbar() {
             >
               <ShoppingCart className="h-5 w-5" />
               {mounted && itemCount > 0 && (
-                <span 
+                <span
                   className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-teal-600 text-xs text-white"
                   aria-live="polite"
                 >
@@ -91,12 +89,13 @@ export function Navbar() {
             {session ? (
               <UserMenu variant="navbar" />
             ) : (
-              <Link
-                href="/auth/signin"
+              <button
+                onClick={openModal}
                 className="text-gray-700 transition-colors hover:text-teal-600"
+                aria-label="Sign In"
               >
                 <User className="h-5 w-5" />
-              </Link>
+              </button>
             )}
           </div>
 

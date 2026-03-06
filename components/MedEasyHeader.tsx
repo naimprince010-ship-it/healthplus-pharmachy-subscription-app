@@ -8,6 +8,7 @@ import { useSession, signOut } from 'next-auth/react'
 import { useCart } from '@/contexts/CartContext'
 import { CartDrawer } from './CartDrawer'
 import { MAIN_CONTAINER } from '@/lib/layout'
+import { useAuthModal } from '@/contexts/AuthModalContext'
 
 interface SearchSuggestion {
   id: string
@@ -29,7 +30,8 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
   const pathname = usePathname()
   const { data: session } = useSession()
   const { itemCount, openDrawer } = useCart()
-  
+  const { openModal } = useAuthModal()
+
   // Hide header on mobile for checkout, cart, order-success, and order tracking pages (they have their own headers)
   const hideOnMobile = pathname === '/checkout' || pathname === '/cart' || pathname === '/order-success' || pathname.startsWith('/orders/')
   const [mounted, setMounted] = useState(false)
@@ -125,15 +127,15 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
     setSearchQuery('')
   }
 
-  const profileHref = !session 
-    ? '/auth/signin' 
-    : session.user?.role === 'ADMIN' 
-    ? '/admin' 
-    : '/dashboard'
+  const profileHref = !session
+    ? '/auth/signin'
+    : session.user?.role === 'ADMIN'
+      ? '/admin'
+      : '/dashboard'
 
-    return (
-      <>
-        <header className={`sticky top-0 z-50 w-full bg-teal-600 shadow-md ${hideOnMobile ? 'hidden lg:block' : ''}`}>
+  return (
+    <>
+      <header className={`sticky top-0 z-50 w-full bg-teal-600 shadow-md ${hideOnMobile ? 'hidden lg:block' : ''}`}>
         {/* Centered container - uses shared MAIN_CONTAINER for consistent layout */}
         <div className={MAIN_CONTAINER}>
           <div className="flex h-14 items-center justify-between gap-2 sm:h-16 sm:gap-4">
@@ -188,12 +190,12 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                                 <div className="flex h-full w-full items-center justify-center text-gray-400 text-xs">No img</div>
                               )}
                             </div>
-                                                        <div className="flex-1 min-w-0">
-                                                          <p className="text-sm font-medium text-gray-900 truncate">{item.name}{item.sizeLabel ? ` ${item.sizeLabel}` : ''}</p>
-                                                          {item.manufacturer && (
-                                                            <p className="text-xs text-gray-500 truncate">{item.manufacturer}</p>
-                                                          )}
-                                                        </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">{item.name}{item.sizeLabel ? ` ${item.sizeLabel}` : ''}</p>
+                              {item.manufacturer && (
+                                <p className="text-xs text-gray-500 truncate">{item.manufacturer}</p>
+                              )}
+                            </div>
                             <div className="flex-shrink-0 text-sm font-semibold text-teal-600">
                               ৳{item.price}
                             </div>
@@ -236,7 +238,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                 className="hidden lg:flex items-center gap-1 rounded-lg bg-black px-3 py-1.5 text-white hover:bg-gray-800 transition-colors"
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.198l2.807 1.626a1 1 0 0 1 0 1.73l-2.808 1.626L15.206 12l2.492-2.491zM5.864 2.658L16.8 8.99l-2.302 2.302-8.634-8.634z"/>
+                  <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.198l2.807 1.626a1 1 0 0 1 0 1.73l-2.808 1.626L15.206 12l2.492-2.491zM5.864 2.658L16.8 8.99l-2.302 2.302-8.634-8.634z" />
                 </svg>
                 <div className="flex flex-col leading-tight">
                   <span className="text-[8px] uppercase">Get it on</span>
@@ -273,22 +275,22 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
 
                 {userMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 rounded-lg bg-white py-2 shadow-lg ring-1 ring-black/5">
-                                        {session ? (
-                                          <>
-                                            <Link
-                                              href={profileHref}
-                                              className="block px-4 py-2 text-sm font-medium text-teal-600 hover:bg-gray-100"
-                                              onClick={() => setUserMenuOpen(false)}
-                                            >
-                                              {session.user?.role === 'ADMIN' ? 'Admin Panel' : 'Dashboard'}
-                                            </Link>
-                                            <Link
-                                              href="/orders"
-                                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                              onClick={() => setUserMenuOpen(false)}
-                                            >
-                                              আমার অর্ডার
-                                            </Link>
+                    {session ? (
+                      <>
+                        <Link
+                          href={profileHref}
+                          className="block px-4 py-2 text-sm font-medium text-teal-600 hover:bg-gray-100"
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          {session.user?.role === 'ADMIN' ? 'Admin Panel' : 'Dashboard'}
+                        </Link>
+                        <Link
+                          href="/orders"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          আমার অর্ডার
+                        </Link>
                         <hr className="my-1" />
                         <button
                           onClick={() => {
@@ -302,13 +304,15 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                       </>
                     ) : (
                       <>
-                        <Link
-                          href="/auth/signin"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          onClick={() => setUserMenuOpen(false)}
+                        <button
+                          onClick={() => {
+                            setUserMenuOpen(false)
+                            openModal()
+                          }}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         >
                           Sign In
-                        </Link>
+                        </button>
                         <Link
                           href="/auth/signup"
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -358,7 +362,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
               <Search className="h-4 w-4" />
             </button>
           </div>
-          
+
           {/* Mobile Search Suggestions */}
           <div className="flex-1 overflow-y-auto">
             {isLoadingSuggestions ? (
@@ -382,12 +386,12 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                         <div className="flex h-full w-full items-center justify-center text-gray-400 text-xs">No img</div>
                       )}
                     </div>
-                                        <div className="flex-1 min-w-0">
-                                          <p className="text-sm font-medium text-gray-900 line-clamp-2">{item.name}{item.sizeLabel ? ` ${item.sizeLabel}` : ''}</p>
-                                          {item.manufacturer && (
-                                            <p className="text-xs text-gray-500 truncate mt-0.5">{item.manufacturer}</p>
-                                          )}
-                                        </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 line-clamp-2">{item.name}{item.sizeLabel ? ` ${item.sizeLabel}` : ''}</p>
+                      {item.manufacturer && (
+                        <p className="text-xs text-gray-500 truncate mt-0.5">{item.manufacturer}</p>
+                      )}
+                    </div>
                     <div className="flex-shrink-0 text-sm font-semibold text-teal-600">
                       ৳{item.price}
                     </div>
