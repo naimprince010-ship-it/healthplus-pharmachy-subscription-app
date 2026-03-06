@@ -430,7 +430,7 @@ export default function ProductImportPage() {
           const data = await res.json()
           const importedProduct = data.product as ImportedProduct
 
-          const finalPrice = importedProduct.sellingPrice ?? importedProduct.mrp ?? product.price ?? null
+          const finalPrice = importedProduct.mrp ?? importedProduct.sellingPrice ?? product.price ?? null
           const finalMrp = importedProduct.mrp ?? null
           const finalImageUrl = importedProduct.imageUrl || product.imageUrl || null
 

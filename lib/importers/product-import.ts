@@ -560,8 +560,16 @@ async function extractProductsFromMedeasyCategory(url: string, maxPages: number 
 
       const name = article.find('h4').text().trim()
       const priceText = article.find('div').filter((_, div) => $(div).text().includes('৳')).first().text()
-      const priceMatch = priceText.match(/৳\s*([\d,.]+)/)
-      const price = priceMatch ? parsePrice(priceMatch[1]) : null
+      const priceMatches = priceText.match(/৳\s*([\d,.]+)/g)
+      let price: number | null = null
+
+      if (priceMatches && priceMatches.length > 0) {
+        // Extract all numeric values and pick the highest one (MRP)
+        const prices = priceMatches.map(p => parsePrice(p)).filter((p): p is number => p !== null)
+        if (prices.length > 0) {
+          price = Math.max(...prices)
+        }
+      }
 
       let imageUrl: string | null = null
       const img = article.find('img[alt="Product Image"]').first()
@@ -619,8 +627,15 @@ async function extractProductsFromAroggaCategory(url: string): Promise<CategoryP
 
     const parent = $(el).parent()
     const priceText = parent.text()
-    const priceMatch = priceText.match(/৳\s*([\d,.]+)/)
-    const price = priceMatch ? parsePrice(priceMatch[1]) : null
+    const priceMatches = priceText.match(/৳\s*([\d,.]+)/g)
+    let price: number | null = null
+
+    if (priceMatches && priceMatches.length > 0) {
+      const prices = priceMatches.map(p => parsePrice(p)).filter((p): p is number => p !== null)
+      if (prices.length > 0) {
+        price = Math.max(...prices)
+      }
+    }
 
     const img = parent.find('img[src*="cdn2.arogga.com"]').first()
     const imageUrl = img.attr('src') || null
@@ -672,8 +687,15 @@ async function extractProductsFromChaldalCategory(url: string): Promise<Category
     if (nameFromHref.length < 3) return
 
     const containerText = productContainer.text()
-    const priceMatch = containerText.match(/৳\s*([\d,.]+)/)
-    const price = priceMatch ? parsePrice(priceMatch[1]) : null
+    const priceMatches = containerText.match(/৳\s*([\d,.]+)/g)
+    let price: number | null = null
+
+    if (priceMatches && priceMatches.length > 0) {
+      const prices = priceMatches.map(p => parsePrice(p)).filter((p): p is number => p !== null)
+      if (prices.length > 0) {
+        price = Math.max(...prices)
+      }
+    }
 
     const img = productContainer.find('img[src*="chaldn.com"]').first()
     const imageUrl = img.attr('src') || null
@@ -713,12 +735,16 @@ async function extractProductsFromOthobaCategory(url: string): Promise<CategoryP
 
     const fullUrl = `https://www.othoba.com${relativeUrl.startsWith('/') ? '' : '/'}${relativeUrl}`
 
-    // Price extraction
-    let priceText = $(el).find('.actual-price, .new-price').text().trim()
-    if (!priceText) {
-      priceText = $(el).find('.product-price').first().text().trim()
+    let price: number | null = null
+    const priceText = $(el).find('.actual-price, .new-price, .product-price, .old-price, .price').text().trim()
+    const priceMatches = priceText.match(/৳\s*([\d,.]+)|Tk\s*([\d,.]+)/g)
+
+    if (priceMatches && priceMatches.length > 0) {
+      const prices = priceMatches.map(p => parsePrice(p)).filter((p): p is number => p !== null)
+      if (prices.length > 0) {
+        price = Math.max(...prices)
+      }
     }
-    const price = parsePrice(priceText)
 
     // Image extraction
     const imgEl = $(el).find('img').first()
