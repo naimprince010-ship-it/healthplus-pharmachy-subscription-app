@@ -1163,10 +1163,14 @@ export default function ProductImportPage() {
                       <div className="flex-1 min-w-0">
                         <p className="truncate text-sm font-medium text-gray-900 flex items-center gap-2">
                           {draft.editedData.name} {(() => {
-                            const cleanRegex = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, '')
+                            if (!draft.editedData.packSize) return null
+                            const cleanRegex = (str: string) => str ? str.toLowerCase().replace(/[^a-z0-9]/g, '') : ''
                             const cleanName = cleanRegex(draft.editedData.name)
                             const cleanPack = cleanRegex(draft.editedData.packSize)
-                            return (draft.editedData.packSize && !cleanName.includes(cleanPack)) ? draft.editedData.packSize : null
+                            if (!cleanPack) return null
+                            return !cleanName.includes(cleanPack) ? (
+                              <span className="text-gray-400 font-normal">({draft.editedData.packSize})</span>
+                            ) : null
                           })()}
                           {duplicateIssues.nameMap.get(draft.editedData.name.toLowerCase().trim())! > 1 && (
                             <span className="px-1.5 py-0.5 text-[10px] bg-amber-100 text-amber-700 border border-amber-200 rounded font-bold">
