@@ -22,8 +22,16 @@ export async function POST(request: NextRequest) {
         })
 
         let fixedCount = 0
-
         const updates = []
+
+        // Track slugs used during THIS cleanup session to avoid internal collisions
+        const sessionUsedSlugs = new Set<string>()
+
+        // Fetch all existing slugs to avoid external collisions
+        const existingSlugsList = await prisma.product.findMany({
+            select: { slug: true }
+        })
+        const dbSlugs = new Set(existingSlugsList.map(p => p.slug))
 
         for (const product of products) {
             const originalName = product.name
@@ -36,8 +44,26 @@ export async function POST(request: NextRequest) {
                 : baseName
 
             if (cleanedName !== originalName) {
-                // Prepare updates for Product
-                const newSlug = slugify(cleanedName)
+                // Generate a unique slug
+                let newSlug = slugify(cleanedName)
+                const baseSlug = newSlug
+
+                // If the slug changed or we just want to be sure it's unique
+                // We must ensure it doesn't collide with:
+                // 1. Slugs already in DB (except our own current slug if we are not changing name)
+                // 2. Slugs we just assigned to other products in this loop
+
+                let counter = 1
+                while (
+                    (dbSlugs.has(newSlug) && newSlug !== product.slug) ||
+                    sessionUsedSlugs.has(newSlug)
+                ) {
+                    newSlug = `${baseSlug}-${counter}`
+                    counter++
+                }
+
+                sessionUsedSlugs.add(newSlug)
+                dbSlugs.add(newSlug)
 
                 updates.push(
                     prisma.product.update({
@@ -49,7 +75,6 @@ export async function POST(request: NextRequest) {
                     })
                 )
 
-                // If it has a medicine relation, update its name/slug too if they match
                 if (product.medicine) {
                     updates.push(
                         prisma.medicine.update({
@@ -61,13 +86,17 @@ export async function POST(request: NextRequest) {
                         })
                     )
                 }
-
                 fixedCount++
+            } else {
+                // If name didn't change, still add its slug to used set to prevent others from taking it
+                sessionUsedSlugs.add(product.slug)
             }
         }
 
         // Execute all updates in a transaction
         if (updates.length > 0) {
+            // If the transaction is too large, we might need to batch it.
+            // For ~270 products, it should be fine.
             await prisma.$transaction(updates)
         }
 
@@ -76,10 +105,10 @@ export async function POST(request: NextRequest) {
             message: `Successfully cleaned up names for ${fixedCount} products.`,
             fixedCount
         })
-    } catch (error) {
+    } catch (error: any) {
         console.error('Product cleanup error:', error)
         return NextResponse.json(
-            { error: 'Failed to clean up products' },
+            { error: `Cleanup failed: ${error.message || 'Unknown error'}` },
             { status: 500 }
         )
     }
