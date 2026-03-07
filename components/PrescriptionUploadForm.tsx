@@ -17,7 +17,7 @@ export default function PrescriptionUploadForm({ hideHeader = false, compact = f
 
   function validateFile(file: File | null): boolean {
     setFileError('')
-    
+
     if (!file) {
       return true
     }
@@ -90,7 +90,7 @@ export default function PrescriptionUploadForm({ hideHeader = false, compact = f
   }
 
   return (
-    <div className={compact ? '' : 'rounded-2xl bg-white p-6 shadow-xl lg:p-5'}>
+    <div className={`${compact ? '' : 'rounded-2xl bg-white p-6 shadow-xl lg:p-5'} pb-2`}>
       {!hideHeader && (
         <div className="mb-4 flex items-center space-x-3 lg:mb-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-100">
@@ -131,8 +131,8 @@ export default function PrescriptionUploadForm({ hideHeader = false, compact = f
             id="name"
             name="name"
             required
-                        className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 text-base focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                        placeholder="আপনার নাম লিখুন"
+            className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 text-base focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+            placeholder="আপনার নাম লিখুন"
           />
         </div>
         <div>
@@ -146,8 +146,8 @@ export default function PrescriptionUploadForm({ hideHeader = false, compact = f
             required
             pattern="^(\+?88)?01[3-9]\d{8}$"
             title="01XXXXXXXXX, 8801XXXXXXXXX, অথবা +8801XXXXXXXXX ব্যবহার করুন"
-                        className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 text-base focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                        placeholder="01712345678"
+            className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 text-base focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+            placeholder="01712345678"
           />
           <p className="mt-1 text-xs text-gray-500">
             ফরম্যাট: 01XXXXXXXXX, 8801XXXXXXXXX, অথবা +8801XXXXXXXXX
@@ -161,9 +161,9 @@ export default function PrescriptionUploadForm({ hideHeader = false, compact = f
             id="zoneId"
             name="zoneId"
             required
-                      className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 text-base focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                    >
-                      <option value="">আপনার জোন নির্বাচন করুন</option>
+            className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 text-base focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+          >
+            <option value="">আপনার জোন নির্বাচন করুন</option>
             <option value="1">ঢাকা সেন্ট্রাল</option>
             <option value="2">ঢাকা উত্তর</option>
             <option value="3">ঢাকা দক্ষিণ</option>
