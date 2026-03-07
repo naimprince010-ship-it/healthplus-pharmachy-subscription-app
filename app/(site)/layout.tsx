@@ -12,7 +12,7 @@ export default async function SiteLayout({
   children: React.ReactNode;
 }) {
   const basicSettings = await getBasicSettings();
-  
+
   return (
     <>
       <TrackingProvider />
@@ -21,7 +21,7 @@ export default async function SiteLayout({
       <SiteFooterWrapper>
         <SiteFooter />
       </SiteFooterWrapper>
-      <SiteWhatsAppButton />
+      <SiteWhatsAppButton phone={basicSettings.storePhone} />
       <SiteMobileNav />
     </>
   );

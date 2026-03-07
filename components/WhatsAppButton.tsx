@@ -3,12 +3,28 @@
 import { MessageCircle } from 'lucide-react'
 import { trackWhatsAppClick } from '@/lib/trackEvent'
 
-export function WhatsAppButton() {
+interface WhatsAppButtonProps {
+  phone?: string
+  message?: string
+}
+
+export function WhatsAppButton({
+  phone = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '',
+  message = 'Hello! I need help with HealthPlus.'
+}: WhatsAppButtonProps) {
   const handleClick = () => {
     trackWhatsAppClick('floating_button')
-    const phone = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '8801XXXXXXXXX'
-    const message = encodeURIComponent('Hello! I need help with HealthPlus.')
-    window.open(`https://wa.me/${phone}?text=${message}`, '_blank')
+
+    // Clean phone number: remove all non-numeric characters except +
+    const cleanPhone = phone.replace(/[^\d+]/g, '')
+
+    if (!cleanPhone) {
+      console.warn('WhatsApp phone number is missing')
+      return
+    }
+
+    const encodedMessage = encodeURIComponent(message)
+    window.open(`https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodedMessage}`, '_blank')
   }
 
   return (
