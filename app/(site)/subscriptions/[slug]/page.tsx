@@ -80,7 +80,7 @@ export default async function SubscriptionDetailPage({ params }: PageProps) {
           <p className="mt-2 text-gray-600">
             Fill in your details to start your monthly subscription
           </p>
-          
+
           {!session ? (
             <div className="mt-6 rounded-lg bg-yellow-50 p-4">
               <p className="text-sm text-yellow-800">
@@ -94,7 +94,10 @@ export default async function SubscriptionDetailPage({ params }: PageProps) {
               </p>
             </div>
           ) : (
-            <SubscriptionForm plan={plan} zones={zones} />
+            <SubscriptionForm
+              plan={JSON.parse(JSON.stringify(plan))}
+              zones={JSON.parse(JSON.stringify(zones))}
+            />
           )}
         </div>
       </div>
