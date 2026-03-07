@@ -61,6 +61,7 @@ interface DraftProduct {
     seoDescription: string
     seoKeywords: string
     slug: string
+    isMedicineOverride?: boolean | null
   }
   status: 'pending' | 'saving' | 'saved' | 'error'
   error?: string
@@ -624,8 +625,13 @@ export default function ProductImportPage() {
     ))
 
     try {
+      let isMedicine = categories.find(c => c.id === draft.editedData.categoryId)?.isMedicineCategory
+      if (draft.editedData.isMedicineOverride !== undefined && draft.editedData.isMedicineOverride !== null) {
+        isMedicine = draft.editedData.isMedicineOverride
+      }
+
       const productData = {
-        type: categories.find(c => c.id === draft.editedData.categoryId)?.isMedicineCategory ? 'MEDICINE' : 'GENERAL',
+        type: isMedicine ? 'MEDICINE' : 'GENERAL',
         name: draft.editedData.name.trim(),
         slug: draft.editedData.slug.trim() || undefined,
         manufacturerId: draft.editedData.manufacturerId || undefined,
@@ -1462,14 +1468,69 @@ export default function ProductImportPage() {
                             </div>
                             {draft.editedData.categoryId && (
                               <div className="mt-2">
-                                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${categories.find(c => c.id === draft.editedData.categoryId)?.isMedicineCategory
-                                  ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                                  : 'bg-green-100 text-green-800 border border-green-200'
-                                  }`}>
-                                  {categories.find(c => c.id === draft.editedData.categoryId)?.isMedicineCategory ? '💊 Medicine' : '📦 General Product'}
-                                </span>
+                                {(() => {
+                                  if (draft.editedData.isMedicineOverride === true) {
+                                    return (
+                                      <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                                        💊 Forced Medicine
+                                      </span>
+                                    )
+                                  }
+                                  if (draft.editedData.isMedicineOverride === false) {
+                                    return (
+                                      <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold bg-green-100 text-green-800 border border-green-200">
+                                        📦 Forced General Product
+                                      </span>
+                                    )
+                                  }
+                                  const isMedCat = categories.find(c => c.id === draft.editedData.categoryId)?.isMedicineCategory
+                                  return (
+                                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${isMedCat
+                                      ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                                      : 'bg-green-100 text-green-800 border border-green-200'
+                                      }`}>
+                                      {isMedCat ? '💊 Auto: Medicine' : '📦 Auto: General Product'}
+                                    </span>
+                                  )
+                                })()}
                               </div>
                             )}
+                          </div>
+
+                          <div className="md:col-span-2 mt-2">
+                            <label className="block text-[10px] font-medium text-gray-700 mb-1">Type Override</label>
+                            <div className="flex gap-3">
+                              <label className="flex items-center gap-1 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name={`typeOverride-${draft.id}`}
+                                  checked={draft.editedData.isMedicineOverride === null || draft.editedData.isMedicineOverride === undefined}
+                                  onChange={() => updateDraftProduct(draft.id, 'isMedicineOverride', null)}
+                                  className="text-teal-600 focus:ring-teal-500 rounded-full w-3 h-3"
+                                />
+                                <span className="text-[10px] font-medium text-gray-700">Auto</span>
+                              </label>
+                              <label className="flex items-center gap-1 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name={`typeOverride-${draft.id}`}
+                                  checked={draft.editedData.isMedicineOverride === true}
+                                  onChange={() => updateDraftProduct(draft.id, 'isMedicineOverride', true)}
+                                  className="text-blue-600 focus:ring-blue-500 rounded-full w-3 h-3"
+                                />
+                                <span className="text-[10px] font-medium text-blue-700">💊 Force Med.</span>
+                              </label>
+                              <label className="flex items-center gap-1 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name={`typeOverride-${draft.id}`}
+                                  checked={draft.editedData.isMedicineOverride === false}
+                                  onChange={() => updateDraftProduct(draft.id, 'isMedicineOverride', false)}
+                                  className="text-green-600 focus:ring-green-500 rounded-full w-3 h-3"
+                                />
+                                <span className="text-[10px] font-medium text-green-700">📦 Force Gen.</span>
+                              </label>
+                            </div>
                           </div>
                           <div>
                             <label className="block text-xs font-medium text-gray-700">Selling Price (BDT) *</label>
@@ -1531,7 +1592,7 @@ export default function ProductImportPage() {
                             />
                           </div>
 
-                          {categories.find(c => c.id === draft.editedData.categoryId)?.isMedicineCategory && (
+                          {(categories.find(c => c.id === draft.editedData.categoryId)?.isMedicineCategory || draft.editedData.isMedicineOverride === true) && (
                             <div className="md:col-span-2 rounded-lg bg-teal-50/50 p-3 border border-teal-100">
                               <h4 className="text-[10px] font-bold text-teal-700 uppercase mb-2">Medicine Fields</h4>
                               <div className="grid gap-3 md:grid-cols-3">
@@ -1570,7 +1631,7 @@ export default function ProductImportPage() {
                             <div className="flex items-center justify-between mb-3">
                               <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">AI Tools</h4>
                               <div className="flex gap-2">
-                                {categories.find(c => c.id === draft.editedData.categoryId)?.isMedicineCategory && (
+                                {(categories.find(c => c.id === draft.editedData.categoryId)?.isMedicineCategory || draft.editedData.isMedicineOverride === true) && (
                                   <button
                                     type="button"
                                     onClick={(e) => { e.stopPropagation(); handleDraftMedicineExtract(draft.id); }}
@@ -1714,7 +1775,7 @@ export default function ProductImportPage() {
                 </div>
               </div>
 
-              {categories.find(c => c.id === editedProduct.categoryId)?.isMedicineCategory && (
+              {(categories.find(c => c.id === editedProduct.categoryId)?.isMedicineCategory || editedProduct.isMedicineOverride === true) && (
                 <div className="space-y-4 rounded-lg bg-teal-50 p-4 border border-teal-100">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-bold text-teal-800 uppercase tracking-wider">Medicine Information</h3>
