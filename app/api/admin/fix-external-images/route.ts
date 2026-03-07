@@ -84,8 +84,10 @@ export async function POST(request: NextRequest) {
         slug: true,
         imageUrl: true,
       },
-      take: fixAll ? 100 : 1,
+      take: fixAll ? 20 : 1, // Reduced from 100 to 20 to avoid 60s timeout
     })
+
+    console.log(`[FixImages] Found ${products.length} products to fix. Batch size: ${fixAll ? 20 : 1}`)
 
     if (products.length === 0) {
       return NextResponse.json({
@@ -108,7 +110,9 @@ export async function POST(request: NextRequest) {
 
     for (const product of products) {
       try {
+        console.log(`[FixImages] Processing product: ${product.name} (${product.id})`)
         if (!product.imageUrl) {
+          console.warn(`[FixImages] No imageUrl for product ${product.id}`)
           results.push({
             id: product.id,
             name: product.name,
@@ -119,20 +123,24 @@ export async function POST(request: NextRequest) {
           continue
         }
 
-        // Download the image from chaldn.com
+        console.log(`[FixImages] Downloading from: ${product.imageUrl}`)
+        // Download the image with improved headers
         const response = await fetch(product.imageUrl, {
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
           },
         })
 
         if (!response.ok) {
+          const errorMsg = `Failed to download: ${response.status} ${response.statusText}`
+          console.error(`[FixImages] ${errorMsg} for ${product.imageUrl}`)
           results.push({
             id: product.id,
             name: product.name,
             status: 'failed',
             oldUrl: product.imageUrl,
-            error: `Failed to download: ${response.status} ${response.statusText}`,
+            error: errorMsg,
           })
           continue
         }
@@ -140,6 +148,7 @@ export async function POST(request: NextRequest) {
         const contentType = response.headers.get('content-type') || 'image/webp'
         const arrayBuffer = await response.arrayBuffer()
         const buffer = Buffer.from(arrayBuffer)
+        console.log(`[FixImages] Downloaded ${buffer.length} bytes. Content-Type: ${contentType}`)
 
         // Determine file extension from content type
         let ext = 'webp'
@@ -151,6 +160,7 @@ export async function POST(request: NextRequest) {
         const fileName = `${uuid}.${ext}`
         const filePath = `products/${product.id}/${fileName}`
 
+        console.log(`[FixImages] Uploading to Supabase: ${filePath}`)
         // Upload to Supabase
         const { data, error: uploadError } = await supabaseAdmin.storage
           .from(bucket)
@@ -161,12 +171,14 @@ export async function POST(request: NextRequest) {
           })
 
         if (uploadError) {
+          const errorMsg = `Upload failed: ${uploadError.message}`
+          console.error(`[FixImages] ${errorMsg}`)
           results.push({
             id: product.id,
             name: product.name,
             status: 'failed',
             oldUrl: product.imageUrl,
-            error: `Upload failed: ${uploadError.message}`,
+            error: errorMsg,
           })
           continue
         }
@@ -177,6 +189,7 @@ export async function POST(request: NextRequest) {
           .getPublicUrl(data.path)
 
         const newUrl = urlData.publicUrl
+        console.log(`[FixImages] Successfully uploaded. New URL: ${newUrl}`)
 
         // Update product record
         await prisma.product.update({
@@ -192,18 +205,21 @@ export async function POST(request: NextRequest) {
           newUrl,
         })
       } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error'
+        console.error(`[FixImages] Unexpected error for product ${product.id}:`, error)
         results.push({
           id: product.id,
           name: product.name,
           status: 'failed',
           oldUrl: product.imageUrl || '',
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: errorMsg,
         })
       }
     }
 
     const fixed = results.filter((r) => r.status === 'success').length
     const failed = results.filter((r) => r.status === 'failed').length
+    console.log(`[FixImages] Batch complete. Fixed: ${fixed}, Failed: ${failed}`)
 
     return NextResponse.json({
       message: `Fixed ${fixed} products, ${failed} failed`,
@@ -212,7 +228,7 @@ export async function POST(request: NextRequest) {
       results,
     })
   } catch (error) {
-    console.error('Error fixing external images:', error)
+    console.error('[FixImages] FATAL Error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to fix images' },
       { status: 500 }
