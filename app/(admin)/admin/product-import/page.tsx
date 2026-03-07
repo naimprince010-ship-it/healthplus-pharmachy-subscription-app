@@ -379,6 +379,32 @@ export default function ProductImportPage() {
         if (matched) matchedMfrId = matched.id
       }
 
+      // Auto-match category
+      let matchedCategoryId = ''
+      if (categories.length > 0) {
+        const searchTerms = [
+          data.product.dosageForm,
+          data.product.packSize,
+          data.product.name
+        ].filter(Boolean).map(t => (typeof t === 'string' ? t.toLowerCase() : ''))
+
+        const dosageFormLower = data.product.dosageForm?.toLowerCase()
+        if (dosageFormLower) {
+          const exactMatch = categories.find(c => c.name.toLowerCase() === dosageFormLower)
+          if (exactMatch) matchedCategoryId = exactMatch.id
+        }
+
+        if (!matchedCategoryId) {
+          for (const cat of categories) {
+            const catNameLower = cat.name.toLowerCase()
+            if (catNameLower.length > 3 && searchTerms.some(term => term.includes(catNameLower) || catNameLower.includes(term))) {
+              matchedCategoryId = cat.id
+              break
+            }
+          }
+        }
+      }
+
       setEditedProduct({
         name: data.product.name || '',
         manufacturerId: matchedMfrId,
@@ -387,7 +413,7 @@ export default function ProductImportPage() {
         sellingPrice: data.product.sellingPrice?.toString() || '',
         mrp: data.product.mrp?.toString() || '',
         stockQuantity: '100',
-        categoryId: '',
+        categoryId: matchedCategoryId,
         packSize: data.product.packSize || '',
         genericName: data.product.genericName || '',
         dosageForm: data.product.dosageForm || '',
@@ -502,6 +528,32 @@ export default function ProductImportPage() {
             ? `${finalName} ${finalPackSize}`
             : finalName
 
+          // Auto-match category
+          let matchedCategoryId = ''
+          if (categories.length > 0) {
+            const searchTerms = [
+              importedProduct.dosageForm,
+              finalPackSize,
+              finalName
+            ].filter(Boolean).map(t => (typeof t === 'string' ? t.toLowerCase() : ''))
+
+            const dosageFormLower = importedProduct.dosageForm?.toLowerCase()
+            if (dosageFormLower) {
+              const exactMatch = categories.find(c => c.name.toLowerCase() === dosageFormLower)
+              if (exactMatch) matchedCategoryId = exactMatch.id
+            }
+
+            if (!matchedCategoryId) {
+              for (const cat of categories) {
+                const catNameLower = cat.name.toLowerCase()
+                if (catNameLower.length > 3 && searchTerms.some(term => term.includes(catNameLower) || catNameLower.includes(term))) {
+                  matchedCategoryId = cat.id
+                  break
+                }
+              }
+            }
+          }
+
           newDrafts.push({
             id: `draft-${Date.now()}-${i}`,
             data: { ...importedProduct, imageUrl: finalImageUrl, sellingPrice: finalPrice },
@@ -512,7 +564,7 @@ export default function ProductImportPage() {
               sellingPrice: finalPrice?.toString() || '',
               mrp: finalMrp?.toString() || '',
               stockQuantity: '100',
-              categoryId: '',
+              categoryId: matchedCategoryId,
               packSize: finalPackSize,
               keyFeatures: '',
               specSummary: '',
