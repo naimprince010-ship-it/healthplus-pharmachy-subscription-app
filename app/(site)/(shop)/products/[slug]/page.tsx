@@ -280,7 +280,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
       },
       variants: {
         where: { isActive: true },
-        orderBy: { sortingOrder: 'asc' },
+        orderBy: { sortOrder: 'asc' },
         select: {
           id: true,
           variantName: true,
