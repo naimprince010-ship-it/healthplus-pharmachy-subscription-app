@@ -117,7 +117,7 @@ async function importFromArogga(url: string): Promise<ImportedProduct> {
   const firstVariant = (item.pv && Array.isArray(item.pv) && item.pv.length > 0) ? item.pv[0] : (item.pv || {});
 
   let strength = item.p_strength ? ` ${item.p_strength}` : '';
-  let variantLabel = firstVariant.pu_base_unit_label && (!item.p_strength || !item.p_strength.includes(firstVariant.pu_base_unit_label)) 
+  let variantLabel = firstVariant.pu_base_unit_label && (!item.p_strength || !item.p_strength.includes(firstVariant.pu_base_unit_label))
     ? ` (${firstVariant.pu_base_unit_label})` : '';
   const name = `${cleanProductName(item.p_name).trim()}${strength}${variantLabel}`.trim();
 
@@ -134,13 +134,13 @@ async function importFromArogga(url: string): Promise<ImportedProduct> {
 
   return {
     name,
-    brandName: item.brand_name || null,
+    brandName: item.brand_name || item.p_brand || item.p_manufacturer || null,
     description: item.p_description ? item.p_description.replace(/<[^>]+>/g, '').substring(0, 1000) : null,
     sellingPrice: sellingPrice ? parseFloat(sellingPrice.toString()) : null,
     mrp: mrp ? parseFloat(mrp.toString()) : null,
     imageUrl: imageUrl || null,
     packSize: firstVariant.pu_base_unit_label || null,
-    genericName: item.generic_name || null,
+    genericName: item.generic_name || item.p_generic_name || item.p_generic || null,
     dosageForm: item.p_form || null,
     strength: item.p_strength || null,
     sourceUrl: url,
@@ -660,10 +660,10 @@ async function extractProductsFromAroggaCategory(url: string): Promise<CategoryP
 
         const baseName = cleanProductName(item.p_name).trim()
         const strength = item.p_strength ? ` ${item.p_strength}` : ''
-        const variantLabel = firstVariant.pu_base_unit_label && (!item.p_strength || !item.p_strength.includes(firstVariant.pu_base_unit_label)) 
+        const variantLabel = firstVariant.pu_base_unit_label && (!item.p_strength || !item.p_strength.includes(firstVariant.pu_base_unit_label))
           ? ` (${firstVariant.pu_base_unit_label})` : '';
         const name = `${baseName}${strength}${variantLabel}`.trim()
-        
+
         const slugFallback = slugify(name)
         const productUrl = `https://www.arogga.com/product/${item.p_id}/${item.p_slug || slugFallback}`
 
