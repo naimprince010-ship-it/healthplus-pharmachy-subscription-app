@@ -5,7 +5,6 @@ import Image from 'next/image'
 import { Shield, Package, Heart, Baby, Activity, Users, ChevronRight } from 'lucide-react'
 import { PrescriptionUploadCard } from '@/components/PrescriptionUploadCard'
 import { ProductCard } from '@/components/ProductCard'
-import { MembershipBanner, type MembershipBannerSettings } from '@/components/MembershipBanner'
 import type { SubscriptionPlan } from '@prisma/client'
 
 interface HomeSection {
@@ -21,11 +20,10 @@ interface HomeSection {
 
 interface MobileHomeProps {
   subscriptionPlans: SubscriptionPlan[]
-  membershipBannerSettings: MembershipBannerSettings
   homeSections: HomeSection[]
 }
 
-export function MobileHome({ subscriptionPlans, membershipBannerSettings, homeSections }: MobileHomeProps) {
+export function MobileHome({ subscriptionPlans, homeSections }: MobileHomeProps) {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section - With Background Image */}
@@ -41,7 +39,7 @@ export function MobileHome({ subscriptionPlans, membershipBannerSettings, homeSe
           />
           <div className="absolute inset-0 bg-gradient-to-r from-teal-900/80 to-teal-700/60" />
         </div>
-        
+
         {/* Content */}
         <div className="relative px-4 py-10">
           <h1 className="text-2xl font-bold text-white leading-tight">
@@ -71,9 +69,6 @@ export function MobileHome({ subscriptionPlans, membershipBannerSettings, homeSe
       <section className="px-4 py-6">
         <PrescriptionUploadCard />
       </section>
-
-      {/* Membership Banner - Admin Configurable */}
-      <MembershipBanner settings={membershipBannerSettings} variant="mobile" />
 
       {/* Home Sections - Horizontal Scrollable */}
       {homeSections.map(({ section, products }) => (

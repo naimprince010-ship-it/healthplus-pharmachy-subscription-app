@@ -2,9 +2,7 @@
 
 import Link from 'next/link'
 import { Package, Heart, Baby, Activity, Users, CheckCircle, Truck, Shield } from 'lucide-react'
-import PrescriptionUploadForm from '@/components/PrescriptionUploadForm'
 import { SectionSlider } from '@/components/SectionSlider'
-import { MembershipBanner, type MembershipBannerSettings } from '@/components/MembershipBanner'
 import type { SubscriptionPlan } from '@prisma/client'
 
 interface HomeSection {
@@ -20,11 +18,10 @@ interface HomeSection {
 
 interface DesktopHomeProps {
   subscriptionPlans: SubscriptionPlan[]
-  membershipBannerSettings: MembershipBannerSettings
   homeSections: HomeSection[]
 }
 
-export function DesktopHome({ subscriptionPlans, membershipBannerSettings, homeSections }: DesktopHomeProps) {
+export function DesktopHome({ subscriptionPlans, homeSections }: DesktopHomeProps) {
   return (
     <>
       {/* Hero Section - compact on desktop with CTA buttons, inline form on mobile */}
@@ -95,9 +92,6 @@ export function DesktopHome({ subscriptionPlans, membershipBannerSettings, homeS
           </div>
         </div>
       </section>
-
-      {/* Membership Banner - Admin Configurable (above product sections) */}
-      <MembershipBanner settings={membershipBannerSettings} variant="desktop" />
 
       {/* Home Sections - compact spacing on desktop */}
       <div className="space-y-2 py-2 lg:space-y-1 lg:py-1">
