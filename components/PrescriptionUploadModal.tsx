@@ -71,10 +71,11 @@ export function PrescriptionUploadModal({ isOpen, onClose }: PrescriptionUploadM
           </button>
         </div>
 
-        {/* Scrollable Content Area */}
-        <div className="overflow-y-auto p-4 sm:p-6">
+        {/* Scrollable Content Area - strictly limited height */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6" style={{ maxHeight: 'calc(80vh - 80px)' }}>
           {/* Prescription Upload Form - hide header since modal has its own */}
           <PrescriptionUploadForm hideHeader compact />
+          <div className="h-4" /> {/* Extra bottom spacing for scroll */}
         </div>
       </div>
     </div>
