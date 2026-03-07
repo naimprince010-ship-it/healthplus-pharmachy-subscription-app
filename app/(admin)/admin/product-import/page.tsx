@@ -119,6 +119,7 @@ export default function ProductImportPage() {
     seoDescription: '',
     seoKeywords: '',
     slug: '',
+    isMedicineOverride: null as boolean | null,
   })
 
   useEffect(() => {
@@ -424,6 +425,7 @@ export default function ProductImportPage() {
         seoDescription: '',
         seoKeywords: '',
         slug: '',
+        isMedicineOverride: null,
       })
 
       toast.success('Product details fetched successfully!')
@@ -926,8 +928,13 @@ export default function ProductImportPage() {
     setLoading(true)
 
     try {
+      let isMedicine = categories.find(c => c.id === editedProduct.categoryId)?.isMedicineCategory
+      if (editedProduct.isMedicineOverride !== undefined && editedProduct.isMedicineOverride !== null) {
+        isMedicine = editedProduct.isMedicineOverride
+      }
+
       const productData = {
-        type: categories.find(c => c.id === editedProduct.categoryId)?.isMedicineCategory ? 'MEDICINE' : 'GENERAL',
+        type: isMedicine ? 'MEDICINE' : 'GENERAL',
         name: editedProduct.name.trim(),
         slug: editedProduct.slug.trim() || undefined,
         manufacturerId: editedProduct.manufacturerId || undefined,
@@ -1762,6 +1769,44 @@ export default function ProductImportPage() {
                 </div>
               )}
 
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Product Type Override
+                </label>
+                <div className="flex gap-4 p-3 border border-gray-200 rounded-lg bg-gray-50">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="productTypeOverride"
+                      checked={editedProduct.isMedicineOverride === null || editedProduct.isMedicineOverride === undefined}
+                      onChange={() => setEditedProduct({ ...editedProduct, isMedicineOverride: null })}
+                      className="text-teal-600 focus:ring-teal-500 rounded-full"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Auto (Based on Category)</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="productTypeOverride"
+                      checked={editedProduct.isMedicineOverride === true}
+                      onChange={() => setEditedProduct({ ...editedProduct, isMedicineOverride: true })}
+                      className="text-blue-600 focus:ring-blue-500 rounded-full"
+                    />
+                    <span className="text-sm font-medium text-blue-700 flex items-center gap-1">💊 Force Medicine</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="productTypeOverride"
+                      checked={editedProduct.isMedicineOverride === false}
+                      onChange={() => setEditedProduct({ ...editedProduct, isMedicineOverride: false })}
+                      className="text-green-600 focus:ring-green-500 rounded-full"
+                    />
+                    <span className="text-sm font-medium text-green-700 flex items-center gap-1">📦 Force General Product</span>
+                  </label>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
@@ -1837,23 +1882,43 @@ export default function ProductImportPage() {
                   </button>
                 </div>
                 <div className="mt-2 text-sm">
-                  {editedProduct.categoryId ? (
-                    <>
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${categories.find(c => c.id === editedProduct.categoryId)?.isMedicineCategory
-                        ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                        : 'bg-green-100 text-green-800 border border-green-200'
-                        }`}>
-                        {categories.find(c => c.id === editedProduct.categoryId)?.isMedicineCategory ? '💊 Medicine Import' : '📦 General Product Import'}
+                  {(() => {
+                    if (editedProduct.isMedicineOverride === true) {
+                      return (
+                        <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                          💊 Forced Medicine Import
+                        </span>
+                      )
+                    }
+                    if (editedProduct.isMedicineOverride === false) {
+                      return (
+                        <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold bg-green-100 text-green-800 border border-green-200">
+                          📦 Forced General Product Import
+                        </span>
+                      )
+                    }
+                    if (editedProduct.categoryId) {
+                      const isMedCat = categories.find(c => c.id === editedProduct.categoryId)?.isMedicineCategory
+                      return (
+                        <>
+                          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${isMedCat
+                            ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                            : 'bg-green-100 text-green-800 border border-green-200'
+                            }`}>
+                            {isMedCat ? '💊 Auto: Medicine Import' : '📦 Auto: General Product Import'}
+                          </span>
+                          <p className="mt-1 text-[10px] text-gray-500">
+                            Product type is matching the selected category.
+                          </p>
+                        </>
+                      )
+                    }
+                    return (
+                      <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                        ℹ️ Select a category or force the product type above
                       </span>
-                      <p className="mt-1 text-[10px] text-gray-500">
-                        Product type is automatically set based on the selected category. Generic names are automatically saved for medicines.
-                      </p>
-                    </>
-                  ) : (
-                    <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
-                      ℹ️ Select a category to determine product type
-                    </span>
-                  )}
+                    )
+                  })()}
                 </div>
               </div>
 
