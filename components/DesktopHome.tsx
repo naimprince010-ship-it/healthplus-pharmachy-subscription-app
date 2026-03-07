@@ -1,10 +1,8 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
-import { Package, Heart, Baby, Activity, Users, Upload, CheckCircle, Truck, Shield } from 'lucide-react'
+import { Package, Heart, Baby, Activity, Users, CheckCircle, Truck, Shield } from 'lucide-react'
 import PrescriptionUploadForm from '@/components/PrescriptionUploadForm'
-import { PrescriptionUploadModal } from '@/components/PrescriptionUploadModal'
 import { SectionSlider } from '@/components/SectionSlider'
 import { MembershipBanner, type MembershipBannerSettings } from '@/components/MembershipBanner'
 import type { SubscriptionPlan } from '@prisma/client'
@@ -27,49 +25,43 @@ interface DesktopHomeProps {
 }
 
 export function DesktopHome({ subscriptionPlans, membershipBannerSettings, homeSections }: DesktopHomeProps) {
-  const [isModalOpen, setIsModalOpen] = useState(false)
-
   return (
     <>
-      {/* Prescription Upload Modal - only used on desktop */}
-      <PrescriptionUploadModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
-
-      {/* Hero Section - compact on desktop with CTA button, full form on mobile */}
+      {/* Hero Section - compact on desktop with CTA buttons, inline form on mobile */}
       <section className="w-full bg-gradient-to-br from-teal-50 to-white py-5 lg:py-4">
         <div className="w-full px-2 sm:px-4">
-          {/* Desktop layout: headline + bullet points on left, CTA button on right */}
-          <div className="hidden lg:grid lg:grid-cols-[1.4fr_1fr] lg:items-center lg:gap-6">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight text-gray-900 lg:text-4xl">
-                সাশ্রয়ী মূল্যে ওষুধের জন্য{' '}
-                <span className="text-teal-600">আপনার বিশ্বস্ত সঙ্গী</span>
-              </h1>
-              <p className="mt-3 text-sm text-gray-600 lg:text-base">
-                মাসিক ওষুধ প্ল্যানে সাবস্ক্রাইব করুন এবং ১০% পর্যন্ত ডিস্কাউন্ট পান।
-              </p>
-              <ul className="mt-3 space-y-1.5 text-sm text-gray-700">
-                <li className="flex items-center">
-                  <CheckCircle className="mr-2 h-4 w-4 text-teal-600" />
-                  সব ওষুধে ১০% পর্যন্ত ডিস্কাউন্ট
-                </li>
-                <li className="flex items-center">
-                  <Truck className="mr-2 h-4 w-4 text-teal-600" />
-                  ২৪–৪৮ ঘন্টার মধ্যে দ্রুত ডেলিভারি
-                </li>
-              </ul>
-            </div>
-
-            {/* Desktop CTA button to open modal */}
-            <div className="flex flex-col items-center justify-center">
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(true)}
-                className="flex w-full max-w-xs items-center justify-center gap-2 rounded-xl bg-teal-600 px-6 py-4 text-lg font-semibold text-white shadow-lg transition-colors hover:bg-teal-700"
+          {/* Desktop layout: Clean Typography with CTAs */}
+          <div className="hidden lg:block lg:max-w-4xl lg:py-4">
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900 lg:text-5xl lg:leading-[1.2]">
+              সাশ্রয়ী মূল্যে ওষুধের জন্য <br />
+              <span className="text-teal-600">আপনার বিশ্বস্ত সঙ্গী</span>
+            </h1>
+            <p className="mt-5 text-base text-gray-600 lg:text-lg lg:max-w-2xl">
+              মাসিক ওষুধ প্ল্যানে সাবস্ক্রাইব করুন এবং আমাদের প্রিমিয়াম মেম্বারশিপ নিয়ে সাশ্রয় করুন। সব ওষুধে ১০% অফ!
+            </p>
+            <ul className="mt-6 flex flex-wrap gap-x-8 gap-y-3 text-base text-gray-700 font-medium">
+              <li className="flex items-center">
+                <CheckCircle className="mr-2.5 h-6 w-6 text-teal-600" />
+                সব ওষুধে ১০% পর্যন্ত ডিস্কাউন্ট
+              </li>
+              <li className="flex items-center">
+                <Truck className="mr-2.5 h-6 w-6 text-teal-600" />
+                ২৪–৪৮ ঘন্টার মধ্যে দ্রুত ডেলিভারি
+              </li>
+            </ul>
+            <div className="mt-8 flex items-center gap-5">
+              <Link
+                href="/membership"
+                className="rounded-xl bg-teal-600 px-8 py-3.5 text-base font-bold text-white shadow-lg shadow-teal-500/30 transition-all hover:-translate-y-0.5 hover:bg-teal-700 hover:shadow-teal-500/40"
               >
-                <Upload className="h-5 w-5" />
-                প্রেসক্রিপশন আপলোড করুন
-              </button>
-              <p className="mt-2 text-xs text-gray-500">JPG, JPEG, PNG, PDF • সর্বোচ্চ ৫MB</p>
+                মেম্বারশিপ নিন
+              </Link>
+              <Link
+                href="/subscriptions"
+                className="rounded-xl border-2 border-teal-600 bg-white px-8 py-3.5 text-base font-bold text-teal-600 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-teal-50 hover:shadow-md"
+              >
+                মাসিক প্ল্যান দেখুন
+              </Link>
             </div>
           </div>
 
