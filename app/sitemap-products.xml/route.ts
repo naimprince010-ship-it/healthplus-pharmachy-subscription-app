@@ -12,6 +12,7 @@ export async function GET() {
     select: {
       slug: true,
       updatedAt: true,
+      type: true,
     },
     orderBy: {
       updatedAt: 'desc',
@@ -20,12 +21,15 @@ export async function GET() {
 
   const urlEntries = products
     .map(
-      (product) => `  <url>
-    <loc>${baseUrl}/medicines/${product.slug}</loc>
+      (product) => {
+        const path = product.type === 'MEDICINE' ? 'medicines' : 'products'
+        return `  <url>
+    <loc>${baseUrl}/${path}/${product.slug}</loc>
     <lastmod>${product.updatedAt.toISOString()}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>`
+      }
     )
     .join('\n')
 

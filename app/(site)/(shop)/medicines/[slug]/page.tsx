@@ -39,6 +39,8 @@ export async function generateMetadata({
       title: medicine.seoTitle || medicine.name,
       description: medicine.seoDescription || medicine.description || undefined,
       images: medicine.imageUrl ? [medicine.imageUrl] : undefined,
+      type: 'website',
+      siteName: 'Halalzi',
     },
   }
 }

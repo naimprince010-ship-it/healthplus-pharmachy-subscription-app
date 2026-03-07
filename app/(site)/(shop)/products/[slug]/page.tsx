@@ -176,6 +176,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
       select: {
         name: true,
         description: true,
+        imageUrl: true,
         seoTitle: true,
         seoDescription: true,
         seoKeywords: true,
@@ -208,6 +209,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
         url: `https://halalzi.com/products/${slug}`,
         siteName: 'Halalzi',
         type: 'website',
+        images: product.imageUrl ? [product.imageUrl] : [],
       },
     }
   } catch (error) {
@@ -278,7 +280,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
       },
       variants: {
         where: { isActive: true },
-        orderBy: { sortOrder: 'asc' },
+        orderBy: { sortingOrder: 'asc' },
         select: {
           id: true,
           variantName: true,
