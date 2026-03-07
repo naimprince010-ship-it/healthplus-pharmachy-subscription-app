@@ -373,10 +373,11 @@ export default function ProductImportPage() {
 
       // Auto-match manufacturer
       let matchedMfrId = ''
-      if (data.product.brandName) {
+      const singleBrandName = data.product.brandName
+      if (singleBrandName) {
         const matched = manufacturers.find(m =>
-          m.name.toLowerCase() === data.product.brandName.toLowerCase() ||
-          m.slug === slugify(data.product.brandName)
+          m.name.toLowerCase() === singleBrandName.toLowerCase() ||
+          m.slug === slugify(singleBrandName)
         )
         if (matched) matchedMfrId = matched.id
       }
@@ -533,10 +534,11 @@ export default function ProductImportPage() {
 
           // Auto-match manufacturer
           let matchedMfrId = ''
-          if (importedProduct.brandName) {
+          const bulkBrandName = importedProduct.brandName
+          if (bulkBrandName) {
             const matched = manufacturers.find(m =>
-              m.name.toLowerCase() === importedProduct.brandName.toLowerCase() ||
-              m.slug === slugify(importedProduct.brandName)
+              m.name.toLowerCase() === bulkBrandName.toLowerCase() ||
+              m.slug === slugify(bulkBrandName)
             )
             if (matched) matchedMfrId = matched.id
           }
