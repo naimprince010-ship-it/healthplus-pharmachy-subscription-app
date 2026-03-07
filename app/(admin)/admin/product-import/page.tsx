@@ -531,6 +531,16 @@ export default function ProductImportPage() {
             ? `${finalName} ${finalPackSize}`
             : finalName
 
+          // Auto-match manufacturer
+          let matchedMfrId = ''
+          if (importedProduct.brandName) {
+            const matched = manufacturers.find(m =>
+              m.name.toLowerCase() === importedProduct.brandName.toLowerCase() ||
+              m.slug === slugify(importedProduct.brandName)
+            )
+            if (matched) matchedMfrId = matched.id
+          }
+
           // Auto-match category
           let matchedCategoryId = ''
           if (categories.length > 0) {
@@ -562,7 +572,7 @@ export default function ProductImportPage() {
             data: { ...importedProduct, imageUrl: finalImageUrl, sellingPrice: finalPrice },
             editedData: {
               name: finalName,
-              manufacturerId: '',
+              manufacturerId: matchedMfrId,
               description: importedProduct.description || '',
               sellingPrice: finalPrice?.toString() || '',
               mrp: finalMrp?.toString() || '',
