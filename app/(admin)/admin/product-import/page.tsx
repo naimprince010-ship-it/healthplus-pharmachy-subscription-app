@@ -771,6 +771,14 @@ export default function ProductImportPage() {
     toast.success('Category assigned to all pending products')
   }
 
+  const handleBulkOverrideType = (isMedicine: boolean | null) => {
+    setDraftProducts(prev => prev.map(d =>
+      d.status === 'pending' ? { ...d, editedData: { ...d.editedData, isMedicineOverride: isMedicine } } : d
+    ))
+    const typeLabel = isMedicine === true ? 'Medicine' : isMedicine === false ? 'General' : 'Auto'
+    toast.success(`Typed override set to "${typeLabel}" for all pending products`)
+  }
+
   const handleDraftMedicineExtract = async (draftId: string) => {
     const draft = draftProducts.find(d => d.id === draftId)
     if (!draft || !draft.editedData.name) return
@@ -1300,6 +1308,32 @@ export default function ProductImportPage() {
                     </button>
                   </div>
 
+                  <div className="flex flex-col gap-2 min-w-[200px]">
+                    <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-blue-700">
+                      Type Override (Bulk)
+                    </label>
+                    <div className="flex flex-col gap-1.5">
+                      <button
+                        onClick={() => handleBulkOverrideType(true)}
+                        className="flex items-center gap-2 rounded-lg bg-blue-100 border border-blue-200 px-3 py-1.5 text-[10px] font-bold text-blue-800 hover:bg-blue-200"
+                      >
+                        💊 Set ALL to Medicine
+                      </button>
+                      <button
+                        onClick={() => handleBulkOverrideType(false)}
+                        className="flex items-center gap-2 rounded-lg bg-green-100 border border-green-200 px-3 py-1.5 text-[10px] font-bold text-green-800 hover:bg-green-200"
+                      >
+                        📦 Set ALL to General
+                      </button>
+                      <button
+                        onClick={() => handleBulkOverrideType(null)}
+                        className="flex items-center gap-2 rounded-lg bg-gray-100 border border-gray-200 px-3 py-1.5 text-[10px] font-bold text-gray-800 hover:bg-gray-200"
+                      >
+                        🔄 Reset ALL to Auto
+                      </button>
+                    </div>
+                  </div>
+
                   <div className="flex flex-col gap-2 min-w-[240px]">
                     <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-purple-700">
                       Bulk AI Content
@@ -1324,7 +1358,12 @@ export default function ProductImportPage() {
                       </button>
                       <button
                         onClick={handleBulkMedicineExtract}
-                        disabled={bulkExtractingMedicine || draftProducts.filter(d => d.status === 'pending' && categories.find(c => c.id === d.editedData.categoryId)?.isMedicineCategory).length === 0}
+                        disabled={bulkExtractingMedicine || draftProducts.filter(d =>
+                          d.status === 'pending' && (
+                            categories.find(c => c.id === d.editedData.categoryId)?.isMedicineCategory ||
+                            d.editedData.isMedicineOverride === true
+                          )
+                        ).length === 0}
                         className="flex items-center justify-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-700 disabled:bg-gray-400"
                       >
                         {bulkExtractingMedicine ? (
