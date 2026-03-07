@@ -498,19 +498,19 @@ export default function CartPage() {
 
         {/* Suggestions Section */}
         {suggestions.length > 0 && (
-          <div className="mt-6 lg:hidden">
+          <div className="mt-6 lg:mt-10">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="flex items-center gap-2 text-base font-bold text-gray-900">
+              <h2 className="flex items-center gap-2 text-base lg:text-xl font-bold text-gray-900">
                 <span>💡</span> {settings.suggestionTitleBn}
               </h2>
               <ChevronRight className="h-5 w-5 text-gray-400" />
             </div>
-            <div className="overflow-x-auto [-webkit-overflow-scrolling:touch]">
-              <div className="flex flex-nowrap gap-3 pb-2">
+            <div className="overflow-x-auto [-webkit-overflow-scrolling:touch] pb-2">
+              <div className="flex flex-nowrap gap-3 lg:gap-4">
                 {suggestions.map((product) => (
-                  <div key={product.id} className="min-w-[140px] max-w-[160px] flex-shrink-0 rounded-xl bg-white p-3 shadow-sm flex flex-col">
+                  <div key={product.id} className="min-w-[140px] max-w-[160px] lg:min-w-[180px] lg:max-w-[200px] flex-shrink-0 rounded-xl bg-white p-3 shadow-sm flex flex-col">
                     <Link href={`/products/${product.slug}`} className="block">
-                      <div className="relative h-20 w-full mb-2 rounded-lg bg-gray-100 overflow-hidden">
+                      <div className="relative h-20 lg:h-28 w-full mb-2 rounded-lg bg-gray-100 overflow-hidden">
                         {product.imageUrl ? (
                           <Image
                             src={product.imageUrl}
@@ -524,12 +524,12 @@ export default function CartPage() {
                           </div>
                         )}
                       </div>
-                      <p className="text-sm font-medium text-gray-900 line-clamp-2 mb-1">{product.name}</p>
+                      <p className="text-sm lg:text-base font-medium text-gray-900 line-clamp-2 mb-1">{product.name}</p>
                     </Link>
-                    <p className="text-sm font-bold text-gray-900 mb-2">৳{product.price}</p>
+                    <p className="text-sm lg:text-base font-bold text-gray-900 mb-2">৳{product.price}</p>
                     <button
                       onClick={() => handleAddSuggestion(product)}
-                      className="w-full rounded-full bg-[#00A651] py-1.5 text-xs font-semibold text-white mt-auto"
+                      className="w-full rounded-full bg-[#00A651] py-1.5 lg:py-2 text-xs lg:text-sm font-semibold text-white mt-auto hover:bg-[#008f45] transition-colors"
                     >
                       + Add
                     </button>

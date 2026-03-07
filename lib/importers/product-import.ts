@@ -85,134 +85,67 @@ function cleanNextImageUrl(url: string | null): string | null {
 }
 
 async function importFromArogga(url: string): Promise<ImportedProduct> {
-  const response = await fetch(url, {
+  const match = url.match(/\/product\/(\d+)\/(.+)/);
+  if (!match) {
+    throw new Error('Could not identify Arogga product ID/slug from URL');
+  }
+  const id = match[1];
+  const slug = match[2].split('?')[0];
+
+  const apiUrl = `https://api.arogga.com/general/v3/search/?_search=${slug}&_type=web`;
+  const response = await fetch(apiUrl, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-      'Accept-Language': 'en-US,en;q=0.5',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)',
+      'Accept': 'application/json, text/plain, */*',
     },
-  })
+  });
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch page: ${response.status}`)
+    throw new Error(`Arogga API error: ${response.status}`);
   }
 
-  const html = await response.text()
-  const $ = cheerio.load(html)
-
-  const name = cleanProductName($('h1').first().text().trim() || '')
-
-  let brandName: string | null = null
-  // Arogga usually has brand link like /brand/100063/eskayef-pharmaceuticals-ltd
-  $('a[href*="/brand/"]').each((_, el) => {
-    const text = $(el).text().trim()
-    if (text && !brandName) {
-      brandName = text
-    }
-  })
-
-  let sellingPrice: number | null = null
-  let mrp: number | null = null
-
-  // Try to find price in structured way first
-  const priceContainer = $('.price-container, .product-price-section').first()
-  if (priceContainer.length) {
-    const prices = priceContainer.text().match(/৳\s*([\d,.]+)/g)
-    if (prices && prices.length >= 1) {
-      sellingPrice = parsePrice(prices[0])
-      if (prices.length >= 2) {
-        mrp = parsePrice(prices[1])
-      }
-    }
+  const result = await response.json();
+  if (!result || !result.data || !Array.isArray(result.data)) {
+    throw new Error('Arogga API returned empty or invalid response');
   }
 
-  // Fallback price extraction
-  if (!sellingPrice) {
-    const priceText = $('body').text()
-    const priceMatch = priceText.match(/৳\s*([\d,.]+)/g)
-    if (priceMatch && priceMatch.length >= 1) {
-      sellingPrice = parsePrice(priceMatch[0])
-      if (priceMatch.length >= 2) {
-        mrp = parsePrice(priceMatch[1])
-      }
-    }
+  const item = result.data.find((p: any) => p.p_id == id);
+  if (!item) {
+    throw new Error('Product not found in Arogga search API');
   }
 
-  let imageUrl: string | null = null
-  $('img[src*="cdn2.arogga.com"]').each((_, el) => {
-    const src = $(el).attr('src')
-    if (src && !imageUrl && !src.includes('logo') && !src.includes('icon')) {
-      imageUrl = src
-    }
-  })
+  const firstVariant = (item.pv && Array.isArray(item.pv) && item.pv.length > 0) ? item.pv[0] : (item.pv || {});
 
-  let genericName: string | null = null
-  // Arogga has generic link like /generic/123/vitamin-b-complex-zinc
-  $('a[href*="/generic/"]').each((_, el) => {
-    const text = $(el).text().trim()
-    if (text && !genericName) {
-      genericName = text
-    }
-  })
+  let strength = item.p_strength ? ` ${item.p_strength}` : '';
+  let variantLabel = firstVariant.pu_base_unit_label && (!item.p_strength || !item.p_strength.includes(firstVariant.pu_base_unit_label)) 
+    ? ` (${firstVariant.pu_base_unit_label})` : '';
+  const name = `${cleanProductName(item.p_name).trim()}${strength}${variantLabel}`.trim();
 
-  // Fallback for generic
-  if (!genericName) {
-    const genericMatch = $('body').text().match(/Generic:\s*([^\n]+)/i)
-    if (genericMatch) {
-      genericName = genericMatch[1].trim()
-    }
+  const sellingPrice = item.pv_b2c_price || firstVariant.pv_b2c_price || item.p_price || firstVariant.p_price || null;
+  const mrp = item.pv_b2c_mrp || firstVariant.pv_b2c_mrp || item.p_mrp || firstVariant.p_mrp || sellingPrice;
+
+  let imageUrl = item.p_f_image || firstVariant.p_f_image;
+  if (!imageUrl && item.attachedFiles_p_images?.length > 0) {
+    imageUrl = item.attachedFiles_p_images[0].src || item.attachedFiles_p_images[0];
   }
-
-  let dosageForm: string | null = null
-  let strength: string | null = null
-
-  // Try to find form and strength from the sub-header (e.g. "Tablet", "Capsule")
-  const subHeaderText = $('h1').first().next().text().trim()
-  if (subHeaderText && subHeaderText.length < 50) {
-    dosageForm = subHeaderText
-  }
-
-  const formMatch = $('body').text().match(/(\d+mg|\d+ml|\d+g|\d+mcg|\d+iu)\s*-\s*(Tablet|Syrup|Capsule|Injection|Cream|Ointment|Drops|Suppository|Suspension|Gel|Spray)/i)
-  if (formMatch) {
-    strength = formMatch[1]
-    if (!dosageForm) dosageForm = formMatch[2]
-  }
-
-  let packSize: string | null = null
-  // Look for patterns like "30 Tablets (1 Box)" or "10's Strip"
-  const packMatch = $('body').text().match(/(\d+\s*(?:Tablets?|Capsules?|ml|g|pcs?|Strip|Bottle|Pads?|Sachets?)(?:\s*\([^)]+\))?)/i)
-  if (packMatch) {
-    packSize = packMatch[1].trim()
-  }
-
-  let description: string | null = null
-  const introMatch = $('body').text().match(/Introduction\s+([\s\S]*?)(?:Uses of|Side effects|Indication|Therapeutic Class|$)/i)
-  if (introMatch) {
-    description = introMatch[1].trim().substring(0, 1000)
-  }
-
-  // If still no description, look for Indication
-  if (!description || description.length < 10) {
-    const indicationMatch = $('body').text().match(/Indication\s+([\s\S]*?)(?:Side effects|Pharmacology|$)/i)
-    if (indicationMatch) {
-      description = indicationMatch[1].trim().substring(0, 1000)
-    }
+  if (!imageUrl && firstVariant.attachedFiles_pv_images?.length > 0) {
+    imageUrl = firstVariant.attachedFiles_pv_images[0].src || firstVariant.attachedFiles_pv_images[0];
   }
 
   return {
     name,
-    brandName,
-    description,
-    sellingPrice,
-    mrp,
-    imageUrl,
-    packSize,
-    genericName,
-    dosageForm,
-    strength: strength || null,
+    brandName: item.brand_name || null,
+    description: item.p_description ? item.p_description.replace(/<[^>]+>/g, '').substring(0, 1000) : null,
+    sellingPrice: sellingPrice ? parseFloat(sellingPrice.toString()) : null,
+    mrp: mrp ? parseFloat(mrp.toString()) : null,
+    imageUrl: imageUrl || null,
+    packSize: firstVariant.pu_base_unit_label || null,
+    genericName: item.generic_name || null,
+    dosageForm: item.p_form || null,
+    strength: item.p_strength || null,
     sourceUrl: url,
     source: 'arogga',
-  }
+  };
 }
 
 async function importFromChaldal(url: string): Promise<ImportedProduct> {
@@ -722,13 +655,17 @@ async function extractProductsFromAroggaCategory(url: string): Promise<CategoryP
       const items = result.data
 
       items.forEach((item: any) => {
-        // Map API fields: item.p_name, item.p_strength, and price/image from multiple possible locations
-        const name = cleanProductName(`${item.p_name} ${item.p_strength || ''}`.trim())
-        const slugFallback = slugify(name)
-        const productUrl = `https://www.arogga.com/product/${item.p_id}/${item.p_slug || slugFallback}`
-
         // Prices and images are often inside the first variant (pv[0])
         const firstVariant = (item.pv && Array.isArray(item.pv) && item.pv.length > 0) ? item.pv[0] : (item.pv || {});
+
+        const baseName = cleanProductName(item.p_name).trim()
+        const strength = item.p_strength ? ` ${item.p_strength}` : ''
+        const variantLabel = firstVariant.pu_base_unit_label && (!item.p_strength || !item.p_strength.includes(firstVariant.pu_base_unit_label)) 
+          ? ` (${firstVariant.pu_base_unit_label})` : '';
+        const name = `${baseName}${strength}${variantLabel}`.trim()
+        
+        const slugFallback = slugify(name)
+        const productUrl = `https://www.arogga.com/product/${item.p_id}/${item.p_slug || slugFallback}`
 
         // Price can be in pv_b2c_price or inside firstVariant
         const sellingPrice = item.pv_b2c_price || firstVariant.pv_b2c_price || item.p_price || firstVariant.p_price
