@@ -1456,8 +1456,8 @@ export default function ProductImportPage() {
                             {draft.editedData.categoryId && (
                               <div className="mt-2">
                                 <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${categories.find(c => c.id === draft.editedData.categoryId)?.isMedicineCategory
-                                    ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                                    : 'bg-green-100 text-green-800 border border-green-200'
+                                  ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                                  : 'bg-green-100 text-green-800 border border-green-200'
                                   }`}>
                                   {categories.find(c => c.id === draft.editedData.categoryId)?.isMedicineCategory ? '💊 Medicine' : '📦 General Product'}
                                 </span>
@@ -1836,19 +1836,25 @@ export default function ProductImportPage() {
                     <Plus className="h-4 w-4" />
                   </button>
                 </div>
-                {editedProduct.categoryId && (
-                  <div className="mt-2">
-                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${categories.find(c => c.id === editedProduct.categoryId)?.isMedicineCategory
-                      ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                      : 'bg-green-100 text-green-800 border border-green-200'
-                      }`}>
-                      {categories.find(c => c.id === editedProduct.categoryId)?.isMedicineCategory ? '💊 Medicine Import' : '📦 General Product Import'}
+                <div className="mt-2 text-sm">
+                  {editedProduct.categoryId ? (
+                    <>
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${categories.find(c => c.id === editedProduct.categoryId)?.isMedicineCategory
+                        ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                        : 'bg-green-100 text-green-800 border border-green-200'
+                        }`}>
+                        {categories.find(c => c.id === editedProduct.categoryId)?.isMedicineCategory ? '💊 Medicine Import' : '📦 General Product Import'}
+                      </span>
+                      <p className="mt-1 text-[10px] text-gray-500">
+                        Product type is automatically set based on the selected category. Generic names are automatically saved for medicines.
+                      </p>
+                    </>
+                  ) : (
+                    <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                      ℹ️ Select a category to determine product type
                     </span>
-                    <p className="mt-1 text-[10px] text-gray-500">
-                      Product type is automatically set based on the selected category. Generic names are automatically saved for medicines.
-                    </p>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
 
               <div>
