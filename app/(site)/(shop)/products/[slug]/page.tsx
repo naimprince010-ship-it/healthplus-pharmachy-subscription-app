@@ -492,7 +492,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 stockQuantity={stockQuantity}
                 imageUrl={product.imageUrl}
                 category={product.category?.name ?? 'General'}
-                unit={product.unit}
+                unit={isMedicine && product.unit === 'pcs' ? 'strip' : product.unit}
                 discountPercentage={discountPercentage}
                 flashSalePrice={product.flashSalePrice}
                 flashSaleStart={product.flashSaleStart}
