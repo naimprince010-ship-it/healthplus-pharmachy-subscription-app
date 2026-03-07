@@ -4,6 +4,18 @@ import { MobileHome } from '@/components/MobileHome'
 import { getEffectivePrices } from '@/lib/pricing'
 // Settings removed
 
+async function getSubscriptionPlans() {
+  try {
+    const { prisma } = await import('@/lib/prisma')
+    return await prisma.subscriptionPlan.findMany({
+      where: { isActive: true },
+      take: 4,
+    })
+  } catch {
+    return []
+  }
+}
+
 async function getHomeSections() {
   try {
     const { prisma } = await import('@/lib/prisma')
