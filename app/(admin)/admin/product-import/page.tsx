@@ -575,6 +575,7 @@ export default function ProductImportPage() {
               seoDescription: '',
               seoKeywords: '',
               slug: slugify(baseSlug),
+              isMedicineOverride: null,
             },
             status: 'pending',
           })
@@ -595,7 +596,7 @@ export default function ProductImportPage() {
     toast.success(`Fetched ${success} products to draft list. ${failed} failed.`)
   }
 
-  const updateDraftProduct = (draftId: string, field: string, value: string) => {
+  const updateDraftProduct = (draftId: string, field: string, value: any) => {
     setDraftProducts(prev => prev.map(draft =>
       draft.id === draftId
         ? { ...draft, editedData: { ...draft.editedData, [field]: value } }
@@ -813,8 +814,10 @@ export default function ProductImportPage() {
 
   const handleBulkMedicineExtract = async () => {
     const pendingDrafts = draftProducts.filter(d =>
-      d.status === 'pending' &&
-      categories.find(c => c.id === d.editedData.categoryId)?.isMedicineCategory
+      d.status === 'pending' && (
+        categories.find(c => c.id === d.editedData.categoryId)?.isMedicineCategory ||
+        d.editedData.isMedicineOverride === true
+      )
     )
 
     if (pendingDrafts.length === 0) {
