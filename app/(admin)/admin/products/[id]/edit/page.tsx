@@ -23,6 +23,7 @@ interface Product {
   name: string
   slug: string
   brandName: string | null
+  genericName?: string | null
   description: string | null
   categoryId: string
   manufacturerId: string | null
@@ -50,6 +51,7 @@ interface Product {
   flashSaleStart: Date | null
   flashSaleEnd: Date | null
   variants?: ProductVariant[]
+  medicine?: { genericName: string | null }
 }
 
 interface ProductVariant {
@@ -81,14 +83,15 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   const [variants, setVariants] = useState<ProductVariant[]>([])
   const [variantSaving, setVariantSaving] = useState(false)
 
-    const [formData, setFormData] = useState({
-      name: '',
-      slug: '',
-      brandName: '',
-      description: '',
-      categoryId: '',
-      manufacturerId: '',
-      mrp: '',
+  const [formData, setFormData] = useState({
+    name: '',
+    slug: '',
+    brandName: '',
+    genericName: '',
+    description: '',
+    categoryId: '',
+    manufacturerId: '',
+    mrp: '',
     sellingPrice: '',
     purchasePrice: '',
     discountPercentage: '',
@@ -113,14 +116,14 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     flashSaleEnd: '',
   })
 
-    useEffect(() => {
-      const loadData = async () => {
-        const resolvedParams = await params
-        setProductId(resolvedParams.id)
-        await Promise.all([fetchProduct(resolvedParams.id), fetchCategories(), fetchManufacturers(), fetchVariants(resolvedParams.id)])
-      }
-      loadData()
-    }, [])
+  useEffect(() => {
+    const loadData = async () => {
+      const resolvedParams = await params
+      setProductId(resolvedParams.id)
+      await Promise.all([fetchProduct(resolvedParams.id), fetchCategories(), fetchManufacturers(), fetchVariants(resolvedParams.id)])
+    }
+    loadData()
+  }, [])
 
   const fetchVariants = async (id: string) => {
     try {
@@ -207,7 +210,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   }
 
   const updateVariantField = (variantId: string, field: keyof ProductVariant, value: any) => {
-    setVariants(prev => prev.map(v => 
+    setVariants(prev => prev.map(v =>
       v.id === variantId ? { ...v, [field]: value } : v
     ))
   }
@@ -217,16 +220,17 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       const res = await fetch(`/api/admin/products/${id}`)
       const data = await res.json()
 
-            if (res.ok) {
-              const product: Product = data.product
-              setFormData({
-                name: product.name,
-                slug: product.slug,
-                brandName: product.brandName || '',
-                description: product.description || '',
-                categoryId: product.categoryId,
-                manufacturerId: product.manufacturerId || '',
-                mrp: product.mrp?.toString() || '',
+      if (res.ok) {
+        const product: Product = data.product
+        setFormData({
+          name: product.name,
+          slug: product.slug,
+          brandName: product.brandName || '',
+          genericName: product.medicine?.genericName || '',
+          description: product.description || '',
+          categoryId: product.categoryId,
+          manufacturerId: product.manufacturerId || '',
+          mrp: product.mrp?.toString() || '',
           sellingPrice: product.sellingPrice.toString(),
           purchasePrice: product.purchasePrice?.toString() || '',
           discountPercentage: product.discountPercentage?.toString() || '',
@@ -260,30 +264,30 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     }
   }
 
-    const fetchCategories = async () => {
-      try {
-        const res = await fetch('/api/admin/categories')
-        const data = await res.json()
-        if (res.ok) {
-          setCategories(data.categories || [])
-        }
-      } catch (error) {
-        console.error('Failed to fetch categories:', error)
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch('/api/admin/categories')
+      const data = await res.json()
+      if (res.ok) {
+        setCategories(data.categories || [])
       }
+    } catch (error) {
+      console.error('Failed to fetch categories:', error)
     }
+  }
 
-        const fetchManufacturers = async () => {
-          try {
-            // Fetch all manufacturers (limit=1000) to ensure all are available for search
-            const res = await fetch('/api/admin/manufacturers?limit=1000')
-            const data = await res.json()
-            if (res.ok) {
-              setManufacturers(data.manufacturers || [])
-            }
-          } catch (error) {
-            console.error('Failed to fetch manufacturers:', error)
-          }
-        }
+  const fetchManufacturers = async () => {
+    try {
+      // Fetch all manufacturers (limit=1000) to ensure all are available for search
+      const res = await fetch('/api/admin/manufacturers?limit=1000')
+      const data = await res.json()
+      if (res.ok) {
+        setManufacturers(data.manufacturers || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch manufacturers:', error)
+    }
+  }
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -377,14 +381,15 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     setError('')
 
     try {
-            const payload = {
-              name: formData.name,
-              slug: formData.slug,
-              brandName: formData.brandName || undefined,
-              description: formData.description || undefined,
-              categoryId: formData.categoryId,
-              manufacturerId: formData.manufacturerId || null,
-              mrp: formData.mrp ? parseFloat(formData.mrp) : undefined,
+      const payload = {
+        name: formData.name,
+        slug: formData.slug,
+        brandName: formData.brandName || undefined,
+        genericName: formData.genericName || undefined,
+        description: formData.description || undefined,
+        categoryId: formData.categoryId,
+        manufacturerId: formData.manufacturerId || null,
+        mrp: formData.mrp ? parseFloat(formData.mrp) : undefined,
         sellingPrice: parseFloat(formData.sellingPrice),
         purchasePrice: formData.purchasePrice ? parseFloat(formData.purchasePrice) : undefined,
         discountPercentage: formData.discountPercentage ? parseFloat(formData.discountPercentage) : undefined,
@@ -485,11 +490,10 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
               </select>
               {formData.categoryId && (
                 <div className="mt-2">
-                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                    categories.find(c => c.id === formData.categoryId)?.isMedicineCategory
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${categories.find(c => c.id === formData.categoryId)?.isMedicineCategory
                       ? 'bg-blue-100 text-blue-800'
                       : 'bg-green-100 text-green-800'
-                  }`}>
+                    }`}>
                     Type: {categories.find(c => c.id === formData.categoryId)?.isMedicineCategory ? 'Medicine' : 'General Product'}
                   </span>
                   <p className="mt-1 text-xs text-gray-500">
@@ -525,40 +529,53 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
               />
             </div>
 
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">
-                            Brand Name
-                          </label>
-                          <input
-                            type="text"
-                            value={formData.brandName}
-                            onChange={(e) => setFormData({ ...formData, brandName: e.target.value })}
-                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                          />
-                        </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Brand Name
+              </label>
+              <input
+                type="text"
+                value={formData.brandName}
+                onChange={(e) => setFormData({ ...formData, brandName: e.target.value })}
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              />
+            </div>
 
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">
-                            Manufacturer
-                          </label>
-                          <select
-                            value={formData.manufacturerId}
-                            onChange={(e) => setFormData({ ...formData, manufacturerId: e.target.value })}
-                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                          >
-                            <option value="">Select a manufacturer</option>
-                            {manufacturers.map((mfr) => (
-                              <option key={mfr.id} value={mfr.id}>
-                                {mfr.name}
-                              </option>
-                            ))}
-                          </select>
-                          <p className="mt-1 text-xs text-gray-500">
-                            Link to a manufacturer for clickable manufacturer links on product page
-                          </p>
-                        </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Generic Name
+              </label>
+              <input
+                type="text"
+                value={formData.genericName}
+                onChange={(e) => setFormData({ ...formData, genericName: e.target.value })}
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                placeholder="e.g. Paracetamol"
+              />
+            </div>
 
-                        <div className="md:col-span-2">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Manufacturer
+              </label>
+              <select
+                value={formData.manufacturerId}
+                onChange={(e) => setFormData({ ...formData, manufacturerId: e.target.value })}
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              >
+                <option value="">Select a manufacturer</option>
+                {manufacturers.map((mfr) => (
+                  <option key={mfr.id} value={mfr.id}>
+                    {mfr.name}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-gray-500">
+                Link to a manufacturer for clickable manufacturer links on product page
+              </p>
+            </div>
+
+            <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700">
                 Description
               </label>
@@ -581,7 +598,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
               Beta
             </span>
           </div>
-          
+
           <p className="mb-4 text-sm text-gray-600">
             Let AI regenerate product descriptions, features, specifications, and SEO content.
           </p>
@@ -602,22 +619,20 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   <button
                     type="button"
                     onClick={() => setAiLanguage('en')}
-                    className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                      aiLanguage === 'en'
+                    className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${aiLanguage === 'en'
                         ? 'bg-purple-600 text-white'
                         : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                    }`}
+                      }`}
                   >
                     English
                   </button>
                   <button
                     type="button"
                     onClick={() => setAiLanguage('bn')}
-                    className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                      aiLanguage === 'bn'
+                    className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${aiLanguage === 'bn'
                         ? 'bg-purple-600 text-white'
                         : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                    }`}
+                      }`}
                   >
                     বাংলা (Bangla)
                   </button>

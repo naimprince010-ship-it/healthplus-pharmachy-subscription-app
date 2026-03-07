@@ -12,6 +12,7 @@ const updateProductSchema = z.object({
   slug: z.string().optional(),
   description: z.string().optional(),
   brandName: z.string().optional(),
+  genericName: z.string().optional(),
   categoryId: z.string().optional(),
   manufacturerId: z.string().nullable().optional(),
   mrp: z.number().positive().optional(),
@@ -73,6 +74,7 @@ export async function GET(
             slug: true,
           },
         },
+        medicine: true,
       },
     })
 
@@ -165,6 +167,49 @@ export async function PATCH(
     }
     if (data.flashSaleEnd !== undefined) {
       updateData.flashSaleEnd = data.flashSaleEnd ? new Date(data.flashSaleEnd) : null
+    }
+
+    // Handle genericName update or creation
+    if (data.genericName !== undefined) {
+      const typeToCheck = updateData.type || existingProduct.type
+
+      const medicineData = {
+        genericName: data.genericName,
+        name: updateData.name || existingProduct.name,
+        slug: updateData.slug || existingProduct.slug,
+        brandName: updateData.brandName || existingProduct.brandName,
+        manufacturer: updateData.brandName || existingProduct.brandName || 'Unknown',
+        mrp: updateData.mrp !== undefined ? updateData.mrp : existingProduct.mrp,
+        sellingPrice: updateData.sellingPrice !== undefined ? updateData.sellingPrice : existingProduct.sellingPrice,
+        price: updateData.sellingPrice !== undefined ? updateData.sellingPrice : existingProduct.sellingPrice,
+        stockQuantity: updateData.stockQuantity !== undefined ? updateData.stockQuantity : existingProduct.stockQuantity,
+        categoryId: updateData.categoryId || existingProduct.categoryId,
+      }
+
+      updateData.medicine = {
+        upsert: {
+          create: medicineData,
+          update: { genericName: data.genericName }
+        }
+      }
+
+      // Also ensure it exists in Generic master table
+      if (data.genericName) {
+        const genSlug = data.genericName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')
+        const existingGen = await prisma.generic.findFirst({
+          where: {
+            OR: [
+              { name: { equals: data.genericName, mode: 'insensitive' } },
+              { slug: genSlug }
+            ]
+          }
+        })
+        if (!existingGen) {
+          await prisma.generic.create({
+            data: { name: data.genericName, slug: genSlug }
+          })
+        }
+      }
     }
 
     const product = await prisma.product.update({
