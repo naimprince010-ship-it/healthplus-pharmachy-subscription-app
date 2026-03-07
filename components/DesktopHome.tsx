@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Package, Heart, Baby, Activity, Users, CheckCircle, Truck, Shield } from 'lucide-react'
 import { SectionSlider } from '@/components/SectionSlider'
+import PrescriptionUploadForm from '@/components/PrescriptionUploadForm'
 import type { SubscriptionPlan } from '@prisma/client'
 
 interface HomeSection {
