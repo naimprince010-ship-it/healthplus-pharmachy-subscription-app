@@ -35,23 +35,28 @@ interface SearchProduct {
 function SearchContent() {
   const searchParams = useSearchParams()
   const query = searchParams.get('q') || ''
-  
+
   const [products, setProducts] = useState<SearchProduct[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [searched, setSearched] = useState(false)
+  const [isFuzzy, setIsFuzzy] = useState(false)
+  const [correctedQuery, setCorrectedQuery] = useState('')
 
   useEffect(() => {
     const fetchResults = async () => {
       if (!query.trim()) {
         setProducts([])
         setSearched(false)
+        setIsFuzzy(false)
+        setCorrectedQuery('')
         return
       }
 
       setLoading(true)
       setError('')
       setSearched(true)
+      setIsFuzzy(false)
 
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`)
@@ -59,6 +64,8 @@ function SearchContent() {
 
         if (res.ok) {
           setProducts(data.products || [])
+          setIsFuzzy(data.isFuzzy || false)
+          setCorrectedQuery(data.correctedQuery || '')
         } else {
           setError(data.error || 'Search failed')
         }
@@ -81,6 +88,11 @@ function SearchContent() {
             <h1 className="text-2xl font-bold text-gray-900">
               Results for &quot;{query}&quot;
             </h1>
+            {!loading && isFuzzy && correctedQuery && (
+              <div className="mt-2 text-lg text-teal-600">
+                আপনি কি বুঝাতে চেয়েছেন: <a href={`/search?q=${encodeURIComponent(correctedQuery)}`} className="font-bold underline hover:text-teal-700 italic">{correctedQuery}</a>?
+              </div>
+            )}
             {!loading && searched && (
               <p className="mt-1 text-sm text-gray-600">
                 {products.length} {products.length === 1 ? 'product' : 'products'} found

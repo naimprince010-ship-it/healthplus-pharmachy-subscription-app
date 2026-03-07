@@ -40,11 +40,17 @@ export async function GET(request: NextRequest) {
     const products = results.map((r) => formatProduct(r.item))
     const items = results.slice(0, 10).map((r) => formatSuggestion(r.item))
 
+    // Check if the results come from a fuzzy match
+    const isFuzzy = results.some(r => r.isFuzzyMatch)
+    const correctedQuery = isFuzzy ? results[0].correctedQuery : undefined
+
     return NextResponse.json({
       products,
       items,
       query: q,
       count: products.length,
+      isFuzzy,
+      correctedQuery,
     })
   } catch (error) {
     console.error('Search API error:', error)

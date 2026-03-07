@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { ProductDetailClient } from '@/components/ProductDetailClient'
 import { ProductCard } from '@/components/ProductCard'
 import { ProductReviews } from '@/components/ProductReviews'
+import { GenericAlternatives } from '@/components/GenericAlternatives'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Metadata } from 'next'
@@ -568,6 +569,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
               </div>
             </div>
           </div>
+
+          {/* Generic Alternatives (Cheaper Alternatives) */}
+          {genericName && (
+            <GenericAlternatives genericName={genericName} currentProductId={product.id} />
+          )}
 
           {/* Similar Products Section */}
           {similarProducts && similarProducts.length > 0 && (

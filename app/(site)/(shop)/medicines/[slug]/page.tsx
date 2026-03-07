@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { AddToCartButton } from '@/components/AddToCartButton'
 import type { Metadata } from 'next'
+import { GenericAlternatives } from '@/components/GenericAlternatives'
 
 export const revalidate = 60 // Revalidate page every 60 seconds (ISR)
 
@@ -362,6 +363,13 @@ export default async function MedicineDetailPage({
               )}
             </div>
           </div>
+          {/* Generic Alternatives (Cheaper Alternatives) */}
+          {medicine.genericName && (
+            <GenericAlternatives
+              genericName={medicine.genericName}
+              currentProductId={medicine.productId || medicine.id}
+            />
+          )}
         </div>
       </div>
     </>

@@ -34,6 +34,9 @@ export interface SearchResult {
   item: SearchableProduct
   score: number // Kept for compatibility, though PG FTS score might be different or we can mock it
   combinedScore: number
+  isFuzzyMatch?: boolean
+  originalQuery?: string
+  correctedQuery?: string
 }
 
 function mapToSearchableProduct(p: any): SearchableProduct {
@@ -114,7 +117,8 @@ export function invalidateSearchIndex(): void {
 
 export async function searchProducts(
   query: string,
-  limit: number = 40
+  limit: number = 40,
+  isRetry: boolean = false
 ): Promise<SearchResult[]> {
   if (!query || query.length < 2) {
     const { products } = await getTopProducts(limit)
@@ -158,6 +162,7 @@ export async function searchProducts(
           { description: { search: ftsQuery } } as any,
           { medicine: { genericName: { search: ftsQuery } } } as any,
           { medicine: { manufacturer: { search: ftsQuery } } } as any,
+          { medicine: { uses: { search: ftsQuery } } } as any,
         ],
       },
       include: {
@@ -179,6 +184,9 @@ export async function searchProducts(
             })),
             ...terms.map((term) => ({
               medicine: { genericName: { contains: term, mode: 'insensitive' as const } }
+            })),
+            ...terms.map((term) => ({
+              medicine: { uses: { contains: term, mode: 'insensitive' as const } }
             }))
           ]
         },
@@ -215,7 +223,26 @@ export async function searchProducts(
 
     // Sort by combined score
     searchResults.sort((a, b) => b.combinedScore - a.combinedScore)
-    const finalResults = searchResults.slice(0, limit)
+    let finalResults = searchResults.slice(0, limit)
+
+    // --- NEW: Fuzzy Logic Fallback ---
+    // If we still have 0 results, let's try a very basic fuzzy match against known names/generics
+    if (finalResults.length === 0 && query.length > 3 && !isRetry) {
+      const fuzzyMatch = await findFuzzyMatch(query)
+      if (fuzzyMatch && fuzzyMatch.toLowerCase() !== query.toLowerCase()) {
+        // Recursively call search with the corrected term, but prevent infinite loop
+        const correctedResults = await searchProducts(fuzzyMatch, limit, true)
+        if (correctedResults.length > 0) {
+          return correctedResults.map(r => ({
+            ...r,
+            isFuzzyMatch: true,
+            originalQuery: query,
+            correctedQuery: fuzzyMatch
+          }))
+        }
+      }
+    }
+    // ---------------------------------
 
     // Store in Redis
     await setCachedData(cacheKey, finalResults, CACHE_TTL_SEARCH)
@@ -224,5 +251,68 @@ export async function searchProducts(
   } catch (error) {
     console.error('Search failed:', error)
     return []
+  }
+}
+
+/**
+ * Very basic Levenshtein distance for fuzzy matching
+ */
+function levenshteinDistance(a: string, b: string): number {
+  const matrix = Array.from({ length: a.length + 1 }, (_, i) => [i])
+  for (let j = 1; j <= b.length; j++) matrix[0][j] = j
+
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + cost
+      )
+    }
+  }
+  return matrix[a.length][b.length]
+}
+
+const CACHE_KEY_SEARCH_DICTIONARY = 'search:dictionary'
+
+async function findFuzzyMatch(query: string): Promise<string | null> {
+  try {
+    const q = query.toLowerCase()
+
+    // Get dictionary of names (cached)
+    let dictionary = await getCachedData<string[]>(CACHE_KEY_SEARCH_DICTIONARY)
+
+    if (!dictionary) {
+      // Build dictionary from top products and generics
+      const [products, medicines] = await Promise.all([
+        prisma.product.findMany({ select: { name: true }, take: 1000 }),
+        prisma.medicine.findMany({ select: { genericName: true }, where: { genericName: { not: null } }, take: 500 })
+      ])
+
+      const names = new Set<string>()
+      products.forEach(p => names.add(p.name))
+      medicines.forEach(m => m.genericName && names.add(m.genericName))
+
+      dictionary = Array.from(names)
+      await setCachedData(CACHE_KEY_SEARCH_DICTIONARY, dictionary, 60 * 60 * 12) // 12 hours
+    }
+
+    let bestMatch: string | null = null
+    let minDistance = 3 // Only consider matches with distance <= 2 for accuracy
+
+    for (const name of dictionary) {
+      const distance = levenshteinDistance(q, name.toLowerCase())
+      if (distance < minDistance) {
+        minDistance = distance
+        bestMatch = name
+        if (minDistance === 1) break // Good enough
+      }
+    }
+
+    return bestMatch
+  } catch (error) {
+    console.error('Fuzzy match failed:', error)
+    return null
   }
 }
