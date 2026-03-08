@@ -28,7 +28,8 @@ const createProductSchema = z.object({
   slug: z.string().optional(),
   description: z.string().optional(),
   brandName: z.string().optional(),
-  categoryId: z.string().min(1),
+  categoryId: z.string().optional(), // Now optional if categoryName is provided
+  categoryName: z.string().optional(), // For auto-creation
   manufacturerId: z.string().nullable().optional(),
   manufacturerName: z.string().optional(), // For auto-creation
   genericName: z.string().optional(),     // For auto-creation and Medicine record
@@ -216,8 +217,47 @@ export async function POST(request: NextRequest) {
 
     const data = validationResult.data
 
+    let categoryId = data.categoryId
+    let isMedicine = data.type === 'MEDICINE'
+
+    // Auto-create category if ID is missing but Name is provided
+    if (!categoryId && data.categoryName) {
+      const catSlug = slugify(data.categoryName)
+      const existingCat = await prisma.category.findFirst({
+        where: {
+          OR: [
+            { name: { equals: data.categoryName, mode: 'insensitive' } },
+            { slug: catSlug }
+          ]
+        }
+      })
+
+      if (existingCat) {
+        categoryId = existingCat.id
+        isMedicine = existingCat.isMedicineCategory || isMedicine
+      } else {
+        const newCat = await prisma.category.create({
+          data: {
+            name: data.categoryName,
+            slug: catSlug,
+            isMedicineCategory: true, // Default to true for medicine scraper flow
+            isActive: true,
+          }
+        })
+        categoryId = newCat.id
+        isMedicine = true
+      }
+    }
+
+    if (!categoryId) {
+      return NextResponse.json(
+        { error: 'Category ID or Category Name is required' },
+        { status: 400 }
+      )
+    }
+
     const category = await prisma.category.findUnique({
-      where: { id: data.categoryId },
+      where: { id: categoryId },
       select: { isMedicineCategory: true },
     })
 
@@ -228,7 +268,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const isMedicine = category.isMedicineCategory || data.type === 'MEDICINE'
+    isMedicine = category.isMedicineCategory || isMedicine
     const productType: ProductType = isMedicine ? 'MEDICINE' : 'GENERAL'
 
     let manufacturerId = data.manufacturerId
@@ -304,7 +344,7 @@ export async function POST(request: NextRequest) {
         slug,
         description: data.description,
         brandName: data.brandName || data.manufacturerName,
-        categoryId: data.categoryId,
+        categoryId: categoryId,
         manufacturerId: manufacturerId || null,
         mrp: data.mrp,
         sellingPrice: data.sellingPrice,
@@ -348,7 +388,7 @@ export async function POST(request: NextRequest) {
               unitPrice: data.unitPrice,
               stripPrice: data.stripPrice,
               stockQuantity: data.stockQuantity,
-              categoryId: data.categoryId,
+              categoryId: categoryId,
               imageUrl: data.imageUrl,
               description: data.description,
             }

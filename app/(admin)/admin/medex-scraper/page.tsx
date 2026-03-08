@@ -47,6 +47,7 @@ interface DraftProduct {
         tabletsPerStrip: string
         mrp: string
         slug: string
+        categoryName: string // For auto-creation
     }
     status: 'pending' | 'saving' | 'saved' | 'error'
     error?: string
@@ -136,8 +137,12 @@ export default function MedexScraperPage() {
                     const cat = categories.find(c => c.name.toLowerCase() === catName.toLowerCase())
                     if (cat) {
                         matchedCategoryId = cat.id
-                        break
+                    } else {
+                        // Category doesn't exist in DB, but we matched the name
+                        matchedCategoryId = '' // Will trigger auto-creation
+                        product.categoryName = catName
                     }
+                    break
                 }
             }
 
@@ -154,6 +159,7 @@ export default function MedexScraperPage() {
                     tabletsPerStrip: (product.tabletsPerStrip ?? '').toString(),
                     mrp: (product.sellingPrice ?? '').toString(),
                     slug: slugify(`${product.name} ${product.strength || ''}`),
+                    categoryName: (product as any).categoryName || '',
                 },
                 status: 'pending',
             }
@@ -248,7 +254,7 @@ export default function MedexScraperPage() {
         const draft = drafts.find(d => d.id === id)
         if (!draft) return
 
-        if (!draft.editedData.categoryId) {
+        if (!draft.editedData.categoryId && !draft.editedData.categoryName) {
             toast.error('Please select a category')
             return
         }
@@ -263,7 +269,8 @@ export default function MedexScraperPage() {
                 body: JSON.stringify({
                     name: draft.editedData.name,
                     slug: draft.editedData.slug,
-                    categoryId: draft.editedData.categoryId,
+                    categoryId: draft.editedData.categoryId || undefined,
+                    categoryName: draft.editedData.categoryId ? undefined : draft.editedData.categoryName,
                     manufacturerId: draft.editedData.manufacturerId || undefined,
                     manufacturerName: draft.editedData.manufacturerId ? undefined : draft.data.brandName,
                     sellingPrice: parseFloat(draft.editedData.sellingPrice),
@@ -490,8 +497,13 @@ export default function MedexScraperPage() {
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                                            Category
+                                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 flex items-center justify-between">
+                                            <span>Category</span>
+                                            {!draft.editedData.categoryId && draft.editedData.categoryName && (
+                                                <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-bold">
+                                                    Auto-create: {draft.editedData.categoryName}
+                                                </span>
+                                            )}
                                         </label>
                                         <SearchableSelect
                                             options={categories.map(c => ({ value: c.id, label: c.name }))}
