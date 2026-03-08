@@ -16,6 +16,7 @@ interface Manufacturer {
     id: string
     name: string
     slug: string
+    aliasList?: any
 }
 
 interface ScrapedProduct {
@@ -82,7 +83,7 @@ export default function MedexScraperPage() {
     }
 
     const fetchManufacturers = async () => {
-        const res = await fetch('/api/admin/manufacturers?limit=1000')
+        const res = await fetch('/api/admin/manufacturers?limit=3000')
         const data = await res.json()
         if (res.ok) setManufacturers(data.manufacturers || [])
     }
@@ -101,12 +102,40 @@ export default function MedexScraperPage() {
             const product = data.product as ScrapedProduct
 
             // 1. Auto-match manufacturer
-            const brandSlug = product.brandName ? slugify(product.brandName) : ''
-            const matchedMfr = manufacturers.find(m =>
-                m.id === brandSlug ||
-                m.slug === brandSlug ||
-                m.name.toLowerCase() === product.brandName?.toLowerCase()
-            )
+            const normalizeMfr = (name: string) => {
+                return name.toLowerCase()
+                    .replace(/^the\s+/i, '')
+                    .replace(/\s+(ltd|limited|pharmaceuticals|pharma|laboratories|lab)\.?$/i, '')
+                    .trim()
+            }
+
+            const scrapedMfrClean = product.brandName ? normalizeMfr(product.brandName) : ''
+            const matchedMfr = manufacturers.find(m => {
+                const dbMfrNameClean = normalizeMfr(m.name)
+                const dbMfrSlug = m.slug?.toLowerCase() || ''
+                const scrapedMfrLower = product.brandName?.toLowerCase() || ''
+
+                // Try exact match first
+                if (m.name.toLowerCase() === scrapedMfrLower) return true
+                if (dbMfrSlug === slugify(scrapedMfrLower)) return true
+
+                // Try cleaned match
+                if (dbMfrNameClean === scrapedMfrClean) return true
+
+                // Fallback: Contains match for longer names (to catch "Acme" in "The ACME Laboratories Ltd")
+                if (scrapedMfrClean.length > 4 && dbMfrNameClean.length > 4) {
+                    if (scrapedMfrClean.includes(dbMfrNameClean) || dbMfrNameClean.includes(scrapedMfrClean)) return true
+                }
+
+                // Check aliases if available
+                if (m.aliasList && Array.isArray(m.aliasList)) {
+                    return m.aliasList.some((alias: any) =>
+                        normalizeMfr(String(alias)) === scrapedMfrClean
+                    )
+                }
+
+                return false
+            })
 
             // 2. Auto-match category
             let matchedCategoryId = ''
