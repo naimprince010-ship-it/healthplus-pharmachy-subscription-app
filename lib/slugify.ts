@@ -29,10 +29,10 @@ export function cleanProductName(name: string): string {
   if (!name) return ''
 
   // Regex for pack sizes: 100ml, 500g, 10 PCS, 2x100mg, 150ml+50ml, etc.
-  const unitPattern = '(?:ml|mg|gm?|g|kg|pcs?|pack|piece|tablet|capsule|stick|sachet|softgel|iu|mcg|unit|wt|oz)'
-  const sizePattern = `(?:\\d+x)?\\d+\\s*${unitPattern}`
+  const unitPattern = '(?:ml|mg|gm?|g|kg|pcs?|pack|piece|tablet|capsule|stick|sachet|softgel|iu|mcg|unit|wt|oz|L|ltr|mg\/ml|mcg\/ml)'
+  const sizePattern = `(?:\\d+\\s*[x*]\\s*)?\\d+(?:\\.\\d+)?\\s*${unitPattern}`
   const combinedPattern = `${sizePattern}(?:\\s*\\+\\s*${sizePattern})*`
-  const packSizeRegex = new RegExp(`(?:\\s+|-|^)${combinedPattern}\\s*$`, 'i')
+  const packSizeRegex = new RegExp(`(?:\\s+|-|\\(|^)${combinedPattern}\\s*\\)?\\s*$`, 'i')
 
   let cleaned = name.trim()
 

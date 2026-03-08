@@ -25,9 +25,11 @@ const approveSchema = z.object({
     seoTitle: z.string().optional(),
     seoDescription: z.string().optional(),
     seoKeywords: z.string().optional(),
+    imageMatchConfidence: z.number().optional(),
     imageUrl: z.string().optional(),
     isActive: z.boolean().default(true),
     isFeatured: z.boolean().default(false),
+    stockQuantity: z.number().int().min(0).default(10),
   }),
   // Phase 2: QC verification flags (must all be true to approve)
   qcVerification: z.object({
@@ -56,7 +58,7 @@ async function generateUniqueSlug(baseSlug: string): Promise<string> {
   // Check if slug exists
   let counter = 1
   let uniqueSlug = slug
-  
+
   while (await prisma.product.findUnique({ where: { slug: uniqueSlug } })) {
     uniqueSlug = `${slug}-${counter + 1}`
     counter++
@@ -112,7 +114,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (draft.status === 'APPROVED') {
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Draft already approved',
         publishedProductId: draft.publishedProductId,
       }, { status: 400 })
@@ -132,7 +134,7 @@ export async function POST(request: NextRequest) {
       if (!qcFlags.genericVerified) missingVerifications.push('Generic')
       if (!qcFlags.manufacturerVerified) missingVerifications.push('Manufacturer')
       if (!qcFlags.categoryVerified) missingVerifications.push('Category')
-      
+
       return NextResponse.json({
         error: 'QC verification incomplete',
         message: `The following must be verified before approval: ${missingVerifications.join(', ')}`,
@@ -189,8 +191,8 @@ export async function POST(request: NextRequest) {
     }
 
     if (!categoryId) {
-      return NextResponse.json({ 
-        error: 'No category specified and no default category found' 
+      return NextResponse.json({
+        error: 'No category specified and no default category found'
       }, { status: 400 })
     }
 
@@ -222,8 +224,8 @@ export async function POST(request: NextRequest) {
         categoryId,
         mrp: productData.mrp,
         sellingPrice: productData.sellingPrice,
-        stockQuantity: 0,
-        inStock: false,
+        stockQuantity: productData.stockQuantity,
+        inStock: productData.stockQuantity > 0,
         unit: 'pcs',
         imageUrl: finalImageUrl,
         seoTitle: productData.seoTitle,
@@ -231,6 +233,28 @@ export async function POST(request: NextRequest) {
         seoKeywords: productData.seoKeywords,
         isFeatured: productData.isFeatured,
         isActive: productData.isActive,
+        // Create medicine record if needed
+        ...(productType === 'MEDICINE' ? {
+          medicine: {
+            create: {
+              name: productData.name,
+              slug: slug,
+              genericName: productData.genericName,
+              brandName: productData.brandName,
+              manufacturer: productData.brandName || 'Unknown',
+              dosageForm: productData.dosageForm,
+              strength: productData.strength,
+              packSize: productData.packSize,
+              mrp: productData.mrp,
+              sellingPrice: productData.sellingPrice,
+              price: productData.sellingPrice,
+              stockQuantity: productData.stockQuantity,
+              categoryId: categoryId,
+              imageUrl: finalImageUrl,
+              description: productData.description || productData.shortDescription,
+            }
+          }
+        } : {})
       },
       include: {
         category: {
@@ -240,6 +264,7 @@ export async function POST(request: NextRequest) {
             slug: true,
           },
         },
+        medicine: true,
       },
     })
 
@@ -312,8 +337,8 @@ export async function DELETE(request: NextRequest) {
     }
 
     if (draft.status === 'APPROVED') {
-      return NextResponse.json({ 
-        error: 'Cannot reject an already approved draft' 
+      return NextResponse.json({
+        error: 'Cannot reject an already approved draft'
       }, { status: 400 })
     }
 
