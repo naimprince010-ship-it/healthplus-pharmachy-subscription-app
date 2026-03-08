@@ -75,6 +75,7 @@ const navItems: NavItem[] = [
   { label: 'Sales / Reports', href: '/admin/sales', icon: BarChart3 },
   { label: 'Market Intelligence', href: '/admin/market-intel', icon: TrendingUp },
   { label: 'Price Comparison', href: '/admin/market-intel/comparison', icon: BarChart3 },
+  { label: 'Medex Scraper', href: '/admin/medex-scraper', icon: Sparkles },
   { label: 'Discount Manager', href: '/admin/discounts', icon: Percent },
   { label: 'Membership Page', href: '/admin/membership-settings', icon: Shield },
   { label: 'Membership Banner', href: '/admin/membership-banner', icon: Image },
