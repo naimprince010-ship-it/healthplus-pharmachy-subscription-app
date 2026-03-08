@@ -277,6 +277,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
           dosageForm: true,
           strength: true,
           manufacturer: true,
+          unitPrice: true,
+          stripPrice: true,
+          tabletsPerStrip: true,
         },
       },
       variants: {
@@ -506,6 +509,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 campaignEnd={product.campaignEnd}
                 slug={slug}
                 variants={variants}
+                unitPrice={product.medicine?.unitPrice ? Number(product.medicine.unitPrice) : null}
+                stripPrice={product.medicine?.stripPrice ? Number(product.medicine.stripPrice) : null}
+                tabletsPerStrip={product.medicine?.tabletsPerStrip || null}
               />
 
               {product.description && (

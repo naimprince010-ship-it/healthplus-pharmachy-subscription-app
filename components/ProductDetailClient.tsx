@@ -37,6 +37,9 @@ interface ProductDetailClientProps {
   campaignEnd?: Date | string | null
   slug: string
   variants?: ProductVariant[]
+  unitPrice?: number | null
+  stripPrice?: number | null
+  tabletsPerStrip?: number | null
 }
 
 export function ProductDetailClient({
@@ -58,6 +61,9 @@ export function ProductDetailClient({
   campaignEnd,
   slug,
   variants = [],
+  unitPrice,
+  stripPrice,
+  tabletsPerStrip,
 }: ProductDetailClientProps) {
   const { addItem } = useCart()
   const [quantity, setQuantity] = useState(1)
@@ -78,10 +84,10 @@ export function ProductDetailClient({
     if (currentVariant) {
       const variantDiscount = currentVariant.discountPercentage || 0
       const variantMrp = currentVariant.mrp || currentVariant.sellingPrice
-      const variantPrice = variantDiscount > 0 
+      const variantPrice = variantDiscount > 0
         ? variantMrp * (1 - variantDiscount / 100)
         : currentVariant.sellingPrice
-      
+
       return {
         price: variantPrice,
         effectiveMrp: variantMrp,
@@ -121,28 +127,28 @@ export function ProductDetailClient({
   const handleAddToCart = () => {
     if (currentStock === 0) return
 
-        setIsAdding(true)
-    
-        // Use variant's unitLabel if available, otherwise compute from unit
-        const computedUnitLabelBn = currentVariant?.unitLabel 
-          ? currentVariant.unitLabel 
-          : buildUnitLabelBn({})
-    
-        addItem({
-          id: currentVariant ? `${productId}-${currentVariant.id}` : productId,
-          productId,
-          variantId: currentVariant?.id,
-          variantLabel: currentVariant?.variantName,
-          name: currentVariant ? `${name} - ${currentVariant.variantName}` : name,
-          price,
-          image: imageUrl || undefined,
-          type: 'PRODUCT',
-          quantity,
-          category,
-          mrp: effectiveMrp,
-          slug,
-          unitLabelBn: computedUnitLabelBn,
-        })
+    setIsAdding(true)
+
+    // Use variant's unitLabel if available, otherwise compute from unit
+    const computedUnitLabelBn = currentVariant?.unitLabel
+      ? currentVariant.unitLabel
+      : buildUnitLabelBn({})
+
+    addItem({
+      id: currentVariant ? `${productId}-${currentVariant.id}` : productId,
+      productId,
+      variantId: currentVariant?.id,
+      variantLabel: currentVariant?.variantName,
+      name: currentVariant ? `${name} - ${currentVariant.variantName}` : name,
+      price,
+      image: imageUrl || undefined,
+      type: 'PRODUCT',
+      quantity,
+      category,
+      mrp: effectiveMrp,
+      slug,
+      unitLabelBn: computedUnitLabelBn,
+    })
 
     trackAddToCart({
       item_id: productId,
@@ -180,11 +186,41 @@ export function ProductDetailClient({
               <span className="text-2xl font-bold text-gray-900">Tk {price.toFixed(2)}</span>
               {unitLabel && <span className="text-gray-500">{unitLabel}</span>}
             </div>
+            {(unitPrice || stripPrice || tabletsPerStrip) && (
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                {unitPrice && <span>৳{unitPrice.toFixed(2)} / পিস</span>}
+                {stripPrice && (
+                  <>
+                    <span className="text-gray-300">|</span>
+                    <span>৳{stripPrice.toFixed(2)} / পাতা</span>
+                  </>
+                )}
+                {tabletsPerStrip && (
+                  <span className="ml-1 text-gray-400">({tabletsPerStrip} পিস প্রতি পাতা)</span>
+                )}
+              </div>
+            )}
           </>
         ) : (
-          <div className="flex items-baseline gap-1">
-            <span className="text-2xl font-bold text-gray-900">৳{price.toFixed(2)}</span>
-            {unitLabel && <span className="text-gray-500">{unitLabel}</span>}
+          <div className="flex flex-col gap-1">
+            <div className="flex items-baseline gap-1">
+              <span className="text-2xl font-bold text-gray-900">৳{price.toFixed(2)}</span>
+              {unitLabel && <span className="text-gray-500">{unitLabel}</span>}
+            </div>
+            {(unitPrice || stripPrice || tabletsPerStrip) && (
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                {unitPrice && <span>৳{unitPrice.toFixed(2)} / পিস</span>}
+                {stripPrice && (
+                  <>
+                    <span className="text-gray-300">|</span>
+                    <span>৳{stripPrice.toFixed(2)} / পাতা</span>
+                  </>
+                )}
+                {tabletsPerStrip && (
+                  <span className="ml-1 text-gray-400">({tabletsPerStrip} পিস প্রতি পাতা)</span>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -199,13 +235,12 @@ export function ProductDetailClient({
             type="button"
             onClick={() => variants.length > 1 && setIsDropdownOpen(!isDropdownOpen)}
             disabled={variants.length === 1}
-            className={`w-full flex items-center justify-between px-4 py-3 bg-white border-2 rounded-xl transition-all duration-200 ${
-              variants.length === 1
-                ? 'border-gray-200 cursor-default'
-                : isDropdownOpen
-                  ? 'border-teal-500 ring-2 ring-teal-100'
-                  : 'border-gray-300 hover:border-teal-400'
-            }`}
+            className={`w-full flex items-center justify-between px-4 py-3 bg-white border-2 rounded-xl transition-all duration-200 ${variants.length === 1
+              ? 'border-gray-200 cursor-default'
+              : isDropdownOpen
+                ? 'border-teal-500 ring-2 ring-teal-100'
+                : 'border-gray-300 hover:border-teal-400'
+              }`}
           >
             <span className="font-medium text-gray-900">
               {currentVariant?.variantName || 'Select variant'}
@@ -223,15 +258,12 @@ export function ProductDetailClient({
                   key={variant.id}
                   type="button"
                   onClick={() => handleVariantSelect(variant.id)}
-                  className={`w-full px-4 py-3 text-left transition-colors duration-150 ${
-                    index === 0 ? 'rounded-t-lg' : ''
-                  } ${
-                    index === variants.length - 1 ? 'rounded-b-lg' : ''
-                  } ${
-                    variant.id === selectedVariantId 
-                      ? 'bg-teal-50 text-teal-700 font-medium' 
+                  className={`w-full px-4 py-3 text-left transition-colors duration-150 ${index === 0 ? 'rounded-t-lg' : ''
+                    } ${index === variants.length - 1 ? 'rounded-b-lg' : ''
+                    } ${variant.id === selectedVariantId
+                      ? 'bg-teal-50 text-teal-700 font-medium'
                       : 'text-gray-900 hover:bg-gray-50'
-                  } ${variant.stockQuantity === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    } ${variant.stockQuantity === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
                   disabled={variant.stockQuantity === 0}
                 >
                   <div className="flex justify-between items-center">
@@ -288,11 +320,10 @@ export function ProductDetailClient({
             type="button"
             onClick={handleAddToCart}
             disabled={isOutOfStock}
-            className={`flex w-full items-center justify-center gap-2 rounded-xl px-8 py-3.5 text-base font-semibold transition-all duration-200 ${
-              isAdding
-                ? 'bg-green-600 text-white scale-[0.98]'
-                : 'bg-teal-600 text-white hover:bg-teal-700 active:scale-[0.98]'
-            }`}
+            className={`flex w-full items-center justify-center gap-2 rounded-xl px-8 py-3.5 text-base font-semibold transition-all duration-200 ${isAdding
+              ? 'bg-green-600 text-white scale-[0.98]'
+              : 'bg-teal-600 text-white hover:bg-teal-700 active:scale-[0.98]'
+              }`}
           >
             <ShoppingCart className="h-5 w-5" />
             {isAdding ? 'Added!' : 'কার্টে যোগ করুন'}

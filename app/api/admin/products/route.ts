@@ -58,6 +58,10 @@ const createProductSchema = z.object({
   flashSalePrice: z.number().positive().optional(),
   flashSaleStart: z.string().datetime().optional(),
   flashSaleEnd: z.string().datetime().optional(),
+  // Medicine-specific pricing
+  unitPrice: z.number().nonnegative().optional(),
+  stripPrice: z.number().nonnegative().optional(),
+  tabletsPerStrip: z.number().int().positive().optional(),
 })
 
 /**
@@ -340,6 +344,9 @@ export async function POST(request: NextRequest) {
               mrp: data.mrp,
               sellingPrice: data.sellingPrice,
               price: data.sellingPrice,
+              tabletsPerStrip: data.tabletsPerStrip,
+              unitPrice: data.unitPrice,
+              stripPrice: data.stripPrice,
               stockQuantity: data.stockQuantity,
               categoryId: data.categoryId,
               imageUrl: data.imageUrl,

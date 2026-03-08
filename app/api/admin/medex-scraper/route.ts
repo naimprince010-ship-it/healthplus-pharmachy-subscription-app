@@ -60,9 +60,20 @@ export async function POST(req: Request) {
             $('span.unit-price-value').text().trim() ||
             $('.package-container').text().trim();
 
-        // Clean up price
+        // Clean up unit price
         const priceMatch = priceText.match(/৳\s*([\d.]+)/);
-        const price = priceMatch ? parseFloat(priceMatch[1]) : null;
+        const unitPrice = priceMatch ? parseFloat(priceMatch[1]) : null;
+
+        // Strip Price extraction
+        let stripPriceText = $('.package-container div:contains("Strip Price:")').text().trim() ||
+            $('.package-container div').filter((i, el) => $(el).text().includes('Strip Price:')).text().trim();
+        const stripPriceMatch = stripPriceText.match(/৳\s*([\d.]+)/);
+        const stripPrice = stripPriceMatch ? parseFloat(stripPriceMatch[1]) : null;
+
+        // Pack Info extraction (e.g., (51 x 10: ৳ 612.00))
+        const packInfoText = $('.pack-size-info').text().trim();
+        const tabletsPerStripMatch = packInfoText.match(/x\s*(\d+):/);
+        const tabletsPerStrip = tabletsPerStripMatch ? parseInt(tabletsPerStripMatch[1]) : null;
 
         // Fetch image from Arogga
         const searchQuery = `${name} ${strength}`;
@@ -74,7 +85,10 @@ export async function POST(req: Request) {
                 genericName: generic,
                 brandName: brand,
                 strength,
-                sellingPrice: price,
+                sellingPrice: unitPrice, // Default selling price is unit price
+                unitPrice,
+                stripPrice,
+                tabletsPerStrip,
                 imageUrl,
                 sourceUrl: url,
                 source: 'medex',

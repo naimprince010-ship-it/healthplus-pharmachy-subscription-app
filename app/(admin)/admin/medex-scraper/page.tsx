@@ -24,6 +24,9 @@ interface ScrapedProduct {
     brandName: string | null
     strength: string | null
     sellingPrice: number | null
+    unitPrice: number | null
+    stripPrice: number | null
+    tabletsPerStrip: number | null
     imageUrl: string | null
     sourceUrl: string
     source: 'medex'
@@ -37,6 +40,9 @@ interface DraftProduct {
         manufacturerId: string
         categoryId: string
         sellingPrice: string
+        unitPrice: string
+        stripPrice: string
+        tabletsPerStrip: string
         mrp: string
         slug: string
     }
@@ -128,8 +134,11 @@ export default function MedexScraperPage() {
                     name: product.name,
                     manufacturerId: matchedMfr?.id || '',
                     categoryId: matchedCategoryId,
-                    sellingPrice: product.sellingPrice?.toString() || '',
-                    mrp: product.sellingPrice?.toString() || '',
+                    sellingPrice: (product.sellingPrice ?? '').toString(),
+                    unitPrice: (product.unitPrice ?? '').toString(),
+                    stripPrice: (product.stripPrice ?? '').toString(),
+                    tabletsPerStrip: (product.tabletsPerStrip ?? '').toString(),
+                    mrp: (product.sellingPrice ?? '').toString(),
                     slug: slugify(`${product.name} ${product.strength || ''}`),
                 },
                 status: 'pending',
@@ -174,6 +183,9 @@ export default function MedexScraperPage() {
                     manufacturerId: draft.editedData.manufacturerId || undefined,
                     manufacturerName: draft.editedData.manufacturerId ? undefined : draft.data.brandName,
                     sellingPrice: parseFloat(draft.editedData.sellingPrice),
+                    unitPrice: draft.editedData.unitPrice ? parseFloat(draft.editedData.unitPrice) : undefined,
+                    stripPrice: draft.editedData.stripPrice ? parseFloat(draft.editedData.stripPrice) : undefined,
+                    tabletsPerStrip: draft.editedData.tabletsPerStrip ? parseInt(draft.editedData.tabletsPerStrip) : undefined,
                     mrp: parseFloat(draft.editedData.mrp),
                     imageUrl: draft.data.imageUrl,
                     genericName: draft.data.genericName,
@@ -302,13 +314,51 @@ export default function MedexScraperPage() {
                                 </div>
 
                                 <div className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-3 gap-4">
                                         <div>
                                             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                                                Selling Price (৳)
+                                                Unit Price (৳)
                                             </label>
                                             <input
                                                 type="number"
+                                                step="0.01"
+                                                value={draft.editedData.unitPrice}
+                                                onChange={(e) => updateDraft(draft.id, 'unitPrice', e.target.value)}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                                                Strip Price (৳)
+                                            </label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                value={draft.editedData.stripPrice}
+                                                onChange={(e) => updateDraft(draft.id, 'stripPrice', e.target.value)}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                                                Tab/Strip
+                                            </label>
+                                            <input
+                                                type="number"
+                                                value={draft.editedData.tabletsPerStrip}
+                                                onChange={(e) => updateDraft(draft.id, 'tabletsPerStrip', e.target.value)}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                                                Final Price (৳)
+                                            </label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
                                                 value={draft.editedData.sellingPrice}
                                                 onChange={(e) => updateDraft(draft.id, 'sellingPrice', e.target.value)}
                                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
@@ -320,6 +370,7 @@ export default function MedexScraperPage() {
                                             </label>
                                             <input
                                                 type="number"
+                                                step="0.01"
                                                 value={draft.editedData.mrp}
                                                 onChange={(e) => updateDraft(draft.id, 'mrp', e.target.value)}
                                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
