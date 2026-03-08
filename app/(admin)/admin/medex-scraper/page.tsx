@@ -172,10 +172,12 @@ export default function MedexScraperPage() {
                     slug: draft.editedData.slug,
                     categoryId: draft.editedData.categoryId,
                     manufacturerId: draft.editedData.manufacturerId || undefined,
+                    manufacturerName: draft.editedData.manufacturerId ? undefined : draft.data.brandName,
                     sellingPrice: parseFloat(draft.editedData.sellingPrice),
                     mrp: parseFloat(draft.editedData.mrp),
                     imageUrl: draft.data.imageUrl,
                     genericName: draft.data.genericName,
+                    dosageForm: draft.data.strength, // Using strength/dosage form info
                     strength: draft.data.strength,
                     isActive: true,
                     type: category?.isMedicineCategory ? 'MEDICINE' : 'GENERAL',
