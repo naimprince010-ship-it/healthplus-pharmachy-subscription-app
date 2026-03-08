@@ -110,17 +110,19 @@ export default function MedexScraperPage() {
             const lowerTherapeutic = (product.therapeuticClass || '').toLowerCase()
 
             const categoryMappings: Record<string, string[]> = {
-                'Pain Relief': ['pain', 'analgesic', 'antipyretic', 'fever', 'headache', 'paracetamol', 'ace', 'napa'],
-                'Diabetes': ['diabetes', 'insulin', 'sugar', 'metformin', 'glimepiride', 'diabetic'],
-                'Blood Pressure': ['blood pressure', 'hypertension', 'amlodipine', 'losartan', 'atenolol', 'hypertensive'],
-                'Baby Care': ['baby', 'infant', 'pediatric', 'kid', 'child'],
-                'Vitamins & Supplements': ['vitamin', 'supplement', 'multivitamin', 'calcium', 'zinc', 'omega'],
-                'Heart Health': ['heart', 'cardiac', 'cholesterol', 'statin', 'atorvastatin'],
-                'Gastric & Ulcer': ['gastric', 'ulcer', 'acidity', 'omeprazole', 'esomeprazole', 'pantoprazole', 'antacid'],
-                'Antibiotic': ['antibiotic', 'infection', 'bacterial', 'azithromycin', 'cefixime', 'amoxicillin'],
+                'Pain Relief': ['pain', 'analgesic', 'antipyretic', 'fever', 'headache', 'paracetamol', 'ace', 'napa', 'diclofenac', 'ibuprofen', 'naproxen', 'ketorolac', 'etoricoxib', 'tramadol', 'aspirin'],
+                'Diabetes': ['diabetes', 'insulin', 'sugar', 'metformin', 'glimepiride', 'diabetic', 'sitagliptin', 'vildagliptin', 'linagliptin', 'gliclazide'],
+                'Blood Pressure': ['blood pressure', 'hypertension', 'amlodipine', 'losartan', 'atenolol', 'hypertensive', 'propranolol', 'beta-blocker', 'bisoprolol', 'carvedilol', 'nifedipine', 'enalapril', 'ramipril', 'valsartan', 'telmisartan'],
+                'Baby Care': ['baby', 'infant', 'pediatric', 'kid', 'child', 'gripe water', 'nappy', 'diaper'],
+                'Vitamins & Supplements': ['vitamin', 'supplement', 'multivitamin', 'calcium', 'zinc', 'omega', 'iron', 'cod liver', 'b12', 'folic acid'],
+                'Heart Health': ['heart', 'cardiac', 'cholesterol', 'statin', 'atorvastatin', 'rosuvastatin', 'propranolol', 'beta-blocker', 'nitroglycerin', 'digoxin', 'warfarin', 'clopidogrel'],
+                'Gastric & Ulcer': ['gastric', 'ulcer', 'acidity', 'omeprazole', 'esomeprazole', 'pantoprazole', 'antacid', 'famotidine', 'domperidone', 'sucralfate', 'rabeprazole'],
+                'Antibiotic': ['antibiotic', 'infection', 'bacterial', 'azithromycin', 'cefixime', 'amoxicillin', 'ciprofloxacin', 'flucloxacillin', 'ceftriaxone', 'moxifloxacin', 'metronidazole'],
+                'Eye & ENT': ['eye drop', 'ear drop', 'nasal', 'otitis', 'conjunctivitis'],
+                'Skin Care': ['skin', 'ointment', 'cream', 'fungal', 'scabies', 'parasiticide', 'monosulfiram', 'betamethasone', 'clotrimazole', 'miconazole', 'permethrin'],
                 'Tablet': ['tablet', 'tab'],
                 'Capsule': ['capsule', 'cap'],
-                'Syrup': ['syrup', 'syp', 'suspension', 'susp'],
+                'Syrup': ['syrup', 'syp', 'suspension', 'susp', 'solution', 'elixir'],
                 'Injection': ['injection', 'inj', 'infusion'],
             }
 
