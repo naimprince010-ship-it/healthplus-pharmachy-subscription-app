@@ -85,10 +85,41 @@ export default function MedexScraperPage() {
 
             const product = data.product as ScrapedProduct
 
-            // Auto-match manufacturer
+            // 1. Auto-match manufacturer (Better matching with slugs)
+            const brandSlug = product.brandName ? slugify(product.brandName) : ''
             const matchedMfr = manufacturers.find(m =>
-                m.name.toLowerCase() === product.brandName?.toLowerCase()
+                m.id === brandSlug || // ID match
+                m.slug === brandSlug || // Slug match
+                m.name.toLowerCase() === product.brandName?.toLowerCase() // Name match
             )
+
+            // 2. Auto-match category (Based on dosage form or keywords in name)
+            let matchedCategoryId = ''
+            const lowerName = product.name.toLowerCase()
+            const lowerStrength = (product.strength || '').toLowerCase()
+            const lowerGeneric = (product.genericName || '').toLowerCase()
+
+            // Keyword mapping for common medicine categories
+            const categoryKeywords: Record<string, string[]> = {
+                'Tablet': ['tablet', 'tab'],
+                'Capsule': ['capsule', 'cap'],
+                'Syrup': ['syrup', 'syp', 'suspension', 'susp'],
+                'Injection': ['injection', 'inj', 'infusion'],
+                'Cream': ['cream', 'ointment', 'gel'],
+                'Drop': ['drop', 'eye drop', 'ear drop', 'nasal drop'],
+                'Inhaler': ['inhaler', 'respules'],
+                'Suppository': ['suppository', 'supp'],
+            }
+
+            for (const [catName, keywords] of Object.entries(categoryKeywords)) {
+                if (keywords.some(kw => lowerName.includes(kw) || lowerStrength.includes(kw) || lowerGeneric.includes(kw))) {
+                    const cat = categories.find(c => c.name.toLowerCase() === catName.toLowerCase())
+                    if (cat) {
+                        matchedCategoryId = cat.id
+                        break
+                    }
+                }
+            }
 
             const newDraft: DraftProduct = {
                 id: `draft-${Date.now()}`,
@@ -96,7 +127,7 @@ export default function MedexScraperPage() {
                 editedData: {
                     name: product.name,
                     manufacturerId: matchedMfr?.id || '',
-                    categoryId: '',
+                    categoryId: matchedCategoryId,
                     sellingPrice: product.sellingPrice?.toString() || '',
                     mrp: product.sellingPrice?.toString() || '',
                     slug: slugify(`${product.name} ${product.strength || ''}`),
