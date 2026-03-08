@@ -19,6 +19,7 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@google/genai": "^1.44.0",
     "@hookform/resolvers": "^5.2.2",
     "@prisma/adapter-pg": "^7.0.0",
     "@prisma/client": "^7.0.0",
@@ -34,6 +35,7 @@
     "lucide-react": "^0.554.0",
     "next": "^16.0.7",
     "next-auth": "^5.0.0-beta.30",
+    "next-mdx-remote": "^6.0.0",
     "openai": "^6.9.1",
     "pg": "^8.16.3",
     "playwright": "^1.58.2",
@@ -42,6 +44,8 @@
     "react-dom": "19.2.0",
     "react-hook-form": "^7.66.1",
     "react-hot-toast": "^2.6.0",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
     "server-only": "^0.0.1",
     "sharp": "^0.34.5",
     "tailwind-merge": "^3.4.0",

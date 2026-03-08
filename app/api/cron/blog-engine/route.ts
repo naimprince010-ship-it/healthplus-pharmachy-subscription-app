@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization')
     const cronSecret = authHeader?.replace('Bearer ', '')
-    
+
     if (!CRON_SECRET || cronSecret !== CRON_SECRET) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization')
     const cronSecret = authHeader?.replace('Bearer ', '')
-    
+
     if (!CRON_SECRET || cronSecret !== CRON_SECRET) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -151,21 +151,120 @@ export async function POST(request: NextRequest) {
       }
 
       if (blog.status !== BlogStatus.TOPIC_ONLY) {
-        return NextResponse.json({ 
+        return NextResponse.json({
           error: 'Blog already has content or is not in TOPIC_ONLY status',
           currentStatus: blog.status,
         }, { status: 400 })
       }
 
+      // Initialize Gemini API
+      const { GoogleGenAI } = await import('@google/genai')
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
+
+      const prompt = `
+        You are an expert copywriter for "Halalzi", a premium pharmacy and health/grocery e-commerce platform in Bangladesh.
+        Write a highly engaging, SEO-optimized blog post in complete Markdown format.
+
+        Topic Context:
+        - Title Idea: "${blog.title}"
+        - Category/Type: "${blog.type}"
+        - Block: "${blog.block}"
+
+        Instructions:
+        1. Write a catchy, SEO-friendly H1 title at the very beginning (you can improve the raw title idea).
+        2. Write a comprehensive, well-structured article (at least 600 words). Use H2 and H3 tags for readability.
+        3. Include practical tips, advice, and facts.
+        4. The tone should be helpful, authoritative, friendly, and trustworthy.
+        5. At the end of the markdown content, provide exactly 3-4 specific product keywords or generic names (e.g., "Paracetamol", "Face Wash", "Basmati Rice") that naturally relate to this article. 
+        
+        CRITICAL FORMAT REQUIREMENT:
+        You must return ONLY a JSON object with this exact structure (no markdown code blocks, no other text):
+        {
+          "title": "Improved Catchy Blog Title",
+          "summary": "A 2-sentence engaging summary for the blog card.",
+          "contentMd": "# The Full Markdown Content Here...",
+          "suggestedProductKeywords": ["keyword1", "keyword2", "keyword3"]
+        }
+      `
+
+      let aiResponse
+      try {
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: prompt,
+          config: {
+            responseMimeType: "application/json",
+          }
+        })
+        aiResponse = JSON.parse(response.text || '{}')
+      } catch (e) {
+        console.error('Gemini API Error:', e)
+        return NextResponse.json({ error: 'Failed to generate content from AI' }, { status: 500 })
+      }
+
+      if (!aiResponse || !aiResponse.contentMd) {
+        return NextResponse.json({ error: 'AI returned malformed response' }, { status: 500 })
+      }
+
+      // Find matching products
+      const matchedProducts: any[] = []
+      if (Array.isArray(aiResponse.suggestedProductKeywords)) {
+        for (const keyword of aiResponse.suggestedProductKeywords) {
+          const products = await prisma.product.findMany({
+            where: {
+              isActive: true,
+              inStock: true,
+              deletedAt: null,
+              OR: [
+                { name: { contains: keyword, mode: 'insensitive' } },
+                { description: { contains: keyword, mode: 'insensitive' } },
+                { aiTags: { has: keyword.toLowerCase() } }
+              ]
+            },
+            take: 1
+          })
+          if (products.length > 0) {
+            matchedProducts.push(products[0])
+          }
+        }
+      }
+
+      // Update the blog with content and link products
+      const updatedBlog = await prisma.$transaction(async (tx) => {
+        const blg = await tx.blog.update({
+          where: { id: blogId },
+          data: {
+            title: aiResponse.title || blog.title,
+            summary: aiResponse.summary,
+            contentMd: aiResponse.contentMd,
+            status: BlogStatus.PUBLISHED,
+            publishedAt: new Date(),
+          }
+        })
+
+        // Link products
+        for (let i = 0; i < matchedProducts.length; i++) {
+          await tx.blogProduct.create({
+            data: {
+              blogId: blg.id,
+              productId: matchedProducts[i].id,
+              role: 'recommended',
+              stepOrder: i + 1
+            }
+          })
+        }
+        return blg
+      })
+
       return NextResponse.json({
         success: true,
-        message: 'AI content generation would be triggered here',
+        message: 'Blog generated and published successfully',
         blog: {
-          id: blog.id,
-          title: blog.title,
-          type: blog.type,
+          id: updatedBlog.id,
+          title: updatedBlog.title,
+          status: updatedBlog.status,
         },
-        note: 'Full AI generation will be implemented in Phase 4',
+        productsMatched: matchedProducts.length
       })
     }
 
@@ -182,7 +281,7 @@ export async function POST(request: NextRequest) {
 function generateSlug(title: string): string {
   const date = new Date()
   const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-  
+
   const slug = title
     .toLowerCase()
     .replace(/[^\w\s-]/g, '')
@@ -190,6 +289,6 @@ function generateSlug(title: string): string {
     .replace(/-+/g, '-')
     .trim()
     .substring(0, 50)
-  
+
   return `${slug}-${dateStr}`
 }

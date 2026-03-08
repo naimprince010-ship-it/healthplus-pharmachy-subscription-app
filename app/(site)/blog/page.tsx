@@ -1,0 +1,108 @@
+import { Metadata } from 'next'
+import { prisma } from '@/lib/prisma'
+import { BlogStatus, BlogType } from '@prisma/client'
+import { BlogCard } from '@/components/blog/BlogCard'
+import Link from 'next/link'
+
+export const metadata: Metadata = {
+    title: 'Blog - Halalzi',
+    description: 'Read the latest related to health, healthy living, and grocery tips.',
+}
+
+export const revalidate = 60 // Revalidate every minute
+
+interface BlogPageProps {
+    searchParams: { [key: string]: string | string[] | undefined }
+}
+
+export default async function BlogPage({ searchParams }: BlogPageProps) {
+    const typeFilter = typeof searchParams.type === 'string' ? searchParams.type as BlogType : undefined
+
+    // Fetch blogs
+    const blogs = await prisma.blog.findMany({
+        where: {
+            status: BlogStatus.PUBLISHED, // Only show published blogs
+            ...(typeFilter ? { type: typeFilter } : {}),
+        },
+        include: {
+            topic: {
+                select: { title: true }
+            }
+        },
+        orderBy: {
+            publishedAt: 'desc',
+        },
+    })
+
+    const types: { value: BlogType | 'ALL'; label: string }[] = [
+        { value: 'ALL', label: 'All Articles' },
+        { value: 'BEAUTY', label: 'Beauty & Care' },
+        { value: 'GROCERY', label: 'Grocery' },
+        { value: 'RECIPE', label: 'Recipe' },
+        { value: 'MONEY_SAVING', label: 'Money Saving' },
+    ]
+
+    return (
+        <div className="bg-slate-50 min-h-screen pb-20">
+            {/* Header Banner */}
+            <div className="bg-emerald-800 text-white py-16 px-4">
+                <div className="max-w-7xl mx-auto text-center">
+                    <h1 className="text-4xl md:text-5xl font-bold mb-4">Halalzi Blog</h1>
+                    <p className="text-emerald-100 text-lg max-w-2xl mx-auto">
+                        Discover articles on health, wellness, beauty, and smart shopping delivered straight from our experts.
+                    </p>
+                </div>
+            </div>
+
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8">
+
+                {/* Category Filter */}
+                <div className="bg-white rounded-xl shadow-sm p-4 mb-8 flex flex-wrap gap-2 justify-center sticky top-20 z-10 border border-emerald-100">
+                    {types.map((type) => {
+                        const isActive = typeFilter ? type.value === typeFilter : type.value === 'ALL'
+                        const href = type.value === 'ALL' ? '/blog' : `/blog?type=${type.value}`
+
+                        return (
+                            <Link
+                                key={type.value}
+                                href={href}
+                                className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${isActive
+                                        ? 'bg-emerald-600 text-white shadow-md'
+                                        : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
+                                    }`}
+                            >
+                                {type.label}
+                            </Link>
+                        )
+                    })}
+                </div>
+
+                {/* Blog Grid */}
+                {blogs.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {blogs.map((blog) => (
+                            <BlogCard key={blog.id} blog={blog} />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="bg-white rounded-2xl p-12 text-center border border-gray-100 shadow-sm mt-8">
+                        <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5a2.5 2.5 0 00-2.5-2.5H14" />
+                            </svg>
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">No articles found</h3>
+                        <p className="text-gray-500 max-w-md mx-auto">
+                            We couldn't find any published articles {typeFilter ? 'in this category' : ''} at the moment. Please check back later!
+                        </p>
+                        {typeFilter && (
+                            <Link href="/blog" className="mt-6 inline-block text-emerald-600 font-medium hover:text-emerald-700">
+                                View all articles
+                            </Link>
+                        )}
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+}

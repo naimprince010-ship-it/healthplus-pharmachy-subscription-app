@@ -58,6 +58,13 @@ export function Navbar() {
               Medicines
             </Link>
             <Link
+              href="/blog"
+              className={`text-sm font-medium transition-colors hover:text-teal-600 ${isActive('/blog') ? 'text-teal-600' : 'text-gray-700'
+                }`}
+            >
+              Blog
+            </Link>
+            <Link
               href="/subscriptions"
               className={`text-sm font-medium transition-colors hover:text-teal-600 ${isActive('/subscriptions') ? 'text-teal-600' : 'text-gray-700'
                 }`}
@@ -126,6 +133,13 @@ export function Navbar() {
               onClick={() => setMobileMenuOpen(false)}
             >
               Medicines
+            </Link>
+            <Link
+              href="/blog"
+              className="block rounded-md px-3 py-2 text-base font-medium text-gray-700 hover:bg-teal-50 hover:text-teal-600"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Blog
             </Link>
             <Link
               href="/subscriptions"
