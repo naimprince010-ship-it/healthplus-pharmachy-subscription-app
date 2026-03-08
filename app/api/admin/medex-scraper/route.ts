@@ -25,7 +25,7 @@ async function fetchAroggaImage(query: string): Promise<string | null> {
 
 export async function POST(req: Request) {
     try {
-        const { url } = await req.json();
+        const { url, mode = 'single' } = await req.json();
 
         if (!url || !url.includes('medex.com.bd')) {
             return NextResponse.json({ error: 'Invalid Medex URL' }, { status: 400 });
@@ -42,10 +42,32 @@ export async function POST(req: Request) {
         const pageTitle = $('title').text();
         const titleParts = pageTitle.split('|').map(p => p.trim());
 
-        // Check if it's a list page instead of a brand page
-        if (pageTitle.toLowerCase().includes('list of') || !url.includes('/brands/')) {
+        // Mode: Expand (Get all brand links from a list page)
+        if (mode === 'expand') {
+            const links: { name: string; url: string }[] = [];
+
+            // Selector for Brand Items (Generic pages, etc.)
+            $('a.brand-item, a.hoverable-block').each((i, el) => {
+                const href = $(el).attr('href');
+                const name = $(el).find('.brand-name').text().trim() || $(el).text().trim();
+
+                if (href && href.includes('/brands/')) {
+                    const fullUrl = href.startsWith('http') ? href : `https://medex.com.bd${href}`;
+                    // Avoid duplicates
+                    if (!links.find(l => l.url === fullUrl)) {
+                        links.push({ name, url: fullUrl });
+                    }
+                }
+            });
+
+            return NextResponse.json({ links });
+        }
+
+        // Mode: Single (Standard detail extraction)
+        // Check if it's a detail page
+        if (!url.includes('/brands/')) {
             return NextResponse.json({
-                error: 'Please provide a specific brand URL (e.g., medex.com.bd/brands/...) instead of a list or index page.'
+                error: 'Please provide a specific brand URL (e.g., medex.com.bd/brands/...) or use "expand" mode for list pages.'
             }, { status: 400 });
         }
 

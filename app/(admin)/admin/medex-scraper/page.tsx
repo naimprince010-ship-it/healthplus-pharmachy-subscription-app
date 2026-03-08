@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { Sparkles, Search, Loader2, CheckCircle, AlertCircle, ExternalLink, Package, Save, Trash2 } from 'lucide-react'
+import React, { useState, useEffect, useCallback } from 'react'
+import { Sparkles, Search, Loader2, CheckCircle, AlertCircle, ExternalLink, Package, Save, Trash2, List, Plus, Layers, Copy } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { SearchableSelect } from '@/components/SearchableSelect'
 import { slugify } from '@/lib/slugify'
@@ -54,6 +54,11 @@ interface DraftProduct {
 
 export default function MedexScraperPage() {
     const [url, setUrl] = useState('')
+    const [bulkMode, setBulkMode] = useState(false)
+    const [bulkUrls, setBulkUrls] = useState('')
+    const [expanding, setExpanding] = useState(false)
+    const [pendingUrls, setPendingUrls] = useState<{ name: string; url: string }[]>([])
+
     const [loading, setLoading] = useState(false)
     const [categories, setCategories] = useState<Category[]>([])
     const [manufacturers, setManufacturers] = useState<Manufacturer[]>([])
@@ -76,16 +81,12 @@ export default function MedexScraperPage() {
         if (res.ok) setManufacturers(data.manufacturers || [])
     }
 
-    const handleScrape = async (e: React.FormEvent) => {
-        e.preventDefault()
-        if (!url.trim()) return
-
-        setLoading(true)
+    const scrapeUrl = useCallback(async (targetUrl: string, silent = false) => {
         try {
             const res = await fetch('/api/admin/medex-scraper', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: url.trim() }),
+                body: JSON.stringify({ url: targetUrl.trim(), mode: 'single' }),
             })
 
             const data = await res.json()
@@ -93,22 +94,21 @@ export default function MedexScraperPage() {
 
             const product = data.product as ScrapedProduct
 
-            // 1. Auto-match manufacturer (Better matching with slugs)
+            // 1. Auto-match manufacturer
             const brandSlug = product.brandName ? slugify(product.brandName) : ''
             const matchedMfr = manufacturers.find(m =>
-                m.id === brandSlug || // ID match
-                m.slug === brandSlug || // Slug match
-                m.name.toLowerCase() === product.brandName?.toLowerCase() // Name match
+                m.id === brandSlug ||
+                m.slug === brandSlug ||
+                m.name.toLowerCase() === product.brandName?.toLowerCase()
             )
 
-            // 2. Auto-match category (Based on therapeutic class, name or dosage form)
+            // 2. Auto-match category
             let matchedCategoryId = ''
             const lowerName = product.name.toLowerCase()
             const lowerStrength = (product.strength || '').toLowerCase()
             const lowerGeneric = (product.genericName || '').toLowerCase()
             const lowerTherapeutic = (product.therapeuticClass || '').toLowerCase()
 
-            // Keyword mapping for specific categories in the database
             const categoryMappings: Record<string, string[]> = {
                 'Pain Relief': ['pain', 'analgesic', 'antipyretic', 'fever', 'headache', 'paracetamol', 'ace', 'napa'],
                 'Diabetes': ['diabetes', 'insulin', 'sugar', 'metformin', 'glimepiride', 'diabetic'],
@@ -118,7 +118,6 @@ export default function MedexScraperPage() {
                 'Heart Health': ['heart', 'cardiac', 'cholesterol', 'statin', 'atorvastatin'],
                 'Gastric & Ulcer': ['gastric', 'ulcer', 'acidity', 'omeprazole', 'esomeprazole', 'pantoprazole', 'antacid'],
                 'Antibiotic': ['antibiotic', 'infection', 'bacterial', 'azithromycin', 'cefixime', 'amoxicillin'],
-                // Dosage forms as fallback if no therapeutic match
                 'Tablet': ['tablet', 'tab'],
                 'Capsule': ['capsule', 'cap'],
                 'Syrup': ['syrup', 'syp', 'suspension', 'susp'],
@@ -141,7 +140,7 @@ export default function MedexScraperPage() {
             }
 
             const newDraft: DraftProduct = {
-                id: `draft-${Date.now()}`,
+                id: `draft-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                 data: product,
                 editedData: {
                     name: product.name,
@@ -158,11 +157,81 @@ export default function MedexScraperPage() {
             }
 
             setDrafts(prev => [newDraft, ...prev])
-            setUrl('')
-            toast.success('Successfully scraped from Medex!')
+            if (!silent) toast.success(`Scraped: ${product.name}`)
+            return true
         } catch (err: any) {
-            toast.error(err.message)
-        } finally {
+            if (!silent) toast.error(err.message)
+            console.error('Scrape error:', err)
+            return false
+        }
+    }, [manufacturers, categories])
+
+    // Effect to process queue
+    useEffect(() => {
+        if (pendingUrls.length > 0 && !loading) {
+            const processQueue = async () => {
+                setLoading(true)
+                const item = pendingUrls[0]
+                await scrapeUrl(item.url, true)
+                setPendingUrls(prev => prev.slice(1))
+                setLoading(false)
+            }
+            processQueue()
+        }
+    }, [pendingUrls, loading, scrapeUrl])
+
+    const handleScrape = async (e: React.FormEvent) => {
+        e.preventDefault()
+
+        if (bulkMode) {
+            if (!bulkUrls.trim()) return
+            const urls = bulkUrls.split('\n').map(u => u.trim()).filter(u => u.length > 0 && u.includes('medex.com.bd'))
+
+            if (urls.length === 0) {
+                toast.error('No valid Medex URLs found')
+                return
+            }
+
+            setExpanding(true)
+            try {
+                const finalUrls: { name: string; url: string }[] = []
+
+                for (const u of urls) {
+                    // Check if it's a list page (Generic/Brand Index/Manufacturer)
+                    // Detail pages usually have /brands/ but also specific ID and slug
+                    if (u.includes('/brands/') && (u.match(/\//g) || []).length >= 5) {
+                        finalUrls.push({ name: 'Brand', url: u })
+                    } else {
+                        // It's a list page, expand it
+                        const res = await fetch('/api/admin/medex-scraper', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ url: u, mode: 'expand' }),
+                        })
+                        const data = await res.json()
+                        if (res.ok && data.links) {
+                            finalUrls.push(...data.links)
+                        } else {
+                            toast.error(`Could not expand: ${u}`)
+                        }
+                    }
+                }
+
+                if (finalUrls.length > 0) {
+                    setPendingUrls(prev => [...prev, ...finalUrls])
+                    setBulkUrls('')
+                    toast.success(`Found ${finalUrls.length} products to scrape!`)
+                }
+            } catch (err: any) {
+                toast.error(err.message)
+            } finally {
+                setExpanding(false)
+            }
+        } else {
+            if (!url.trim()) return
+            setLoading(true)
+            await scrapeUrl(url)
+            setUrl('')
             setLoading(false)
         }
     }
@@ -235,31 +304,136 @@ export default function MedexScraperPage() {
                         Scrape medicine data from Medex and get images from Arogga
                     </p>
                 </div>
+                <div className="flex bg-gray-100 p-1 rounded-lg">
+                    <button
+                        onClick={() => setBulkMode(false)}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${!bulkMode ? 'bg-white shadow-sm text-teal-600' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        <Plus className="h-4 w-4" />
+                        Single
+                    </button>
+                    <button
+                        onClick={() => setBulkMode(true)}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${bulkMode ? 'bg-white shadow-sm text-teal-600' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        <Layers className="h-4 w-4" />
+                        Bulk
+                    </button>
+                </div>
             </div>
 
             <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm mb-8">
-                <form onSubmit={handleScrape} className="flex gap-4">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
-                        <input
-                            type="text"
-                            value={url}
-                            onChange={(e) => setUrl(e.target.value)}
-                            placeholder="Enter Medex brand URL (e.g., https://medex.com.bd/brands/501/napa-500-mg-tablet)"
-                            className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all"
-                        />
-                    </div>
-                    <button
-                        type="submit"
-                        disabled={loading || !url.trim()}
-                        className="flex items-center gap-2 px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                        {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Scrape'}
-                    </button>
+                <form onSubmit={handleScrape} className="space-y-4">
+                    {bulkMode ? (
+                        <div className="space-y-4">
+                            <div className="relative">
+                                <List className="absolute left-3 top-3 text-gray-400 h-5 w-5" />
+                                <textarea
+                                    value={bulkUrls}
+                                    onChange={(e) => setBulkUrls(e.target.value)}
+                                    placeholder="Enter multiple Medex brand or list URLs (one per line)...&#10;Example:&#10;https://medex.com.bd/brands/...&#10;https://medex.com.bd/generics/..."
+                                    rows={5}
+                                    className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all resize-none"
+                                />
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <p className="text-xs text-gray-400">
+                                    💡 You can paste Brand links, Generic links, or Manufacturer links.
+                                </p>
+                                <button
+                                    type="submit"
+                                    disabled={expanding || !bulkUrls.trim()}
+                                    className="flex items-center gap-2 px-8 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    {expanding ? (
+                                        <>
+                                            <Loader2 className="h-5 w-5 animate-spin" />
+                                            Expanding Lists...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Search className="h-5 w-5" />
+                                            Find Products
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="flex gap-4">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
+                                <input
+                                    type="text"
+                                    value={url}
+                                    onChange={(e) => setUrl(e.target.value)}
+                                    placeholder="Enter Medex brand URL (e.g., https://medex.com.bd/brands/501/napa-500-mg-tablet)"
+                                    className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all"
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                disabled={loading || !url.trim()}
+                                className="flex items-center gap-2 px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                                {loading && !pendingUrls.length ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Scrape'}
+                            </button>
+                        </div>
+                    )}
                 </form>
             </div>
 
+            {pendingUrls.length > 0 && (
+                <div className="bg-teal-50 border border-teal-100 rounded-xl p-4 mb-8 flex items-center justify-between animate-pulse">
+                    <div className="flex items-center gap-3">
+                        <Loader2 className="h-5 w-5 text-teal-600 animate-spin" />
+                        <div>
+                            <p className="text-sm font-semibold text-teal-900">
+                                Scraping in progress...
+                            </p>
+                            <p className="text-xs text-teal-700">
+                                {pendingUrls.length} products remaining in queue
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="space-y-6">
+                {(drafts.length > 0 || pendingUrls.length > 0) && (
+                    <div className="flex items-center justify-between bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                        <div className="flex items-center gap-2 text-gray-700 font-medium">
+                            <Package className="h-5 w-5 text-teal-600" />
+                            <span>{drafts.length} Scraped Products</span>
+                            {pendingUrls.length > 0 && (
+                                <span className="text-xs bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full">
+                                    + {pendingUrls.length} in queue
+                                </span>
+                            )}
+                        </div>
+                        <div className="flex gap-3">
+                            {drafts.some(d => d.status === 'pending') && (
+                                <button
+                                    onClick={() => {
+                                        drafts.filter(d => d.status === 'pending').forEach(d => handleSave(d.id))
+                                    }}
+                                    className="flex items-center gap-2 px-4 py-1.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors text-sm shadow-sm"
+                                >
+                                    <Save className="h-4 w-4" />
+                                    Save All Pending
+                                </button>
+                            )}
+                            <button
+                                onClick={() => setDrafts([])}
+                                className="flex items-center gap-2 px-4 py-1.5 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+                            >
+                                <Trash2 className="h-4 w-4" />
+                                Clear All
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {drafts.map((draft) => (
                     <div key={draft.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm flex">
                         {/* Image Preview */}
