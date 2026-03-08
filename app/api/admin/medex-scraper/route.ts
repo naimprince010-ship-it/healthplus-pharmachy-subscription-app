@@ -60,7 +60,11 @@ export async function POST(req: Request) {
                 }
             });
 
-            return NextResponse.json({ links });
+            // Detect total pages
+            const lastPageText = $('.pagination .page-item:nth-last-child(2) .page-link').text().trim();
+            const totalPages = parseInt(lastPageText) || 1;
+
+            return NextResponse.json({ links, totalPages });
         }
 
         // Mode: Single (Standard detail extraction)

@@ -205,8 +205,7 @@ export default function MedexScraperPage() {
                 const finalUrls: { name: string; url: string }[] = []
 
                 for (const u of urls) {
-                    // Check if it's a list page (Generic/Brand Index/Manufacturer)
-                    // Detail pages usually have /brands/ but also specific ID and slug
+                    // Check if it's a list page
                     if (u.includes('/brands/') && (u.match(/\//g) || []).length >= 5) {
                         finalUrls.push({ name: 'Brand', url: u })
                     } else {
@@ -219,6 +218,36 @@ export default function MedexScraperPage() {
                         const data = await res.json()
                         if (res.ok && data.links) {
                             finalUrls.push(...data.links)
+
+                            // Multi-page Support
+                            if (data.totalPages > 1) {
+                                const loadAll = confirm(`This list has ${data.totalPages} pages. Do you want to load products from ALL pages?\n(This may take a moment to find all brand links)`)
+
+                                if (loadAll) {
+                                    // Base URL logic for pagination
+                                    const baseUrl = u.includes('?') ? u.split('?')[0] : u
+                                    const queryParams = new URLSearchParams(u.includes('?') ? u.split('?')[1] : '')
+
+                                    for (let p = 2; p <= data.totalPages; p++) {
+                                        queryParams.set('page', p.toString())
+                                        const pageUrl = `${baseUrl}?${queryParams.toString()}`
+
+                                        // Small toast for progress
+                                        toast.loading(`Finding brands on page ${p}...`, { id: 'expansion-progress' })
+
+                                        const pRes = await fetch('/api/admin/medex-scraper', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ url: pageUrl, mode: 'expand' }),
+                                        })
+                                        const pData = await pRes.json()
+                                        if (pRes.ok && pData.links) {
+                                            finalUrls.push(...pData.links)
+                                        }
+                                    }
+                                    toast.dismiss('expansion-progress')
+                                }
+                            }
                         } else {
                             toast.error(`Could not expand: ${u}`)
                         }
