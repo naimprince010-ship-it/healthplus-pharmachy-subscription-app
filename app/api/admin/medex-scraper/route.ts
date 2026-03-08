@@ -42,12 +42,23 @@ export async function POST(req: Request) {
         const pageTitle = $('title').text();
         const titleParts = pageTitle.split('|').map(p => p.trim());
 
-        // Extract from HTML with robust fallbacks
-        const name = $('h1.n-title').text().trim() || titleParts[0] || 'Unknown';
-        const generic = $('div.brand-generics a').first().text().trim() || 'Generic not found';
-        const strength = $('span.brand-strength').text().trim() || titleParts[1] || '';
+        // Check if it's a list page instead of a brand page
+        if (pageTitle.toLowerCase().includes('list of') || !url.includes('/brands/')) {
+            return NextResponse.json({
+                error: 'Please provide a specific brand URL (e.g., medex.com.bd/brands/...) instead of a list or index page.'
+            }, { status: 400 });
+        }
+
+        // Extract from HTML with NEW robust selectors (Medex updated their site)
+        const name = $('h1.page-heading-1-l.brand').text().trim() || $('h1.n-title').text().trim() || titleParts[0] || 'Unknown';
+        const generic = $('div[title="Generic Name"] a').first().text().trim() || $('div.brand-generics a').first().text().trim() || 'Generic not found';
+        const strength = $('div[title="Strength"]').text().trim() || $('span.brand-strength').text().trim() || titleParts[1] || '';
         const brand = $('a.calm-link').first().text().trim() || titleParts.find(p => p.includes('Ltd') || p.includes('Pharm')) || 'Unknown';
-        const priceText = $('span.unit-price-value').text().trim() || $('.package-container').text().trim();
+
+        // Price extraction: often in .package-container > span
+        let priceText = $('.package-container > span:nth-child(2)').text().trim() ||
+            $('span.unit-price-value').text().trim() ||
+            $('.package-container').text().trim();
 
         // Clean up price
         const priceMatch = priceText.match(/৳\s*([\d.]+)/);
