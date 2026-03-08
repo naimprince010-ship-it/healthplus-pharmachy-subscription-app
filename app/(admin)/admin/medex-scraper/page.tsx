@@ -23,6 +23,8 @@ interface ScrapedProduct {
     genericName: string | null
     brandName: string | null
     strength: string | null
+    dosageForm: string | null
+    therapeuticClass: string | null
     sellingPrice: number | null
     unitPrice: number | null
     stripPrice: number | null
@@ -99,26 +101,37 @@ export default function MedexScraperPage() {
                 m.name.toLowerCase() === product.brandName?.toLowerCase() // Name match
             )
 
-            // 2. Auto-match category (Based on dosage form or keywords in name)
+            // 2. Auto-match category (Based on therapeutic class, name or dosage form)
             let matchedCategoryId = ''
             const lowerName = product.name.toLowerCase()
             const lowerStrength = (product.strength || '').toLowerCase()
             const lowerGeneric = (product.genericName || '').toLowerCase()
+            const lowerTherapeutic = (product.therapeuticClass || '').toLowerCase()
 
-            // Keyword mapping for common medicine categories
-            const categoryKeywords: Record<string, string[]> = {
+            // Keyword mapping for specific categories in the database
+            const categoryMappings: Record<string, string[]> = {
+                'Pain Relief': ['pain', 'analgesic', 'antipyretic', 'fever', 'headache', 'paracetamol', 'ace', 'napa'],
+                'Diabetes': ['diabetes', 'insulin', 'sugar', 'metformin', 'glimepiride', 'diabetic'],
+                'Blood Pressure': ['blood pressure', 'hypertension', 'amlodipine', 'losartan', 'atenolol', 'hypertensive'],
+                'Baby Care': ['baby', 'infant', 'pediatric', 'kid', 'child'],
+                'Vitamins & Supplements': ['vitamin', 'supplement', 'multivitamin', 'calcium', 'zinc', 'omega'],
+                'Heart Health': ['heart', 'cardiac', 'cholesterol', 'statin', 'atorvastatin'],
+                'Gastric & Ulcer': ['gastric', 'ulcer', 'acidity', 'omeprazole', 'esomeprazole', 'pantoprazole', 'antacid'],
+                'Antibiotic': ['antibiotic', 'infection', 'bacterial', 'azithromycin', 'cefixime', 'amoxicillin'],
+                // Dosage forms as fallback if no therapeutic match
                 'Tablet': ['tablet', 'tab'],
                 'Capsule': ['capsule', 'cap'],
                 'Syrup': ['syrup', 'syp', 'suspension', 'susp'],
                 'Injection': ['injection', 'inj', 'infusion'],
-                'Cream': ['cream', 'ointment', 'gel'],
-                'Drop': ['drop', 'eye drop', 'ear drop', 'nasal drop'],
-                'Inhaler': ['inhaler', 'respules'],
-                'Suppository': ['suppository', 'supp'],
             }
 
-            for (const [catName, keywords] of Object.entries(categoryKeywords)) {
-                if (keywords.some(kw => lowerName.includes(kw) || lowerStrength.includes(kw) || lowerGeneric.includes(kw))) {
+            for (const [catName, keywords] of Object.entries(categoryMappings)) {
+                if (keywords.some(kw =>
+                    lowerName.includes(kw) ||
+                    lowerStrength.includes(kw) ||
+                    lowerGeneric.includes(kw) ||
+                    lowerTherapeutic.includes(kw)
+                )) {
                     const cat = categories.find(c => c.name.toLowerCase() === catName.toLowerCase())
                     if (cat) {
                         matchedCategoryId = cat.id

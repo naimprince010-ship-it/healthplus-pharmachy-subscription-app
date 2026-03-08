@@ -54,6 +54,15 @@ export async function POST(req: Request) {
         const generic = $('div[title="Generic Name"] a').first().text().trim() || $('div.brand-generics a').first().text().trim() || 'Generic not found';
         const strength = $('div[title="Strength"]').text().trim() || $('span.brand-strength').text().trim() || titleParts[1] || '';
         const brand = $('a.calm-link').first().text().trim() || titleParts.find(p => p.includes('Ltd') || p.includes('Pharm')) || 'Unknown';
+        const dosageForm = $('h1.page-heading-1-l small.h1-subtitle').text().trim() || $('h1.n-title + span').text().trim() || '';
+
+        // Therapeutic Class extraction
+        let therapeuticClass = '';
+        $('h4.ac-header').each((i, el) => {
+            if ($(el).text().includes('Therapeutic Class')) {
+                therapeuticClass = $(el).next('.ac-body').text().trim();
+            }
+        });
 
         // Price extraction: often in .package-container > span
         let priceText = $('.package-container > span:nth-child(2)').text().trim() ||
@@ -85,6 +94,8 @@ export async function POST(req: Request) {
                 genericName: generic,
                 brandName: brand,
                 strength,
+                dosageForm,
+                therapeuticClass,
                 sellingPrice: unitPrice, // Default selling price is unit price
                 unitPrice,
                 stripPrice,
