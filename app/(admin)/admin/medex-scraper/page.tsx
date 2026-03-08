@@ -32,6 +32,7 @@ interface ScrapedProduct {
     imageUrl: string | null
     sourceUrl: string
     source: 'medex'
+    categoryName?: string
 }
 
 interface DraftProduct {
