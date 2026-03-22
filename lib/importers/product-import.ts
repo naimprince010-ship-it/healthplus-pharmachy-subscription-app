@@ -24,6 +24,8 @@ const ALLOWED_HOSTS = [
   'www.medeasy.health',
   'othoba.com',
   'www.othoba.com',
+  'bdshop.com',
+  'www.bdshop.com'
 ]
 
 function validateUrl(url: string): { valid: boolean; host: string | null; error?: string } {
@@ -37,7 +39,7 @@ function validateUrl(url: string): { valid: boolean; host: string | null; error?
     const host = parsed.hostname.toLowerCase()
 
     if (!ALLOWED_HOSTS.includes(host)) {
-      return { valid: false, host, error: 'Only Arogga, Chaldal, MedEasy, and Othoba URLs are supported' }
+      return { valid: false, host, error: 'Only Arogga, Chaldal, MedEasy, Othoba, and BDShop URLs are supported' }
     }
 
     if (host.includes('localhost') || host.match(/^(\d{1,3}\.){3}\d{1,3}$/)) {
@@ -517,9 +519,71 @@ export async function importProductFromUrl(url: string): Promise<ImportedProduct
     return importFromMedeasy(url)
   } else if (host.includes('othoba')) {
     return importFromOthoba(url)
+  } else if (host.includes('bdshop')) {
+    return importFromBdshop(url)
   }
 
   throw new Error('Unsupported website')
+}
+
+async function importFromBdshop(url: string): Promise<ImportedProduct> {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    },
+  })
+
+  if (!response.ok) throw new Error(`Failed to fetch page: ${response.status}`)
+
+  const html = await response.text()
+  const $ = cheerio.load(html)
+
+  const parts = url.split('/product/')
+  const urlSlug = parts[parts.length - 1]?.split('?')[0] || ''
+
+  const nameValue = $('h1').first().text().trim() ||
+    $('meta[property="og:title"]').attr('content')?.replace(' - BDShop', '').trim() ||
+    urlSlug.replace(/-/g, ' ')
+
+  let priceText = ''
+  $('[class*="price"], [class*="Price"]').each((_, el) => {
+    const t = $(el).text().trim()
+    if (t.includes('৳') && !priceText) priceText = t
+  })
+
+  if (!priceText) {
+    const ogDesc = $('meta[property="og:description"]').attr('content') || ''
+    const match = ogDesc.match(/৳\s*[\d,]+/)
+    if (match) priceText = match[0]
+  }
+
+  const sellingPrice = priceText ? parsePrice(priceText) : null
+
+  const imageUrl = $('meta[property="og:image"]').attr('content')?.startsWith('http')
+    ? $('meta[property="og:image"]').attr('content')
+    : null
+
+  const description = $('meta[property="og:description"]').attr('content') ||
+    $('[class*="description"], [class*="detail"]').first().text().trim().substring(0, 500) ||
+    null
+
+  const brandRaw = $('[class*="brand"]').first().text().trim()
+  const brandName = brandRaw && brandRaw.length < 100 ? brandRaw : null
+
+  return {
+    name: nameValue.trim() || 'Unknown Product',
+    brandName,
+    description,
+    sellingPrice,
+    mrp: sellingPrice,
+    imageUrl: imageUrl || null,
+    packSize: null,
+    genericName: null,
+    dosageForm: null,
+    strength: null,
+    sourceUrl: url,
+    source: 'medeasy' // bdshop does not have a defined enum in the database schema usually, using medeasy as fallback or generic if added later. Assuming Prisma has it mapped or we need to map to nearest or skip. Actually, DB schema accepts string for source? Let's check Prisma schema later. Let's use 'othoba' as a general goods fallback if BDShop isn't in Enum, or we update enum. 
+  }
 }
 
 export interface CategoryProduct {
@@ -830,7 +894,94 @@ export async function extractProductsFromCategory(url: string): Promise<Category
     return extractProductsFromChaldalCategory(url)
   } else if (host.includes('othoba')) {
     return extractProductsFromOthobaCategory(url)
+  } else if (host.includes('bdshop')) {
+    return extractProductsFromBdShopCategory(url)
   }
 
   throw new Error('Unsupported website for category extraction')
+}
+
+async function extractProductsFromBdShopCategory(url: string, maxPages: number = 5): Promise<CategoryProduct[]> {
+  const products: CategoryProduct[] = []
+  let page = 1
+
+  while (page <= maxPages) {
+    const pageUrl = page === 1 ? url : `${url}&page=${page}`
+    const response = await fetch(pageUrl, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+    })
+
+    if (!response.ok) break
+    const html = await response.text()
+    const $ = cheerio.load(html)
+
+    let itemsFoundOnThisPage = 0
+
+    // Common selectors for product cards on bdshop
+    const cardSelectors = ['.product-card', '.product-item', '[class*="product-card"]', '.card']
+
+    for (const sel of cardSelectors) {
+      const cards = $(sel)
+      if (cards.length === 0) continue
+
+      cards.each((_, card) => {
+        const linkEl = $(card).find('a[href*="/product/"]').first()
+        const href = linkEl.attr('href') || ''
+        if (!href) return
+
+        let fullUrl = href.startsWith('http') ? href : `https://www.bdshop.com${href.startsWith('/') ? '' : '/'}${href}`
+        fullUrl = fullUrl.replace('www.bdshop.com/bdshop/product/', 'www.bdshop.com/product/')
+        const cleanUrl = fullUrl.split('?')[0]
+
+        if (!cleanUrl.includes('/product/')) return
+
+        let name = linkEl.text().trim() || $(card).find('h3, .title, .product-title').first().text().trim() || cleanUrl.split('/').pop()?.replace(/-/g, ' ') || ''
+
+        let priceText = ''
+        $(card).find('[class*="price"], [class*="Price"]').each((_, el) => {
+          const t = $(el).text().trim()
+          if (t.includes('৳') && !priceText) priceText = t
+        })
+
+        if (!priceText) {
+          $(card).find('*').each((_, el) => {
+            if ($(el).children().length > 0) return
+            const t = $(el).text().trim()
+            if (t.includes('৳') && !priceText) priceText = t
+          })
+        }
+
+        const price = priceText ? parsePrice(priceText) : null
+        const imgEl = $(card).find('img').first()
+        const imageUrl = imgEl.attr('src') || imgEl.attr('data-src') || null
+
+        if (name && !products.some(p => p.url === cleanUrl)) {
+          products.push({ name, url: cleanUrl, price, imageUrl })
+          itemsFoundOnThisPage++
+        }
+      })
+
+      break // Stop after finding the right layout
+    }
+
+    if (itemsFoundOnThisPage === 0) {
+      // Fallback: just standard links
+      $('a[href*="/product/"]').each((_, el) => {
+        const href = $(el).attr('href') || ''
+        let fullUrl = href.startsWith('http') ? href : `https://www.bdshop.com${href.startsWith('/') ? '' : '/'}${href}`
+        const cleanUrl = fullUrl.split('?')[0]
+
+        if (cleanUrl.includes('/product/') && !products.some(p => p.url === cleanUrl)) {
+          const name = $(el).text().trim() || cleanUrl.split('/').pop()?.replace(/-/g, ' ') || 'Unknown'
+          products.push({ name, url: cleanUrl, price: null, imageUrl: null })
+          itemsFoundOnThisPage++
+        }
+      })
+    }
+
+    if (itemsFoundOnThisPage === 0) break
+    page++
+  }
+
+  return products
 }

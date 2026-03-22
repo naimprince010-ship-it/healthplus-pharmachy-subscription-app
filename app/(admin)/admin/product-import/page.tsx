@@ -1013,7 +1013,7 @@ export default function ProductImportPage() {
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Import Product</h1>
         <p className="mt-2 text-sm text-gray-600">
-          Import product details from Arogga, Chaldal, MedEasy, or Othoba
+          Import product details from Arogga, Chaldal, MedEasy, Othoba, or BDShop
         </p>
       </div>
 
@@ -1025,7 +1025,7 @@ export default function ProductImportPage() {
             <p className="mt-1">
               This feature imports product data from external websites. Please ensure you have
               permission to use the imported content (images, descriptions, etc.) before saving.
-              Only Arogga, Chaldal, MedEasy, and Othoba URLs are supported.
+              Only Arogga, Chaldal, MedEasy, Othoba, and BDShop URLs are supported.
             </p>
           </div>
         </div>
@@ -1054,92 +1054,38 @@ export default function ProductImportPage() {
         </button>
       </div>
 
-      {importMode === 'single' ? (
-        <div className="rounded-lg border border-gray-200 bg-white p-6">
-          <h2 className="text-lg font-semibold text-gray-900">Step 1: Enter Product URL</h2>
-          <p className="mt-1 text-sm text-gray-600">
-            Paste a product URL from Arogga, Chaldal, MedEasy, or Othoba
-          </p>
-
-          <form onSubmit={handleFetch} className="mt-4">
-            <div className="flex gap-3">
-              <input
-                type="url"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://www.othoba.com/product/... or https://www.arogga.com/product/... or https://chaldal.com/... or https://medeasy.health/medicines/..."
-                className="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                disabled={loading}
-              />
-              <button
-                type="submit"
-                disabled={loading || !url.trim()}
-                className="flex items-center gap-2 rounded-lg bg-teal-600 px-6 py-2 font-semibold text-white transition-colors hover:bg-teal-700 disabled:bg-gray-400"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Fetching...
-                  </>
-                ) : (
-                  <>
-                    <Download className="h-4 w-4" />
-                    Fetch Details
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
-
-          {error && (
-            <div className="mt-4 flex items-center gap-2 text-sm text-red-600">
-              <AlertCircle className="h-4 w-4" />
-              {error}
-            </div>
-          )}
-
-          <div className="mt-4 text-xs text-gray-500">
-            <p>Supported URLs:</p>
-            <ul className="mt-1 list-inside list-disc">
-              <li>Arogga: https://www.arogga.com/product/...</li>
-              <li>Chaldal: https://chaldal.com/...</li>
-              <li>MedEasy: https://medeasy.health/medicines/...</li>
-              <li>Othoba: https://www.othoba.com/product-slug-id</li>
-            </ul>
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-6">
+      {
+        importMode === 'single' ? (
           <div className="rounded-lg border border-gray-200 bg-white p-6">
-            <h2 className="text-lg font-semibold text-gray-900">Step 1: Enter Category URL</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Step 1: Enter Product URL</h2>
             <p className="mt-1 text-sm text-gray-600">
-              Paste a category page URL to extract all products from that category
+              Paste a product URL from Arogga, Chaldal, MedEasy, Othoba, or BDShop
             </p>
 
-            <form onSubmit={handleFetchCategory} className="mt-4">
+            <form onSubmit={handleFetch} className="mt-4">
               <div className="flex gap-3">
                 <input
                   type="url"
-                  value={categoryUrl}
-                  onChange={(e) => setCategoryUrl(e.target.value)}
-                  placeholder="https://www.arogga.com/category/... or https://chaldal.com/soaps or https://medeasy.health/skin-care"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder="https://www.bdshop.com/product/... or https://www.othoba.com/product/..."
                   className="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  disabled={bulkLoading}
+                  disabled={loading}
                 />
                 <button
                   type="submit"
-                  disabled={bulkLoading || !categoryUrl.trim()}
+                  disabled={loading || !url.trim()}
                   className="flex items-center gap-2 rounded-lg bg-teal-600 px-6 py-2 font-semibold text-white transition-colors hover:bg-teal-700 disabled:bg-gray-400"
                 >
-                  {bulkLoading ? (
+                  {loading ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Scanning...
+                      Fetching...
                     </>
                   ) : (
                     <>
-                      <FolderOpen className="h-4 w-4" />
-                      Scan Category
+                      <Download className="h-4 w-4" />
+                      Fetch Details
                     </>
                   )}
                 </button>
@@ -1154,1259 +1100,1323 @@ export default function ProductImportPage() {
             )}
 
             <div className="mt-4 text-xs text-gray-500">
-              <p>Supported Category URLs:</p>
+              <p>Supported URLs:</p>
               <ul className="mt-1 list-inside list-disc">
-                <li>Arogga: https://www.arogga.com/category/beauty/6980/skincare</li>
-                <li>Chaldal: https://chaldal.com/soaps</li>
-                <li>MedEasy: https://medeasy.health/skin-care</li>
+                <li>Arogga: https://www.arogga.com/product/...</li>
+                <li>Chaldal: https://chaldal.com/...</li>
+                <li>MedEasy: https://medeasy.health/medicines/...</li>
+                <li>Othoba: https://www.othoba.com/product-slug-id</li>
+                <li>BDShop: https://www.bdshop.com/product/...</li>
               </ul>
             </div>
           </div>
-
-          {categoryProducts.length > 0 && (
+        ) : (
+          <div className="space-y-6">
             <div className="rounded-lg border border-gray-200 bg-white p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">Step 2: Select Products to Import</h2>
-                  <p className="mt-1 text-sm text-gray-600">
-                    Found {categoryProducts.length} products. Select which ones to import.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-gray-900">Step 1: Enter Category URL</h2>
+              <p className="mt-1 text-sm text-gray-600">
+                Paste a category page URL to extract all products from that category
+              </p>
+
+              <form onSubmit={handleFetchCategory} className="mt-4">
+                <div className="flex gap-3">
+                  <input
+                    type="url"
+                    value={categoryUrl}
+                    onChange={(e) => setCategoryUrl(e.target.value)}
+                    placeholder="https://www.bdshop.com/products.php?category=... or https://www.arogga.com/category/..."
+                    className="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    disabled={bulkLoading}
+                  />
                   <button
-                    onClick={() => toggleAllProducts(true)}
-                    className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    type="submit"
+                    disabled={bulkLoading || !categoryUrl.trim()}
+                    className="flex items-center gap-2 rounded-lg bg-teal-600 px-6 py-2 font-semibold text-white transition-colors hover:bg-teal-700 disabled:bg-gray-400"
                   >
-                    Select All
-                  </button>
-                  <button
-                    onClick={() => toggleAllProducts(false)}
-                    className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                  >
-                    Deselect All
+                    {bulkLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Scanning...
+                      </>
+                    ) : (
+                      <>
+                        <FolderOpen className="h-4 w-4" />
+                        Scan Category
+                      </>
+                    )}
                   </button>
                 </div>
-              </div>
+              </form>
 
-              <div className="mt-4 max-h-96 overflow-y-auto rounded-lg border border-gray-200">
-                {categoryProducts.map((product, index) => (
-                  <div
-                    key={product.url}
-                    className={`flex items-center gap-3 p-3 ${index !== 0 ? 'border-t border-gray-100' : ''}`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={product.selected}
-                      onChange={() => toggleProductSelection(product.url)}
-                      className="h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
-                    />
-                    {product.imageUrl && (
-                      <img
-                        src={product.imageUrl}
-                        alt={product.name}
-                        className="h-12 w-12 rounded object-cover bg-gray-100"
-                      />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="truncate text-sm font-medium text-gray-900">{product.name}</p>
-                      <p className="text-xs text-gray-500 truncate">{product.url}</p>
-                    </div>
-                    {product.price && (
-                      <span className="text-sm font-medium text-gray-900">৳{product.price}</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-4 flex items-center justify-between border-t border-gray-200 pt-4">
-                <p className="text-sm text-gray-600">
-                  {categoryProducts.filter(p => p.selected).length} of {categoryProducts.length} products selected
-                </p>
-                <button
-                  onClick={handleBulkImport}
-                  disabled={bulkImporting || categoryProducts.filter(p => p.selected).length === 0}
-                  className="flex items-center gap-2 rounded-lg bg-teal-600 px-6 py-2 font-semibold text-white transition-colors hover:bg-teal-700 disabled:bg-gray-400"
-                >
-                  {bulkImporting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Importing {bulkProgress.current}/{bulkProgress.total}...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="h-4 w-4" />
-                      Import Selected ({categoryProducts.filter(p => p.selected).length})
-                    </>
-                  )}
-                </button>
-              </div>
-
-              {bulkImporting && (
-                <div className="mt-4 rounded-lg bg-gray-50 p-4">
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Progress: {bulkProgress.current}/{bulkProgress.total}</span>
-                    <span className="text-green-600">{bulkProgress.success} success</span>
-                    {bulkProgress.failed > 0 && (
-                      <span className="text-red-600">{bulkProgress.failed} failed</span>
-                    )}
-                  </div>
-                  <div className="mt-2 h-2 w-full rounded-full bg-gray-200">
-                    <div
-                      className="h-2 rounded-full bg-teal-600 transition-all"
-                      style={{ width: `${(bulkProgress.current / bulkProgress.total) * 100}%` }}
-                    />
-                  </div>
+              {error && (
+                <div className="mt-4 flex items-center gap-2 text-sm text-red-600">
+                  <AlertCircle className="h-4 w-4" />
+                  {error}
                 </div>
               )}
-            </div>
-          )}
 
-          {draftProducts.length > 0 && (
-            <div className="rounded-lg border border-gray-200 bg-white p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">Step 3: Review & Save Products</h2>
-                  <p className="mt-1 text-sm text-gray-600">
-                    Edit each product and save to database. {draftProducts.filter(d => d.status === 'saved').length} of {draftProducts.length} saved.
-                  </p>
-                </div>
-                <button
-                  onClick={saveAllDrafts}
-                  disabled={draftProducts.filter(d => d.status === 'pending' && d.editedData.categoryId).length === 0}
-                  className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-700 disabled:bg-gray-400"
-                >
-                  <Save className="h-4 w-4" />
-                  Save All Ready
-                </button>
+              <div className="mt-4 text-xs text-gray-500">
+                <p>Supported Category URLs:</p>
+                <ul className="mt-1 list-inside list-disc">
+                  <li>BDShop: https://www.bdshop.com/products.php?category=computer-and-office</li>
+                  <li>Arogga: https://www.arogga.com/category/beauty/6980/skincare</li>
+                  <li>Chaldal: https://chaldal.com/soaps</li>
+                  <li>MedEasy: https://medeasy.health/skin-care</li>
+                </ul>
               </div>
+            </div>
 
-              {/* Bulk Actions Section */}
-              <div className="mt-6 rounded-xl border-2 border-dashed border-teal-100 bg-teal-50/50 p-4">
-                <div className="flex flex-col gap-6 md:flex-row md:items-end">
-                  <div className="flex-1">
-                    <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-teal-700">
-                      Bulk Category Assignment
-                    </label>
-                    <div className="flex gap-2">
-                      <SearchableSelect
-                        options={categories.map((cat) => ({ value: cat.id, label: cat.name }))}
-                        value=""
-                        onChange={handleBulkAssignCategory}
-                        placeholder="Select category for ALL pending products..."
-                        className="flex-1"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => openCategoryModal(null)}
-                        className="flex items-center justify-center rounded-lg border border-teal-200 bg-white px-3 text-teal-600 hover:bg-teal-50 hover:text-teal-700"
-                        title="Add new category"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </button>
-                    </div>
+            {categoryProducts.length > 0 && (
+              <div className="rounded-lg border border-gray-200 bg-white p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">Step 2: Select Products to Import</h2>
+                    <p className="mt-1 text-sm text-gray-600">
+                      Found {categoryProducts.length} products. Select which ones to import.
+                    </p>
                   </div>
-
-                  <div className="flex flex-col gap-2 min-w-[200px]">
-                    <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-amber-700">
-                      Cleanup Tools
-                    </label>
+                  <div className="flex items-center gap-2">
                     <button
-                      onClick={handleAutoFixDrafts}
-                      disabled={draftProducts.length === 0}
-                      className="flex items-center justify-center gap-2 rounded-lg bg-amber-100 border border-amber-200 px-4 py-2 text-sm font-semibold text-amber-800 transition-colors hover:bg-amber-200 disabled:bg-gray-100 disabled:text-gray-400"
+                      onClick={() => toggleAllProducts(true)}
+                      className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
                     >
-                      <Sparkles className="h-4 w-4" />
-                      Auto Fix All Names & Slugs
+                      Select All
+                    </button>
+                    <button
+                      onClick={() => toggleAllProducts(false)}
+                      className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      Deselect All
                     </button>
                   </div>
-
-                  <div className="flex flex-col gap-2 min-w-[200px]">
-                    <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-blue-700">
-                      Type Override (Bulk)
-                    </label>
-                    <div className="flex flex-col gap-1.5">
-                      <button
-                        onClick={() => handleBulkOverrideType(true)}
-                        className="flex items-center gap-2 rounded-lg bg-blue-100 border border-blue-200 px-3 py-1.5 text-[10px] font-bold text-blue-800 hover:bg-blue-200"
-                      >
-                        💊 Set ALL to Medicine
-                      </button>
-                      <button
-                        onClick={() => handleBulkOverrideType(false)}
-                        className="flex items-center gap-2 rounded-lg bg-green-100 border border-green-200 px-3 py-1.5 text-[10px] font-bold text-green-800 hover:bg-green-200"
-                      >
-                        📦 Set ALL to General
-                      </button>
-                      <button
-                        onClick={() => handleBulkOverrideType(null)}
-                        className="flex items-center gap-2 rounded-lg bg-gray-100 border border-gray-200 px-3 py-1.5 text-[10px] font-bold text-gray-800 hover:bg-gray-200"
-                      >
-                        🔄 Reset ALL to Auto
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2 min-w-[240px]">
-                    <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-purple-700">
-                      Bulk AI Content
-                    </label>
-                    <div className="flex flex-col gap-2">
-                      <button
-                        onClick={handleBulkAiGenerate}
-                        disabled={bulkAiGenerating || draftProducts.filter(d => d.status === 'pending').length === 0}
-                        className="flex items-center justify-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-purple-700 disabled:bg-gray-400"
-                      >
-                        {bulkAiGenerating ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            SEO Processing {bulkAiProgress.current}/{bulkAiProgress.total}
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="h-4 w-4" />
-                            AI SEO (All Pending)
-                          </>
-                        )}
-                      </button>
-                      <button
-                        onClick={handleBulkMedicineExtract}
-                        disabled={bulkExtractingMedicine || draftProducts.filter(d =>
-                          d.status === 'pending' && (
-                            categories.find(c => c.id === d.editedData.categoryId)?.isMedicineCategory ||
-                            d.editedData.isMedicineOverride === true
-                          )
-                        ).length === 0}
-                        className="flex items-center justify-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-700 disabled:bg-gray-400"
-                      >
-                        {bulkExtractingMedicine ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Extracting {bulkAiProgress.current}/{bulkAiProgress.total}
-                          </>
-                        ) : (
-                          <>
-                            <Package className="h-4 w-4" />
-                            AI Extract Meds (All Pending)
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
                 </div>
-                <p className="mt-2 text-[10px] text-gray-500 italic">
-                  Note: Bulk actions will only apply to products marked as &quot;Pending&quot;.
-                </p>
-              </div>
 
-              <div className="mt-4 space-y-3">
-                {draftProducts.map((draft) => (
-                  <div
-                    key={draft.id}
-                    className={`rounded-lg border ${draft.status === 'saved'
-                      ? 'border-green-200 bg-green-50'
-                      : draft.status === 'error'
-                        ? 'border-red-200 bg-red-50'
-                        : 'border-gray-200 bg-white'
-                      }`}
-                  >
+                <div className="mt-4 max-h-96 overflow-y-auto rounded-lg border border-gray-200">
+                  {categoryProducts.map((product, index) => (
                     <div
-                      className="flex items-center gap-3 p-4 cursor-pointer"
-                      onClick={() => setEditingDraftId(editingDraftId === draft.id ? null : draft.id)}
+                      key={product.url}
+                      className={`flex items-center gap-3 p-3 ${index !== 0 ? 'border-t border-gray-100' : ''}`}
                     >
-                      {draft.data.imageUrl ? (
+                      <input
+                        type="checkbox"
+                        checked={product.selected}
+                        onChange={() => toggleProductSelection(product.url)}
+                        className="h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                      />
+                      {product.imageUrl && (
                         <img
-                          src={draft.data.imageUrl}
-                          alt={draft.editedData.name}
+                          src={product.imageUrl}
+                          alt={product.name}
                           className="h-12 w-12 rounded object-cover bg-gray-100"
                         />
-                      ) : (
-                        <div className="h-12 w-12 rounded bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
-                          No img
-                        </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="truncate text-sm font-medium text-gray-900 flex items-center gap-2">
-                          {draft.editedData.name} {(() => {
-                            if (!draft.editedData.packSize) return null
-                            const cleanRegex = (str: string) => str ? str.toLowerCase().replace(/[^a-z0-9]/g, '') : ''
-                            const cleanName = cleanRegex(draft.editedData.name)
-                            const cleanPack = cleanRegex(draft.editedData.packSize)
-                            if (!cleanPack) return null
-                            return !cleanName.includes(cleanPack) ? (
-                              <span className="text-gray-400 font-normal">({draft.editedData.packSize})</span>
-                            ) : null
-                          })()}
-                          {duplicateIssues.nameMap.get(draft.editedData.name.toLowerCase().trim())! > 1 && (
-                            <span className="px-1.5 py-0.5 text-[10px] bg-amber-100 text-amber-700 border border-amber-200 rounded font-bold">
-                              DUPLICATE NAME
-                            </span>
-                          )}
-                          {duplicateIssues.slugMap.get(draft.editedData.slug.toLowerCase().trim())! > 1 && (
-                            <span className="px-1.5 py-0.5 text-[10px] bg-red-100 text-red-700 border border-red-200 rounded font-bold">
-                              DUPLICATE SLUG
-                            </span>
-                          )}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {draft.editedData.sellingPrice ? `৳${draft.editedData.sellingPrice}` : 'No price'}
-                          {draft.editedData.categoryId ? '' : ' • No category selected'}
-                        </p>
+                        <p className="truncate text-sm font-medium text-gray-900">{product.name}</p>
+                        <p className="text-xs text-gray-500 truncate">{product.url}</p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {draft.status === 'saved' && (
-                          <span className="flex items-center gap-1 text-xs text-green-600">
-                            <CheckCircle className="h-4 w-4" />
-                            Saved
-                          </span>
-                        )}
-                        {draft.status === 'saving' && (
-                          <Loader2 className="h-4 w-4 animate-spin text-teal-600" />
-                        )}
-                        {draft.status === 'error' && (
-                          <span className="text-xs text-red-600">{draft.error}</span>
-                        )}
-                        {draft.status === 'pending' && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); saveDraftProduct(draft.id); }}
-                            disabled={!draft.editedData.categoryId || !draft.editedData.sellingPrice}
-                            className="flex items-center gap-1 rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-teal-700 disabled:bg-gray-400"
-                          >
-                            <Save className="h-3 w-3" />
-                            Save
-                          </button>
-                        )}
+                      {product.price && (
+                        <span className="text-sm font-medium text-gray-900">৳{product.price}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-4 flex items-center justify-between border-t border-gray-200 pt-4">
+                  <p className="text-sm text-gray-600">
+                    {categoryProducts.filter(p => p.selected).length} of {categoryProducts.length} products selected
+                  </p>
+                  <button
+                    onClick={handleBulkImport}
+                    disabled={bulkImporting || categoryProducts.filter(p => p.selected).length === 0}
+                    className="flex items-center gap-2 rounded-lg bg-teal-600 px-6 py-2 font-semibold text-white transition-colors hover:bg-teal-700 disabled:bg-gray-400"
+                  >
+                    {bulkImporting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Importing {bulkProgress.current}/{bulkProgress.total}...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="h-4 w-4" />
+                        Import Selected ({categoryProducts.filter(p => p.selected).length})
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {bulkImporting && (
+                  <div className="mt-4 rounded-lg bg-gray-50 p-4">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Progress: {bulkProgress.current}/{bulkProgress.total}</span>
+                      <span className="text-green-600">{bulkProgress.success} success</span>
+                      {bulkProgress.failed > 0 && (
+                        <span className="text-red-600">{bulkProgress.failed} failed</span>
+                      )}
+                    </div>
+                    <div className="mt-2 h-2 w-full rounded-full bg-gray-200">
+                      <div
+                        className="h-2 rounded-full bg-teal-600 transition-all"
+                        style={{ width: `${(bulkProgress.current / bulkProgress.total) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {draftProducts.length > 0 && (
+              <div className="rounded-lg border border-gray-200 bg-white p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">Step 3: Review & Save Products</h2>
+                    <p className="mt-1 text-sm text-gray-600">
+                      Edit each product and save to database. {draftProducts.filter(d => d.status === 'saved').length} of {draftProducts.length} saved.
+                    </p>
+                  </div>
+                  <button
+                    onClick={saveAllDrafts}
+                    disabled={draftProducts.filter(d => d.status === 'pending' && d.editedData.categoryId).length === 0}
+                    className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-700 disabled:bg-gray-400"
+                  >
+                    <Save className="h-4 w-4" />
+                    Save All Ready
+                  </button>
+                </div>
+
+                {/* Bulk Actions Section */}
+                <div className="mt-6 rounded-xl border-2 border-dashed border-teal-100 bg-teal-50/50 p-4">
+                  <div className="flex flex-col gap-6 md:flex-row md:items-end">
+                    <div className="flex-1">
+                      <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-teal-700">
+                        Bulk Category Assignment
+                      </label>
+                      <div className="flex gap-2">
+                        <SearchableSelect
+                          options={categories.map((cat) => ({ value: cat.id, label: cat.name }))}
+                          value=""
+                          onChange={handleBulkAssignCategory}
+                          placeholder="Select category for ALL pending products..."
+                          className="flex-1"
+                        />
                         <button
-                          onClick={(e) => { e.stopPropagation(); removeDraftProduct(draft.id); }}
-                          className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-red-600"
+                          type="button"
+                          onClick={() => openCategoryModal(null)}
+                          className="flex items-center justify-center rounded-lg border border-teal-200 bg-white px-3 text-teal-600 hover:bg-teal-50 hover:text-teal-700"
+                          title="Add new category"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Plus className="h-4 w-4" />
                         </button>
-                        {editingDraftId === draft.id ? (
-                          <ChevronUp className="h-5 w-5 text-gray-400" />
-                        ) : (
-                          <ChevronDown className="h-5 w-5 text-gray-400" />
-                        )}
                       </div>
                     </div>
 
-                    {editingDraftId === draft.id && draft.status !== 'saved' && (
-                      <div className="border-t border-gray-200 p-4">
-                        <div className="grid gap-4 md:grid-cols-2">
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700">Product Name *</label>
-                            <input
-                              type="text"
-                              value={draft.editedData.name}
-                              onChange={(e) => updateDraftProduct(draft.id, 'name', e.target.value)}
-                              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700">Category *</label>
-                            <div className="mt-1 flex gap-2">
-                              <SearchableSelect
-                                options={categories.map((cat) => ({ value: cat.id, label: cat.name }))}
-                                value={draft.editedData.categoryId}
-                                onChange={(value) => updateDraftProduct(draft.id, 'categoryId', value)}
-                                placeholder="Select Category"
-                                className="flex-1"
-                              />
-                              <button
-                                type="button"
-                                onClick={(e) => { e.stopPropagation(); openCategoryModal(draft.id); }}
-                                className="flex items-center justify-center rounded-lg border border-gray-300 px-2 text-gray-600 hover:bg-gray-50 hover:text-teal-600"
-                                title="Add new category"
-                              >
-                                <Plus className="h-4 w-4" />
-                              </button>
-                            </div>
-                            {draft.editedData.categoryId && (
-                              <div className="mt-2">
-                                {(() => {
-                                  if (draft.editedData.isMedicineOverride === true) {
-                                    return (
-                                      <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
-                                        💊 Forced Medicine
-                                      </span>
-                                    )
-                                  }
-                                  if (draft.editedData.isMedicineOverride === false) {
-                                    return (
-                                      <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold bg-green-100 text-green-800 border border-green-200">
-                                        📦 Forced General Product
-                                      </span>
-                                    )
-                                  }
-                                  const isMedCat = categories.find(c => c.id === draft.editedData.categoryId)?.isMedicineCategory
-                                  return (
-                                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${isMedCat
-                                      ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                                      : 'bg-green-100 text-green-800 border border-green-200'
-                                      }`}>
-                                      {isMedCat ? '💊 Auto: Medicine' : '📦 Auto: General Product'}
-                                    </span>
-                                  )
-                                })()}
-                              </div>
-                            )}
-                          </div>
+                    <div className="flex flex-col gap-2 min-w-[200px]">
+                      <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-amber-700">
+                        Cleanup Tools
+                      </label>
+                      <button
+                        onClick={handleAutoFixDrafts}
+                        disabled={draftProducts.length === 0}
+                        className="flex items-center justify-center gap-2 rounded-lg bg-amber-100 border border-amber-200 px-4 py-2 text-sm font-semibold text-amber-800 transition-colors hover:bg-amber-200 disabled:bg-gray-100 disabled:text-gray-400"
+                      >
+                        <Sparkles className="h-4 w-4" />
+                        Auto Fix All Names & Slugs
+                      </button>
+                    </div>
 
-                          <div className="md:col-span-2 mt-2">
-                            <label className="block text-[10px] font-medium text-gray-700 mb-1">Type Override</label>
-                            <div className="flex gap-3">
-                              <label className="flex items-center gap-1 cursor-pointer">
-                                <input
-                                  type="radio"
-                                  name={`typeOverride-${draft.id}`}
-                                  checked={draft.editedData.isMedicineOverride === null || draft.editedData.isMedicineOverride === undefined}
-                                  onChange={() => updateDraftProduct(draft.id, 'isMedicineOverride', null)}
-                                  className="text-teal-600 focus:ring-teal-500 rounded-full w-3 h-3"
-                                />
-                                <span className="text-[10px] font-medium text-gray-700">Auto</span>
-                              </label>
-                              <label className="flex items-center gap-1 cursor-pointer">
-                                <input
-                                  type="radio"
-                                  name={`typeOverride-${draft.id}`}
-                                  checked={draft.editedData.isMedicineOverride === true}
-                                  onChange={() => updateDraftProduct(draft.id, 'isMedicineOverride', true)}
-                                  className="text-blue-600 focus:ring-blue-500 rounded-full w-3 h-3"
-                                />
-                                <span className="text-[10px] font-medium text-blue-700">💊 Force Med.</span>
-                              </label>
-                              <label className="flex items-center gap-1 cursor-pointer">
-                                <input
-                                  type="radio"
-                                  name={`typeOverride-${draft.id}`}
-                                  checked={draft.editedData.isMedicineOverride === false}
-                                  onChange={() => updateDraftProduct(draft.id, 'isMedicineOverride', false)}
-                                  className="text-green-600 focus:ring-green-500 rounded-full w-3 h-3"
-                                />
-                                <span className="text-[10px] font-medium text-green-700">📦 Force Gen.</span>
-                              </label>
-                            </div>
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700">Selling Price (BDT) *</label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              value={draft.editedData.sellingPrice}
-                              onChange={(e) => updateDraftProduct(draft.id, 'sellingPrice', e.target.value)}
-                              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700">MRP (BDT)</label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              value={draft.editedData.mrp}
-                              onChange={(e) => updateDraftProduct(draft.id, 'mrp', e.target.value)}
-                              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700">Manufacturer</label>
-                            <div className="mt-1 flex gap-2">
-                              <SearchableSelect
-                                options={manufacturers.map((mfr) => ({ value: mfr.id, label: mfr.name }))}
-                                value={draft.editedData.manufacturerId}
-                                onChange={(value) => updateDraftProduct(draft.id, 'manufacturerId', value)}
-                                placeholder="Select Manufacturer"
-                                className="flex-1"
-                              />
-                              <button
-                                type="button"
-                                onClick={(e) => { e.stopPropagation(); openManufacturerModal(draft.id); }}
-                                className="flex items-center justify-center rounded-lg border border-gray-300 px-2 text-gray-600 hover:bg-gray-50 hover:text-teal-600"
-                                title="Add new manufacturer"
-                              >
-                                <Plus className="h-4 w-4" />
-                              </button>
-                            </div>
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700">Pack Size</label>
-                            <input
-                              type="text"
-                              value={draft.editedData.packSize}
-                              onChange={(e) => updateDraftProduct(draft.id, 'packSize', e.target.value)}
-                              placeholder="e.g., 500 ml, 300 gm"
-                              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                            />
-                          </div>
-                          <div className="md:col-span-2">
-                            <label className="block text-xs font-medium text-gray-700">Description</label>
-                            <textarea
-                              rows={2}
-                              value={draft.editedData.description}
-                              onChange={(e) => updateDraftProduct(draft.id, 'description', e.target.value)}
-                              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                            />
-                          </div>
+                    <div className="flex flex-col gap-2 min-w-[200px]">
+                      <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-blue-700">
+                        Type Override (Bulk)
+                      </label>
+                      <div className="flex flex-col gap-1.5">
+                        <button
+                          onClick={() => handleBulkOverrideType(true)}
+                          className="flex items-center gap-2 rounded-lg bg-blue-100 border border-blue-200 px-3 py-1.5 text-[10px] font-bold text-blue-800 hover:bg-blue-200"
+                        >
+                          💊 Set ALL to Medicine
+                        </button>
+                        <button
+                          onClick={() => handleBulkOverrideType(false)}
+                          className="flex items-center gap-2 rounded-lg bg-green-100 border border-green-200 px-3 py-1.5 text-[10px] font-bold text-green-800 hover:bg-green-200"
+                        >
+                          📦 Set ALL to General
+                        </button>
+                        <button
+                          onClick={() => handleBulkOverrideType(null)}
+                          className="flex items-center gap-2 rounded-lg bg-gray-100 border border-gray-200 px-3 py-1.5 text-[10px] font-bold text-gray-800 hover:bg-gray-200"
+                        >
+                          🔄 Reset ALL to Auto
+                        </button>
+                      </div>
+                    </div>
 
-                          {(categories.find(c => c.id === draft.editedData.categoryId)?.isMedicineCategory || draft.editedData.isMedicineOverride === true) && (
-                            <div className="md:col-span-2 rounded-lg bg-teal-50/50 p-3 border border-teal-100">
-                              <h4 className="text-[10px] font-bold text-teal-700 uppercase mb-2">Medicine Fields</h4>
-                              <div className="grid gap-3 md:grid-cols-3">
-                                <div>
-                                  <label className="block text-[10px] font-medium text-gray-700">Generic Name</label>
-                                  <input
-                                    type="text"
-                                    value={draft.data.genericName || ''}
-                                    onChange={(e) => setDraftProducts(prev => prev.map(d => d.id === draft.id ? { ...d, data: { ...d.data, genericName: e.target.value } } : d))}
-                                    className="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-xs focus:border-teal-500 focus:outline-none"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-[10px] font-medium text-gray-700">Dosage Form</label>
-                                  <input
-                                    type="text"
-                                    value={draft.data.dosageForm || ''}
-                                    onChange={(e) => setDraftProducts(prev => prev.map(d => d.id === draft.id ? { ...d, data: { ...d.data, dosageForm: e.target.value } } : d))}
-                                    className="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-xs focus:border-teal-500 focus:outline-none"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-[10px] font-medium text-gray-700">Strength</label>
-                                  <input
-                                    type="text"
-                                    value={draft.data.strength || ''}
-                                    onChange={(e) => setDraftProducts(prev => prev.map(d => d.id === draft.id ? { ...d, data: { ...d.data, strength: e.target.value } } : d))}
-                                    className="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-xs focus:border-teal-500 focus:outline-none"
-                                  />
-                                </div>
-                              </div>
-                            </div>
+                    <div className="flex flex-col gap-2 min-w-[240px]">
+                      <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-purple-700">
+                        Bulk AI Content
+                      </label>
+                      <div className="flex flex-col gap-2">
+                        <button
+                          onClick={handleBulkAiGenerate}
+                          disabled={bulkAiGenerating || draftProducts.filter(d => d.status === 'pending').length === 0}
+                          className="flex items-center justify-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-purple-700 disabled:bg-gray-400"
+                        >
+                          {bulkAiGenerating ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              SEO Processing {bulkAiProgress.current}/{bulkAiProgress.total}
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="h-4 w-4" />
+                              AI SEO (All Pending)
+                            </>
                           )}
+                        </button>
+                        <button
+                          onClick={handleBulkMedicineExtract}
+                          disabled={bulkExtractingMedicine || draftProducts.filter(d =>
+                            d.status === 'pending' && (
+                              categories.find(c => c.id === d.editedData.categoryId)?.isMedicineCategory ||
+                              d.editedData.isMedicineOverride === true
+                            )
+                          ).length === 0}
+                          className="flex items-center justify-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-700 disabled:bg-gray-400"
+                        >
+                          {bulkExtractingMedicine ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Extracting {bulkAiProgress.current}/{bulkAiProgress.total}
+                            </>
+                          ) : (
+                            <>
+                              <Package className="h-4 w-4" />
+                              AI Extract Meds (All Pending)
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="mt-2 text-[10px] text-gray-500 italic">
+                    Note: Bulk actions will only apply to products marked as &quot;Pending&quot;.
+                  </p>
+                </div>
 
-                          <div className="md:col-span-2 border-t border-gray-200 pt-4 mt-2">
-                            <div className="flex items-center justify-between mb-3">
-                              <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">AI Tools</h4>
-                              <div className="flex gap-2">
-                                {(categories.find(c => c.id === draft.editedData.categoryId)?.isMedicineCategory || draft.editedData.isMedicineOverride === true) && (
-                                  <button
-                                    type="button"
-                                    onClick={(e) => { e.stopPropagation(); handleDraftMedicineExtract(draft.id); }}
-                                    disabled={draftAiLoading === draft.id}
-                                    className="flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-teal-700 disabled:bg-gray-400"
-                                  >
-                                    <Package className="h-3 w-3" />
-                                    AI Extract Med Info
-                                  </button>
-                                )}
+                <div className="mt-4 space-y-3">
+                  {draftProducts.map((draft) => (
+                    <div
+                      key={draft.id}
+                      className={`rounded-lg border ${draft.status === 'saved'
+                        ? 'border-green-200 bg-green-50'
+                        : draft.status === 'error'
+                          ? 'border-red-200 bg-red-50'
+                          : 'border-gray-200 bg-white'
+                        }`}
+                    >
+                      <div
+                        className="flex items-center gap-3 p-4 cursor-pointer"
+                        onClick={() => setEditingDraftId(editingDraftId === draft.id ? null : draft.id)}
+                      >
+                        {draft.data.imageUrl ? (
+                          <img
+                            src={draft.data.imageUrl}
+                            alt={draft.editedData.name}
+                            className="h-12 w-12 rounded object-cover bg-gray-100"
+                          />
+                        ) : (
+                          <div className="h-12 w-12 rounded bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
+                            No img
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="truncate text-sm font-medium text-gray-900 flex items-center gap-2">
+                            {draft.editedData.name} {(() => {
+                              if (!draft.editedData.packSize) return null
+                              const cleanRegex = (str: string) => str ? str.toLowerCase().replace(/[^a-z0-9]/g, '') : ''
+                              const cleanName = cleanRegex(draft.editedData.name)
+                              const cleanPack = cleanRegex(draft.editedData.packSize)
+                              if (!cleanPack) return null
+                              return !cleanName.includes(cleanPack) ? (
+                                <span className="text-gray-400 font-normal">({draft.editedData.packSize})</span>
+                              ) : null
+                            })()}
+                            {duplicateIssues.nameMap.get(draft.editedData.name.toLowerCase().trim())! > 1 && (
+                              <span className="px-1.5 py-0.5 text-[10px] bg-amber-100 text-amber-700 border border-amber-200 rounded font-bold">
+                                DUPLICATE NAME
+                              </span>
+                            )}
+                            {duplicateIssues.slugMap.get(draft.editedData.slug.toLowerCase().trim())! > 1 && (
+                              <span className="px-1.5 py-0.5 text-[10px] bg-red-100 text-red-700 border border-red-200 rounded font-bold">
+                                DUPLICATE SLUG
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {draft.editedData.sellingPrice ? `৳${draft.editedData.sellingPrice}` : 'No price'}
+                            {draft.editedData.categoryId ? '' : ' • No category selected'}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {draft.status === 'saved' && (
+                            <span className="flex items-center gap-1 text-xs text-green-600">
+                              <CheckCircle className="h-4 w-4" />
+                              Saved
+                            </span>
+                          )}
+                          {draft.status === 'saving' && (
+                            <Loader2 className="h-4 w-4 animate-spin text-teal-600" />
+                          )}
+                          {draft.status === 'error' && (
+                            <span className="text-xs text-red-600">{draft.error}</span>
+                          )}
+                          {draft.status === 'pending' && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); saveDraftProduct(draft.id); }}
+                              disabled={!draft.editedData.categoryId || !draft.editedData.sellingPrice}
+                              className="flex items-center gap-1 rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-teal-700 disabled:bg-gray-400"
+                            >
+                              <Save className="h-3 w-3" />
+                              Save
+                            </button>
+                          )}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); removeDraftProduct(draft.id); }}
+                            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-red-600"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                          {editingDraftId === draft.id ? (
+                            <ChevronUp className="h-5 w-5 text-gray-400" />
+                          ) : (
+                            <ChevronDown className="h-5 w-5 text-gray-400" />
+                          )}
+                        </div>
+                      </div>
+
+                      {editingDraftId === draft.id && draft.status !== 'saved' && (
+                        <div className="border-t border-gray-200 p-4">
+                          <div className="grid gap-4 md:grid-cols-2">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700">Product Name *</label>
+                              <input
+                                type="text"
+                                value={draft.editedData.name}
+                                onChange={(e) => updateDraftProduct(draft.id, 'name', e.target.value)}
+                                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700">Category *</label>
+                              <div className="mt-1 flex gap-2">
+                                <SearchableSelect
+                                  options={categories.map((cat) => ({ value: cat.id, label: cat.name }))}
+                                  value={draft.editedData.categoryId}
+                                  onChange={(value) => updateDraftProduct(draft.id, 'categoryId', value)}
+                                  placeholder="Select Category"
+                                  className="flex-1"
+                                />
                                 <button
                                   type="button"
-                                  onClick={(e) => { e.stopPropagation(); handleDraftAIGenerate(draft.id); }}
-                                  disabled={draftAiLoading === draft.id || !draft.editedData.name}
-                                  className="flex items-center gap-1.5 rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-700 disabled:bg-gray-400"
+                                  onClick={(e) => { e.stopPropagation(); openCategoryModal(draft.id); }}
+                                  className="flex items-center justify-center rounded-lg border border-gray-300 px-2 text-gray-600 hover:bg-gray-50 hover:text-teal-600"
+                                  title="Add new category"
                                 >
-                                  {draftAiLoading === draft.id ? (
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                  ) : (
-                                    <Sparkles className="h-3 w-3" />
-                                  )}
-                                  AI SEO Content
+                                  <Plus className="h-4 w-4" />
+                                </button>
+                              </div>
+                              {draft.editedData.categoryId && (
+                                <div className="mt-2">
+                                  {(() => {
+                                    if (draft.editedData.isMedicineOverride === true) {
+                                      return (
+                                        <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                                          💊 Forced Medicine
+                                        </span>
+                                      )
+                                    }
+                                    if (draft.editedData.isMedicineOverride === false) {
+                                      return (
+                                        <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold bg-green-100 text-green-800 border border-green-200">
+                                          📦 Forced General Product
+                                        </span>
+                                      )
+                                    }
+                                    const isMedCat = categories.find(c => c.id === draft.editedData.categoryId)?.isMedicineCategory
+                                    return (
+                                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${isMedCat
+                                        ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                                        : 'bg-green-100 text-green-800 border border-green-200'
+                                        }`}>
+                                        {isMedCat ? '💊 Auto: Medicine' : '📦 Auto: General Product'}
+                                      </span>
+                                    )
+                                  })()}
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="md:col-span-2 mt-2">
+                              <label className="block text-[10px] font-medium text-gray-700 mb-1">Type Override</label>
+                              <div className="flex gap-3">
+                                <label className="flex items-center gap-1 cursor-pointer">
+                                  <input
+                                    type="radio"
+                                    name={`typeOverride-${draft.id}`}
+                                    checked={draft.editedData.isMedicineOverride === null || draft.editedData.isMedicineOverride === undefined}
+                                    onChange={() => updateDraftProduct(draft.id, 'isMedicineOverride', null)}
+                                    className="text-teal-600 focus:ring-teal-500 rounded-full w-3 h-3"
+                                  />
+                                  <span className="text-[10px] font-medium text-gray-700">Auto</span>
+                                </label>
+                                <label className="flex items-center gap-1 cursor-pointer">
+                                  <input
+                                    type="radio"
+                                    name={`typeOverride-${draft.id}`}
+                                    checked={draft.editedData.isMedicineOverride === true}
+                                    onChange={() => updateDraftProduct(draft.id, 'isMedicineOverride', true)}
+                                    className="text-blue-600 focus:ring-blue-500 rounded-full w-3 h-3"
+                                  />
+                                  <span className="text-[10px] font-medium text-blue-700">💊 Force Med.</span>
+                                </label>
+                                <label className="flex items-center gap-1 cursor-pointer">
+                                  <input
+                                    type="radio"
+                                    name={`typeOverride-${draft.id}`}
+                                    checked={draft.editedData.isMedicineOverride === false}
+                                    onChange={() => updateDraftProduct(draft.id, 'isMedicineOverride', false)}
+                                    className="text-green-600 focus:ring-green-500 rounded-full w-3 h-3"
+                                  />
+                                  <span className="text-[10px] font-medium text-green-700">📦 Force Gen.</span>
+                                </label>
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700">Selling Price (BDT) *</label>
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={draft.editedData.sellingPrice}
+                                onChange={(e) => updateDraftProduct(draft.id, 'sellingPrice', e.target.value)}
+                                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700">MRP (BDT)</label>
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={draft.editedData.mrp}
+                                onChange={(e) => updateDraftProduct(draft.id, 'mrp', e.target.value)}
+                                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700">Manufacturer</label>
+                              <div className="mt-1 flex gap-2">
+                                <SearchableSelect
+                                  options={manufacturers.map((mfr) => ({ value: mfr.id, label: mfr.name }))}
+                                  value={draft.editedData.manufacturerId}
+                                  onChange={(value) => updateDraftProduct(draft.id, 'manufacturerId', value)}
+                                  placeholder="Select Manufacturer"
+                                  className="flex-1"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); openManufacturerModal(draft.id); }}
+                                  className="flex items-center justify-center rounded-lg border border-gray-300 px-2 text-gray-600 hover:bg-gray-50 hover:text-teal-600"
+                                  title="Add new manufacturer"
+                                >
+                                  <Plus className="h-4 w-4" />
                                 </button>
                               </div>
                             </div>
-                            <div className="grid gap-3 md:grid-cols-2">
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700">SEO Title</label>
-                                <input
-                                  type="text"
-                                  value={draft.editedData.seoTitle}
-                                  onChange={(e) => updateDraftProduct(draft.id, 'seoTitle', e.target.value)}
-                                  placeholder="SEO optimized title"
-                                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                                />
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700">Pack Size</label>
+                              <input
+                                type="text"
+                                value={draft.editedData.packSize}
+                                onChange={(e) => updateDraftProduct(draft.id, 'packSize', e.target.value)}
+                                placeholder="e.g., 500 ml, 300 gm"
+                                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                              />
+                            </div>
+                            <div className="md:col-span-2">
+                              <label className="block text-xs font-medium text-gray-700">Description</label>
+                              <textarea
+                                rows={2}
+                                value={draft.editedData.description}
+                                onChange={(e) => updateDraftProduct(draft.id, 'description', e.target.value)}
+                                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                              />
+                            </div>
+
+                            {(categories.find(c => c.id === draft.editedData.categoryId)?.isMedicineCategory || draft.editedData.isMedicineOverride === true) && (
+                              <div className="md:col-span-2 rounded-lg bg-teal-50/50 p-3 border border-teal-100">
+                                <h4 className="text-[10px] font-bold text-teal-700 uppercase mb-2">Medicine Fields</h4>
+                                <div className="grid gap-3 md:grid-cols-3">
+                                  <div>
+                                    <label className="block text-[10px] font-medium text-gray-700">Generic Name</label>
+                                    <input
+                                      type="text"
+                                      value={draft.data.genericName || ''}
+                                      onChange={(e) => setDraftProducts(prev => prev.map(d => d.id === draft.id ? { ...d, data: { ...d.data, genericName: e.target.value } } : d))}
+                                      className="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-xs focus:border-teal-500 focus:outline-none"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-[10px] font-medium text-gray-700">Dosage Form</label>
+                                    <input
+                                      type="text"
+                                      value={draft.data.dosageForm || ''}
+                                      onChange={(e) => setDraftProducts(prev => prev.map(d => d.id === draft.id ? { ...d, data: { ...d.data, dosageForm: e.target.value } } : d))}
+                                      className="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-xs focus:border-teal-500 focus:outline-none"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-[10px] font-medium text-gray-700">Strength</label>
+                                    <input
+                                      type="text"
+                                      value={draft.data.strength || ''}
+                                      onChange={(e) => setDraftProducts(prev => prev.map(d => d.id === draft.id ? { ...d, data: { ...d.data, strength: e.target.value } } : d))}
+                                      className="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-xs focus:border-teal-500 focus:outline-none"
+                                    />
+                                  </div>
+                                </div>
                               </div>
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700">URL Slug</label>
-                                <input
-                                  type="text"
-                                  value={draft.editedData.slug}
-                                  onChange={(e) => updateDraftProduct(draft.id, 'slug', e.target.value)}
-                                  placeholder="product-url-slug"
-                                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                                />
+                            )}
+
+                            <div className="md:col-span-2 border-t border-gray-200 pt-4 mt-2">
+                              <div className="flex items-center justify-between mb-3">
+                                <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">AI Tools</h4>
+                                <div className="flex gap-2">
+                                  {(categories.find(c => c.id === draft.editedData.categoryId)?.isMedicineCategory || draft.editedData.isMedicineOverride === true) && (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => { e.stopPropagation(); handleDraftMedicineExtract(draft.id); }}
+                                      disabled={draftAiLoading === draft.id}
+                                      className="flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-teal-700 disabled:bg-gray-400"
+                                    >
+                                      <Package className="h-3 w-3" />
+                                      AI Extract Med Info
+                                    </button>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); handleDraftAIGenerate(draft.id); }}
+                                    disabled={draftAiLoading === draft.id || !draft.editedData.name}
+                                    className="flex items-center gap-1.5 rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-700 disabled:bg-gray-400"
+                                  >
+                                    {draftAiLoading === draft.id ? (
+                                      <Loader2 className="h-3 w-3 animate-spin" />
+                                    ) : (
+                                      <Sparkles className="h-3 w-3" />
+                                    )}
+                                    AI SEO Content
+                                  </button>
+                                </div>
                               </div>
-                              <div className="md:col-span-2">
-                                <label className="block text-xs font-medium text-gray-700">SEO Description</label>
-                                <textarea
-                                  rows={2}
-                                  value={draft.editedData.seoDescription}
-                                  onChange={(e) => updateDraftProduct(draft.id, 'seoDescription', e.target.value)}
-                                  placeholder="Meta description for search engines"
-                                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                                />
-                              </div>
-                              <div className="md:col-span-2">
-                                <label className="block text-xs font-medium text-gray-700">SEO Keywords</label>
-                                <input
-                                  type="text"
-                                  value={draft.editedData.seoKeywords}
-                                  onChange={(e) => updateDraftProduct(draft.id, 'seoKeywords', e.target.value)}
-                                  placeholder="keyword1, keyword2, keyword3"
-                                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                                />
+                              <div className="grid gap-3 md:grid-cols-2">
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700">SEO Title</label>
+                                  <input
+                                    type="text"
+                                    value={draft.editedData.seoTitle}
+                                    onChange={(e) => updateDraftProduct(draft.id, 'seoTitle', e.target.value)}
+                                    placeholder="SEO optimized title"
+                                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700">URL Slug</label>
+                                  <input
+                                    type="text"
+                                    value={draft.editedData.slug}
+                                    onChange={(e) => updateDraftProduct(draft.id, 'slug', e.target.value)}
+                                    placeholder="product-url-slug"
+                                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                  />
+                                </div>
+                                <div className="md:col-span-2">
+                                  <label className="block text-xs font-medium text-gray-700">SEO Description</label>
+                                  <textarea
+                                    rows={2}
+                                    value={draft.editedData.seoDescription}
+                                    onChange={(e) => updateDraftProduct(draft.id, 'seoDescription', e.target.value)}
+                                    placeholder="Meta description for search engines"
+                                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                  />
+                                </div>
+                                <div className="md:col-span-2">
+                                  <label className="block text-xs font-medium text-gray-700">SEO Keywords</label>
+                                  <input
+                                    type="text"
+                                    value={draft.editedData.seoKeywords}
+                                    onChange={(e) => updateDraftProduct(draft.id, 'seoKeywords', e.target.value)}
+                                    placeholder="keyword1, keyword2, keyword3"
+                                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                  />
+                                </div>
                               </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {importedProduct && (
-        <div className="rounded-lg border border-gray-200 bg-white p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Step 2: Review & Edit</h2>
-              <p className="mt-1 text-sm text-gray-600">
-                Review the imported data and make any necessary changes
-              </p>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-green-600">
-              <CheckCircle className="h-4 w-4" />
-              Imported from {importedProduct.source}
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-6 md:grid-cols-2">
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Product Name *
-                </label>
-                <input
-                  type="text"
-                  value={editedProduct.name}
-                  onChange={(e) => setEditedProduct({ ...editedProduct, name: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Manufacturer {editedProduct.manufacturerName && !editedProduct.manufacturerId && (
-                    <span className="ml-2 text-[10px] bg-teal-100 text-teal-700 px-1 rounded uppercase font-bold">New</span>
-                  )}
-                </label>
-                <div className="mt-1 flex gap-2">
-                  <div className="flex-1">
-                    <SearchableSelect
-                      options={manufacturers.map((mfr) => ({ value: mfr.id, label: mfr.name }))}
-                      value={editedProduct.manufacturerId}
-                      onChange={(value) => setEditedProduct({ ...editedProduct, manufacturerId: value, manufacturerName: value ? '' : editedProduct.manufacturerName })}
-                      placeholder="Select Manufacturer"
-                    />
-                    {!editedProduct.manufacturerId && (
-                      <input
-                        type="text"
-                        value={editedProduct.manufacturerName}
-                        onChange={(e) => setEditedProduct({ ...editedProduct, manufacturerName: e.target.value })}
-                        placeholder="Or enter new manufacturer name"
-                        className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-teal-500 focus:outline-none"
-                      />
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => openManufacturerModal(null)}
-                    className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 hover:text-teal-600"
-                    title="Add new manufacturer"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-
-              {(categories.find(c => c.id === editedProduct.categoryId)?.isMedicineCategory || editedProduct.isMedicineOverride === true) && (
-                <div className="space-y-4 rounded-lg bg-teal-50 p-4 border border-teal-100">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-bold text-teal-800 uppercase tracking-wider">Medicine Information</h3>
-                    <button
-                      type="button"
-                      onClick={handleExtractMedicineFields}
-                      disabled={isExtractingMedicine || !editedProduct.name}
-                      className="flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-teal-700 disabled:bg-gray-400"
-                    >
-                      {isExtractingMedicine ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <Sparkles className="h-3 w-3" />
                       )}
-                      AI Extract Fields
-                    </button>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700">Generic Name</label>
-                    <input
-                      type="text"
-                      value={editedProduct.genericName}
-                      onChange={(e) => setEditedProduct({ ...editedProduct, genericName: e.target.value })}
-                      placeholder="e.g. Paracetamol"
-                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700">Dosage Form</label>
-                      <input
-                        type="text"
-                        value={editedProduct.dosageForm}
-                        onChange={(e) => setEditedProduct({ ...editedProduct, dosageForm: e.target.value })}
-                        placeholder="e.g. Tablet"
-                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none"
-                      />
                     </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700">Strength</label>
-                      <input
-                        type="text"
-                        value={editedProduct.strength}
-                        onChange={(e) => setEditedProduct({ ...editedProduct, strength: e.target.value })}
-                        placeholder="e.g. 500mg"
-                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Product Type Override
-                </label>
-                <div className="flex gap-4 p-3 border border-gray-200 rounded-lg bg-gray-50">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="productTypeOverride"
-                      checked={editedProduct.isMedicineOverride === null || editedProduct.isMedicineOverride === undefined}
-                      onChange={() => setEditedProduct({ ...editedProduct, isMedicineOverride: null })}
-                      className="text-teal-600 focus:ring-teal-500 rounded-full"
-                    />
-                    <span className="text-sm font-medium text-gray-700">Auto (Based on Category)</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="productTypeOverride"
-                      checked={editedProduct.isMedicineOverride === true}
-                      onChange={() => setEditedProduct({ ...editedProduct, isMedicineOverride: true })}
-                      className="text-blue-600 focus:ring-blue-500 rounded-full"
-                    />
-                    <span className="text-sm font-medium text-blue-700 flex items-center gap-1">💊 Force Medicine</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="productTypeOverride"
-                      checked={editedProduct.isMedicineOverride === false}
-                      onChange={() => setEditedProduct({ ...editedProduct, isMedicineOverride: false })}
-                      className="text-green-600 focus:ring-green-500 rounded-full"
-                    />
-                    <span className="text-sm font-medium text-green-700 flex items-center gap-1">📦 Force General Product</span>
-                  </label>
+                  ))}
                 </div>
               </div>
+            )}
+          </div>
+        )
+      }
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Selling Price (BDT) *
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={editedProduct.sellingPrice}
-                    onChange={(e) => setEditedProduct({ ...editedProduct, sellingPrice: e.target.value })}
-                    className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    MRP (BDT)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={editedProduct.mrp}
-                    onChange={(e) => setEditedProduct({ ...editedProduct, mrp: e.target.value })}
-                    className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  />
-                </div>
+      {
+        importedProduct && (
+          <div className="rounded-lg border border-gray-200 bg-white p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Step 2: Review & Edit</h2>
+                <p className="mt-1 text-sm text-gray-600">
+                  Review the imported data and make any necessary changes
+                </p>
               </div>
+              <div className="flex items-center gap-2 text-sm text-green-600">
+                <CheckCircle className="h-4 w-4" />
+                Imported from {importedProduct.source}
+              </div>
+            </div>
 
-              <div className="grid grid-cols-2 gap-4">
+            <div className="mt-6 grid gap-6 md:grid-cols-2">
+              <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Stock Quantity
-                  </label>
-                  <input
-                    type="number"
-                    value={editedProduct.stockQuantity}
-                    onChange={(e) => setEditedProduct({ ...editedProduct, stockQuantity: e.target.value })}
-                    className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Pack Size
+                    Product Name *
                   </label>
                   <input
                     type="text"
-                    value={editedProduct.packSize}
-                    onChange={(e) => setEditedProduct({ ...editedProduct, packSize: e.target.value })}
-                    placeholder="e.g., 500 ml, 300 gm"
+                    value={editedProduct.name}
+                    onChange={(e) => setEditedProduct({ ...editedProduct, name: e.target.value })}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Manufacturer {editedProduct.manufacturerName && !editedProduct.manufacturerId && (
+                      <span className="ml-2 text-[10px] bg-teal-100 text-teal-700 px-1 rounded uppercase font-bold">New</span>
+                    )}
+                  </label>
+                  <div className="mt-1 flex gap-2">
+                    <div className="flex-1">
+                      <SearchableSelect
+                        options={manufacturers.map((mfr) => ({ value: mfr.id, label: mfr.name }))}
+                        value={editedProduct.manufacturerId}
+                        onChange={(value) => setEditedProduct({ ...editedProduct, manufacturerId: value, manufacturerName: value ? '' : editedProduct.manufacturerName })}
+                        placeholder="Select Manufacturer"
+                      />
+                      {!editedProduct.manufacturerId && (
+                        <input
+                          type="text"
+                          value={editedProduct.manufacturerName}
+                          onChange={(e) => setEditedProduct({ ...editedProduct, manufacturerName: e.target.value })}
+                          placeholder="Or enter new manufacturer name"
+                          className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-teal-500 focus:outline-none"
+                        />
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => openManufacturerModal(null)}
+                      className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 hover:text-teal-600"
+                      title="Add new manufacturer"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {(categories.find(c => c.id === editedProduct.categoryId)?.isMedicineCategory || editedProduct.isMedicineOverride === true) && (
+                  <div className="space-y-4 rounded-lg bg-teal-50 p-4 border border-teal-100">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-bold text-teal-800 uppercase tracking-wider">Medicine Information</h3>
+                      <button
+                        type="button"
+                        onClick={handleExtractMedicineFields}
+                        disabled={isExtractingMedicine || !editedProduct.name}
+                        className="flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-teal-700 disabled:bg-gray-400"
+                      >
+                        {isExtractingMedicine ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Sparkles className="h-3 w-3" />
+                        )}
+                        AI Extract Fields
+                      </button>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700">Generic Name</label>
+                      <input
+                        type="text"
+                        value={editedProduct.genericName}
+                        onChange={(e) => setEditedProduct({ ...editedProduct, genericName: e.target.value })}
+                        placeholder="e.g. Paracetamol"
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700">Dosage Form</label>
+                        <input
+                          type="text"
+                          value={editedProduct.dosageForm}
+                          onChange={(e) => setEditedProduct({ ...editedProduct, dosageForm: e.target.value })}
+                          placeholder="e.g. Tablet"
+                          className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700">Strength</label>
+                        <input
+                          type="text"
+                          value={editedProduct.strength}
+                          onChange={(e) => setEditedProduct({ ...editedProduct, strength: e.target.value })}
+                          placeholder="e.g. 500mg"
+                          className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Product Type Override
+                  </label>
+                  <div className="flex gap-4 p-3 border border-gray-200 rounded-lg bg-gray-50">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="productTypeOverride"
+                        checked={editedProduct.isMedicineOverride === null || editedProduct.isMedicineOverride === undefined}
+                        onChange={() => setEditedProduct({ ...editedProduct, isMedicineOverride: null })}
+                        className="text-teal-600 focus:ring-teal-500 rounded-full"
+                      />
+                      <span className="text-sm font-medium text-gray-700">Auto (Based on Category)</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="productTypeOverride"
+                        checked={editedProduct.isMedicineOverride === true}
+                        onChange={() => setEditedProduct({ ...editedProduct, isMedicineOverride: true })}
+                        className="text-blue-600 focus:ring-blue-500 rounded-full"
+                      />
+                      <span className="text-sm font-medium text-blue-700 flex items-center gap-1">💊 Force Medicine</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="productTypeOverride"
+                        checked={editedProduct.isMedicineOverride === false}
+                        onChange={() => setEditedProduct({ ...editedProduct, isMedicineOverride: false })}
+                        className="text-green-600 focus:ring-green-500 rounded-full"
+                      />
+                      <span className="text-sm font-medium text-green-700 flex items-center gap-1">📦 Force General Product</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Selling Price (BDT) *
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={editedProduct.sellingPrice}
+                      onChange={(e) => setEditedProduct({ ...editedProduct, sellingPrice: e.target.value })}
+                      className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      MRP (BDT)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={editedProduct.mrp}
+                      onChange={(e) => setEditedProduct({ ...editedProduct, mrp: e.target.value })}
+                      className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Stock Quantity
+                    </label>
+                    <input
+                      type="number"
+                      value={editedProduct.stockQuantity}
+                      onChange={(e) => setEditedProduct({ ...editedProduct, stockQuantity: e.target.value })}
+                      className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Pack Size
+                    </label>
+                    <input
+                      type="text"
+                      value={editedProduct.packSize}
+                      onChange={(e) => setEditedProduct({ ...editedProduct, packSize: e.target.value })}
+                      placeholder="e.g., 500 ml, 300 gm"
+                      className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Category <span className="text-red-500">*</span>
+                  </label>
+                  <div className="mt-1 flex gap-2">
+                    <SearchableSelect
+                      options={categories.map((cat) => ({ value: cat.id, label: cat.name }))}
+                      value={editedProduct.categoryId}
+                      onChange={(value) => setEditedProduct({ ...editedProduct, categoryId: value })}
+                      placeholder="Select Category"
+                      className="flex-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => openCategoryModal(null)}
+                      className="flex items-center justify-center rounded-lg border border-gray-300 px-3 text-gray-600 hover:bg-gray-50 hover:text-teal-600"
+                      title="Add new category"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="mt-2 text-sm">
+                    {(() => {
+                      if (editedProduct.isMedicineOverride === true) {
+                        return (
+                          <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                            💊 Forced Medicine Import
+                          </span>
+                        )
+                      }
+                      if (editedProduct.isMedicineOverride === false) {
+                        return (
+                          <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold bg-green-100 text-green-800 border border-green-200">
+                            📦 Forced General Product Import
+                          </span>
+                        )
+                      }
+                      if (editedProduct.categoryId) {
+                        const isMedCat = categories.find(c => c.id === editedProduct.categoryId)?.isMedicineCategory
+                        return (
+                          <>
+                            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${isMedCat
+                              ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                              : 'bg-green-100 text-green-800 border border-green-200'
+                              }`}>
+                              {isMedCat ? '💊 Auto: Medicine Import' : '📦 Auto: General Product Import'}
+                            </span>
+                            <p className="mt-1 text-[10px] text-gray-500">
+                              Product type is matching the selected category.
+                            </p>
+                          </>
+                        )
+                      }
+                      return (
+                        <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                          ℹ️ Select a category or force the product type above
+                        </span>
+                      )
+                    })()}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Description
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={editedProduct.description}
+                    onChange={(e) => setEditedProduct({ ...editedProduct, description: e.target.value })}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Key Features
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={editedProduct.keyFeatures}
+                    onChange={(e) => setEditedProduct({ ...editedProduct, keyFeatures: e.target.value })}
+                    placeholder="Enter key features, one per line"
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Specifications Summary
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={editedProduct.specSummary}
+                    onChange={(e) => setEditedProduct({ ...editedProduct, specSummary: e.target.value })}
+                    placeholder="Enter specifications"
                     className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Category <span className="text-red-500">*</span>
-                </label>
-                <div className="mt-1 flex gap-2">
-                  <SearchableSelect
-                    options={categories.map((cat) => ({ value: cat.id, label: cat.name }))}
-                    value={editedProduct.categoryId}
-                    onChange={(value) => setEditedProduct({ ...editedProduct, categoryId: value })}
-                    placeholder="Select Category"
-                    className="flex-1"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => openCategoryModal(null)}
-                    className="flex items-center justify-center rounded-lg border border-gray-300 px-3 text-gray-600 hover:bg-gray-50 hover:text-teal-600"
-                    title="Add new category"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                </div>
-                <div className="mt-2 text-sm">
-                  {(() => {
-                    if (editedProduct.isMedicineOverride === true) {
-                      return (
-                        <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">
-                          💊 Forced Medicine Import
-                        </span>
-                      )
-                    }
-                    if (editedProduct.isMedicineOverride === false) {
-                      return (
-                        <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold bg-green-100 text-green-800 border border-green-200">
-                          📦 Forced General Product Import
-                        </span>
-                      )
-                    }
-                    if (editedProduct.categoryId) {
-                      const isMedCat = categories.find(c => c.id === editedProduct.categoryId)?.isMedicineCategory
-                      return (
-                        <>
-                          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${isMedCat
-                            ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                            : 'bg-green-100 text-green-800 border border-green-200'
-                            }`}>
-                            {isMedCat ? '💊 Auto: Medicine Import' : '📦 Auto: General Product Import'}
-                          </span>
-                          <p className="mt-1 text-[10px] text-gray-500">
-                            Product type is matching the selected category.
-                          </p>
-                        </>
-                      )
-                    }
-                    return (
-                      <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
-                        ℹ️ Select a category or force the product type above
-                      </span>
-                    )
-                  })()}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Description
-                </label>
-                <textarea
-                  rows={4}
-                  value={editedProduct.description}
-                  onChange={(e) => setEditedProduct({ ...editedProduct, description: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Key Features
-                </label>
-                <textarea
-                  rows={3}
-                  value={editedProduct.keyFeatures}
-                  onChange={(e) => setEditedProduct({ ...editedProduct, keyFeatures: e.target.value })}
-                  placeholder="Enter key features, one per line"
-                  className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Specifications Summary
-                </label>
-                <textarea
-                  rows={3}
-                  value={editedProduct.specSummary}
-                  onChange={(e) => setEditedProduct({ ...editedProduct, specSummary: e.target.value })}
-                  placeholder="Enter specifications"
-                  className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {importedProduct.imageUrl && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Product Image
-                  </label>
-                  <div className="mt-2 overflow-hidden rounded-lg border border-gray-200">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={importedProduct.imageUrl}
-                      alt={importedProduct.name}
-                      className="h-48 w-full object-contain bg-gray-50"
-                    />
-                  </div>
-                  <p className="mt-1 text-xs text-gray-500">
-                    Image will be saved from: {importedProduct.source}
-                  </p>
-                </div>
-              )}
-
-              <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-                <h3 className="text-sm font-medium text-gray-700">Additional Info</h3>
-                <dl className="mt-2 space-y-2 text-sm">
-                  {importedProduct.genericName && (
-                    <div>
-                      <dt className="text-gray-500">Generic Name:</dt>
-                      <dd className="font-medium text-gray-900">{importedProduct.genericName}</dd>
-                    </div>
-                  )}
-                  {importedProduct.dosageForm && (
-                    <div>
-                      <dt className="text-gray-500">Dosage Form:</dt>
-                      <dd className="font-medium text-gray-900">{importedProduct.dosageForm}</dd>
-                    </div>
-                  )}
-                  {importedProduct.strength && (
-                    <div>
-                      <dt className="text-gray-500">Strength:</dt>
-                      <dd className="font-medium text-gray-900">{importedProduct.strength}</dd>
-                    </div>
-                  )}
-                  {importedProduct.packSize && (
-                    <div>
-                      <dt className="text-gray-500">Pack Size:</dt>
-                      <dd className="font-medium text-gray-900">{importedProduct.packSize}</dd>
-                    </div>
-                  )}
+              <div className="space-y-4">
+                {importedProduct.imageUrl && (
                   <div>
-                    <dt className="text-gray-500">Source:</dt>
-                    <dd>
-                      <a
-                        href={importedProduct.sourceUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-teal-600 hover:text-teal-700"
-                      >
-                        {importedProduct.source}
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
-                    </dd>
-                  </div>
-                </dl>
-              </div>
-
-              <div className="rounded-lg border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50 p-4">
-                <div className="mb-3 flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-purple-600" />
-                  <h3 className="text-sm font-semibold text-gray-900">AI Assistant</h3>
-                  <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
-                    Beta
-                  </span>
-                </div>
-
-                <p className="mb-3 text-xs text-gray-600">
-                  Generate SEO content automatically based on product name and category.
-                </p>
-
-                {aiError && (
-                  <div className="mb-3 rounded-lg bg-red-50 p-2 text-xs text-red-600">
-                    {aiError}
-                  </div>
-                )}
-
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Language
+                    <label className="block text-sm font-medium text-gray-700">
+                      Product Image
                     </label>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setAiLanguage('en')}
-                        className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${aiLanguage === 'en'
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                          }`}
-                      >
-                        English
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setAiLanguage('bn')}
-                        className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${aiLanguage === 'bn'
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                          }`}
-                      >
-                        বাংলা
-                      </button>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleAIGenerate}
-                    disabled={aiLoading || !editedProduct.name}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    {aiLoading ? 'Generating...' : 'Regenerate with AI'}
-                  </button>
-
-                  <p className="text-xs text-purple-700">
-                    <strong>Tip:</strong> Click to generate Description, Key Features, Specifications, SEO URL, and SEO fields.
-                  </p>
-                </div>
-              </div>
-
-              <div className="rounded-lg border border-gray-200 bg-white p-4">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">SEO Settings</h3>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700">
-                      SEO URL (Slug)
-                    </label>
-                    <div className="mt-1 flex items-center gap-1">
-                      <span className="text-xs text-gray-500">/products/</span>
-                      <input
-                        type="text"
-                        value={editedProduct.slug}
-                        onChange={(e) => setEditedProduct({ ...editedProduct, slug: e.target.value })}
-                        placeholder="vim-dishwashing-liquid-pouch-200-ml"
-                        className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    <div className="mt-2 overflow-hidden rounded-lg border border-gray-200">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={importedProduct.imageUrl}
+                        alt={importedProduct.name}
+                        className="h-48 w-full object-contain bg-gray-50"
                       />
                     </div>
                     <p className="mt-1 text-xs text-gray-500">
-                      Auto-generated when you click &quot;Regenerate with AI&quot;
+                      Image will be saved from: {importedProduct.source}
                     </p>
                   </div>
+                )}
 
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700">
-                      SEO Title
-                    </label>
-                    <input
-                      type="text"
-                      value={editedProduct.seoTitle}
-                      onChange={(e) => setEditedProduct({ ...editedProduct, seoTitle: e.target.value })}
-                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                    />
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                  <h3 className="text-sm font-medium text-gray-700">Additional Info</h3>
+                  <dl className="mt-2 space-y-2 text-sm">
+                    {importedProduct.genericName && (
+                      <div>
+                        <dt className="text-gray-500">Generic Name:</dt>
+                        <dd className="font-medium text-gray-900">{importedProduct.genericName}</dd>
+                      </div>
+                    )}
+                    {importedProduct.dosageForm && (
+                      <div>
+                        <dt className="text-gray-500">Dosage Form:</dt>
+                        <dd className="font-medium text-gray-900">{importedProduct.dosageForm}</dd>
+                      </div>
+                    )}
+                    {importedProduct.strength && (
+                      <div>
+                        <dt className="text-gray-500">Strength:</dt>
+                        <dd className="font-medium text-gray-900">{importedProduct.strength}</dd>
+                      </div>
+                    )}
+                    {importedProduct.packSize && (
+                      <div>
+                        <dt className="text-gray-500">Pack Size:</dt>
+                        <dd className="font-medium text-gray-900">{importedProduct.packSize}</dd>
+                      </div>
+                    )}
+                    <div>
+                      <dt className="text-gray-500">Source:</dt>
+                      <dd>
+                        <a
+                          href={importedProduct.sourceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-teal-600 hover:text-teal-700"
+                        >
+                          {importedProduct.source}
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+
+                <div className="rounded-lg border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50 p-4">
+                  <div className="mb-3 flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-purple-600" />
+                    <h3 className="text-sm font-semibold text-gray-900">AI Assistant</h3>
+                    <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+                      Beta
+                    </span>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700">
-                      SEO Description
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={editedProduct.seoDescription}
-                      onChange={(e) => setEditedProduct({ ...editedProduct, seoDescription: e.target.value })}
-                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                    />
-                  </div>
+                  <p className="mb-3 text-xs text-gray-600">
+                    Generate SEO content automatically based on product name and category.
+                  </p>
 
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700">
-                      SEO Keywords
-                    </label>
-                    <input
-                      type="text"
-                      value={editedProduct.seoKeywords}
-                      onChange={(e) => setEditedProduct({ ...editedProduct, seoKeywords: e.target.value })}
-                      placeholder="keyword1, keyword2, keyword3"
-                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                    />
+                  {aiError && (
+                    <div className="mb-3 rounded-lg bg-red-50 p-2 text-xs text-red-600">
+                      {aiError}
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Language
+                      </label>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setAiLanguage('en')}
+                          className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${aiLanguage === 'en'
+                            ? 'bg-purple-600 text-white'
+                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                            }`}
+                        >
+                          English
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAiLanguage('bn')}
+                          className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${aiLanguage === 'bn'
+                            ? 'bg-purple-600 text-white'
+                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                            }`}
+                        >
+                          বাংলা
+                        </button>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleAIGenerate}
+                      disabled={aiLoading || !editedProduct.name}
+                      className="flex w-full items-center justify-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      {aiLoading ? 'Generating...' : 'Regenerate with AI'}
+                    </button>
+
+                    <p className="text-xs text-purple-700">
+                      <strong>Tip:</strong> Click to generate Description, Key Features, Specifications, SEO URL, and SEO fields.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-gray-200 bg-white p-4">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3">SEO Settings</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700">
+                        SEO URL (Slug)
+                      </label>
+                      <div className="mt-1 flex items-center gap-1">
+                        <span className="text-xs text-gray-500">/products/</span>
+                        <input
+                          type="text"
+                          value={editedProduct.slug}
+                          onChange={(e) => setEditedProduct({ ...editedProduct, slug: e.target.value })}
+                          placeholder="vim-dishwashing-liquid-pouch-200-ml"
+                          className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        />
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Auto-generated when you click &quot;Regenerate with AI&quot;
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700">
+                        SEO Title
+                      </label>
+                      <input
+                        type="text"
+                        value={editedProduct.seoTitle}
+                        onChange={(e) => setEditedProduct({ ...editedProduct, seoTitle: e.target.value })}
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700">
+                        SEO Description
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={editedProduct.seoDescription}
+                        onChange={(e) => setEditedProduct({ ...editedProduct, seoDescription: e.target.value })}
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700">
+                        SEO Keywords
+                      </label>
+                      <input
+                        type="text"
+                        value={editedProduct.seoKeywords}
+                        onChange={(e) => setEditedProduct({ ...editedProduct, seoKeywords: e.target.value })}
+                        placeholder="keyword1, keyword2, keyword3"
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="mt-6 flex items-center justify-end gap-3 border-t border-gray-200 pt-6">
-            <Link
-              href="/admin/products"
-              className="rounded-lg border border-gray-300 px-6 py-2 font-semibold text-gray-700 transition-colors hover:bg-gray-50"
-            >
-              Cancel
-            </Link>
-            <button
-              onClick={handleSaveProduct}
-              disabled={loading}
-              className="flex items-center gap-2 rounded-lg bg-teal-600 px-6 py-2 font-semibold text-white transition-colors hover:bg-teal-700 disabled:bg-gray-400"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                'Save Product'
-              )}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {showManufacturerModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Add New Manufacturer</h3>
-              <button
-                onClick={() => { setShowManufacturerModal(false); setNewManufacturerName(''); }}
-                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            <div className="mt-6 flex items-center justify-end gap-3 border-t border-gray-200 pt-6">
+              <Link
+                href="/admin/products"
+                className="rounded-lg border border-gray-300 px-6 py-2 font-semibold text-gray-700 transition-colors hover:bg-gray-50"
               >
-                <X className="h-5 w-5" />
+                Cancel
+              </Link>
+              <button
+                onClick={handleSaveProduct}
+                disabled={loading}
+                className="flex items-center gap-2 rounded-lg bg-teal-600 px-6 py-2 font-semibold text-white transition-colors hover:bg-teal-700 disabled:bg-gray-400"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save Product'
+                )}
               </button>
             </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Manufacturer Name *</label>
-                <input
-                  type="text"
-                  value={newManufacturerName}
-                  onChange={(e) => setNewManufacturerName(e.target.value)}
-                  placeholder="Enter manufacturer name"
-                  className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  autoFocus
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleCreateManufacturer(); }}
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  Slug will be auto-generated: {newManufacturerName ? slugify(newManufacturerName) : 'manufacturer-slug'}
-                </p>
-              </div>
-              <div className="flex justify-end gap-3">
+          </div>
+        )
+      }
+
+      {
+        showManufacturerModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Add New Manufacturer</h3>
                 <button
                   onClick={() => { setShowManufacturerModal(false); setNewManufacturerName(''); }}
-                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
                 >
-                  Cancel
+                  <X className="h-5 w-5" />
                 </button>
-                <button
-                  onClick={handleCreateManufacturer}
-                  disabled={creatingManufacturer || !newManufacturerName.trim()}
-                  className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 disabled:bg-gray-400"
-                >
-                  {creatingManufacturer ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Creating...
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="h-4 w-4" />
-                      Create
-                    </>
-                  )}
-                </button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Manufacturer Name *</label>
+                  <input
+                    type="text"
+                    value={newManufacturerName}
+                    onChange={(e) => setNewManufacturerName(e.target.value)}
+                    placeholder="Enter manufacturer name"
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    autoFocus
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleCreateManufacturer(); }}
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Slug will be auto-generated: {newManufacturerName ? slugify(newManufacturerName) : 'manufacturer-slug'}
+                  </p>
+                </div>
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => { setShowManufacturerModal(false); setNewManufacturerName(''); }}
+                    className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleCreateManufacturer}
+                    disabled={creatingManufacturer || !newManufacturerName.trim()}
+                    className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 disabled:bg-gray-400"
+                  >
+                    {creatingManufacturer ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4" />
+                        Create
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
-      {showCategoryModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Add New Category</h3>
-              <button
-                onClick={() => { setShowCategoryModal(false); setNewCategoryName(''); }}
-                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Category Name *</label>
-                <input
-                  type="text"
-                  value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
-                  placeholder="Enter category name"
-                  className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  autoFocus
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleCreateCategory(); }}
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  Slug will be auto-generated: {newCategoryName ? slugify(newCategoryName) : 'category-slug'}
-                </p>
-              </div>
-              <div className="flex justify-end gap-3">
+      {
+        showCategoryModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Add New Category</h3>
                 <button
                   onClick={() => { setShowCategoryModal(false); setNewCategoryName(''); }}
-                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
                 >
-                  Cancel
+                  <X className="h-5 w-5" />
                 </button>
-                <button
-                  onClick={handleCreateCategory}
-                  disabled={creatingCategory || !newCategoryName.trim()}
-                  className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 disabled:bg-gray-400"
-                >
-                  {creatingCategory ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Creating...
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="h-4 w-4" />
-                      Create
-                    </>
-                  )}
-                </button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Category Name *</label>
+                  <input
+                    type="text"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    placeholder="Enter category name"
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    autoFocus
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleCreateCategory(); }}
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Slug will be auto-generated: {newCategoryName ? slugify(newCategoryName) : 'category-slug'}
+                  </p>
+                </div>
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => { setShowCategoryModal(false); setNewCategoryName(''); }}
+                    className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleCreateCategory}
+                    disabled={creatingCategory || !newCategoryName.trim()}
+                    className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 disabled:bg-gray-400"
+                  >
+                    {creatingCategory ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4" />
+                        Create
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   )
 }
