@@ -593,9 +593,12 @@ export default function ProductImportPage() {
           })
           success++
         } else {
+          const errData = await res.json().catch(() => ({ error: 'Unknown API error' }));
+          toast.error(`Import failed for ${product.name}: ${errData.error || res.statusText}`);
           failed++
         }
-      } catch {
+      } catch (err: any) {
+        toast.error(`Import failed for ${product.name}: ${err.message || 'Unknown error'}`);
         failed++
       }
 

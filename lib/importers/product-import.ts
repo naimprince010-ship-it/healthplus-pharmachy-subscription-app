@@ -559,9 +559,14 @@ async function importFromBdshop(url: string): Promise<ImportedProduct> {
 
   const sellingPrice = priceText ? parsePrice(priceText) : null
 
-  const imageUrl = $('meta[property="og:image"]').attr('content')?.startsWith('http')
+  let imageUrl = $('meta[property="og:image"]').attr('content')?.startsWith('http')
     ? $('meta[property="og:image"]').attr('content')
     : null
+
+  if (!imageUrl || imageUrl.includes('logo')) {
+    const mainImg = $('.product-image img, #product-core-image img, .gallery img, img.img-responsive, .picture img').first()
+    imageUrl = mainImg.attr('data-src') || mainImg.attr('src') || imageUrl
+  }
 
   const description = $('meta[property="og:description"]').attr('content') ||
     $('[class*="description"], [class*="detail"]').first().text().trim().substring(0, 500) ||
