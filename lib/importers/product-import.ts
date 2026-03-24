@@ -901,12 +901,16 @@ export async function extractProductsFromCategory(url: string): Promise<Category
   throw new Error('Unsupported website for category extraction')
 }
 
-async function extractProductsFromBdShopCategory(url: string, maxPages: number = 5): Promise<CategoryProduct[]> {
+async function extractProductsFromBdShopCategory(url: string, maxPages: number = 20): Promise<CategoryProduct[]> {
   const products: CategoryProduct[] = []
   let page = 1
 
   while (page <= maxPages) {
-    const pageUrl = page === 1 ? url : `${url}&page=${page}`
+    const urlObj = new URL(url)
+    if (page > 1) {
+      urlObj.searchParams.set('page', page.toString())
+    }
+    const pageUrl = page === 1 ? url : urlObj.toString()
     const response = await fetch(pageUrl, {
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
     })
