@@ -527,15 +527,33 @@ export async function importProductFromUrl(url: string): Promise<ImportedProduct
 }
 
 async function importFromBdshop(url: string): Promise<ImportedProduct> {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    },
-  })
+  const headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.9'
+  }
 
-  if (!response.ok) throw new Error(`Failed to fetch page: ${response.status}`)
+  let response = await fetch(url, { headers })
+  let html = ''
 
-  const html = await response.text()
+  if (!response.ok) {
+    if (response.status === 403) {
+      // Fallback for Cloudflare blocking
+      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`
+      const proxyRes = await fetch(proxyUrl)
+      if (proxyRes.ok) {
+        const data = await proxyRes.json()
+        html = data.contents
+      } else {
+        throw new Error(`Failed to fetch page: 403 (Proxy also failed)`)
+      }
+    } else {
+      throw new Error(`Failed to fetch page: ${response.status}`)
+    }
+  } else {
+    html = await response.text()
+  }
+
   const $ = cheerio.load(html)
 
   const parts = url.split('/product/')
