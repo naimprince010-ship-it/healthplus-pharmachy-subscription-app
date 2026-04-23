@@ -124,7 +124,7 @@ export function DesktopHome({ subscriptionPlans, homeSections }: DesktopHomeProp
   return (
     <>
       {/* Hero Section */}
-      <section className="w-full bg-white py-5 lg:py-8">
+      <section className="w-full bg-white py-5 lg:pb-12 lg:pt-8">
         <div className="w-full px-2 sm:px-4">
 
           {/* Desktop layout: 55/45 two-column */}
@@ -132,12 +132,12 @@ export function DesktopHome({ subscriptionPlans, homeSections }: DesktopHomeProp
 
             {/* Left 55%: Text + CTAs */}
             <div style={{ flex: '0 0 55%' }}>
-              <h1 className="text-4xl font-bold tracking-tight text-gray-900 lg:text-5xl lg:leading-[1.2]">
-                ওষুধ, কসমেটিক্স ও গ্রোসারি —<br />
+              <h1 className="font-bold tracking-tight text-gray-900" style={{ fontSize: '2rem', lineHeight: 1.3 }}>
+                ঔষধ, কসমেটিক্স ও গ্রোসারি —<br />
                 <span style={{ color: '#0e9a6e' }}>এক জায়গায়, সাশ্রয়ী দামে</span>
               </h1>
               <p className="mt-4 max-w-md text-base text-gray-500 lg:text-lg">
-                প্রেসক্রিপশনের ওষুধ, পছন্দের কসমেটিক্স, আর রোজকার গ্রোসারি — অর্ডার করুন, আমরা পৌঁছে দেব।
+                প্রেসক্রিপশনের ঔষধ, পছন্দের কসমেটিক্স, আর রোজকার গ্রোসারি — অর্ডার করুন, আমরা পৌঁছে দেব।
               </p>
 
               {/* Badges */}
@@ -152,7 +152,12 @@ export function DesktopHome({ subscriptionPlans, homeSections }: DesktopHomeProp
                   <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: '#0e9a6e' }}>
                     <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                   </span>
-                  <AnimatedDeliveryTruck />
+                  <svg className="mr-2 flex-shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <path d="M1 3h15v13H1z" stroke="#0e9a6e" strokeWidth="1.5"/>
+                    <path d="M16 8h4l3 4v5h-7V8z" stroke="#0e9a6e" strokeWidth="1.5"/>
+                    <circle cx="5.5" cy="18.5" r="2" stroke="#0e9a6e" strokeWidth="1.5"/>
+                    <circle cx="18.5" cy="18.5" r="2" stroke="#0e9a6e" strokeWidth="1.5"/>
+                  </svg>
                   ২৪–৪৮ ঘন্টায় ডেলিভারি
                 </span>
               </div>
@@ -227,11 +232,11 @@ export function DesktopHome({ subscriptionPlans, homeSections }: DesktopHomeProp
           <div className="lg:hidden">
             <div className="mb-5">
               <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-                ওষুধ, কসমেটিক্স ও গ্রোসারি —{' '}
+                ঔষধ, কসমেটিক্স ও গ্রোসারি —{' '}
                 <span className="text-teal-600">এক জায়গায়, সাশ্রয়ী দামে</span>
               </h1>
               <p className="mt-4 text-base text-gray-600">
-                প্রেসক্রিপশনের ওষুধ, পছন্দের কসমেটিক্স, আর রোজকার গ্রোসারি — অর্ডার করুন, আমরা পৌঁছে দেব।
+                প্রেসক্রিপশনের ঔষধ, পছন্দের কসমেটিক্স, আর রোজকার গ্রোসারি — অর্ডার করুন, আমরা পৌঁছে দেব।
               </p>
               <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                 <Link

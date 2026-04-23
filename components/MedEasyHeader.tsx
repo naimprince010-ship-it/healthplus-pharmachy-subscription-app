@@ -146,6 +146,15 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
               <span className="text-xl font-bold text-white hidden sm:block">{storeName}</span>
             </Link>
 
+            {/* Shortcut nav links - Desktop only */}
+            <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
+              <Link href="/medicines" className="px-3 py-1.5 text-[14px] text-white hover:underline transition-all">ঔষধ</Link>
+              <span className="text-white/40 text-sm">|</span>
+              <Link href="/products?category=cosmetics" className="px-3 py-1.5 text-[14px] text-white hover:underline transition-all">কসমেটিক্স</Link>
+              <span className="text-white/40 text-sm">|</span>
+              <Link href="/products?category=grocery" className="px-3 py-1.5 text-[14px] text-white hover:underline transition-all">গ্রোসারি</Link>
+            </div>
+
             {/* Desktop Search Bar */}
             <div className="hidden md:flex flex-1 max-w-xl mx-4" ref={searchContainerRef}>
               <form onSubmit={handleSearch} className="relative w-full">
@@ -155,7 +164,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={handleKeyDown}
                   onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-                  placeholder="Search medicines & products..."
+                  placeholder="ওষুধ, কসমেটিক্স বা গ্রোসারি খুঁজুন..."
                   className="w-full rounded-full border-0 bg-white py-2.5 pl-5 pr-12 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/50"
                 />
                 <button
@@ -349,8 +358,8 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Search medicines & products..."
-                className="w-full border-0 bg-transparent py-2 text-gray-900 placeholder-gray-500 focus:outline-none"
+                  placeholder="ওষুধ, কসমেটিক্স বা গ্রোসারি খুঁজুন..."
+                  className="w-full border-0 bg-transparent py-2 text-gray-900 placeholder-gray-500 focus:outline-none"
                 autoFocus
               />
             </form>
