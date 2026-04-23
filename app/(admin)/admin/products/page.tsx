@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Search, Filter, Edit, Trash2, AlertCircle, Sparkles, Loader2 } from 'lucide-react'
+import { Plus, Search, Filter, Edit, Trash2, AlertCircle, Sparkles, Loader2, RefreshCw } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface Product {
@@ -13,6 +13,7 @@ interface Product {
   slug: string
   brandName: string | null
   sellingPrice: number
+  purchasePrice?: number | null
   mrp: number | null
   stockQuantity: number
   isActive: boolean
@@ -50,6 +51,9 @@ export default function ProductsPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [deleting, setDeleting] = useState(false)
   const [cleaning, setCleaning] = useState(false)
+  const [syncingAzan, setSyncingAzan] = useState(false)
+  const [applyingMargin, setApplyingMargin] = useState(false)
+  const [marginPercent, setMarginPercent] = useState('30')
 
   useEffect(() => {
     fetchProducts()
@@ -250,6 +254,76 @@ export default function ProductsPage() {
     }
   }
 
+  const handleAzanSync = async () => {
+    if (!confirm('Sync Azan products now? All synced items will remain Draft by default.')) return
+    setSyncingAzan(true)
+    try {
+      const res = await fetch('/api/admin/products/azan-sync', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error || 'Azan sync failed')
+        return
+      }
+      toast.success(
+        `Azan sync done: ${data.summary?.fetched ?? 0} fetched, ${data.summary?.created ?? 0} created, ${data.summary?.updated ?? 0} updated`
+      )
+      fetchProducts()
+    } catch {
+      toast.error('Azan sync failed')
+    } finally {
+      setSyncingAzan(false)
+    }
+  }
+
+  const runBulkMarginPublish = async (applyToAzanCategory: boolean) => {
+    const parsedMargin = Number.parseFloat(marginPercent)
+    if (!Number.isFinite(parsedMargin) || parsedMargin < 0) {
+      toast.error('Enter a valid margin percent')
+      return
+    }
+
+    if (!applyToAzanCategory && selectedIds.size === 0) {
+      toast.error('Select products first')
+      return
+    }
+
+    const targetText = applyToAzanCategory
+      ? 'all Azan category products with purchase price'
+      : `${selectedIds.size} selected product(s)`
+    const confirmed = confirm(
+      `Apply ${parsedMargin}% margin and publish ${targetText}?`
+    )
+    if (!confirmed) return
+
+    setApplyingMargin(true)
+    try {
+      const res = await fetch('/api/admin/products/bulk-margin-publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          marginPercent: parsedMargin,
+          publish: true,
+          applyToAzanCategory,
+          ids: applyToAzanCategory ? undefined : Array.from(selectedIds),
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error || 'Failed to apply margin')
+        return
+      }
+      toast.success(
+        `Updated ${data.summary?.updated ?? 0} products. Skipped missing purchase price: ${data.summary?.skippedMissingPurchasePrice ?? 0}`
+      )
+      if (!applyToAzanCategory) setSelectedIds(new Set())
+      fetchProducts()
+    } catch {
+      toast.error('Failed to apply margin')
+    } finally {
+      setApplyingMargin(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -260,6 +334,18 @@ export default function ProductsPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleAzanSync}
+            disabled={syncingAzan}
+            className="flex items-center gap-2 rounded-lg border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-700 transition-colors hover:bg-sky-100 disabled:opacity-50"
+          >
+            {syncingAzan ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            Sync Azan (Draft)
+          </button>
           <button
             onClick={handleCleanupNames}
             disabled={cleaning}
@@ -387,6 +473,39 @@ export default function ProductsPage() {
         </div>
       ) : (
         <>
+          <div className="flex flex-wrap items-end gap-3 rounded-lg border border-teal-100 bg-teal-50 p-3">
+            <div>
+              <label className="block text-xs font-medium uppercase tracking-wide text-teal-700">
+                Margin %
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.1"
+                value={marginPercent}
+                onChange={(e) => setMarginPercent(e.target.value)}
+                className="mt-1 w-28 rounded-lg border border-teal-200 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              />
+            </div>
+            <button
+              onClick={() => runBulkMarginPublish(false)}
+              disabled={applyingMargin || selectedIds.size === 0}
+              className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-700 disabled:opacity-50"
+            >
+              {applyingMargin ? 'Applying...' : 'Margin + Publish Selected'}
+            </button>
+            <button
+              onClick={() => runBulkMarginPublish(true)}
+              disabled={applyingMargin}
+              className="rounded-lg border border-teal-600 bg-white px-4 py-2 text-sm font-semibold text-teal-700 transition-colors hover:bg-teal-100 disabled:opacity-50"
+            >
+              {applyingMargin ? 'Applying...' : 'Margin + Publish All Azan'}
+            </button>
+            <p className="text-xs text-teal-800">
+              Uses `purchasePrice` as cost price. Products without cost are skipped.
+            </p>
+          </div>
+
           {(selectedIds.size > 0 || pagination.total > pagination.limit) && (
             <div className="flex items-center gap-4 rounded-lg border border-red-200 bg-red-50 p-3">
               {selectedIds.size > 0 && (
