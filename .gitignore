@@ -41,3 +41,9 @@ yarn-error.log*
 next-env.d.ts
 
 /app/generated/prisma
+
+# Playwright temp scripts
+playwright-temp/node_modules/
+playwright-temp/*.json
+playwright-temp/*.html
+playwright-temp/*.png

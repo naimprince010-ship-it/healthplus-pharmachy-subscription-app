@@ -17,7 +17,7 @@ export function DesktopSubscriptions({ plans }: DesktopSubscriptionsProps) {
           </p>
         </div>
 
-        <div className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-3 items-center">
+        <div className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-3 items-stretch">
           {plans.map((plan, index) => {
             const isMostPopular = index === 1 // Highlight the middle plan (or specific slug like 'family-pack')
 

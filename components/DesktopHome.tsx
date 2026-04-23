@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import Link from 'next/link'
 import { Package, Heart, Baby, Activity, Users, CheckCircle, Truck, Shield } from 'lucide-react'
@@ -31,11 +31,11 @@ export function DesktopHome({ subscriptionPlans, homeSections }: DesktopHomeProp
           {/* Desktop layout: Clean Typography with CTAs */}
           <div className="hidden lg:block lg:max-w-4xl lg:py-4">
             <h1 className="text-3xl font-bold tracking-tight text-gray-900 lg:text-5xl lg:leading-[1.2]">
-              সাশ্রয়ী মূল্যে ওষুধের জন্য <br />
-              <span className="text-teal-600">আপনার বিশ্বস্ত সঙ্গী</span>
+              ওষুধ, কসমেটিক্স ও গ্রোসারি —<br />
+              <span className="text-teal-600">এক জায়গায়, সাশ্রয়ী দামে</span>
             </h1>
             <p className="mt-5 text-base text-gray-600 lg:text-lg lg:max-w-2xl">
-              মাসিক ওষুধ প্ল্যানে সাবস্ক্রাইব করুন এবং আমাদের প্রিমিয়াম মেম্বারশিপ নিয়ে সাশ্রয় করুন। সব ওষুধে ১০% অফ!
+              প্রেসক্রিপশনের ওষুধ, পছন্দের কসমেটিক্স, আর রোজকার গ্রোসারি — অর্ডার করুন, আমরা পৌঁছে দেব।
             </p>
             <ul className="mt-6 flex flex-wrap gap-x-8 gap-y-3 text-base text-gray-700 font-medium">
               <li className="flex items-center">
@@ -67,8 +67,8 @@ export function DesktopHome({ subscriptionPlans, homeSections }: DesktopHomeProp
           <div className="lg:hidden">
             <div className="mb-5">
               <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-                সাশ্রয়ী মূল্যে ওষুধের জন্য{' '}
-                <span className="text-teal-600">আপনার বিশ্বস্ত সঙ্গী</span>
+                ওষুধ, কসমেটিক্স ও গ্রোসারি —{' '}
+                <span className="text-teal-600">এক জায়গায়, সাশ্রয়ী দামে</span>
               </h1>
               <p className="mt-4 text-base text-gray-600">
                 মাসিক ওষুধ প্ল্যানে সাবস্ক্রাইব করুন এবং আমাদের ১০০ টাকা মেম্বারশিপে সাশ্রয় করুন। সব ওষুধে ১০% ছাড় পান!
@@ -111,9 +111,9 @@ export function DesktopHome({ subscriptionPlans, homeSections }: DesktopHomeProp
             </p>
           </div>
 
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:mt-8 lg:grid-cols-4 lg:gap-6">
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:mt-8 lg:grid-cols-4 lg:gap-6 items-stretch">
             {subscriptionPlans.map((plan) => (
-              <div key={plan.id} className="rounded-xl bg-white p-4 shadow-lg transition-transform hover:scale-105 lg:rounded-2xl lg:p-6">
+              <div key={plan.id} className="flex flex-col rounded-xl bg-white p-4 shadow-lg transition-transform hover:scale-105 lg:rounded-2xl lg:p-6">
                 <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-teal-100 lg:mb-4 lg:h-12 lg:w-12">
                   {plan.slug === 'bp-care' && <Activity className="h-5 w-5 text-teal-600 lg:h-6 lg:w-6" />}
                   {plan.slug === 'diabetes' && <Heart className="h-5 w-5 text-teal-600 lg:h-6 lg:w-6" />}
@@ -124,7 +124,7 @@ export function DesktopHome({ subscriptionPlans, homeSections }: DesktopHomeProp
                   )}
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 lg:text-xl">{plan.name}</h3>
-                <p className="mt-1.5 text-xs text-gray-600 lg:mt-2 lg:text-sm">{plan.shortDescription}</p>
+                <p className="mt-1.5 flex-grow text-xs text-gray-600 lg:mt-2 lg:text-sm">{plan.shortDescription}</p>
                 <div className="mt-3 flex items-baseline space-x-1 lg:mt-4 lg:space-x-2">
                   <span className="text-2xl font-bold text-gray-900 lg:text-3xl">৳{plan.priceMonthly}</span>
                   <span className="text-sm text-gray-600">/month</span>
