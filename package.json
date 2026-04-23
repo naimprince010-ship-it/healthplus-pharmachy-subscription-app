@@ -17,7 +17,8 @@
     "import:bdshop": "npx tsx scripts/bdshop-scraper.ts",
     "import:bdshop:dry": "npx tsx scripts/bdshop-scraper.ts --dry-run",
     "import:bdshop:test": "npx tsx scripts/bdshop-scraper.ts --dry-run --limit=10",
-    "sync:azan": "npx tsx scripts/sync-azan-api.ts"
+    "sync:azan": "npx tsx scripts/sync-azan-api.ts",
+    "db:report-azan": "npx tsx scripts/report-azan-wholesale-db.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

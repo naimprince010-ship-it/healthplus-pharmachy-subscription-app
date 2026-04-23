@@ -115,12 +115,50 @@ export function invalidateSearchIndex(): void {
   invalidateCache(CACHE_KEY_TOP_PRODUCTS).catch(console.error)
 }
 
+/** Latin / numeric tokens only — used for Postgres FTS prefix query. */
+function ftsTermsFromQuery(query: string): string[] {
+  return query
+    .trim()
+    .split(/\s+/)
+    .filter((word) => word.length > 0)
+    .map((word) => word.replace(/[^a-zA-Z0-9]/g, ''))
+    .filter((word) => word.length > 0)
+}
+
+/**
+ * Terms for ILIKE `contains`. If FTS stripped everything (e.g. Bangla-only),
+ * search the whole trimmed phrase on name / slug / brand / description.
+ */
+function containsTermsFromQuery(query: string): string[] {
+  const raw = query.trim()
+  if (raw.length < 2) return []
+  const fts = ftsTermsFromQuery(query)
+  if (fts.length > 0) return fts
+  return [raw]
+}
+
+function buildIlikeOr(terms: string[]): Prisma.ProductWhereInput[] {
+  const ors: Prisma.ProductWhereInput[] = []
+  for (const term of terms) {
+    ors.push(
+      { name: { contains: term, mode: 'insensitive' } },
+      { slug: { contains: term, mode: 'insensitive' } },
+      { brandName: { contains: term, mode: 'insensitive' } },
+      { description: { contains: term, mode: 'insensitive' } },
+      { medicine: { genericName: { contains: term, mode: 'insensitive' } } },
+      { medicine: { uses: { contains: term, mode: 'insensitive' } } }
+    )
+  }
+  return ors
+}
+
 export async function searchProducts(
   query: string,
   limit: number = 40,
   isRetry: boolean = false
 ): Promise<SearchResult[]> {
-  if (!query || query.length < 2) {
+  const rawQuery = query.trim()
+  if (!rawQuery || rawQuery.length < 2) {
     const { products } = await getTopProducts(limit)
     return products.map((item) => ({
       item,
@@ -129,66 +167,36 @@ export async function searchProducts(
     }))
   }
 
-  // Sanitize query to break into valid Postgres FTS term
-  // Format query as word1 | word2 | word3:* for prefix searching
-  const terms = query
-    .trim()
-    .split(/\s+/)
-    .filter((word) => word.length > 0)
-    .map((word) => word.replace(/[^a-zA-Z0-9]/g, ''))
-    .map((word) => word.replace(/[^a-zA-Z0-9]/g, ''))
-    .filter((word) => word.length > 0)
+  const ftsTerms = ftsTermsFromQuery(rawQuery)
+  const containsTerms = containsTermsFromQuery(rawQuery)
 
-  if (terms.length === 0) {
+  if (containsTerms.length === 0) {
     const { products } = await getTopProducts(limit)
     return products.map((item) => ({ item, score: 1, combinedScore: item.popularityScore }))
   }
 
-  const cacheKey = `search:query:${terms.join('-').toLowerCase()}:${limit}`
+  // v2 cache key: earlier logic returned "top products" for Bangla-only queries (wrong).
+  const cacheKey = `search:query:v2:${rawQuery.toLowerCase()}:${limit}`
   const cachedResults = await getCachedData<SearchResult[]>(cacheKey)
   if (cachedResults) return cachedResults
 
-  // Join with OR (|) and add prefix matching (:*) to each term
-  const ftsQuery = terms.map((term) => `${term}:*`).join(' | ')
-
   try {
-    const products = await prisma.product.findMany({
-      where: {
-        isActive: true,
-        deletedAt: null,
-        OR: [
-          { name: { search: ftsQuery } } as any,
-          { brandName: { search: ftsQuery } } as any,
-          { description: { search: ftsQuery } } as any,
-          { medicine: { genericName: { search: ftsQuery } } } as any,
-          { medicine: { manufacturer: { search: ftsQuery } } } as any,
-          { medicine: { uses: { search: ftsQuery } } } as any,
-        ],
-      },
-      include: {
-        category: true,
-        medicine: true,
-      },
-      take: limit * 2, // Fetch more to post-sort by our combined score
-    })
+    let products: any[] = []
 
-    // If FTS fails to find anything (maybe language issue or strictly formatted prefixes), fallback to basic ILIKE
-    if (products.length === 0) {
-      const fallbackProducts = await prisma.product.findMany({
+    if (ftsTerms.length > 0) {
+      const ftsQuery = ftsTerms.map((term) => `${term}:*`).join(' | ')
+      products = await prisma.product.findMany({
         where: {
           isActive: true,
           deletedAt: null,
           OR: [
-            ...terms.map((term) => ({
-              name: { contains: term, mode: 'insensitive' as const }
-            })),
-            ...terms.map((term) => ({
-              medicine: { genericName: { contains: term, mode: 'insensitive' as const } }
-            })),
-            ...terms.map((term) => ({
-              medicine: { uses: { contains: term, mode: 'insensitive' as const } }
-            }))
-          ]
+            { name: { search: ftsQuery } } as any,
+            { brandName: { search: ftsQuery } } as any,
+            { description: { search: ftsQuery } } as any,
+            { medicine: { genericName: { search: ftsQuery } } } as any,
+            { medicine: { manufacturer: { search: ftsQuery } } } as any,
+            { medicine: { uses: { search: ftsQuery } } } as any,
+          ],
         },
         include: {
           category: true,
@@ -196,7 +204,46 @@ export async function searchProducts(
         },
         take: limit * 2,
       })
-      products.push(...fallbackProducts)
+    }
+
+    if (products.length === 0) {
+      const fallbackProducts = await prisma.product.findMany({
+        where: {
+          isActive: true,
+          deletedAt: null,
+          OR: buildIlikeOr(containsTerms),
+        },
+        include: {
+          category: true,
+          medicine: true,
+        },
+        take: limit * 2,
+      })
+      const seen = new Set(products.map((p: { id: string }) => p.id))
+      for (const p of fallbackProducts) {
+        if (!seen.has(p.id)) {
+          seen.add(p.id)
+          products.push(p)
+        }
+      }
+    } else if (ftsTerms.length > 0) {
+      // Also match SKU/barcode in slug when FTS already returned rows (narrow queries).
+      const slugMatches = await prisma.product.findMany({
+        where: {
+          isActive: true,
+          deletedAt: null,
+          OR: containsTerms.flatMap((term) => [{ slug: { contains: term, mode: 'insensitive' as const } }]),
+        },
+        include: { category: true, medicine: true },
+        take: limit * 2,
+      })
+      const seen = new Set(products.map((p: { id: string }) => p.id))
+      for (const p of slugMatches) {
+        if (!seen.has(p.id)) {
+          seen.add(p.id)
+          products.push(p)
+        }
+      }
     }
 
     const maxPopularity = Math.max(...products.map((p: any) => p.popularityScore ?? 0), 1)
