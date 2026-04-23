@@ -141,15 +141,8 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 flex-shrink-0 group">
               {/* Icon badge */}
-              <div
-                className="flex h-10 w-10 items-center justify-center rounded-xl shadow-md transition-transform duration-200 group-hover:scale-105"
-                style={{ background: 'linear-gradient(135deg, #ffffff 0%, #e0faf4 100%)' }}
-              >
-                {/* Crescent + leaf halal-inspired mark */}
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 3C7.03 3 3 7.03 3 12s4.03 9 9 9c1.5 0 2.91-.37 4.15-1.02A7 7 0 0 1 8 12a7 7 0 0 1 5.5-6.85A8.96 8.96 0 0 0 12 3z" fill="#0e9a6e"/>
-                  <circle cx="16" cy="8" r="2.2" fill="#34d399"/>
-                </svg>
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white transition-transform duration-200 group-hover:scale-105">
+                <span className="text-lg font-bold text-teal-600">H</span>
               </div>
 
               {/* Brand name + tagline */}
