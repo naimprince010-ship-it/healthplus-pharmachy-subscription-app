@@ -306,31 +306,53 @@ export function DesktopHome({ subscriptionPlans, homeSections }: DesktopHomeProp
         </div>
       </section>
 
-      {/* Trust Badges - full width */}
-      <section className="w-full py-8 lg:py-12">
+      {/* Trust Badges */}
+      <section className="w-full py-6 lg:py-10">
         <div className="w-full px-2 sm:px-4">
-          <div className="grid gap-6 sm:grid-cols-3 lg:gap-8">
-            <div className="text-center">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-teal-100 lg:mb-4 lg:h-16 lg:w-16">
-                <Shield className="h-6 w-6 text-teal-600 lg:h-8 lg:w-8" />
+          <div className="grid gap-4 sm:grid-cols-3 lg:gap-6" style={{ background: '#f0faf6', borderRadius: '16px', padding: '28px' }}>
+
+            {/* ১০০% খাঁটি পণ্য */}
+            <div className="flex flex-col items-start">
+              <div className="mb-3 flex h-12 w-12 items-center justify-center" style={{ borderRadius: '12px', backgroundColor: '#dbeafe' }}>
+                <Shield className="h-6 w-6" style={{ color: '#378ADD' }} />
               </div>
-              <h3 className="text-base font-semibold text-gray-900 lg:text-lg">100% Authentic</h3>
-              <p className="mt-1.5 text-xs text-gray-600 lg:mt-2 lg:text-sm">All medicines are sourced from licensed distributors</p>
+              <h3 className="text-base font-bold text-gray-900 lg:text-lg">১০০% খাঁটি পণ্য</h3>
+              <p className="mt-1.5 flex-grow text-xs text-gray-500 lg:mt-2 lg:text-sm">
+                লাইসেন্সপ্রাপ্ত ডিস্ট্রিবিউটর থেকে সংগ্রহ করা ঔষধ, কসমেটিক্স ও গ্রোসারি।
+              </p>
+              <span className="mt-3 inline-block rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: '#dbeafe', color: '#1d4ed8' }}>
+                অরিজিনাল গ্যারান্টি
+              </span>
             </div>
-            <div className="text-center">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-teal-100 lg:mb-4 lg:h-16 lg:w-16">
-                <Package className="h-6 w-6 text-teal-600 lg:h-8 lg:w-8" />
+
+            {/* দ্রুত ডেলিভারি */}
+            <div className="flex flex-col items-start">
+              <div className="mb-3 flex h-12 w-12 items-center justify-center" style={{ borderRadius: '12px', backgroundColor: '#d1fae5' }}>
+                <Package className="h-6 w-6" style={{ color: '#0e9a6e' }} />
               </div>
-              <h3 className="text-base font-semibold text-gray-900 lg:text-lg">Fast Delivery</h3>
-              <p className="mt-1.5 text-xs text-gray-600 lg:mt-2 lg:text-sm">Get your medicines delivered within 24-48 hours</p>
+              <h3 className="text-base font-bold text-gray-900 lg:text-lg">দ্রুত ডেলিভারি</h3>
+              <p className="mt-1.5 flex-grow text-xs text-gray-500 lg:mt-2 lg:text-sm">
+                ২৪–৪৮ ঘন্টার মধ্যে আপনার দরজায় পৌঁছে দেওয়া হবে।
+              </p>
+              <span className="mt-3 inline-block rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: '#d1fae5', color: '#065f46' }}>
+                ঢাকায় একই দিনে
+              </span>
             </div>
-            <div className="text-center">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-teal-100 lg:mb-4 lg:h-16 lg:w-16">
-                <Heart className="h-6 w-6 text-teal-600 lg:h-8 lg:w-8" />
+
+            {/* বিশেষজ্ঞ সাপোর্ট */}
+            <div className="flex flex-col items-start">
+              <div className="mb-3 flex h-12 w-12 items-center justify-center" style={{ borderRadius: '12px', backgroundColor: '#fce7f3' }}>
+                <Heart className="h-6 w-6" style={{ color: '#D4537E' }} />
               </div>
-              <h3 className="text-base font-semibold text-gray-900 lg:text-lg">Expert Support</h3>
-              <p className="mt-1.5 text-xs text-gray-600 lg:mt-2 lg:text-sm">Our pharmacists are here to help you 24/7</p>
+              <h3 className="text-base font-bold text-gray-900 lg:text-lg">বিশেষজ্ঞ সাপোর্ট</h3>
+              <p className="mt-1.5 flex-grow text-xs text-gray-500 lg:mt-2 lg:text-sm">
+                আমাদের ফার্মাসিস্টরা সপ্তাহের ৭ দিন, ২৪ ঘন্টা আপনার পাশে আছেন।
+              </p>
+              <span className="mt-3 inline-block rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: '#fce7f3', color: '#9d174d' }}>
+                ২৪/৭ সক্রিয়
+              </span>
             </div>
+
           </div>
         </div>
       </section>

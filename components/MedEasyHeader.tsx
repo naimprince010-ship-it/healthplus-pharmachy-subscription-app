@@ -141,7 +141,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 flex-shrink-0">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white">
-                <span className="text-lg font-bold text-teal-600">H+</span>
+                <span className="text-lg font-bold text-teal-600">H</span>
               </div>
               <span className="text-xl font-bold text-white hidden sm:block">{storeName}</span>
             </Link>
