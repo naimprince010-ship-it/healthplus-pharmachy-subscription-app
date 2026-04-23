@@ -139,11 +139,32 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
         <div className={MAIN_CONTAINER}>
           <div className="flex h-14 items-center justify-between gap-2 sm:h-16 sm:gap-4">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white">
-                <span className="text-lg font-bold text-teal-600">H</span>
+            <Link href="/" className="flex items-center gap-2 flex-shrink-0 group">
+              {/* Icon badge */}
+              <div
+                className="flex h-10 w-10 items-center justify-center rounded-xl shadow-md transition-transform duration-200 group-hover:scale-105"
+                style={{ background: 'linear-gradient(135deg, #ffffff 0%, #e0faf4 100%)' }}
+              >
+                {/* Crescent + leaf halal-inspired mark */}
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 3C7.03 3 3 7.03 3 12s4.03 9 9 9c1.5 0 2.91-.37 4.15-1.02A7 7 0 0 1 8 12a7 7 0 0 1 5.5-6.85A8.96 8.96 0 0 0 12 3z" fill="#0e9a6e"/>
+                  <circle cx="16" cy="8" r="2.2" fill="#34d399"/>
+                </svg>
               </div>
-              <span className="text-xl font-bold text-white hidden sm:block">{storeName}</span>
+
+              {/* Brand name + tagline */}
+              <div className="hidden sm:flex flex-col leading-none">
+                <span
+                  className="font-extrabold tracking-tight transition-opacity group-hover:opacity-90"
+                  style={{ fontSize: '1.2rem', letterSpacing: '-0.02em', color: '#ffffff' }}
+                >
+                  Halalzi
+                  <span style={{ color: '#a7f3d0', fontWeight: 400, fontSize: '0.75rem', marginLeft: '2px' }}>.com</span>
+                </span>
+                <span className="text-[10px] text-teal-100 font-medium tracking-wide" style={{ marginTop: '1px' }}>
+                  হালাল শপিং
+                </span>
+              </div>
             </Link>
 
             {/* Shortcut nav links - Desktop only */}
