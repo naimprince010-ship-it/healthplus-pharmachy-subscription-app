@@ -307,13 +307,39 @@ export function DesktopHome({ subscriptionPlans, homeSections }: DesktopHomeProp
       </section>
 
       {/* Trust Badges */}
+      <style>{`
+        .trust-card {
+          transition: transform 0.3s cubic-bezier(.22,.68,0,1.2), border-color 0.3s, box-shadow 0.3s;
+          border: 1.5px solid transparent;
+          border-radius: 12px;
+          padding: 16px;
+          background: white;
+        }
+        .trust-card-blue:hover {
+          transform: translateY(-6px);
+          border-color: #1e6fb5;
+          box-shadow: 0 0 0 3px rgba(30,111,181,0.1), 0 0 20px rgba(30,111,181,0.2), 0 12px 32px rgba(30,111,181,0.15);
+        }
+        .trust-card-green:hover {
+          transform: translateY(-6px);
+          border-color: #1a7a5e;
+          box-shadow: 0 0 0 3px rgba(26,122,94,0.1), 0 0 20px rgba(26,122,94,0.22), 0 12px 32px rgba(26,122,94,0.15);
+        }
+        .trust-card-pink:hover {
+          transform: translateY(-6px);
+          border-color: #d4537e;
+          box-shadow: 0 0 0 3px rgba(212,83,126,0.1), 0 0 20px rgba(212,83,126,0.2), 0 12px 32px rgba(212,83,126,0.15);
+        }
+        .icon-wrap { transition: transform 0.3s; }
+        .trust-card:hover .icon-wrap { transform: scale(1.12) rotate(-4deg); }
+      `}</style>
       <section className="w-full py-6 lg:py-10">
         <div className="w-full px-2 sm:px-4">
           <div className="grid gap-4 sm:grid-cols-3 lg:gap-6" style={{ background: '#f0faf6', borderRadius: '16px', padding: '28px' }}>
 
             {/* ১০০% খাঁটি পণ্য */}
-            <div className="flex flex-col items-start">
-              <div className="mb-3 flex h-12 w-12 items-center justify-center" style={{ borderRadius: '12px', backgroundColor: '#dbeafe' }}>
+            <div className="trust-card trust-card-blue flex flex-col items-start">
+              <div className="icon-wrap mb-3 flex h-12 w-12 items-center justify-center" style={{ borderRadius: '12px', backgroundColor: '#dbeafe' }}>
                 <Shield className="h-6 w-6" style={{ color: '#378ADD' }} />
               </div>
               <h3 className="text-base font-bold text-gray-900 lg:text-lg">১০০% খাঁটি পণ্য</h3>
@@ -326,8 +352,8 @@ export function DesktopHome({ subscriptionPlans, homeSections }: DesktopHomeProp
             </div>
 
             {/* দ্রুত ডেলিভারি */}
-            <div className="flex flex-col items-start">
-              <div className="mb-3 flex h-12 w-12 items-center justify-center" style={{ borderRadius: '12px', backgroundColor: '#d1fae5' }}>
+            <div className="trust-card trust-card-green flex flex-col items-start">
+              <div className="icon-wrap mb-3 flex h-12 w-12 items-center justify-center" style={{ borderRadius: '12px', backgroundColor: '#d1fae5' }}>
                 <Package className="h-6 w-6" style={{ color: '#0e9a6e' }} />
               </div>
               <h3 className="text-base font-bold text-gray-900 lg:text-lg">দ্রুত ডেলিভারি</h3>
@@ -340,8 +366,8 @@ export function DesktopHome({ subscriptionPlans, homeSections }: DesktopHomeProp
             </div>
 
             {/* বিশেষজ্ঞ সাপোর্ট */}
-            <div className="flex flex-col items-start">
-              <div className="mb-3 flex h-12 w-12 items-center justify-center" style={{ borderRadius: '12px', backgroundColor: '#fce7f3' }}>
+            <div className="trust-card trust-card-pink flex flex-col items-start">
+              <div className="icon-wrap mb-3 flex h-12 w-12 items-center justify-center" style={{ borderRadius: '12px', backgroundColor: '#fce7f3' }}>
                 <Heart className="h-6 w-6" style={{ color: '#D4537E' }} />
               </div>
               <h3 className="text-base font-bold text-gray-900 lg:text-lg">বিশেষজ্ঞ সাপোর্ট</h3>

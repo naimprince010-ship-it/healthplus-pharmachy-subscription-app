@@ -39,6 +39,7 @@ export default async function LeftCategorySidebar() {
         mrp: true,
         discountPercentage: true,
         type: true,
+        stockQuantity: true,
       },
     })
   ])
@@ -122,6 +123,7 @@ export default async function LeftCategorySidebar() {
                   href={`/${product.type === 'MEDICINE' ? 'medicines' : 'products'}/${product.slug}`}
                   className="group flex items-center gap-3 rounded-xl border border-gray-100 bg-white p-2.5 shadow-sm transition-all hover:border-teal-100 hover:shadow-md"
                 >
+                  {/* Image with discount badge */}
                   <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-gray-50">
                     {product.imageUrl ? (
                       <img
@@ -134,17 +136,34 @@ export default async function LeftCategorySidebar() {
                         <Star className="h-6 w-6" />
                       </div>
                     )}
+                    {pricing.discountPercent > 0 && (
+                      <span className="absolute left-0 top-0 rounded-br-md bg-red-500 px-1 py-0.5 text-[9px] font-bold text-white leading-none">
+                        {pricing.discountPercent.toFixed(0)}% ছাড়
+                      </span>
+                    )}
                   </div>
+
+                  {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-xs font-bold text-gray-900 line-clamp-1 group-hover:text-teal-700">
+                    <h4 className="text-xs font-semibold leading-snug text-gray-900 group-hover:text-teal-700">
                       {product.name}
                     </h4>
-                    <div className="mt-1 flex items-baseline gap-1.5">
+                    <div className="mt-1 flex items-baseline gap-1.5 flex-wrap">
                       <span className="text-sm font-bold text-teal-600">৳{pricing.price.toFixed(0)}</span>
                       {pricing.discountPercent > 0 && (
                         <span className="text-[10px] text-gray-400 line-through">৳{pricing.mrp.toFixed(0)}</span>
                       )}
                     </div>
+                    {/* Stock */}
+                    {product.stockQuantity !== null && product.stockQuantity !== undefined && (
+                      <p className={`mt-0.5 text-[10px] font-medium ${product.stockQuantity <= 5 ? 'text-red-500' : 'text-gray-400'}`}>
+                        {product.stockQuantity <= 0
+                          ? 'স্টক নেই'
+                          : product.stockQuantity <= 5
+                            ? `মাত্র ${product.stockQuantity}টি বাকি`
+                            : 'স্টকে আছে'}
+                      </p>
+                    )}
                   </div>
                 </Link>
               )
