@@ -33,6 +33,7 @@ import {
   AlertCircle,
   TrendingUp,
   Megaphone,
+  Store,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -51,6 +52,7 @@ const navItems: NavItem[] = [
   { label: 'Product Tagging', href: '/admin/product-tagging', icon: Tag },
   { label: 'AI Import', href: '/admin/ai-import', icon: Upload },
   { label: 'Product Import', href: '/admin/product-import', icon: Download },
+  { label: 'Azan Wholesale', href: '/admin/azan-wholesale', icon: Store },
   { label: 'Medicines', href: '/admin/medicines', icon: Package },
   { label: 'Products', href: '/admin/products', icon: Box },
   { label: 'Categories', href: '/admin/categories', icon: FolderTree },

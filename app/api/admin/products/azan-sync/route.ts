@@ -253,3 +253,48 @@ export async function POST() {
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }
+
+export async function GET() {
+  try {
+    const session = await auth()
+    if (!session || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    }
+
+    const categoryName = process.env.AZAN_WHOLESALE_CATEGORY || 'Azan Wholesale'
+    const whereBase = {
+      deletedAt: null,
+      category: { is: { name: categoryName } },
+    } as const
+
+    const [total, published, draft, missingPrice] = await Promise.all([
+      prisma.product.count({ where: whereBase }),
+      prisma.product.count({
+        where: { ...whereBase, isActive: true },
+      }),
+      prisma.product.count({
+        where: { ...whereBase, isActive: false },
+      }),
+      prisma.product.count({
+        where: {
+          ...whereBase,
+          OR: [{ purchasePrice: null }, { purchasePrice: { lte: 0 } }],
+        },
+      }),
+    ])
+
+    return NextResponse.json({
+      success: true,
+      summary: {
+        categoryName,
+        total,
+        published,
+        draft,
+        missingPrice,
+      },
+    })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to fetch Azan stats'
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
+}
