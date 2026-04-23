@@ -126,6 +126,14 @@ function ftsTermsFromQuery(query: string): string[] {
 }
 
 /**
+ * Single-digit-only FTS tokens (e.g. shade "4") match almost every product ("400g", "4-8 kg")
+ * under OR tsquery, flooding results and hiding real matches. Drop them from FTS only.
+ */
+function ftsTermsForPostgres(query: string): string[] {
+  return ftsTermsFromQuery(query).filter((t) => !/^\d$/.test(t))
+}
+
+/**
  * Terms for ILIKE `contains`. If FTS stripped everything (e.g. Bangla-only),
  * search the whole trimmed phrase on name / slug / brand / description.
  */
@@ -140,6 +148,8 @@ function containsTermsFromQuery(query: string): string[] {
 function buildIlikeOr(terms: string[]): Prisma.ProductWhereInput[] {
   const ors: Prisma.ProductWhereInput[] = []
   for (const term of terms) {
+    // Single-digit contains matches almost every catalog row (prices, pack sizes); skip for ILIKE.
+    if (/^\d$/.test(term)) continue
     ors.push(
       { name: { contains: term, mode: 'insensitive' } },
       { slug: { contains: term, mode: 'insensitive' } },
@@ -167,7 +177,7 @@ export async function searchProducts(
     }))
   }
 
-  const ftsTerms = ftsTermsFromQuery(rawQuery)
+  const ftsTerms = ftsTermsForPostgres(rawQuery)
   const containsTerms = containsTermsFromQuery(rawQuery)
 
   if (containsTerms.length === 0) {
@@ -175,17 +185,36 @@ export async function searchProducts(
     return products.map((item) => ({ item, score: 1, combinedScore: item.popularityScore }))
   }
 
-  // v2 cache key: earlier logic returned "top products" for Bangla-only queries (wrong).
-  const cacheKey = `search:query:v2:${rawQuery.toLowerCase()}:${limit}`
+  const cacheKey = `search:query:v3:${rawQuery.toLowerCase()}:${limit}`
   const cachedResults = await getCachedData<SearchResult[]>(cacheKey)
   if (cachedResults) return cachedResults
 
   try {
     let products: any[] = []
 
+    // Strong signal: whole query (normalized) appears in title — avoids OR-token flooding (e.g. "Hair").
+    const phrase = rawQuery
+      .replace(/[\u2013\u2014]/g, '-')
+      .replace(/\s+/g, ' ')
+      .trim()
+    if (phrase.length >= 3) {
+      const phraseRows = await prisma.product.findMany({
+        where: {
+          isActive: true,
+          deletedAt: null,
+          name: { contains: phrase, mode: 'insensitive' },
+        },
+        include: { category: true, medicine: true },
+        take: limit,
+      })
+      for (const p of phraseRows) {
+        products.push(p)
+      }
+    }
+
     if (ftsTerms.length > 0) {
       const ftsQuery = ftsTerms.map((term) => `${term}:*`).join(' | ')
-      products = await prisma.product.findMany({
+      const ftsRows = await prisma.product.findMany({
         where: {
           isActive: true,
           deletedAt: null,
@@ -202,47 +231,46 @@ export async function searchProducts(
           category: true,
           medicine: true,
         },
-        take: limit * 2,
+        take: limit * 4,
       })
+      const seenFts = new Set(products.map((p: { id: string }) => p.id))
+      for (const p of ftsRows) {
+        if (!seenFts.has(p.id)) {
+          seenFts.add(p.id)
+          products.push(p)
+        }
+      }
     }
 
-    if (products.length === 0) {
-      const fallbackProducts = await prisma.product.findMany({
+    // Always merge ILIKE + slug: OR-FTS + `take` returns an arbitrary slice; noisy tokens like
+    // `4:*` used to flood FTS so the real product never appeared. ILIKE finds title/substring matches.
+    const ilikeOrs = buildIlikeOr(containsTerms)
+    const slugOrs = containsTerms
+      .filter((term) => !/^\d$/.test(term))
+      .map((term) => ({ slug: { contains: term, mode: 'insensitive' as const } }))
+    const combinedOr = [...ilikeOrs, ...slugOrs]
+
+    let fallbackProducts: any[] = []
+    if (combinedOr.length > 0) {
+      fallbackProducts = await prisma.product.findMany({
         where: {
           isActive: true,
           deletedAt: null,
-          OR: buildIlikeOr(containsTerms),
+          OR: combinedOr,
         },
         include: {
           category: true,
           medicine: true,
         },
-        take: limit * 2,
+        take: limit * 4,
       })
-      const seen = new Set(products.map((p: { id: string }) => p.id))
-      for (const p of fallbackProducts) {
-        if (!seen.has(p.id)) {
-          seen.add(p.id)
-          products.push(p)
-        }
-      }
-    } else if (ftsTerms.length > 0) {
-      // Also match SKU/barcode in slug when FTS already returned rows (narrow queries).
-      const slugMatches = await prisma.product.findMany({
-        where: {
-          isActive: true,
-          deletedAt: null,
-          OR: containsTerms.flatMap((term) => [{ slug: { contains: term, mode: 'insensitive' as const } }]),
-        },
-        include: { category: true, medicine: true },
-        take: limit * 2,
-      })
-      const seen = new Set(products.map((p: { id: string }) => p.id))
-      for (const p of slugMatches) {
-        if (!seen.has(p.id)) {
-          seen.add(p.id)
-          products.push(p)
-        }
+    }
+    const seen = new Set<string>()
+    for (const p of products) seen.add(p.id)
+    for (const p of fallbackProducts) {
+      if (!seen.has(p.id)) {
+        seen.add(p.id)
+        products.push(p)
       }
     }
 
@@ -258,8 +286,10 @@ export async function searchProducts(
 
       // Match quality heuristic (exact startsWith > contains)
       const exactMatch = item.name.toLowerCase().startsWith(query.toLowerCase()) ? 0.9 : 0.6
+      const phraseBoost =
+        phrase.length >= 3 && item.name.toLowerCase().includes(phrase.toLowerCase()) ? 0.35 : 0
 
-      const combinedScore = exactMatch * 0.6 + normalizedPopularity * 0.3 + featuredBonus
+      const combinedScore = phraseBoost + exactMatch * 0.6 + normalizedPopularity * 0.3 + featuredBonus
 
       return {
         item,
