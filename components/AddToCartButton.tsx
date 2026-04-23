@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ShoppingCart } from 'lucide-react'
+import { ShoppingCart, Plus, Minus, Check } from 'lucide-react'
 import { useCart, buildUnitLabelBn, SellingUnitType } from '@/contexts/CartContext'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { trackAddToCart } from '@/lib/trackEvent'
@@ -20,7 +20,6 @@ interface AddToCartButtonProps {
   mrp?: number
   slug?: string
   type?: 'MEDICINE' | 'PRODUCT'
-  // Unit label fields
   sellingUnitType?: SellingUnitType
   unitQuantity?: number
   baseUnitLabelBn?: string
@@ -48,61 +47,62 @@ export function AddToCartButton({
   dosageForm,
   tabletsPerStrip,
 }: AddToCartButtonProps) {
-  const { addItem } = useCart()
-  const [isAdding, setIsAdding] = useState(false)
+  const { addItem, updateQuantity, items } = useCart()
+  const [justAdded, setJustAdded] = useState(false)
 
-  const handleAddToCart = (e: React.MouseEvent) => {
+  const itemId = medicineId || productId
+  const cartItem = itemId ? items.find(i => i.id === itemId) : undefined
+  const cartQty = cartItem?.quantity ?? 0
+
+  const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    if (requiresPrescription || stockQuantity === 0 || !itemId) return
 
-    if (requiresPrescription || stockQuantity === 0) {
-      return
-    }
-
-    const itemId = medicineId || productId
-    if (!itemId) {
-      console.error('No medicineId or productId provided')
-      return
-    }
-
-        setIsAdding(true)
-    
-        // Compute unit label from product data
-        const unitLabelBn = buildUnitLabelBn({
-          sellingUnitType,
-          unitQuantity,
-          baseUnitLabelBn,
-          dosageForm,
-          tabletsPerStrip,
-        })
-    
-        addItem({
-          id: itemId,
-          medicineId,
-          productId,
-          name,
-          price,
-          image,
-          type,
-          category,
-          genericName,
-          mrp,
-          slug,
-          unitLabelBn,
-          sellingUnitType,
-          unitQuantity,
-          baseUnitLabelBn,
-        })
-
-    trackAddToCart({
-      item_id: itemId,
-      item_name: name,
-      item_category: category,
-      price,
-      quantity: 1,
+    const unitLabelBn = buildUnitLabelBn({
+      sellingUnitType,
+      unitQuantity,
+      baseUnitLabelBn,
+      dosageForm,
+      tabletsPerStrip,
     })
 
-    setTimeout(() => setIsAdding(false), 1000)
+    addItem({
+      id: itemId,
+      medicineId,
+      productId,
+      name,
+      price,
+      image,
+      type,
+      category,
+      genericName,
+      mrp,
+      slug,
+      unitLabelBn,
+      sellingUnitType,
+      unitQuantity,
+      baseUnitLabelBn,
+    })
+
+    trackAddToCart({ item_id: itemId, item_name: name, item_category: category, price, quantity: 1 })
+
+    setJustAdded(true)
+    setTimeout(() => setJustAdded(false), 1500)
+  }
+
+  const handleIncrease = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!itemId) return
+    updateQuantity(itemId, cartQty + 1)
+  }
+
+  const handleDecrease = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!itemId) return
+    updateQuantity(itemId, cartQty - 1)
   }
 
   const isDisabled = requiresPrescription || stockQuantity === 0
@@ -113,21 +113,61 @@ export function AddToCartButton({
     ? 'Out of stock'
     : ''
 
+  // ── Already in cart: show quantity stepper ──
+  if (cartQty > 0) {
+    return (
+      <div className={`flex items-center justify-between gap-1 rounded-lg border-2 border-teal-600 bg-teal-50 overflow-hidden ${className}`}>
+        <button
+          type="button"
+          onClick={handleDecrease}
+          className="flex h-9 w-9 flex-shrink-0 items-center justify-center text-teal-700 hover:bg-teal-100 transition-colors"
+          aria-label="Remove one"
+        >
+          <Minus className="h-3.5 w-3.5" />
+        </button>
+
+        <span className="flex-1 text-center text-sm font-bold text-teal-700 tabular-nums">
+          {cartQty}
+        </span>
+
+        <button
+          type="button"
+          onClick={handleIncrease}
+          disabled={stockQuantity > 0 && cartQty >= stockQuantity}
+          className="flex h-9 w-9 flex-shrink-0 items-center justify-center text-teal-700 hover:bg-teal-100 transition-colors disabled:opacity-40"
+          aria-label="Add one more"
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    )
+  }
+
+  // ── Not in cart yet ──
   const button = (
     <button
       type="button"
-      onClick={handleAddToCart}
+      onClick={handleAdd}
       disabled={isDisabled}
-      className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+      className={`flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200 ${
         isDisabled
-          ? 'cursor-not-allowed bg-gray-300 text-gray-500'
-          : isAdding
-          ? 'bg-green-600 text-white'
-          : 'bg-teal-600 text-white hover:bg-teal-700'
+          ? 'cursor-not-allowed bg-gray-200 text-gray-400'
+          : justAdded
+          ? 'bg-green-500 text-white scale-95'
+          : 'bg-teal-600 text-white hover:bg-teal-700 hover:shadow-md active:scale-95'
       } ${className}`}
     >
-      <ShoppingCart className="h-4 w-4" />
-      {isAdding ? 'Added!' : 'Add to Cart'}
+      {justAdded ? (
+        <>
+          <Check className="h-4 w-4" />
+          যোগ হয়েছে!
+        </>
+      ) : (
+        <>
+          <ShoppingCart className="h-4 w-4" />
+          কার্টে যোগ করুন
+        </>
+      )}
     </button>
   )
 
