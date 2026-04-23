@@ -25,11 +25,11 @@ interface MobileHomeProps {
 }
 
 const CATEGORIES = [
-  { label: 'ঔষধ',       emoji: '💊', href: '/medicines' },
-  { label: 'গ্রোসারি',  emoji: '🥦', href: '/products?category=grocery' },
-  { label: 'কসমেটিক',  emoji: '✨', href: '/products?category=cosmetics' },
-  { label: 'বেবি',       emoji: '👶', href: '/products?category=baby' },
-  { label: 'সকল',       emoji: '🏪', href: '/products' },
+  { label: 'ঔষধ',      iconSrc: '/icons/categories/medicine.svg', href: '/medicines' },
+  { label: 'গ্রোসারি', iconSrc: '/icons/categories/grocery.svg', href: '/products?category=grocery' },
+  { label: 'কসমেটিক', iconSrc: '/icons/categories/cosmetics.svg', href: '/products?category=cosmetics' },
+  { label: 'বেবি',      iconSrc: '/icons/categories/baby.svg', href: '/products?category=baby' },
+  { label: 'সকল',      iconSrc: '/icons/categories/all.svg', href: '/products' },
 ]
 
 export function MobileHome({ subscriptionPlans, homeSections }: MobileHomeProps) {
@@ -84,10 +84,16 @@ export function MobileHome({ subscriptionPlans, homeSections }: MobileHomeProps)
             <Link
               key={cat.href}
               href={cat.href}
-              className="flex flex-col items-center gap-1 rounded-xl px-2 py-2 transition-colors active:bg-teal-50"
+              className="flex flex-col items-center gap-1 rounded-xl px-2 py-2 transition-all active:scale-95 active:bg-teal-50"
             >
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-50 text-2xl shadow-sm">
-                {cat.emoji}
+              <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl border border-white/70 bg-gradient-to-br from-slate-50 via-white to-teal-50 shadow-[0_8px_18px_rgba(13,148,136,0.18)]">
+                <Image
+                  src={cat.iconSrc}
+                  alt={cat.label}
+                  width={34}
+                  height={34}
+                  className="drop-shadow-[0_2px_2px_rgba(0,0,0,0.18)]"
+                />
               </span>
               <span className="text-[11px] font-semibold text-gray-700">{cat.label}</span>
             </Link>

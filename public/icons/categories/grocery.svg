@@ -1,0 +1,28 @@
+<svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg-gro" x1="12" y1="10" x2="84" y2="86" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#DDF8E7"/>
+      <stop offset="1" stop-color="#BAEBC9"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="31" y1="34" x2="68" y2="68" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#61C961"/>
+      <stop offset="1" stop-color="#2B8C42"/>
+    </linearGradient>
+    <linearGradient id="stem" x1="47" y1="22" x2="54" y2="40" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#81B85A"/>
+      <stop offset="1" stop-color="#4C7A36"/>
+    </linearGradient>
+    <filter id="shadow-g" x="16" y="16" width="64" height="64" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#267548" flood-opacity="0.24"/>
+    </filter>
+  </defs>
+  <circle cx="48" cy="48" r="38" fill="url(#bg-gro)"/>
+  <g filter="url(#shadow-g)">
+    <path d="M48 27C51 27 54 30 54 34C54 36 53 39 52 41H44C43 39 42 36 42 34C42 30 45 27 48 27Z" fill="url(#stem)"/>
+    <path d="M28 48C28 36 38 30 48 30C58 30 68 36 68 48C68 60 60 67 48 67C36 67 28 60 28 48Z" fill="url(#leaf)"/>
+    <path d="M48 35V63" stroke="#D9FFE2" stroke-width="2.4" stroke-linecap="round" opacity="0.75"/>
+    <path d="M39 44C42 45 45 47 48 50" stroke="#D9FFE2" stroke-width="2.1" stroke-linecap="round" opacity="0.75"/>
+    <path d="M57 44C54 45 51 47 48 50" stroke="#D9FFE2" stroke-width="2.1" stroke-linecap="round" opacity="0.75"/>
+  </g>
+  <ellipse cx="36" cy="31" rx="9" ry="4" fill="white" fill-opacity="0.38" transform="rotate(-14 36 31)"/>
+</svg>

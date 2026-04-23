@@ -1,0 +1,26 @@
+<svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg-med" x1="16" y1="12" x2="80" y2="84" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D9F6F2"/>
+      <stop offset="1" stop-color="#B9EDE6"/>
+    </linearGradient>
+    <linearGradient id="pill-red" x1="33" y1="30" x2="59" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF7A7A"/>
+      <stop offset="1" stop-color="#D9345A"/>
+    </linearGradient>
+    <linearGradient id="pill-amber" x1="38" y1="35" x2="64" y2="63" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFD66E"/>
+      <stop offset="1" stop-color="#F1A92D"/>
+    </linearGradient>
+    <filter id="s" x="10" y="10" width="76" height="76" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#2B7A73" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  <circle cx="48" cy="48" r="38" fill="url(#bg-med)"/>
+  <g filter="url(#s)">
+    <rect x="29.5" y="29.5" width="37" height="37" rx="18.5" fill="url(#pill-red)" transform="rotate(45 29.5 29.5)"/>
+    <path d="M52 26L70 44L57 57L39 39L52 26Z" fill="url(#pill-amber)"/>
+    <path d="M45 33L63 51" stroke="#FFF8EE" stroke-width="2.5" stroke-linecap="round" opacity="0.8"/>
+  </g>
+  <ellipse cx="35" cy="29" rx="10" ry="4" fill="white" fill-opacity="0.45" transform="rotate(-20 35 29)"/>
+</svg>
