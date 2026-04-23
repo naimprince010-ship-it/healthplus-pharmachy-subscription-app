@@ -1,9 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Shield, Package, Heart, Baby, Activity, Users, ChevronRight } from 'lucide-react'
-import { PrescriptionUploadCard } from '@/components/PrescriptionUploadCard'
+import { Shield, Package, Heart, Baby, Activity, Users, ChevronRight, FileText, Plus, Zap } from 'lucide-react'
+import { PrescriptionUploadModal } from '@/components/PrescriptionUploadModal'
 import { ProductCard } from '@/components/ProductCard'
 import type { SubscriptionPlan } from '@prisma/client'
 
@@ -23,12 +24,21 @@ interface MobileHomeProps {
   homeSections: HomeSection[]
 }
 
+const CATEGORIES = [
+  { label: 'ঔষধ',       emoji: '💊', href: '/medicines' },
+  { label: 'গ্রোসারি',  emoji: '🥦', href: '/products?category=grocery' },
+  { label: 'কসমেটিক',  emoji: '✨', href: '/products?category=cosmetics' },
+  { label: 'বেবি',       emoji: '👶', href: '/products?category=baby' },
+  { label: 'সকল',       emoji: '🏪', href: '/products' },
+]
+
 export function MobileHome({ subscriptionPlans, homeSections }: MobileHomeProps) {
+  const [isPrescriptionOpen, setIsPrescriptionOpen] = useState(false)
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Section - With Background Image */}
+      {/* Hero Section */}
       <section className="relative overflow-hidden">
-        {/* Background Image */}
         <div className="absolute inset-0">
           <Image
             src="/images/hero-pharmacy.jpg"
@@ -37,27 +47,29 @@ export function MobileHome({ subscriptionPlans, homeSections }: MobileHomeProps)
             className="object-cover"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-teal-900/80 to-teal-700/60" />
+          <div className="absolute inset-0 bg-gradient-to-r from-teal-900/85 to-teal-700/65" />
         </div>
 
-        {/* Content */}
-        <div className="relative px-4 py-10">
-          <h1 className="text-2xl font-bold text-white leading-tight">
-            আপনার স্বাস্থ্য,<br />আমাদের অগ্রাধিকার
-          </h1>
-          <p className="mt-2 text-sm text-white/90">
-            সাশ্রয়ী মূল্যে নির্ভরযোগ্য সেবা।
+        <div className="relative px-4 py-8">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-teal-200">
+            হালাল শপিং · দ্রুত ডেলিভারি
           </p>
-          <div className="mt-6 flex gap-3">
+          <h1 className="text-[1.6rem] font-extrabold leading-tight text-white">
+            ঔষধ, গ্রোসারি ও<br />বেবি ফুড — একটি অ্যাপে।
+          </h1>
+          <p className="mt-2 text-sm text-white/80">
+            অর্ডার করুন, আমরা পৌঁছে দেব।
+          </p>
+          <div className="mt-5 flex gap-3">
             <Link
               href="/products"
-              className="flex-1 rounded-lg bg-white px-4 py-3 text-center text-sm font-semibold text-teal-700 shadow-lg"
+              className="flex-1 rounded-xl bg-white px-4 py-2.5 text-center text-sm font-bold text-teal-700 shadow-lg"
             >
-              এখনই শুরু করুন
+              এখনই কিনুন
             </Link>
             <Link
               href="/subscriptions"
-              className="flex-1 rounded-lg border-2 border-white/80 bg-white/10 backdrop-blur-sm px-4 py-3 text-center text-sm font-semibold text-white"
+              className="flex-1 rounded-xl border-2 border-white/70 bg-white/10 backdrop-blur-sm px-4 py-2.5 text-center text-sm font-semibold text-white"
             >
               প্ল্যান দেখুন
             </Link>
@@ -65,10 +77,58 @@ export function MobileHome({ subscriptionPlans, homeSections }: MobileHomeProps)
         </div>
       </section>
 
-      {/* Prescription Upload - MedEasy-style compact card */}
-      <section className="px-4 py-6">
-        <PrescriptionUploadCard />
+      {/* ── Category Icon Strip ── */}
+      <section className="bg-white px-2 py-3 shadow-sm">
+        <div className="flex items-center justify-around gap-1">
+          {CATEGORIES.map(cat => (
+            <Link
+              key={cat.href}
+              href={cat.href}
+              className="flex flex-col items-center gap-1 rounded-xl px-2 py-2 transition-colors active:bg-teal-50"
+            >
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-50 text-2xl shadow-sm">
+                {cat.emoji}
+              </span>
+              <span className="text-[11px] font-semibold text-gray-700">{cat.label}</span>
+            </Link>
+          ))}
+        </div>
       </section>
+
+      {/* ── Compact Prescription + Quick Delivery ── */}
+      <section className="px-4 pt-4 pb-2">
+        <div className="flex gap-3">
+          {/* Prescription card */}
+          <button
+            onClick={() => setIsPrescriptionOpen(true)}
+            className="flex flex-1 items-center gap-3 rounded-2xl border border-teal-100 bg-white px-4 py-3 shadow-sm text-left"
+          >
+            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-teal-500 text-white">
+              <FileText className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="text-xs font-bold text-gray-900 leading-tight">প্রেসক্রিপশন</p>
+              <p className="text-[11px] text-teal-600 font-semibold">আপলোড করুন →</p>
+            </div>
+          </button>
+
+          {/* Quick delivery card */}
+          <Link
+            href="/products"
+            className="flex flex-1 items-center gap-3 rounded-2xl border border-amber-100 bg-white px-4 py-3 shadow-sm"
+          >
+            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-amber-400 text-white">
+              <Zap className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="text-xs font-bold text-gray-900 leading-tight">দ্রুত ডেলিভারি</p>
+              <p className="text-[11px] text-amber-600 font-semibold">ঢাকায় একই দিনে</p>
+            </div>
+          </Link>
+        </div>
+      </section>
+
+      <PrescriptionUploadModal isOpen={isPrescriptionOpen} onClose={() => setIsPrescriptionOpen(false)} />
 
       {/* Home Sections - Horizontal Scrollable */}
       {homeSections.map(({ section, products }) => (
