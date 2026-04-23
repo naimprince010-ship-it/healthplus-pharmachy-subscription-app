@@ -244,14 +244,19 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                 href="https://play.google.com/store"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hidden lg:flex items-center gap-1 rounded-lg bg-black px-3 py-1.5 text-white hover:bg-gray-800 transition-colors"
+                className="hidden lg:flex items-center gap-2 rounded-xl px-3 py-1.5 text-white transition-all duration-200 hover:scale-105 hover:shadow-lg"
+                style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%)', border: '1px solid rgba(255,255,255,0.15)' }}
               >
-                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.198l2.807 1.626a1 1 0 0 1 0 1.73l-2.808 1.626L15.206 12l2.492-2.491zM5.864 2.658L16.8 8.99l-2.302 2.302-8.634-8.634z" />
+                {/* Colorful Play Store icon */}
+                <svg className="h-6 w-6 flex-shrink-0" viewBox="0 0 24 24">
+                  <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92z" fill="#EA4335"/>
+                  <path d="M14.497 12.703l2.302 2.302-10.937 6.333 8.635-8.635z" fill="#FBBC04"/>
+                  <path d="M17.696 9.505l2.807 1.626a1 1 0 0 1 0 1.73l-2.808 1.626L15.206 12l2.49-2.495z" fill="#4285F4"/>
+                  <path d="M5.864 2.658L16.8 8.99l-2.302 2.302-8.634-8.634z" fill="#34A853"/>
                 </svg>
                 <div className="flex flex-col leading-tight">
-                  <span className="text-[8px] uppercase">Get it on</span>
-                  <span className="text-xs font-semibold">Google Play</span>
+                  <span className="text-[8px] uppercase tracking-wide text-gray-300">Get it on</span>
+                  <span className="text-xs font-bold tracking-tight">Google Play</span>
                 </div>
               </a>
 
