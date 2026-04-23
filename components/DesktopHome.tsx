@@ -231,10 +231,10 @@ export function DesktopHome({ subscriptionPlans, homeSections }: DesktopHomeProp
           {/* Mobile/Tablet layout */}
           <div className="lg:hidden">
             <div className="mb-5">
-              <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+              <p aria-hidden="true" className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
                 ঔষধ, কসমেটিক্স ও গ্রোসারি —{' '}
                 <span className="text-teal-600">এক জায়গায়, সাশ্রয়ী দামে</span>
-              </h1>
+              </p>
               <p className="mt-4 text-base text-gray-600">
                 প্রেসক্রিপশনের ঔষধ, পছন্দের কসমেটিক্স, আর রোজকার গ্রোসারি — অর্ডার করুন, আমরা পৌঁছে দেব।
               </p>
@@ -270,9 +270,9 @@ export function DesktopHome({ subscriptionPlans, homeSections }: DesktopHomeProp
       <section className="w-full bg-gray-50 py-8 lg:py-12">
         <div className="w-full px-2 sm:px-4">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">Monthly Subscription Plans</h2>
+            <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">মাসিক সাবস্ক্রিপশন প্ল্যান</h2>
             <p className="mt-3 text-base text-gray-600 lg:mt-4 lg:text-lg">
-              Choose a plan that fits your healthcare needs
+              আপনার স্বাস্থ্যসেবার প্রয়োজন অনুযায়ী একটি প্ল্যান বেছে নিন
             </p>
           </div>
 
