@@ -115,6 +115,14 @@ function extractSourceCategory(item: AnyRecord): { key: string | null; label: st
   if (direct) return { key: normalizeSourceCategoryKey(direct), label: direct }
 
   const categories = item.product_categories
+  if (typeof categories === 'string' && categories.trim()) {
+    const parts = categories
+      .split(',')
+      .map((p) => p.trim())
+      .filter(Boolean)
+    const label = parts[1] || parts[0] || categories.trim()
+    return { key: normalizeSourceCategoryKey(label), label }
+  }
   if (Array.isArray(categories) && categories.length > 0) {
     const first = categories[0]
     if (typeof first === 'string') return { key: normalizeSourceCategoryKey(first), label: first }
