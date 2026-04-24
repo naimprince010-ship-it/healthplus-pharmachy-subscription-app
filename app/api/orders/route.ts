@@ -351,6 +351,16 @@ export async function POST(request: NextRequest) {
       billingPhone: order.user.phone,
     })
 
+    void (async () => {
+      const { forwardOrderToAzanById } = await import('@/lib/integrations/forward-order-to-azan')
+      const r = await forwardOrderToAzanById(order.id)
+      if (!r.ok && r.error) {
+        console.error('[Azan order forward]', r.error)
+      } else if (r.ok && r.lineCount) {
+        console.log(`[Azan order forward] ${order.orderNumber} → ${r.lineCount} line(s)`)
+      }
+    })()
+
     return NextResponse.json({ success: true, order }, { status: 201 })
   } catch (error) {
     console.error('Order creation error:', error)

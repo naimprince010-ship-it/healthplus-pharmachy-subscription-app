@@ -353,6 +353,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const parentCategoryName = product.category?.parentCategory?.name || null
   const leafCategoryName = product.category?.name || null
   const leafCategorySlug = product.category?.slug || null
+  const azanCategoryName = (process.env.AZAN_WHOLESALE_CATEGORY || 'Azan Wholesale').trim().toLowerCase()
+  const isAzanCategory = (leafCategoryName?.trim().toLowerCase() || '') === azanCategoryName
+  const customerFacingLeafLabel = isAzanCategory ? 'Verified by Halalzi' : leafCategoryName
 
   // Top line text: dosage form (for medicines) OR parent department (for general products with hierarchy)
   const topLineText = isMedicine ? dosageForm : parentCategoryName
@@ -405,7 +408,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
           >
             <ArrowLeft className="h-4 w-4" />
-            {product.category?.name ? `Back to ${product.category.name}` : 'Back to Products'}
+            {customerFacingLeafLabel ? `Back to ${customerFacingLeafLabel}` : 'Back to Products'}
           </Link>
 
           {/* MedEasy grid: 1.8fr image column + 1.4fr info column with gap-8 */}
@@ -463,7 +466,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                     href={`/category/${leafCategorySlug}`}
                     className="text-teal-600 font-medium hover:text-teal-700"
                   >
-                    {leafCategoryName}
+                    {customerFacingLeafLabel}
                   </Link>
                 </div>
               )}
@@ -551,7 +554,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 <dl className="mt-4 space-y-3 text-sm">
                   <div className="flex justify-between">
                     <dt className="text-gray-600">Category</dt>
-                    <dd className="font-medium text-gray-900">{product.category?.name ?? 'Uncategorized'}</dd>
+                    <dd className="font-medium text-gray-900">{customerFacingLeafLabel ?? 'Uncategorized'}</dd>
                   </div>
                   {product.brandName && (
                     <div className="flex justify-between">

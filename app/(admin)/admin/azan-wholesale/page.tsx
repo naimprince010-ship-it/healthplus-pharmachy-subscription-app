@@ -12,8 +12,24 @@ interface AzanSummary {
   missingPrice: number
 }
 
+interface AzanCoverage {
+  apiTotal: number | null
+  apiLastPage: number | null
+  apiPerPage: number | null
+  dbTotalInCategory: number
+  gapToApiTotal: number | null
+  maxProductsPerSyncRun: number
+  syncMaxPagesEnv: number
+  fullCatalogCoveredInOneRun: boolean | null
+  endpoint: string
+  firstPageUrl: string
+  note: string | null
+  error?: string
+}
+
 export default function AzanWholesalePage() {
   const [summary, setSummary] = useState<AzanSummary | null>(null)
+  const [coverage, setCoverage] = useState<AzanCoverage | null | undefined>(undefined)
   const [loadingSummary, setLoadingSummary] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [publishing, setPublishing] = useState(false)
@@ -22,13 +38,14 @@ export default function AzanWholesalePage() {
   const fetchSummary = async () => {
     setLoadingSummary(true)
     try {
-      const res = await fetch('/api/admin/products/azan-sync')
+      const res = await fetch('/api/admin/products/azan-sync?compare=1')
       const data = await res.json()
       if (!res.ok) {
         toast.error(data.error || 'Failed to load Azan stats')
         return
       }
       setSummary(data.summary)
+      setCoverage(data.coverage ?? null)
     } catch {
       toast.error('Failed to load Azan stats')
     } finally {
@@ -137,6 +154,59 @@ export default function AzanWholesalePage() {
           </div>
         )}
       </div>
+
+      {coverage && 'error' in coverage && coverage.error && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <p className="font-semibold">API coverage (compare) unavailable</p>
+          <p className="mt-1 text-amber-800">{coverage.error}</p>
+        </div>
+      )}
+
+      {coverage && !('error' in coverage && coverage.error) && 'apiTotal' in coverage && (
+        <div className="rounded-lg border border-sky-200 bg-sky-50 p-5">
+          <h2 className="text-sm font-semibold text-sky-900">Azan API ↔ your DB (tracking)</h2>
+          <p className="mt-1 text-xs text-sky-800">
+            Compares catalog size from Azan (page 1 <code className="rounded bg-sky-100 px-1">meta.total</code>) with
+            products in &quot;{summary?.categoryName ?? 'Azan'}&quot; category.
+          </p>
+          <dl className="mt-3 grid gap-2 text-sm md:grid-cols-2">
+            <div className="flex justify-between gap-2 rounded bg-white/60 px-3 py-2">
+              <dt className="text-sky-700">API total (Azan)</dt>
+              <dd className="font-mono font-semibold text-sky-950">{coverage.apiTotal ?? '—'}</dd>
+            </div>
+            <div className="flex justify-between gap-2 rounded bg-white/60 px-3 py-2">
+              <dt className="text-sky-700">DB total (this category)</dt>
+              <dd className="font-mono font-semibold text-sky-950">{coverage.dbTotalInCategory}</dd>
+            </div>
+            <div className="flex justify-between gap-2 rounded bg-white/60 px-3 py-2">
+              <dt className="text-sky-700">Gap (API − DB)</dt>
+              <dd className="font-mono font-semibold text-sky-950">{coverage.gapToApiTotal ?? '—'}</dd>
+            </div>
+            <div className="flex justify-between gap-2 rounded bg-white/60 px-3 py-2">
+              <dt className="text-sky-700">Max per sync run</dt>
+              <dd className="text-xs text-sky-900">
+                <span className="font-mono font-semibold">
+                  {coverage.maxProductsPerSyncRun} = per_page {coverage.apiPerPage} × AZAN_WHOLESALE_MAX_PAGES (
+                  {coverage.syncMaxPagesEnv})
+                </span>
+              </dd>
+            </div>
+            <div className="md:col-span-2 flex flex-wrap items-center justify-between gap-2 rounded bg-white/60 px-3 py-2">
+              <dt className="text-sky-700">One run can load full API catalog?</dt>
+              <dd className="font-semibold text-sky-950">
+                {coverage.fullCatalogCoveredInOneRun == null
+                  ? '—'
+                  : coverage.fullCatalogCoveredInOneRun
+                    ? 'Yes'
+                    : 'No — increase max pages or run sync multiple times'}
+              </dd>
+            </div>
+          </dl>
+          {coverage.note && (
+            <p className="mt-3 text-xs text-sky-900 border-t border-sky-200/80 pt-3">{coverage.note}</p>
+          )}
+        </div>
+      )}
 
       <div className="rounded-lg border border-teal-100 bg-teal-50 p-5">
         <div className="flex flex-wrap items-end gap-3">

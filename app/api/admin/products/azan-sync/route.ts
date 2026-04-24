@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { slugify } from '@/lib/slugify'
@@ -42,6 +42,11 @@ function getStringValue(obj: AnyRecord, keys: string[]): string | null {
 }
 
 function extractList(payload: AnyRecord): AnyRecord[] {
+  if (payload.data && typeof payload.data === 'object' && !Array.isArray(payload.data)) {
+    const layer = payload.data as AnyRecord
+    if (Array.isArray(layer.data)) return layer.data as AnyRecord[]
+    if (Array.isArray(layer.products)) return layer.products as AnyRecord[]
+  }
   const candidates = [payload.data, payload.products, payload.items, payload.results]
   for (const candidate of candidates) {
     if (Array.isArray(candidate)) return candidate as AnyRecord[]
@@ -58,7 +63,8 @@ function extractList(payload: AnyRecord): AnyRecord[] {
 function normalizeImage(imageUrl: string | null): string | null {
   if (!imageUrl) return null
   if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) return imageUrl
-  return `https://api.azanwholesale.com/${imageUrl.replace(/^\/+/, '')}`
+  const base = (process.env.AZAN_WHOLESALE_BASE_URL || 'https://api.azanwholesale.com').replace(/\/$/, '')
+  return `${base}/${imageUrl.replace(/^\/+/, '')}`
 }
 
 function normalizeProduct(item: AnyRecord): AzanNormalizedProduct | null {
@@ -71,6 +77,19 @@ function normalizeProduct(item: AnyRecord): AzanNormalizedProduct | null {
     parseNumber(item.unit_price) ??
     parseNumber(item.price) ??
     parseNumber(item.product_price)
+
+  if (purchasePrice == null || purchasePrice <= 0) return null
+
+  let firstPicture: string | null = null
+  if (Array.isArray(item.pictures) && item.pictures[0]) {
+    const p0 = item.pictures[0]
+    if (typeof p0 === 'string' && p0.trim()) firstPicture = p0.trim()
+    else if (typeof p0 === 'object' && p0 !== null) {
+      firstPicture = getStringValue(p0 as AnyRecord, ['image', 'url', 'path', 'src', 'link'])
+    }
+  }
+  const rawImage =
+    getStringValue(item, ['product_image', 'image', 'image_url', 'thumbnail', 'meta_image']) ?? firstPicture
 
   const stockQuantity =
     parseIntValue(item.stock) ??
@@ -87,11 +106,67 @@ function normalizeProduct(item: AnyRecord): AzanNormalizedProduct | null {
   return {
     name,
     sku,
-    imageUrl: normalizeImage(getStringValue(item, ['product_image', 'image', 'image_url', 'thumbnail'])),
-    purchasePrice: purchasePrice && purchasePrice > 0 ? purchasePrice : null,
+    imageUrl: normalizeImage(rawImage),
+    purchasePrice,
     stockQuantity: stockQuantity > 0 ? stockQuantity : 0,
     brandName: getStringValue(item, ['brand_name', 'brand']),
   }
+}
+
+function parseAzanMeta(raw: unknown): { total: number; last_page: number; per_page: number; current_page: number } | null {
+  if (!raw || typeof raw !== 'object') return null
+  const m = raw as AnyRecord
+  const total = typeof m.total === 'number' ? m.total : null
+  const last_page = typeof m.last_page === 'number' ? m.last_page : null
+  const per_page = typeof m.per_page === 'number' ? m.per_page : null
+  const current_page = typeof m.current_page === 'number' ? m.current_page : null
+  if (total == null || last_page == null || per_page == null || current_page == null) return null
+  return { total, last_page, per_page, current_page }
+}
+
+/** One GET to page 1; reads Laravel-style meta (total, last_page). */
+async function fetchAzanCatalogMeta(): Promise<{ endpoint: string; fullUrl: string; meta: ReturnType<typeof parseAzanMeta> }> {
+  const appId = process.env.AZAN_WHOLESALE_APP_ID
+  const secretKey = process.env.AZAN_WHOLESALE_SECRET_KEY
+  if (!appId || !secretKey) {
+    throw new Error('Missing AZAN_WHOLESALE_APP_ID or AZAN_WHOLESALE_SECRET_KEY')
+  }
+
+  const baseUrl = process.env.AZAN_WHOLESALE_BASE_URL || 'https://api.azanwholesale.com'
+  const envPath = process.env.AZAN_WHOLESALE_PRODUCTS_PATH?.trim()
+  const endpoints = [
+    envPath && envPath.length > 0 ? envPath : '/api/en/products/by-api?per_page=300&selected_product=0',
+    '/api/en/products/by-api?per_page=300&selected_product=0',
+    '/api/v1/products',
+  ]
+
+  for (const endpoint of endpoints) {
+    const testUrl = new URL(endpoint, baseUrl)
+    testUrl.searchParams.set('page', '1')
+    for (const [k, v] of [
+      ['app_id', appId],
+      ['secret_key', secretKey],
+    ] as const) {
+      if (!testUrl.searchParams.has(k)) testUrl.searchParams.set(k, v)
+    }
+    const testResponse = await fetch(testUrl.toString(), {
+      headers: {
+        Accept: 'application/json',
+        'App-Id': appId,
+        'Secret-Key': secretKey,
+      },
+    })
+    if (!testResponse.ok) continue
+    const testPayload = (await testResponse.json()) as AnyRecord
+    const testList = extractList(testPayload)
+    if (testList.length === 0) continue
+    const hasPricedProduct = testList.some((row) => normalizeProduct(row) != null)
+    if (!hasPricedProduct) continue
+    const meta = parseAzanMeta(testPayload.meta)
+    return { endpoint, fullUrl: testUrl.toString(), meta }
+  }
+
+  throw new Error('No working Azan products endpoint found for meta')
 }
 
 async function fetchAzanProducts() {
@@ -102,12 +177,14 @@ async function fetchAzanProducts() {
   }
 
   const baseUrl = process.env.AZAN_WHOLESALE_BASE_URL || 'https://api.azanwholesale.com'
+  const envPath = process.env.AZAN_WHOLESALE_PRODUCTS_PATH?.trim()
   const endpoints = [
+    envPath && envPath.length > 0 ? envPath : '/api/en/products/by-api?per_page=300&selected_product=0',
     '/api/en/products/by-api?per_page=300&selected_product=0',
     '/api/v1/products',
   ]
 
-  const maxPages = Number.parseInt(process.env.AZAN_WHOLESALE_MAX_PAGES || '20', 10)
+  const maxPages = Number.parseInt(process.env.AZAN_WHOLESALE_MAX_PAGES || '300', 10)
   const results: AzanNormalizedProduct[] = []
   const seen = new Set<string>()
   let activeEndpoint: string | null = null
@@ -115,6 +192,12 @@ async function fetchAzanProducts() {
   for (const endpoint of endpoints) {
     const testUrl = new URL(endpoint, baseUrl)
     testUrl.searchParams.set('page', '1')
+    for (const [k, v] of [
+      ['app_id', appId],
+      ['secret_key', secretKey],
+    ] as const) {
+      if (!testUrl.searchParams.has(k)) testUrl.searchParams.set(k, v)
+    }
     const testResponse = await fetch(testUrl.toString(), {
       headers: {
         Accept: 'application/json',
@@ -124,7 +207,10 @@ async function fetchAzanProducts() {
     })
     if (!testResponse.ok) continue
     const testPayload = (await testResponse.json()) as AnyRecord
-    if (extractList(testPayload).length > 0) {
+    const testList = extractList(testPayload)
+    if (testList.length === 0) continue
+    const hasPricedProduct = testList.some((row) => normalizeProduct(row) != null)
+    if (hasPricedProduct) {
       activeEndpoint = endpoint
       break
     }
@@ -137,6 +223,12 @@ async function fetchAzanProducts() {
   for (let page = 1; page <= maxPages; page++) {
     const url = new URL(activeEndpoint, baseUrl)
     url.searchParams.set('page', String(page))
+    for (const [k, v] of [
+      ['app_id', appId],
+      ['secret_key', secretKey],
+    ] as const) {
+      if (!url.searchParams.has(k)) url.searchParams.set(k, v)
+    }
 
     const response = await fetch(url.toString(), {
       headers: {
@@ -210,6 +302,7 @@ export async function POST() {
         inStock: product.stockQuantity > 0,
         categoryId: category.id,
         isActive: false,
+        supplierSku: product.sku,
         ...(product.purchasePrice ? { purchasePrice: product.purchasePrice, sellingPrice, mrp: sellingPrice } : {}),
       }
 
@@ -254,7 +347,7 @@ export async function POST() {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await auth()
     if (!session || session.user.role !== 'ADMIN') {
@@ -283,6 +376,41 @@ export async function GET() {
       }),
     ])
 
+    const wantCompare = request.nextUrl.searchParams.get('compare') === '1' || request.nextUrl.searchParams.get('compare') === 'true'
+
+    let coverage: Record<string, unknown> | undefined
+    if (wantCompare) {
+      try {
+        const { meta, endpoint, fullUrl } = await fetchAzanCatalogMeta()
+        const maxPages = Number.parseInt(process.env.AZAN_WHOLESALE_MAX_PAGES || '300', 10)
+        const perPage = meta?.per_page ?? 0
+        const apiTotal = meta?.total ?? null
+        const maxPerRun = perPage * maxPages
+        const gap = apiTotal != null ? apiTotal - total : null
+        coverage = {
+          apiTotal,
+          apiLastPage: meta?.last_page ?? null,
+          apiPerPage: meta?.per_page ?? null,
+          dbTotalInCategory: total,
+          gapToApiTotal: gap,
+          /** max products one sync can pull (admin + server uses AZAN_WHOLESALE_MAX_PAGES) */
+          maxProductsPerSyncRun: maxPerRun,
+          syncMaxPagesEnv: maxPages,
+          fullCatalogCoveredInOneRun: apiTotal != null && maxPerRun >= apiTotal,
+          endpoint,
+          firstPageUrl: fullUrl,
+          note:
+            apiTotal != null && maxPerRun < apiTotal
+              ? `Only ~${maxPerRun} of ${apiTotal} can load per run. Increase AZAN_WHOLESALE_MAX_PAGES (e.g. ${Math.ceil(apiTotal / Math.max(perPage, 1))}) or re-run sync until DB total matches API.`
+              : null,
+        }
+      } catch (e) {
+        coverage = {
+          error: e instanceof Error ? e.message : 'Could not read Azan API meta (compare).',
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
       summary: {
@@ -292,6 +420,7 @@ export async function GET() {
         draft,
         missingPrice,
       },
+      coverage,
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to fetch Azan stats'

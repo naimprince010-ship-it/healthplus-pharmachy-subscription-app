@@ -248,6 +248,9 @@ model Product {
   campaignEnd      DateTime? // When the campaign discount ends
   campaignRuleId   String?   // Reference to the DiscountRule that applied this price
 
+  // Supplier / dropship (Azan import — used for /api/orders/store)
+  supplierSku String? // Barcode on supplier (Azan line item)
+
   // General Product Fields
   brandName    String? // Brand name (optional for medicines, common for general products)
   sizeLabel    String? // e.g., "50ml", "100g", "10 pcs", "1 device"
@@ -465,6 +468,9 @@ model Order {
   paymentMethod            PaymentMethod @default(COD)
   paymentStatus            String        @default("PENDING")
   notes                    String?
+  // Reseller: Azan Wholesale order forward (POST /api/orders/store)
+  azanPushedAt  DateTime?
+  azanPushError String?   @db.Text
   // Rider info (for shipped orders)
   riderName                String?
   riderPhone               String?

@@ -1,4 +1,6 @@
 import { PrismaClient } from '@prisma/client'
+import { Pool } from 'pg'
+import { PrismaPg } from '@prisma/adapter-pg'
 import fs from 'fs'
 import path from 'path'
 
@@ -13,10 +15,26 @@ interface AzanProduct {
 }
 
 let prisma: PrismaClient | null = null
+let pgPool: Pool | null = null
+
+function buildPoolConnectionString(url: string) {
+  return url
+    .replace(/[?&]pgbouncer=[^&]*/g, '')
+    .replace(/[?&]connection_limit=[^&]*/g, '')
+    .replace(/[?&]sslmode=[^&]*/g, '')
+}
 
 function getPrismaClient(): PrismaClient {
   if (!prisma) {
-    prisma = new PrismaClient()
+    loadLocalEnv()
+    if (!process.env.DATABASE_URL) {
+      throw new Error('DATABASE_URL is not set in .env / .env.local')
+    }
+    pgPool = new Pool({
+      connectionString: buildPoolConnectionString(process.env.DATABASE_URL),
+      ssl: { rejectUnauthorized: false },
+    })
+    prisma = new PrismaClient({ adapter: new PrismaPg(pgPool) })
   }
   return prisma
 }
@@ -44,7 +62,10 @@ function loadLocalEnv() {
         value = value.slice(1, -1)
       }
 
-      if (!(key in process.env)) {
+      // Prefer file when parent shell left an empty var (skips .env).
+      const existing = process.env[key]
+      const isEmpty = existing === undefined || String(existing).trim() === ''
+      if (!(key in process.env) || isEmpty) {
         process.env[key] = value
       }
     }
@@ -82,6 +103,12 @@ function getStringValue(obj: AnyRecord, keys: string[]): string | null {
 }
 
 function extractArray(payload: AnyRecord): unknown[] {
+  if (payload.data && typeof payload.data === 'object' && !Array.isArray(payload.data)) {
+    const layer = payload.data as AnyRecord
+    if (Array.isArray(layer.data)) return layer.data
+    if (Array.isArray(layer.products)) return layer.products
+  }
+
   const candidates = [payload.data, payload.products, payload.items, payload.results]
 
   for (const candidate of candidates) {
@@ -152,17 +179,12 @@ function setPageParam(url: URL, page: number) {
   url.searchParams.set('page', page.toString())
 }
 
+/** Only well-formed names — duplicate/unusual header keys can make undici `fetch` throw. */
 function buildAuthHeaders(appId: string, secretKey: string): Record<string, string> {
   return {
     Accept: 'application/json',
     'App-Id': appId,
     'Secret-Key': secretKey,
-    'app-id': appId,
-    'secret-key': secretKey,
-    app_id: appId,
-    secret_key: secretKey,
-    appId,
-    secretKey,
   }
 }
 
@@ -188,8 +210,6 @@ async function resolveWorkingEndpoint(
   preferredPath: string,
   extraQuery: string,
 ): Promise<string> {
-  let fallbackEndpoint: string | null = null
-
   for (const baseUrl of baseUrls) {
     const candidates = getEndpointCandidates(baseUrl, preferredPath)
     for (const endpoint of candidates) {
@@ -213,21 +233,16 @@ async function resolveWorkingEndpoint(
         if (validWithPrice.length > 0) {
           return endpoint
         }
-
-        if (!fallbackEndpoint) {
-          fallbackEndpoint = endpoint
-        }
       } catch {
         // Try next candidate endpoint
       }
     }
   }
 
-  if (fallbackEndpoint) {
-    return fallbackEndpoint
-  }
-
-  throw new Error('Could not find a working Azan product endpoint. Set AZAN_WHOLESALE_BASE_URL and AZAN_WHOLESALE_PRODUCTS_PATH from the API docs.')
+  // Do not return a "fallback" with list but no normalizable products (e.g. /api/v1/products without prices).
+  throw new Error(
+    'No Azan endpoint returned products with a usable supplier price. Check AZAN_WHOLESALE_BASE_URL (use https://staging.azanwholesale.com for sandbox) and GET /api/en/products/by-api?per_page=...&selected_product=0 in the docs.',
+  )
 }
 
 function normalizeProduct(raw: unknown): AzanProduct | null {
@@ -279,11 +294,19 @@ function normalizeProduct(raw: unknown): AzanProduct | null {
     getStringValue(item, ['sku', 'supplier_product_id', 'product_code', 'code', 'product_id']) ??
     (typeof item.id === 'string' || typeof item.id === 'number' ? String(item.id) : null)
 
-  const imageUrl = getStringValue(item, ['product_image', 'image', 'image_url', 'thumbnail'])
+  let firstPicture: string | null = null
+  if (Array.isArray(item.pictures) && item.pictures[0]) {
+    const p0 = item.pictures[0]
+    if (typeof p0 === 'string' && p0.trim()) firstPicture = p0.trim()
+    else if (typeof p0 === 'object' && p0 !== null) {
+      firstPicture = getStringValue(p0 as AnyRecord, ['image', 'url', 'path', 'src', 'link'])
+    }
+  }
+  const imageUrl =
+    getStringValue(item, ['product_image', 'image', 'image_url', 'thumbnail', 'meta_image']) ?? firstPicture
+  const imageBase = (process.env.AZAN_WHOLESALE_BASE_URL || 'https://api.azanwholesale.com').replace(/\/$/, '')
   const normalizedImage =
-    imageUrl && !imageUrl.startsWith('http')
-      ? `https://api.azanwholesale.com/${imageUrl.replace(/^\/+/, '')}`
-      : imageUrl
+    imageUrl && !imageUrl.startsWith('http') ? `${imageBase}/${imageUrl.replace(/^\/+/, '')}` : imageUrl
 
   return {
     name,
@@ -313,7 +336,7 @@ async function fetchAzanProducts(): Promise<AzanProduct[]> {
     .filter(Boolean)
   const productsPath = process.env.AZAN_WHOLESALE_PRODUCTS_PATH || '/api/en/products/by-api?per_page=300&selected_product=0'
   const extraQuery = process.env.AZAN_WHOLESALE_EXTRA_QUERY || ''
-  const maxPages = Number.parseInt(process.env.AZAN_WHOLESALE_MAX_PAGES || '50', 10)
+  const maxPages = Number.parseInt(process.env.AZAN_WHOLESALE_MAX_PAGES || '300', 10)
 
   if (!appId || !secretKey) {
     throw new Error('Missing AZAN_WHOLESALE_APP_ID or AZAN_WHOLESALE_SECRET_KEY in environment.')
@@ -399,6 +422,7 @@ async function upsertAzanProducts(products: AzanProduct[]) {
           stockQuantity: item.stock,
           inStock: item.stock > 0,
           imageUrl: item.imageUrl,
+          supplierSku: item.sku,
         },
         create: {
           type: 'GENERAL',
@@ -413,6 +437,7 @@ async function upsertAzanProducts(products: AzanProduct[]) {
           categoryId: category.id,
           unit: 'pcs',
           inStock: item.stock > 0,
+          supplierSku: item.sku,
         },
       })
       success++
@@ -425,6 +450,7 @@ async function upsertAzanProducts(products: AzanProduct[]) {
 }
 
 async function main() {
+  loadLocalEnv()
   const products = await fetchAzanProducts()
   if (products.length === 0) {
     console.log('No products returned from Azan API.')
@@ -458,5 +484,8 @@ main()
   .finally(async () => {
     if (prisma) {
       await prisma.$disconnect()
+    }
+    if (pgPool) {
+      await pgPool.end()
     }
   })
