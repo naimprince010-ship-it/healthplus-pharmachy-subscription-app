@@ -13,6 +13,8 @@ interface AzanNormalizedProduct {
   purchasePrice: number | null
   stockQuantity: number
   brandName: string | null
+  sourceCategoryKey: string | null
+  sourceCategoryLabel: string | null
 }
 
 function parseNumber(value: unknown): number | null {
@@ -39,6 +41,35 @@ function getStringValue(obj: AnyRecord, keys: string[]): string | null {
     if (typeof value === 'string' && value.trim()) return value.trim()
   }
   return null
+}
+
+function normalizeSourceCategoryKey(value: string | null): string | null {
+  if (!value) return null
+  const cleaned = value.trim().toLowerCase()
+  return cleaned || null
+}
+
+function extractSourceCategory(item: AnyRecord): { key: string | null; label: string | null } {
+  const direct = getStringValue(item, ['category', 'category_name', 'product_category', 'product_category_name'])
+  if (direct) {
+    return { key: normalizeSourceCategoryKey(direct), label: direct }
+  }
+
+  const categories = item.product_categories
+  if (Array.isArray(categories) && categories.length > 0) {
+    const first = categories[0]
+    if (typeof first === 'string') {
+      return { key: normalizeSourceCategoryKey(first), label: first }
+    }
+    if (first && typeof first === 'object') {
+      const firstObj = first as AnyRecord
+      const label = getStringValue(firstObj, ['name', 'title', 'category_name'])
+      const key = getStringValue(firstObj, ['slug', 'key', 'code']) || label
+      return { key: normalizeSourceCategoryKey(key), label }
+    }
+  }
+
+  return { key: null, label: null }
 }
 
 function extractList(payload: AnyRecord): AnyRecord[] {
@@ -102,6 +133,7 @@ function normalizeProduct(item: AnyRecord): AzanNormalizedProduct | null {
   const sku =
     getStringValue(item, ['sku', 'supplier_product_id', 'product_code']) ??
     (typeof item.id === 'number' || typeof item.id === 'string' ? String(item.id) : null)
+  const sourceCategory = extractSourceCategory(item)
 
   return {
     name,
@@ -110,6 +142,8 @@ function normalizeProduct(item: AnyRecord): AzanNormalizedProduct | null {
     purchasePrice,
     stockQuantity: stockQuantity > 0 ? stockQuantity : 0,
     brandName: getStringValue(item, ['brand_name', 'brand']),
+    sourceCategoryKey: sourceCategory.key,
+    sourceCategoryLabel: sourceCategory.label,
   }
 }
 
@@ -287,11 +321,24 @@ export async function POST() {
     let created = 0
     let updated = 0
     let missingPrice = 0
+    let mappedToLocalCategory = 0
+    let fallbackToAzanCategory = 0
+
+    const mappings = await prisma.azanCategoryMapping.findMany({
+      where: { isActive: true },
+      select: { sourceCategoryKey: true, localCategoryId: true },
+    })
+    const mappingByKey = new Map(mappings.map((m) => [m.sourceCategoryKey.trim().toLowerCase(), m.localCategoryId]))
 
     for (const product of products) {
       const baseSlug = slugify(product.name)
       const slug = product.sku ? `${baseSlug}-${slugify(product.sku)}` : baseSlug
       const sellingPrice = product.purchasePrice ? Math.ceil(product.purchasePrice * multiplier) : 0
+      const mappedCategoryId =
+        product.sourceCategoryKey ? mappingByKey.get(product.sourceCategoryKey.trim().toLowerCase()) : undefined
+      const resolvedCategoryId = mappedCategoryId || category.id
+      if (mappedCategoryId) mappedToLocalCategory++
+      else fallbackToAzanCategory++
 
       const existing = await prisma.product.findUnique({ where: { slug } })
       const updatePayload = {
@@ -300,9 +347,10 @@ export async function POST() {
         imageUrl: product.imageUrl,
         stockQuantity: product.stockQuantity,
         inStock: product.stockQuantity > 0,
-        categoryId: category.id,
+        categoryId: resolvedCategoryId,
         isActive: false,
         supplierSku: product.sku,
+        sourceCategoryName: product.sourceCategoryLabel || product.sourceCategoryKey,
         ...(product.purchasePrice ? { purchasePrice: product.purchasePrice, sellingPrice, mrp: sellingPrice } : {}),
       }
 
@@ -338,6 +386,8 @@ export async function POST() {
         created,
         updated,
         missingPrice,
+        mappedToLocalCategory,
+        fallbackToAzanCategory,
       },
       message: 'Azan products synced to draft catalog',
     })

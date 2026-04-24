@@ -27,6 +27,26 @@ interface AzanCoverage {
   error?: string
 }
 
+interface MappingItem {
+  id: string
+  sourceCategoryKey: string
+  sourceCategoryLabel: string | null
+  isActive: boolean
+  localCategory: { id: string; name: string; slug: string }
+}
+
+interface CategoryOption {
+  id: string
+  name: string
+  slug: string
+}
+
+interface UnmappedItem {
+  sourceCategoryKey: string
+  sourceCategoryLabel: string
+  products: number
+}
+
 export default function AzanWholesalePage() {
   const [summary, setSummary] = useState<AzanSummary | null>(null)
   const [coverage, setCoverage] = useState<AzanCoverage | null | undefined>(undefined)
@@ -34,6 +54,12 @@ export default function AzanWholesalePage() {
   const [syncing, setSyncing] = useState(false)
   const [publishing, setPublishing] = useState(false)
   const [marginPercent, setMarginPercent] = useState('30')
+  const [mappings, setMappings] = useState<MappingItem[]>([])
+  const [categories, setCategories] = useState<CategoryOption[]>([])
+  const [unmapped, setUnmapped] = useState<UnmappedItem[]>([])
+  const [sourceCategoryInput, setSourceCategoryInput] = useState('')
+  const [selectedLocalCategoryId, setSelectedLocalCategoryId] = useState('')
+  const [savingMapping, setSavingMapping] = useState(false)
 
   const fetchSummary = async () => {
     setLoadingSummary(true)
@@ -53,8 +79,28 @@ export default function AzanWholesalePage() {
     }
   }
 
+  const fetchMappings = async () => {
+    try {
+      const res = await fetch('/api/admin/products/azan-category-mappings')
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error || 'Failed to load category mappings')
+        return
+      }
+      setMappings(data.mappings || [])
+      setCategories(data.categories || [])
+      setUnmapped(data.unmapped || [])
+      if (!selectedLocalCategoryId && data.categories?.length) {
+        setSelectedLocalCategoryId(data.categories[0].id)
+      }
+    } catch {
+      toast.error('Failed to load category mappings')
+    }
+  }
+
   useEffect(() => {
     fetchSummary()
+    fetchMappings()
   }, [])
 
   const handleSync = async () => {
@@ -69,13 +115,68 @@ export default function AzanWholesalePage() {
         return
       }
       toast.success(
-        `Sync complete: ${data.summary?.fetched ?? 0} fetched, ${data.summary?.created ?? 0} created, ${data.summary?.updated ?? 0} updated`
+        `Sync complete: ${data.summary?.fetched ?? 0} fetched, ${data.summary?.created ?? 0} created, ${data.summary?.updated ?? 0} updated, ${data.summary?.mappedToLocalCategory ?? 0} mapped`
       )
       fetchSummary()
+      fetchMappings()
     } catch {
       toast.error('Azan sync failed')
     } finally {
       setSyncing(false)
+    }
+  }
+
+  const handleSaveMapping = async (sourceCategoryKey?: string) => {
+    const source = (sourceCategoryKey || sourceCategoryInput).trim()
+    if (!source) {
+      toast.error('Enter source category key/name')
+      return
+    }
+    if (!selectedLocalCategoryId) {
+      toast.error('Select local category')
+      return
+    }
+
+    setSavingMapping(true)
+    try {
+      const res = await fetch('/api/admin/products/azan-category-mappings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sourceCategoryKey: source,
+          sourceCategoryLabel: source,
+          localCategoryId: selectedLocalCategoryId,
+          isActive: true,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error || 'Failed to save mapping')
+        return
+      }
+      toast.success('Mapping saved')
+      setSourceCategoryInput('')
+      fetchMappings()
+    } catch {
+      toast.error('Failed to save mapping')
+    } finally {
+      setSavingMapping(false)
+    }
+  }
+
+  const handleDeleteMapping = async (id: string) => {
+    if (!confirm('Delete this mapping?')) return
+    try {
+      const res = await fetch(`/api/admin/products/azan-category-mappings?id=${id}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error || 'Failed to delete mapping')
+        return
+      }
+      toast.success('Mapping removed')
+      fetchMappings()
+    } catch {
+      toast.error('Failed to delete mapping')
     }
   }
 
@@ -240,6 +341,91 @@ export default function AzanWholesalePage() {
           >
             {publishing ? 'Publishing...' : 'Apply Margin + Publish All Azan'}
           </button>
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-5 space-y-4">
+        <div>
+          <h2 className="text-sm font-semibold text-indigo-900">Azan Category Mapping</h2>
+          <p className="mt-1 text-xs text-indigo-800">
+            Map supplier category names to your local categories. Next sync will auto-place products category-wise.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-end gap-3">
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-wide text-indigo-700">Source category</label>
+            <input
+              value={sourceCategoryInput}
+              onChange={(e) => setSourceCategoryInput(e.target.value)}
+              placeholder="e.g. skin care"
+              className="mt-1 w-56 rounded-lg border border-indigo-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-wide text-indigo-700">Local category</label>
+            <select
+              value={selectedLocalCategoryId}
+              onChange={(e) => setSelectedLocalCategoryId(e.target.value)}
+              className="mt-1 w-56 rounded-lg border border-indigo-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button
+            onClick={() => handleSaveMapping()}
+            disabled={savingMapping}
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+          >
+            {savingMapping ? 'Saving...' : 'Save Mapping'}
+          </button>
+        </div>
+
+        {unmapped.length > 0 && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+            <p className="text-xs font-semibold text-amber-900">Unmapped source categories detected</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {unmapped.slice(0, 12).map((u) => (
+                <button
+                  key={u.sourceCategoryKey}
+                  onClick={() => {
+                    setSourceCategoryInput(u.sourceCategoryLabel)
+                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })
+                  }}
+                  className="rounded-full border border-amber-300 bg-white px-3 py-1 text-xs text-amber-900 hover:bg-amber-100"
+                  title={`${u.products} products`}
+                >
+                  {u.sourceCategoryLabel} ({u.products})
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="rounded-lg border border-indigo-200 bg-white p-3">
+          <p className="text-xs font-semibold text-indigo-900">Active mappings ({mappings.length})</p>
+          <div className="mt-2 space-y-2">
+            {mappings.length === 0 && <p className="text-xs text-gray-500">No mappings yet.</p>}
+            {mappings.map((m) => (
+              <div key={m.id} className="flex items-center justify-between rounded border border-gray-200 px-3 py-2 text-sm">
+                <div>
+                  <span className="font-medium text-gray-900">{m.sourceCategoryLabel || m.sourceCategoryKey}</span>
+                  <span className="mx-2 text-gray-400">→</span>
+                  <span className="text-indigo-700 font-medium">{m.localCategory.name}</span>
+                </div>
+                <button
+                  onClick={() => handleDeleteMapping(m.id)}
+                  className="text-xs text-red-600 hover:text-red-700"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

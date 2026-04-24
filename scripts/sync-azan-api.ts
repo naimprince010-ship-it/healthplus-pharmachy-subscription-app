@@ -12,6 +12,8 @@ interface AzanProduct {
   stock: number
   sku: string | null
   imageUrl: string | null
+  sourceCategoryKey: string | null
+  sourceCategoryLabel: string | null
 }
 
 let prisma: PrismaClient | null = null
@@ -100,6 +102,30 @@ function getStringValue(obj: AnyRecord, keys: string[]): string | null {
     if (typeof val === 'string' && val.trim()) return val.trim()
   }
   return null
+}
+
+function normalizeSourceCategoryKey(value: string | null): string | null {
+  if (!value) return null
+  const cleaned = value.trim().toLowerCase()
+  return cleaned || null
+}
+
+function extractSourceCategory(item: AnyRecord): { key: string | null; label: string | null } {
+  const direct = getStringValue(item, ['category', 'category_name', 'product_category', 'product_category_name'])
+  if (direct) return { key: normalizeSourceCategoryKey(direct), label: direct }
+
+  const categories = item.product_categories
+  if (Array.isArray(categories) && categories.length > 0) {
+    const first = categories[0]
+    if (typeof first === 'string') return { key: normalizeSourceCategoryKey(first), label: first }
+    if (first && typeof first === 'object') {
+      const obj = first as AnyRecord
+      const label = getStringValue(obj, ['name', 'title', 'category_name'])
+      const key = getStringValue(obj, ['slug', 'key', 'code']) || label
+      return { key: normalizeSourceCategoryKey(key), label }
+    }
+  }
+  return { key: null, label: null }
 }
 
 function extractArray(payload: AnyRecord): unknown[] {
@@ -293,6 +319,7 @@ function normalizeProduct(raw: unknown): AzanProduct | null {
   const sku =
     getStringValue(item, ['sku', 'supplier_product_id', 'product_code', 'code', 'product_id']) ??
     (typeof item.id === 'string' || typeof item.id === 'number' ? String(item.id) : null)
+  const sourceCategory = extractSourceCategory(item)
 
   let firstPicture: string | null = null
   if (Array.isArray(item.pictures) && item.pictures[0]) {
@@ -314,6 +341,8 @@ function normalizeProduct(raw: unknown): AzanProduct | null {
     stock: stock > 0 ? stock : 0,
     sku,
     imageUrl: normalizedImage ?? null,
+    sourceCategoryKey: sourceCategory.key,
+    sourceCategoryLabel: sourceCategory.label,
   }
 }
 
@@ -406,11 +435,19 @@ async function upsertAzanProducts(products: AzanProduct[]) {
 
   let success = 0
   let failed = 0
+  const mappings = await prismaClient.azanCategoryMapping.findMany({
+    where: { isActive: true },
+    select: { sourceCategoryKey: true, localCategoryId: true },
+  })
+  const mappingByKey = new Map(mappings.map((m) => [m.sourceCategoryKey.trim().toLowerCase(), m.localCategoryId]))
 
   for (const item of products) {
     const slug = item.sku ? `${slugify(item.name)}-${slugify(item.sku)}` : slugify(item.name)
     const sellingPrice = Math.ceil(item.supplierPrice * markupMultiplier)
 
+    const mappedCategoryId =
+      item.sourceCategoryKey ? mappingByKey.get(item.sourceCategoryKey.trim().toLowerCase()) : undefined
+    const resolvedCategoryId = mappedCategoryId || category.id
     try {
       await prismaClient.product.upsert({
         where: { slug },
@@ -423,6 +460,8 @@ async function upsertAzanProducts(products: AzanProduct[]) {
           inStock: item.stock > 0,
           imageUrl: item.imageUrl,
           supplierSku: item.sku,
+          sourceCategoryName: item.sourceCategoryLabel || item.sourceCategoryKey,
+          categoryId: resolvedCategoryId,
         },
         create: {
           type: 'GENERAL',
@@ -434,10 +473,11 @@ async function upsertAzanProducts(products: AzanProduct[]) {
           imageUrl: item.imageUrl,
           stockQuantity: item.stock,
           isActive: false,
-          categoryId: category.id,
+          categoryId: resolvedCategoryId,
           unit: 'pcs',
           inStock: item.stock > 0,
           supplierSku: item.sku,
+          sourceCategoryName: item.sourceCategoryLabel || item.sourceCategoryKey,
         },
       })
       success++

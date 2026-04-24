@@ -207,11 +207,23 @@ model Category {
   updatedAt          DateTime      @updatedAt
   medicines          Medicine[]
   products           Product[]
+  azanMappings       AzanCategoryMapping[]
   homeSections       HomeSection[]
   blogs              Blog[] // Blogs with this category as primary
   // Phase 2: AI Import draft relations
   aiDraftsAsCategory    AiProductDraft[] // Drafts where this is the matched category
   aiDraftsAsSubcategory AiProductDraft[] @relation("SubcategoryDrafts") // Drafts where this is the matched subcategory
+}
+
+model AzanCategoryMapping {
+  id                  String   @id @default(cuid())
+  sourceCategoryKey   String   @unique
+  sourceCategoryLabel String?
+  localCategoryId     String
+  localCategory       Category @relation(fields: [localCategoryId], references: [id], onDelete: Cascade)
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 }
 
 model Product {
@@ -250,6 +262,7 @@ model Product {
 
   // Supplier / dropship (Azan import — used for /api/orders/store)
   supplierSku String? // Barcode on supplier (Azan line item)
+  sourceCategoryName String? // Source category from supplier payload (e.g., Azan)
 
   // General Product Fields
   brandName    String? // Brand name (optional for medicines, common for general products)
