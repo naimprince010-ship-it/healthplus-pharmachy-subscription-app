@@ -11,9 +11,11 @@ type AzanInboundPayload = {
   purchase_price?: string | number | null
   wholesale_price?: string | number | null
   unit_price?: string | number | null
+  sales_price?: string | number | null
   price?: string | number | null
   selling_price?: string | number | null
   mrp?: string | number | null
+  mrp_price?: string | number | null
 }
 
 function parseNumeric(value: string | number | null | undefined): number | null {
@@ -78,8 +80,11 @@ export async function applyAzanInboundProductUpdate(kind: UpdateKind, payload: A
   const stock = parseStock(payload.stock)
   const inStock = computeInStock(stock, payload.status)
 
-  const explicitSelling = parseNumeric(payload.selling_price) ?? parseNumeric(payload.price)
-  const incomingMrp = parseNumeric(payload.mrp)
+  const explicitSelling =
+    parseNumeric(payload.selling_price) ??
+    parseNumeric(payload.sales_price) ??
+    parseNumeric(payload.price)
+  const incomingMrp = parseNumeric(payload.mrp) ?? parseNumeric(payload.mrp_price)
   const baseCost =
     parseNumeric(payload.purchase_price) ??
     parseNumeric(payload.wholesale_price) ??

@@ -13,9 +13,11 @@ const payloadSchema = z.object({
   purchase_price: z.union([z.string(), z.number()]).optional(),
   wholesale_price: z.union([z.string(), z.number()]).optional(),
   unit_price: z.union([z.string(), z.number()]).optional(),
+  sales_price: z.union([z.string(), z.number()]).optional(),
   price: z.union([z.string(), z.number()]).optional(),
   selling_price: z.union([z.string(), z.number()]).optional(),
   mrp: z.union([z.string(), z.number()]).optional(),
+  mrp_price: z.union([z.string(), z.number()]).optional(),
 })
 
 export async function POST(request: NextRequest) {
