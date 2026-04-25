@@ -1,4 +1,5 @@
-import type { OrderStatus, Prisma } from '@prisma/client'
+import { Prisma } from '@prisma/client'
+import type { OrderStatus } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { fetchAzanOrderStatusByPlatformOrderId } from '@/lib/integrations/azan-wholesale'
 
