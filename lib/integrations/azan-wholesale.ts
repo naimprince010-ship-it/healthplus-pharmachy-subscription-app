@@ -42,7 +42,7 @@ export interface AzanOrderPayload {
   date: string
   order_details: AzanOrderLine[]
   platform_source: string
-  platform_user_id?: string
+  platform_user_id?: number
   order_source?: string
   shipping_address: {
     name: string

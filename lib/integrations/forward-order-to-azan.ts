@@ -78,10 +78,11 @@ export async function forwardOrderToAzanById(orderId: string): Promise<{
       continue
     }
 
-    const unit = line.price
-    const totalLine = line.total
+    const normalizedPrice = normalizeAzanLinePrice(p.mrp, line.price)
+    const unit = normalizedPrice
+    const totalLine = normalizedPrice * line.quantity
     const wholesale = p.purchasePrice ?? 0
-    const mrp = p.mrp ?? p.sellingPrice
+    const mrp = normalizedPrice
 
     details.push({
       name: p.name,
@@ -112,12 +113,21 @@ export async function forwardOrderToAzanById(orderId: string): Promise<{
     })
     return { ok: false, lineCount: details.length, error: msg }
   }
+  const platformUserId = extractIntegerUserId(order.userId, order.user.phone)
+  if (!platformUserId) {
+    const msg = `Could not derive integer platform_user_id from userId=${order.userId}`
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { azanPushError: msg },
+    })
+    return { ok: false, lineCount: details.length, error: msg }
+  }
 
   const payload = {
     date: format(now, 'yyyy-MM-dd HH:mm:ss'),
     order_details: details,
     platform_source: getAzanPlatformSource(),
-    platform_user_id: order.userId,
+    platform_user_id: platformUserId,
     order_source: 'website',
     shipping_address: {
       name: order.address.fullName,
@@ -186,6 +196,35 @@ function extractIntegerOrderId(orderNumber: string, orderId: string): number | n
   }
 
   return null
+}
+
+/**
+ * Azan validates platform_user_id as integer.
+ * Prefer numeric DB ids, then phone digits as stable fallback.
+ */
+function extractIntegerUserId(userId: string, phone?: string | null): number | null {
+  const fromUserId = userId.replace(/\D/g, '')
+  if (fromUserId) {
+    const n = Number(fromUserId)
+    if (Number.isSafeInteger(n) && n > 0) return n
+  }
+
+  const fromPhone = (phone || '').replace(/\D/g, '')
+  if (fromPhone) {
+    const n = Number(fromPhone)
+    if (Number.isSafeInteger(n) && n > 0) return n
+  }
+
+  return null
+}
+
+/**
+ * Keep all Azan-facing price fields aligned to a single canonical value
+ * to avoid payload-level price mismatches.
+ */
+function normalizeAzanLinePrice(mrp: number | null | undefined, fallback: number): number {
+  if (typeof mrp === 'number' && Number.isFinite(mrp) && mrp > 0) return mrp
+  return fallback
 }
 
 function extractAzanOrderMetaFromResponse(data: unknown): {
