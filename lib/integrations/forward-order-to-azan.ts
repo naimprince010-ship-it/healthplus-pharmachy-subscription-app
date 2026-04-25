@@ -1,11 +1,8 @@
 import { format } from 'date-fns'
 import { prisma } from '@/lib/prisma'
 import { getAzanPlatformSource, submitAzanResellerOrder, type AzanOrderLine } from '@/lib/integrations/azan-wholesale'
+import { getAzanResellerCategoryName, isProductLinkedToAzanCatalog } from '@/lib/integrations/azan-catalog'
 import { slugify } from '@/lib/slugify'
-
-function getResellerCategoryName() {
-  return process.env.AZAN_WHOLESALE_CATEGORY || 'Azan Wholesale'
-}
 
 function getSupplierNameForLine() {
   return process.env.AZAN_WHOLESALE_SUPPLIER_NAME || 'AzanWholeSale'
@@ -30,7 +27,7 @@ export async function forwardOrderToAzanById(orderId: string): Promise<{
     return { ok: false, error: msg }
   }
 
-  const categoryName = getResellerCategoryName()
+  const categoryName = getAzanResellerCategoryName()
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },
@@ -68,7 +65,7 @@ export async function forwardOrderToAzanById(orderId: string): Promise<{
   for (const line of order.items) {
     if (line.medicineId) continue
     if (!line.product) continue
-    if (line.product.category.name !== categoryName) continue
+    if (!isProductLinkedToAzanCatalog(line.product, categoryName)) continue
     if (line.product.deletedAt) continue
 
     const p = line.product

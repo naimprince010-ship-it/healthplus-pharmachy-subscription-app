@@ -3,6 +3,10 @@ import { Pool } from 'pg'
 import { PrismaPg } from '@prisma/adapter-pg'
 import fs from 'fs'
 import path from 'path'
+import {
+  buildAutoSourceCategoryIdMap,
+  isAzanAutoCreateSourceCategoriesEnabled,
+} from '@/lib/integrations/azan-source-categories'
 
 type AnyRecord = Record<string, unknown>
 
@@ -361,6 +365,17 @@ function slugify(value: string): string {
     .replace(/^-|-$/g, '')
 }
 
+function parseAzanApiMeta(raw: unknown): { total: number; last_page: number; per_page: number; current_page: number } | null {
+  if (!raw || typeof raw !== 'object') return null
+  const m = raw as AnyRecord
+  const total = typeof m.total === 'number' ? m.total : null
+  const last_page = typeof m.last_page === 'number' ? m.last_page : null
+  const per_page = typeof m.per_page === 'number' ? m.per_page : null
+  const current_page = typeof m.current_page === 'number' ? m.current_page : null
+  if (total == null || last_page == null || per_page == null || current_page == null) return null
+  return { total, last_page, per_page, current_page }
+}
+
 async function fetchAzanProducts(): Promise<AzanProduct[]> {
   loadLocalEnv()
 
@@ -385,7 +400,8 @@ async function fetchAzanProducts(): Promise<AzanProduct[]> {
 
   console.log(`Using Azan endpoint: ${endpoint}`)
 
-  for (let page = 1; page <= maxPages; page++) {
+  let effectiveMaxPages = maxPages
+  for (let page = 1; page <= effectiveMaxPages; page++) {
     const url = new URL(endpoint)
     applyExtraQuery(url, extraQuery)
     applyAuthQuery(url, appId, secretKey)
@@ -401,6 +417,12 @@ async function fetchAzanProducts(): Promise<AzanProduct[]> {
     }
 
     const payload = (await response.json()) as AnyRecord
+    if (page === 1) {
+      const m = parseAzanApiMeta(payload.meta)
+      if (m && m.last_page > 0) {
+        effectiveMaxPages = Math.min(maxPages, m.last_page)
+      }
+    }
     const list = extractArray(payload)
     if (list.length === 0) break
 
@@ -449,13 +471,33 @@ async function upsertAzanProducts(products: AzanProduct[]) {
   })
   const mappingByKey = new Map(mappings.map((m) => [m.sourceCategoryKey.trim().toLowerCase(), m.localCategoryId]))
 
+  const autoCreateEnabled = isAzanAutoCreateSourceCategoriesEnabled()
+  let autoByKey = new Map<string, string>()
+  let newSourceCategoriesCreated = 0
+  if (autoCreateEnabled) {
+    const { bySourceKey, newCategoriesCreated } = await buildAutoSourceCategoryIdMap(
+      prismaClient,
+      products,
+      mappingByKey
+    )
+    autoByKey = bySourceKey
+    newSourceCategoriesCreated = newCategoriesCreated
+  }
+
   for (const item of products) {
     const slug = item.sku ? `${slugify(item.name)}-${slugify(item.sku)}` : slugify(item.name)
     const sellingPrice = Math.ceil(item.supplierPrice * markupMultiplier)
 
-    const mappedCategoryId =
-      item.sourceCategoryKey ? mappingByKey.get(item.sourceCategoryKey.trim().toLowerCase()) : undefined
-    const resolvedCategoryId = mappedCategoryId || category.id
+    const k = item.sourceCategoryKey?.trim().toLowerCase() ?? null
+    let resolvedCategoryId = category.id
+    if (k) {
+      const explicit = mappingByKey.get(k)
+      if (explicit) {
+        resolvedCategoryId = explicit
+      } else if (autoCreateEnabled && autoByKey.has(k)) {
+        resolvedCategoryId = autoByKey.get(k)!
+      }
+    }
     try {
       await prismaClient.product.upsert({
         where: { slug },
@@ -494,7 +536,7 @@ async function upsertAzanProducts(products: AzanProduct[]) {
     }
   }
 
-  return { success, failed }
+  return { success, failed, newSourceCategoriesCreated, autoCreateEnabled }
 }
 
 async function main() {
@@ -518,9 +560,12 @@ async function main() {
     return
   }
 
-  const { success, failed } = await upsertAzanProducts(products)
+  const { success, failed, newSourceCategoriesCreated, autoCreateEnabled } = await upsertAzanProducts(products)
 
-  console.log(`Azan sync complete. Fetched: ${products.length}, Imported/Updated: ${success}, Failed: ${failed}`)
+  console.log(
+    `Azan sync complete. Fetched: ${products.length}, Imported/Updated: ${success}, Failed: ${failed}` +
+      (autoCreateEnabled ? `, New local categories: ${newSourceCategoriesCreated}` : '')
+  )
 }
 
 main()

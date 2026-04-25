@@ -20,12 +20,6 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 
-  const defaultAzanCategoryName = process.env.AZAN_WHOLESALE_CATEGORY || 'Azan Wholesale'
-  const defaultAzanCategory = await prisma.category.findUnique({
-    where: { name: defaultAzanCategoryName },
-    select: { id: true },
-  })
-
   const [mappings, categories, unmappedSourceGroups] = await Promise.all([
     prisma.azanCategoryMapping.findMany({
       orderBy: [{ sourceCategoryKey: 'asc' }],
@@ -43,7 +37,7 @@ export async function GET() {
       where: {
         deletedAt: null,
         sourceCategoryName: { not: null },
-        ...(defaultAzanCategory ? { categoryId: defaultAzanCategory.id } : {}),
+        NOT: { sourceCategoryName: { equals: '' } },
       },
       _count: { _all: true },
       orderBy: { _count: { sourceCategoryName: 'desc' } },

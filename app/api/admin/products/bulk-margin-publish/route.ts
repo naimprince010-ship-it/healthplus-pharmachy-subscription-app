@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { prismaWhereAzanCatalogProducts } from '@/lib/integrations/azan-catalog'
 import { Prisma } from '@prisma/client'
 import { z } from 'zod'
 import { invalidateSearchIndex } from '@/lib/search-index'
@@ -30,14 +31,13 @@ export async function POST(request: NextRequest) {
 
     const { marginPercent, publish, ids, applyToAzanCategory } = parsed.data
     const marginMultiplier = 1 + marginPercent / 100
-    const azanCategoryName = process.env.AZAN_WHOLESALE_CATEGORY || 'Azan Wholesale'
 
     const where: Prisma.ProductWhereInput = {
       deletedAt: null,
     }
 
     if (applyToAzanCategory) {
-      where.category = { is: { name: azanCategoryName } }
+      Object.assign(where, prismaWhereAzanCatalogProducts())
     } else if (ids && ids.length > 0) {
       where.id = { in: ids }
     } else {

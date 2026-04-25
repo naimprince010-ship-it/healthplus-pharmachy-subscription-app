@@ -1,5 +1,5 @@
 /**
- * Set isActive: true for all products in the Azan Wholesale category (storefront visibility).
+ * Set isActive: true for all Azan-sourced products (reseller category and/or supplierSku / sourceCategoryName).
  * Loads .env.local then .env — run: npx tsx scripts/activate-azan-products.ts
  */
 import fs from 'fs'
@@ -8,6 +8,7 @@ import { Pool } from 'pg'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '@prisma/client'
 import { invalidateSearchIndex } from '@/lib/search-index'
+import { getAzanResellerCategoryName, prismaWhereAzanCatalogProducts } from '@/lib/integrations/azan-catalog'
 
 function loadLocalEnv() {
   const root = process.cwd()
@@ -50,25 +51,16 @@ async function main() {
     process.exit(1)
   }
 
-  const categoryName = process.env.AZAN_WHOLESALE_CATEGORY || 'Azan Wholesale'
+  const categoryName = getAzanResellerCategoryName()
   const pool = new Pool({
     connectionString: buildPoolConnectionString(process.env.DATABASE_URL),
     ssl: { rejectUnauthorized: false },
   })
   const prisma = new PrismaClient({ adapter: new PrismaPg(pool) })
 
-  const category = await prisma.category.findUnique({ where: { name: categoryName } })
-  if (!category) {
-    console.log(`Category not found: ${categoryName}. Run sync first.`)
-    await prisma.$disconnect()
-    await pool.end()
-    return
-  }
-
   const result = await prisma.product.updateMany({
     where: {
-      categoryId: category.id,
-      deletedAt: null,
+      ...prismaWhereAzanCatalogProducts(),
       isActive: false,
     },
     data: { isActive: true },
@@ -76,7 +68,9 @@ async function main() {
 
   invalidateSearchIndex()
 
-  console.log(`Activated (isActive: true): ${result.count} products in "${categoryName}".`)
+  console.log(
+    `Activated (isActive: true): ${result.count} Azan-sourced product(s) (default "${categoryName}" and/or supplierSku / mapped).`,
+  )
 
   await prisma.$disconnect()
   await pool.end()

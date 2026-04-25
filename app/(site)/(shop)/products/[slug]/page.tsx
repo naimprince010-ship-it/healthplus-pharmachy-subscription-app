@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Metadata } from 'next'
 import { getEffectivePrices } from '@/lib/pricing'
+import { isProductLinkedToAzanCatalog } from '@/lib/integrations/azan-catalog'
 
 export const runtime = 'nodejs'
 export const revalidate = 60 // Revalidate page every 60 seconds (ISR)
@@ -249,6 +250,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
       campaignPrice: true,
       campaignStart: true,
       campaignEnd: true,
+      supplierSku: true,
+      sourceCategoryName: true,
       category: {
         select: {
           id: true,
@@ -353,9 +356,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const parentCategoryName = product.category?.parentCategory?.name || null
   const leafCategoryName = product.category?.name || null
   const leafCategorySlug = product.category?.slug || null
-  const azanCategoryName = (process.env.AZAN_WHOLESALE_CATEGORY || 'Azan Wholesale').trim().toLowerCase()
-  const isAzanCategory = (leafCategoryName?.trim().toLowerCase() || '') === azanCategoryName
-  const customerFacingLeafLabel = isAzanCategory ? 'Verified by Halalzi' : leafCategoryName
+  const isAzanCatalogProduct = isProductLinkedToAzanCatalog({
+    supplierSku: product.supplierSku,
+    sourceCategoryName: product.sourceCategoryName,
+    category: { name: product.category?.name ?? '' },
+  })
+  const customerFacingLeafLabel = isAzanCatalogProduct ? 'Verified by Halalzi' : leafCategoryName
 
   // Top line text: dosage form (for medicines) OR parent department (for general products with hierarchy)
   const topLineText = isMedicine ? dosageForm : parentCategoryName

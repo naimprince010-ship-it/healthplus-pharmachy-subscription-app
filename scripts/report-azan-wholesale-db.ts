@@ -7,6 +7,7 @@ import path from 'path'
 import { Pool } from 'pg'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '@prisma/client'
+import { getAzanResellerCategoryName, prismaWhereAzanCatalogProducts } from '@/lib/integrations/azan-catalog'
 
 function loadLocalEnv() {
   const root = process.cwd()
@@ -45,7 +46,7 @@ async function main() {
     process.exit(1)
   }
 
-  const categoryName = process.env.AZAN_WHOLESALE_CATEGORY || 'Azan Wholesale'
+  const categoryName = getAzanResellerCategoryName()
   const pool = new Pool({
     connectionString: buildPoolConnectionString(process.env.DATABASE_URL),
     ssl: { rejectUnauthorized: false },
@@ -57,16 +58,7 @@ async function main() {
     select: { id: true, name: true, slug: true },
   })
 
-  if (!category) {
-    console.log(JSON.stringify({ error: `Category not found: ${categoryName}` }, null, 2))
-    await prisma.$disconnect()
-    return
-  }
-
-  const whereBase = {
-    deletedAt: null,
-    categoryId: category.id,
-  }
+  const whereBase = prismaWhereAzanCatalogProducts()
 
   const [total, published, draft, withPurchase, missingPurchase, recent] = await Promise.all([
     prisma.product.count({ where: whereBase }),
@@ -106,7 +98,8 @@ async function main() {
   console.log(
     JSON.stringify(
       {
-        category,
+        defaultAzanCategory: category,
+        note: 'Counts include all Azan-sourced rows (reseller category and/or supplierSku / sourceCategoryName).',
         counts: {
           total,
           published,

@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { prismaWhereAzanCatalogProducts } from '@/lib/integrations/azan-catalog'
+import {
+  buildAutoSourceCategoryIdMap,
+  isAzanAutoCreateSourceCategoriesEnabled,
+} from '@/lib/integrations/azan-source-categories'
 import { slugify } from '@/lib/slugify'
 import { invalidateSearchIndex } from '@/lib/search-index'
 
@@ -262,7 +267,8 @@ async function fetchAzanProducts() {
     throw new Error('No working Azan products endpoint found')
   }
 
-  for (let page = 1; page <= maxPages; page++) {
+  let effectiveMaxPages = maxPages
+  for (let page = 1; page <= effectiveMaxPages; page++) {
     const url = new URL(activeEndpoint, baseUrl)
     url.searchParams.set('page', String(page))
     for (const [k, v] of [
@@ -282,6 +288,12 @@ async function fetchAzanProducts() {
 
     if (!response.ok) break
     const payload = (await response.json()) as AnyRecord
+    if (page === 1) {
+      const m = parseAzanMeta(payload.meta)
+      if (m && m.last_page > 0) {
+        effectiveMaxPages = Math.min(maxPages, m.last_page)
+      }
+    }
     const list = extractList(payload)
     if (list.length === 0) break
 
@@ -330,7 +342,9 @@ export async function POST() {
     let updated = 0
     let missingPrice = 0
     let mappedToLocalCategory = 0
-    let fallbackToAzanCategory = 0
+    let assignedViaAutoCategory = 0
+    let fallbackToDefaultCategory = 0
+    const autoCreateEnabled = isAzanAutoCreateSourceCategoriesEnabled()
 
     const mappings = await prisma.azanCategoryMapping.findMany({
       where: { isActive: true },
@@ -338,15 +352,38 @@ export async function POST() {
     })
     const mappingByKey = new Map(mappings.map((m) => [m.sourceCategoryKey.trim().toLowerCase(), m.localCategoryId]))
 
+    let autoByKey = new Map<string, string>()
+    let newSourceCategoriesCreated = 0
+    if (autoCreateEnabled) {
+      const { bySourceKey, newCategoriesCreated } = await buildAutoSourceCategoryIdMap(
+        prisma,
+        products,
+        mappingByKey
+      )
+      autoByKey = bySourceKey
+      newSourceCategoriesCreated = newCategoriesCreated
+    }
+
     for (const product of products) {
       const baseSlug = slugify(product.name)
       const slug = product.sku ? `${baseSlug}-${slugify(product.sku)}` : baseSlug
       const sellingPrice = product.purchasePrice ? Math.ceil(product.purchasePrice * multiplier) : 0
-      const mappedCategoryId =
-        product.sourceCategoryKey ? mappingByKey.get(product.sourceCategoryKey.trim().toLowerCase()) : undefined
-      const resolvedCategoryId = mappedCategoryId || category.id
-      if (mappedCategoryId) mappedToLocalCategory++
-      else fallbackToAzanCategory++
+      const k = product.sourceCategoryKey?.trim().toLowerCase() ?? null
+      let resolvedCategoryId = category.id
+      if (k) {
+        const explicit = mappingByKey.get(k)
+        if (explicit) {
+          resolvedCategoryId = explicit
+          mappedToLocalCategory++
+        } else if (autoCreateEnabled && autoByKey.has(k)) {
+          resolvedCategoryId = autoByKey.get(k)!
+          assignedViaAutoCategory++
+        } else {
+          fallbackToDefaultCategory++
+        }
+      } else {
+        fallbackToDefaultCategory++
+      }
 
       const existing = await prisma.product.findUnique({ where: { slug } })
       const updatePayload = {
@@ -395,7 +432,12 @@ export async function POST() {
         updated,
         missingPrice,
         mappedToLocalCategory,
-        fallbackToAzanCategory,
+        autoCreateSourceCategories: autoCreateEnabled,
+        newSourceCategoriesCreated: autoCreateEnabled ? newSourceCategoriesCreated : 0,
+        assignedViaAutoCategory: autoCreateEnabled ? assignedViaAutoCategory : 0,
+        fallbackToDefaultCategory,
+        /** @deprecated use fallbackToDefaultCategory */
+        fallbackToAzanCategory: fallbackToDefaultCategory,
       },
       message: 'Azan products synced to draft catalog',
     })
@@ -413,10 +455,7 @@ export async function GET(request: NextRequest) {
     }
 
     const categoryName = process.env.AZAN_WHOLESALE_CATEGORY || 'Azan Wholesale'
-    const whereBase = {
-      deletedAt: null,
-      category: { is: { name: categoryName } },
-    } as const
+    const whereBase = prismaWhereAzanCatalogProducts()
 
     const [total, published, draft, missingPrice] = await Promise.all([
       prisma.product.count({ where: whereBase }),
@@ -443,7 +482,9 @@ export async function GET(request: NextRequest) {
         const maxPages = Number.parseInt(process.env.AZAN_WHOLESALE_MAX_PAGES || '300', 10)
         const perPage = meta?.per_page ?? 0
         const apiTotal = meta?.total ?? null
-        const maxPerRun = perPage * maxPages
+        const effectivePages =
+          meta && meta.last_page > 0 ? Math.min(maxPages, meta.last_page) : maxPages
+        const maxPerRun = perPage * effectivePages
         const gap = apiTotal != null ? apiTotal - total : null
         coverage = {
           apiTotal,
@@ -454,6 +495,7 @@ export async function GET(request: NextRequest) {
           /** max products one sync can pull (admin + server uses AZAN_WHOLESALE_MAX_PAGES) */
           maxProductsPerSyncRun: maxPerRun,
           syncMaxPagesEnv: maxPages,
+          effectiveSyncPages: effectivePages,
           fullCatalogCoveredInOneRun: apiTotal != null && maxPerRun >= apiTotal,
           endpoint,
           firstPageUrl: fullUrl,
