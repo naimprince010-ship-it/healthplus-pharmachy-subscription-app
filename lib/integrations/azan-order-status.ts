@@ -50,7 +50,7 @@ export async function syncAzanStatusForOrder(orderId: string) {
     azanTrackingNumber: meta.trackingNumber,
     azanCourierName: meta.courierName,
     azanTrackingUrl: meta.trackingUrl,
-    azanStatusRaw: res.data as Prisma.JsonValue,
+    azanStatusRaw: toNullableInputJsonValue(res.data),
     azanStatusSyncedAt: now,
     azanPushError: null,
   }
@@ -73,6 +73,11 @@ export async function syncAzanStatusForOrder(orderId: string) {
     azanStatus: meta.rawStatus,
     trackingNumber: meta.trackingNumber,
   }
+}
+
+function toNullableInputJsonValue(value: unknown): Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput {
+  if (value === null || value === undefined) return Prisma.JsonNull
+  return value as Prisma.InputJsonValue
 }
 
 function extractAzanOrderMeta(data: unknown): AzanStatusMeta {
