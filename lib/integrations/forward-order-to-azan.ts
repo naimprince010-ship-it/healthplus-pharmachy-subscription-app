@@ -1,5 +1,5 @@
 import { format } from 'date-fns'
-import type { Prisma } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { getAzanPlatformSource, submitAzanResellerOrder, type AzanOrderLine } from '@/lib/integrations/azan-wholesale'
 import { getAzanResellerCategoryName, isProductLinkedToAzanCatalog } from '@/lib/integrations/azan-catalog'
@@ -143,7 +143,7 @@ export async function forwardOrderToAzanById(orderId: string): Promise<{
         azanTrackingNumber: azanMeta.trackingNumber,
         azanCourierName: azanMeta.courierName,
         azanTrackingUrl: azanMeta.trackingUrl,
-        azanStatusRaw: res.data as Prisma.JsonValue,
+        azanStatusRaw: toNullableInputJsonValue(res.data),
         azanStatusSyncedAt: now,
       },
     })
@@ -215,4 +215,9 @@ function extractAzanOrderMetaFromResponse(data: unknown): {
     courierName: readString('courier_name', 'courier', 'delivery_partner'),
     trackingUrl: readString('tracking_url', 'trackingUrl'),
   }
+}
+
+function toNullableInputJsonValue(value: unknown): Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput {
+  if (value === null || value === undefined) return Prisma.JsonNull
+  return value as Prisma.InputJsonValue
 }
