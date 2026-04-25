@@ -15,6 +15,11 @@ interface Zone {
   deliveryCharge: number
 }
 
+interface LocationOption {
+  id: string
+  name: string
+}
+
 interface Address {
   id: string
   label: string
@@ -59,6 +64,12 @@ export default function CheckoutPage() {
   const { data: session, status } = useSession()
   const { items, total, clearCart } = useCart()
   const [zones, setZones] = useState<Zone[]>([])
+  const [divisions, setDivisions] = useState<LocationOption[]>([])
+  const [districts, setDistricts] = useState<LocationOption[]>([])
+  const [upazilas, setUpazilas] = useState<LocationOption[]>([])
+  const [selectedDivisionId, setSelectedDivisionId] = useState('')
+  const [selectedDistrictId, setSelectedDistrictId] = useState('')
+  const [selectedUpazilaId, setSelectedUpazilaId] = useState('')
   const [selectedZone, setSelectedZone] = useState('')
   const [notes, setNotes] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -134,6 +145,52 @@ export default function CheckoutPage() {
         })
         .catch((err) => console.error('Failed to fetch cart settings:', err))
     }, [status, session, items, router, total, hasSubmittedOrder])
+
+  useEffect(() => {
+    fetch('/api/locations')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.divisions) setDivisions(data.divisions)
+      })
+      .catch((err) => console.error('Failed to fetch divisions:', err))
+  }, [])
+
+  const handleDivisionChange = async (divisionId: string) => {
+    setSelectedDivisionId(divisionId)
+    setSelectedDistrictId('')
+    setSelectedUpazilaId('')
+    setUpazilas([])
+    if (!divisionId) {
+      setDistricts([])
+      return
+    }
+    const res = await fetch(`/api/locations?divisionId=${encodeURIComponent(divisionId)}`)
+    const data = await res.json()
+    setDistricts(data.districts || [])
+  }
+
+  const handleDistrictChange = async (districtId: string) => {
+    setSelectedDistrictId(districtId)
+    setSelectedUpazilaId('')
+    if (!districtId) {
+      setUpazilas([])
+      return
+    }
+    const res = await fetch(`/api/locations?districtId=${encodeURIComponent(districtId)}`)
+    const data = await res.json()
+    setUpazilas(data.upazilas || [])
+  }
+
+  useEffect(() => {
+    if (!selectedDistrictId || zones.length === 0) return
+    const districtName = districts.find((d) => d.id === selectedDistrictId)?.name
+    if (!districtName) return
+    const normalizedDistrict = districtName.trim().toLowerCase()
+    const match =
+      zones.find((z) => z.name.trim().toLowerCase() === normalizedDistrict) ||
+      zones.find((z) => z.name.trim().toLowerCase().includes(normalizedDistrict))
+    if (match) setSelectedZone(match.id)
+  }, [selectedDistrictId, districts, zones])
 
   const handleAddAddress = () => {
     if (!newAddress.label || !newAddress.fullAddress || !newAddress.phone) return
@@ -221,6 +278,14 @@ export default function CheckoutPage() {
   }
 
     const selectedZoneData = zones.find((z) => z.id === selectedZone)
+    const selectedDistrictName = districts.find((d) => d.id === selectedDistrictId)?.name
+    const filteredZones = selectedDistrictName
+      ? zones.filter((z) => {
+          const zName = z.name.trim().toLowerCase()
+          const dName = selectedDistrictName.trim().toLowerCase()
+          return zName === dName || zName.includes(dName)
+        })
+      : zones
     // Apply free delivery if cart total meets the threshold
     const qualifiesForFreeDelivery = freeDeliveryThreshold !== null && total >= freeDeliveryThreshold
     const deliveryCharge = qualifiesForFreeDelivery ? 0 : (selectedZoneData?.deliveryCharge || 0)
@@ -300,6 +365,44 @@ export default function CheckoutPage() {
             
             {/* Zone Selection */}
             <div className="mb-4">
+              <div className="mb-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+                <select
+                  value={selectedDivisionId}
+                  onChange={(e) => void handleDivisionChange(e.target.value)}
+                  className="block w-full rounded-lg border-2 border-gray-200 px-4 py-3 text-base text-gray-900 focus:border-teal-500 focus:outline-none"
+                >
+                  <option value="">বিভাগ নির্বাচন করুন</option>
+                  {divisions.map((division) => (
+                    <option key={division.id} value={division.id}>
+                      {division.name}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={selectedDistrictId}
+                  onChange={(e) => void handleDistrictChange(e.target.value)}
+                  className="block w-full rounded-lg border-2 border-gray-200 px-4 py-3 text-base text-gray-900 focus:border-teal-500 focus:outline-none"
+                >
+                  <option value="">জেলা নির্বাচন করুন</option>
+                  {districts.map((district) => (
+                    <option key={district.id} value={district.id}>
+                      {district.name}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={selectedUpazilaId}
+                  onChange={(e) => setSelectedUpazilaId(e.target.value)}
+                  className="block w-full rounded-lg border-2 border-gray-200 px-4 py-3 text-base text-gray-900 focus:border-teal-500 focus:outline-none"
+                >
+                  <option value="">উপজেলা/থানা নির্বাচন করুন</option>
+                  {upazilas.map((upazila) => (
+                    <option key={upazila.id} value={upazila.id}>
+                      {upazila.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <select
                 id="zone"
                 value={selectedZone}
@@ -308,7 +411,7 @@ export default function CheckoutPage() {
                 className="block w-full rounded-lg border-2 border-gray-200 px-4 py-3 text-base text-gray-900 focus:border-teal-500 focus:outline-none"
               >
                 <option value="">জোন নির্বাচন করুন</option>
-                {zones.map((zone) => (
+                {filteredZones.map((zone) => (
                   <option key={zone.id} value={zone.id}>
                     {zone.name} - ৳{zone.deliveryCharge} ডেলিভারি
                   </option>

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { resolveDeliveryChargeByZoneName } from '@/lib/delivery-charge'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -11,7 +12,13 @@ export async function GET() {
       orderBy: { name: 'asc' },
     })
 
-    return NextResponse.json({ zones })
+    const normalizedZones = zones.map((zone) => ({
+      ...zone,
+      deliveryCharge: resolveDeliveryChargeByZoneName(zone.name),
+      deliveryFee: resolveDeliveryChargeByZoneName(zone.name),
+    }))
+
+    return NextResponse.json({ zones: normalizedZones })
   } catch (error) {
     console.error('Fetch zones error:', error)
     return NextResponse.json(

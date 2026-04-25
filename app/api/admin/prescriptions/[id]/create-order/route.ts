@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { resolveDeliveryChargeByZoneName } from '@/lib/delivery-charge'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -140,7 +141,7 @@ export async function POST(
       ? subtotal * (membership.plan.discountPercent / 100) 
       : 0
     
-    const zoneFee = selectedZone.deliveryFee ?? selectedZone.deliveryCharge
+    const zoneFee = resolveDeliveryChargeByZoneName(selectedZone.name)
     const deliveryCharge = customDeliveryCharge ?? zoneFee
     const total = subtotal - membershipDiscountAmount + deliveryCharge
 

@@ -5,6 +5,7 @@ import { addDays, format } from 'date-fns'
 import { prisma } from '@/lib/prisma'
 import { sendSMS, sendEmail } from '@/lib/notifications'
 import { processOrderOtp } from '@/lib/settings/server'
+import { resolveDeliveryChargeByZoneName } from '@/lib/delivery-charge'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -190,7 +191,7 @@ export async function POST(request: NextRequest) {
         const discount = membership ? subtotal * (membership.plan.discountPercent / 100) : 0
         // Apply free delivery if subtotal meets the threshold
         const qualifiesForFreeDelivery = subtotal >= freeDeliveryThreshold
-        const deliveryCharge = qualifiesForFreeDelivery ? 0 : address.zone.deliveryCharge
+        const deliveryCharge = qualifiesForFreeDelivery ? 0 : resolveDeliveryChargeByZoneName(address.zone.name)
         const total = subtotal - discount + deliveryCharge
 
     const orderNumber = `ORD-${Date.now()}`

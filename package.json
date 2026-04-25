@@ -34,6 +34,7 @@
     "@types/bcryptjs": "^2.4.6",
     "@upstash/redis": "^1.36.3",
     "adm-zip": "^0.5.16",
+    "bangladesh-location-data": "^1.0.6",
     "bcryptjs": "^3.0.3",
     "cheerio": "^1.1.2",
     "clsx": "^2.1.1",
