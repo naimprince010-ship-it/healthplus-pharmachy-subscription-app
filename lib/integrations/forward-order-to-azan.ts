@@ -1,4 +1,5 @@
 import { format } from 'date-fns'
+import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { getAzanPlatformSource, submitAzanResellerOrder, type AzanOrderLine } from '@/lib/integrations/azan-wholesale'
 import { getAzanResellerCategoryName, isProductLinkedToAzanCatalog } from '@/lib/integrations/azan-catalog'
@@ -102,6 +103,16 @@ export async function forwardOrderToAzanById(orderId: string): Promise<{
   }
 
   const now = new Date()
+  const platformOrderId = extractIntegerOrderId(order.orderNumber, order.id)
+  if (!platformOrderId) {
+    const msg = `Could not derive integer platform_order_id from orderNumber=${order.orderNumber}`
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { azanPushError: msg },
+    })
+    return { ok: false, lineCount: details.length, error: msg }
+  }
+
   const payload = {
     date: format(now, 'yyyy-MM-dd HH:mm:ss'),
     order_details: details,
@@ -114,16 +125,27 @@ export async function forwardOrderToAzanById(orderId: string): Promise<{
       phone: order.address.phone,
       address: shippingText,
     },
-    platform_order_id: order.orderNumber,
+    platform_order_id: platformOrderId,
     grand_total: order.total,
   }
 
   const res = await submitAzanResellerOrder(payload)
+  const azanMeta = extractAzanOrderMetaFromResponse(res.data)
 
   if (res.ok) {
     await prisma.order.update({
       where: { id: orderId },
-      data: { azanPushedAt: now, azanPushError: null },
+      data: {
+        azanPushedAt: now,
+        azanPushError: null,
+        azanOrderId: azanMeta.azanOrderId,
+        azanStatus: azanMeta.azanStatus,
+        azanTrackingNumber: azanMeta.trackingNumber,
+        azanCourierName: azanMeta.courierName,
+        azanTrackingUrl: azanMeta.trackingUrl,
+        azanStatusRaw: res.data as Prisma.JsonValue,
+        azanStatusSyncedAt: now,
+      },
     })
     return { ok: true, lineCount: details.length }
   }
@@ -147,4 +169,50 @@ function extractSkuFromSlug(slug: string): string | null {
   const last = parts[parts.length - 1]
   if (last && /^\d{4,20}$/.test(last)) return last
   return null
+}
+
+/** Azan validates platform_order_id as integer. */
+function extractIntegerOrderId(orderNumber: string, orderId: string): number | null {
+  const fromOrderNo = orderNumber.replace(/\D/g, '')
+  if (fromOrderNo) {
+    const n = Number(fromOrderNo)
+    if (Number.isSafeInteger(n) && n > 0) return n
+  }
+
+  const fromId = orderId.replace(/\D/g, '')
+  if (fromId) {
+    const n = Number(fromId)
+    if (Number.isSafeInteger(n) && n > 0) return n
+  }
+
+  return null
+}
+
+function extractAzanOrderMetaFromResponse(data: unknown): {
+  azanOrderId: string | null
+  azanStatus: string | null
+  trackingNumber: string | null
+  courierName: string | null
+  trackingUrl: string | null
+} {
+  if (!data || typeof data !== 'object') {
+    return { azanOrderId: null, azanStatus: null, trackingNumber: null, courierName: null, trackingUrl: null }
+  }
+  const bag = data as Record<string, unknown>
+  const readString = (...keys: string[]) => {
+    for (const key of keys) {
+      const v = bag[key]
+      if (typeof v === 'string' && v.trim()) return v.trim()
+      if (typeof v === 'number') return String(v)
+    }
+    return null
+  }
+
+  return {
+    azanOrderId: readString('order_id', 'orderId', 'id', 'azan_order_id', 'platform_order_id'),
+    azanStatus: readString('status', 'order_status', 'delivery_status'),
+    trackingNumber: readString('tracking_number', 'trackingNo', 'consignment_id'),
+    courierName: readString('courier_name', 'courier', 'delivery_partner'),
+    trackingUrl: readString('tracking_url', 'trackingUrl'),
+  }
 }

@@ -38,6 +38,13 @@ interface Order {
   riderName: string | null
   riderPhone: string | null
   estimatedDeliveryText: string | null
+  azanOrderId: string | null
+  azanStatus: string | null
+  azanTrackingNumber: string | null
+  azanCourierName: string | null
+  azanTrackingUrl: string | null
+  azanStatusSyncedAt: string | null
+  azanPushError: string | null
   user: {
     name: string
     phone: string
@@ -452,6 +459,47 @@ export default function OrderDetailsPage() {
             </div>
           </div>
         )}
+
+        <div className="mb-8 rounded-lg bg-white p-6 shadow">
+          <h2 className="mb-4 text-xl font-bold text-gray-900">Azan Fulfillment</h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <p className="text-sm text-gray-600">Azan Order ID</p>
+              <p className="font-medium text-gray-900">{order.azanOrderId || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Azan Status</p>
+              <p className="font-medium text-gray-900">{order.azanStatus || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Synced At</p>
+              <p className="font-medium text-gray-900">
+                {order.azanStatusSyncedAt ? new Date(order.azanStatusSyncedAt).toLocaleString('en-US') : 'N/A'}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Tracking Number</p>
+              <p className="font-medium text-gray-900">{order.azanTrackingNumber || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Courier</p>
+              <p className="font-medium text-gray-900">{order.azanCourierName || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Tracking URL</p>
+              {order.azanTrackingUrl ? (
+                <a href={order.azanTrackingUrl} target="_blank" rel="noreferrer" className="font-medium text-teal-700 hover:underline">
+                  Open link
+                </a>
+              ) : (
+                <p className="font-medium text-gray-900">N/A</p>
+              )}
+            </div>
+          </div>
+          {order.azanPushError && (
+            <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-800">{order.azanPushError}</div>
+          )}
+        </div>
 
         <div className="grid gap-8 lg:grid-cols-2">
           <div className="space-y-6">

@@ -50,7 +50,7 @@ export interface AzanOrderPayload {
     phone?: string
     address: string
   }
-  platform_order_id: string
+  platform_order_id: number
   grand_total?: number
 }
 
@@ -85,9 +85,39 @@ async function postJson(path: string, body: unknown): Promise<{ ok: boolean; sta
   return { ok: res.ok, status: res.status, data }
 }
 
+async function getJson(path: string): Promise<{ ok: boolean; status: number; data: unknown }> {
+  const url = `${getBaseUrl()}${path.startsWith('/') ? '' : '/'}${path}`
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  })
+  let data: unknown
+  const text = await res.text()
+  try {
+    data = text ? JSON.parse(text) : null
+  } catch {
+    data = text
+  }
+  return { ok: res.ok, status: res.status, data }
+}
+
 /** POST /api/orders/store — call after your customer order is confirmed (wire from checkout). */
 export async function submitAzanResellerOrder(payload: AzanOrderPayload) {
   return postJson('/api/orders/store', payload)
+}
+
+/**
+ * GET order status from Azan.
+ * Configure endpoint template in env:
+ * AZAN_WHOLESALE_ORDER_STATUS_PATH="/api/orders/status?platform_order_id={platform_order_id}"
+ */
+export async function fetchAzanOrderStatusByPlatformOrderId(platformOrderId: number) {
+  const tpl = process.env.AZAN_WHOLESALE_ORDER_STATUS_PATH
+  if (!tpl?.trim()) {
+    return { ok: false, status: 400, data: { message: 'AZAN_WHOLESALE_ORDER_STATUS_PATH not configured' } }
+  }
+  const path = tpl.replace('{platform_order_id}', encodeURIComponent(String(platformOrderId)))
+  return getJson(path)
 }
 
 /** POST /api/update-stock */

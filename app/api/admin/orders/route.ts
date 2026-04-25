@@ -42,7 +42,24 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     })
 
-    return NextResponse.json({ orders })
+    const [totalOrders, azanForwardedOrders, azanFailedOrders, deliveredOrders, cancelledOrders] = await Promise.all([
+      prisma.order.count(),
+      prisma.order.count({ where: { azanPushedAt: { not: null } } }),
+      prisma.order.count({ where: { azanPushError: { not: null } } }),
+      prisma.order.count({ where: { status: 'DELIVERED' } }),
+      prisma.order.count({ where: { status: 'CANCELLED' } }),
+    ])
+
+    return NextResponse.json({
+      orders,
+      summary: {
+        totalOrders,
+        azanForwardedOrders,
+        azanFailedOrders,
+        deliveredOrders,
+        cancelledOrders,
+      },
+    })
   } catch (error) {
     console.error('Fetch admin orders error:', error)
     return NextResponse.json(

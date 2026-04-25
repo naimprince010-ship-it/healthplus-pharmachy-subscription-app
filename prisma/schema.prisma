@@ -484,6 +484,13 @@ model Order {
   // Reseller: Azan Wholesale order forward (POST /api/orders/store)
   azanPushedAt  DateTime?
   azanPushError String?   @db.Text
+  azanOrderId   String?
+  azanStatus    String?
+  azanTrackingNumber String?
+  azanCourierName    String?
+  azanTrackingUrl    String?
+  azanStatusRaw      Json?
+  azanStatusSyncedAt DateTime?
   // Rider info (for shipped orders)
   riderName                String?
   riderPhone               String?

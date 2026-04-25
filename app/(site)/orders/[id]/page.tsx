@@ -44,6 +44,11 @@ interface Order {
   paymentMethod: string
   riderName?: string | null
   riderPhone?: string | null
+  azanStatus?: string | null
+  azanTrackingNumber?: string | null
+  azanCourierName?: string | null
+  azanTrackingUrl?: string | null
+  azanStatusSyncedAt?: string | null
   estimatedDeliveryAt?: string | null
   estimatedDeliveryText?: string | null
   createdAt: string
@@ -380,6 +385,45 @@ export default function OrderTrackingPage() {
             </div>
           )}
         </div>
+
+        {(order.azanStatus || order.azanTrackingNumber || order.azanTrackingUrl) && (
+          <div className="rounded-xl bg-white p-4 shadow-sm">
+            <h2 className="mb-3 text-base font-semibold text-gray-900">Azan Delivery Update</h2>
+            <div className="space-y-2 text-sm text-gray-700">
+              {order.azanStatus && (
+                <p>
+                  <span className="text-gray-500">Status:</span>{' '}
+                  <span className="font-medium uppercase">{order.azanStatus}</span>
+                </p>
+              )}
+              {order.azanCourierName && (
+                <p>
+                  <span className="text-gray-500">Courier:</span> {order.azanCourierName}
+                </p>
+              )}
+              {order.azanTrackingNumber && (
+                <p>
+                  <span className="text-gray-500">Tracking No:</span> {order.azanTrackingNumber}
+                </p>
+              )}
+              {order.azanTrackingUrl && (
+                <a
+                  href={order.azanTrackingUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-block rounded-lg bg-[#00A651] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#008f45]"
+                >
+                  Track Package
+                </a>
+              )}
+              {order.azanStatusSyncedAt && (
+                <p className="text-xs text-gray-500">
+                  Last synced: {new Date(order.azanStatusSyncedAt).toLocaleString('en-US')}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Delivery Address Card */}
         <div className="rounded-xl bg-white p-4 shadow-sm">
