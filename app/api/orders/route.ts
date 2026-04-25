@@ -352,7 +352,7 @@ export async function POST(request: NextRequest) {
       billingPhone: order.user.phone,
     })
 
-    void (async () => {
+    try {
       const { forwardOrderToAzanById } = await import('@/lib/integrations/forward-order-to-azan')
       const r = await forwardOrderToAzanById(order.id)
       if (!r.ok && r.error) {
@@ -360,7 +360,9 @@ export async function POST(request: NextRequest) {
       } else if (r.ok && r.lineCount) {
         console.log(`[Azan order forward] ${order.orderNumber} → ${r.lineCount} line(s)`)
       }
-    })()
+    } catch (forwardErr) {
+      console.error('[Azan order forward] unhandled error:', forwardErr)
+    }
 
     return NextResponse.json({ success: true, order }, { status: 201 })
   } catch (error) {
