@@ -1,8 +1,32 @@
 import Link from 'next/link'
-import { ChevronRight, Zap, TrendingUp, Star } from 'lucide-react'
+import {
+  Baby,
+  ChevronRight,
+  Cross,
+  Droplets,
+  Flame,
+  Heart,
+  Shield,
+  Sparkles,
+  Star,
+  TrendingUp,
+  Zap,
+} from 'lucide-react'
 import { prisma } from '@/lib/prisma'
 import PrescriptionSidebarButton from './PrescriptionSidebarButton'
 import { getEffectivePrices } from '@/lib/pricing'
+
+function getCategoryIcon(name: string) {
+  const n = name.toLowerCase()
+  if (n.includes('face') || n.includes('skin') || n.includes('beauty')) return Sparkles
+  if (n.includes('hair')) return Droplets
+  if (n.includes('baby') || n.includes('kid') || n.includes('mom')) return Baby
+  if (n.includes('fragrance') || n.includes('perfume')) return Flame
+  if (n.includes('lip')) return Heart
+  if (n.includes('oral')) return Cross
+  if (n.includes('wellness') || n.includes('health')) return Shield
+  return Star
+}
 
 // Server component - fetches data on the server for instant loading
 export default async function LeftCategorySidebar() {
@@ -73,6 +97,7 @@ export default async function LeftCategorySidebar() {
         <div className="divide-y divide-gray-50/80">
           {categories.map((category) => {
             const href = category.sidebarLinkUrl || `/category/${category.slug}`
+            const Icon = getCategoryIcon(category.name)
             return (
               <Link
                 key={category.id}
@@ -82,15 +107,9 @@ export default async function LeftCategorySidebar() {
                 {/* teal left accent on hover */}
                 <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-teal-500 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                 <div className="flex items-center gap-3">
-                  {category.sidebarIconUrl ? (
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-all duration-200 group-hover:border-teal-100 group-hover:shadow">
-                      <img src={category.sidebarIconUrl} alt={category.name} className="h-6 w-6 object-contain" />
-                    </div>
-                  ) : (
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600 transition-all duration-200 group-hover:bg-teal-100">
-                      <span className="text-xs font-bold uppercase">{category.name.charAt(0)}</span>
-                    </div>
-                  )}
+                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600 transition-all duration-200 group-hover:bg-teal-100">
+                    <Icon className="h-4 w-4" />
+                  </div>
                   <span className="text-[13.5px] font-medium text-gray-700 transition-colors duration-200 group-hover:text-teal-700">
                     {category.name}
                   </span>
