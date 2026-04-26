@@ -15,6 +15,12 @@ import {
 import { prisma } from '@/lib/prisma'
 import PrescriptionSidebarButton from './PrescriptionSidebarButton'
 import { getEffectivePrices } from '@/lib/pricing'
+import {
+  GROCERY_CATEGORY_SLUG,
+  isGroceryShopEnabled,
+  isMedicineShopEnabled,
+  isPrescriptionFlowEnabled,
+} from '@/lib/site-features'
 
 function getCategoryIcon(name: string) {
   const n = name.toLowerCase()
@@ -45,6 +51,7 @@ export default async function LeftCategorySidebar() {
         slug: true,
         sidebarIconUrl: true,
         sidebarLinkUrl: true,
+        isMedicineCategory: true,
       },
     }),
     prisma.product.findMany({
@@ -52,6 +59,10 @@ export default async function LeftCategorySidebar() {
         isActive: true,
         isFeatured: true,
         deletedAt: null,
+        ...(!isMedicineShopEnabled() ? { type: 'GENERAL' as const } : {}),
+        ...(!isGroceryShopEnabled()
+          ? { NOT: { category: { slug: GROCERY_CATEGORY_SLUG } } }
+          : {}),
       },
       take: 2,
       select: {
@@ -68,10 +79,15 @@ export default async function LeftCategorySidebar() {
     })
   ])
 
+  const navCategories = categories.filter((c) => {
+    if (!isMedicineShopEnabled() && c.isMedicineCategory) return false
+    if (!isGroceryShopEnabled() && c.slug === GROCERY_CATEGORY_SLUG) return false
+    return true
+  })
+
   return (
     <div className="w-full space-y-4">
-      {/* 1. Prescription Upload - Most Important CTA */}
-      <PrescriptionSidebarButton />
+      {isPrescriptionFlowEnabled() && <PrescriptionSidebarButton />}
 
       <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
         {/* FLASH SALE Row */}
@@ -95,7 +111,7 @@ export default async function LeftCategorySidebar() {
 
         {/* Category List */}
         <div className="divide-y divide-gray-50/80">
-          {categories.map((category) => {
+          {navCategories.map((category) => {
             const href = category.sidebarLinkUrl || `/category/${category.slug}`
             const Icon = getCategoryIcon(category.name)
             return (

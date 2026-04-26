@@ -10,6 +10,7 @@ import { getEffectivePrices } from '@/lib/pricing'
 import { isProductLinkedToAzanCatalog } from '@/lib/integrations/azan-catalog'
 import { getStorefrontImageUrl } from '@/lib/image-url'
 import { getCachedProductBySlug } from './get-product-by-slug'
+import { GROCERY_CATEGORY_SLUG, isGroceryShopEnabled, isMedicineShopEnabled } from '@/lib/site-features'
 
 export const runtime = 'nodejs'
 export const revalidate = 60 // Revalidate page every 60 seconds (ISR)
@@ -211,6 +212,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const product = await getCachedProductBySlug(slug)
 
   if (!product || !product.isActive) {
+    notFound()
+  }
+
+  if (!isMedicineShopEnabled() && product.type === 'MEDICINE') {
+    notFound()
+  }
+  if (!isGroceryShopEnabled() && product.category?.slug === GROCERY_CATEGORY_SLUG) {
     notFound()
   }
 

@@ -1,5 +1,10 @@
 import { prisma } from '@/lib/prisma'
 import { MobileShop, MobileShopProduct, MobileShopCategorySection } from './MobileShop'
+import {
+  GROCERY_CATEGORY_SLUG,
+  isGroceryShopEnabled,
+  isMedicineShopEnabled,
+} from '@/lib/site-features'
 
 async function getAllDescendantCategoryIds(parentId: string): Promise<string[]> {
   const children = await prisma.category.findMany({
@@ -22,7 +27,7 @@ async function getAllDescendantCategoryIds(parentId: string): Promise<string[]> 
 export async function MobileShopServer() {
   const now = new Date()
 
-  const [flashSaleProductsRaw, sidebarCategories] = await Promise.all([
+  const [flashSaleProductsRaw, sidebarCategoriesRaw] = await Promise.all([
     prisma.product.findMany({
       where: {
         isActive: true,
@@ -30,6 +35,10 @@ export async function MobileShopServer() {
         isFlashSale: true,
         flashSaleStart: { lte: now },
         flashSaleEnd: { gte: now },
+        ...(!isMedicineShopEnabled() ? { type: 'GENERAL' as const } : {}),
+        ...(!isGroceryShopEnabled()
+          ? { NOT: { category: { slug: GROCERY_CATEGORY_SLUG } } }
+          : {}),
       },
       orderBy: { createdAt: 'desc' },
       take: 10,
@@ -53,9 +62,16 @@ export async function MobileShopServer() {
         slug: true,
         sidebarIconUrl: true,
         sidebarLinkUrl: true,
+        isMedicineCategory: true,
       },
     }),
   ])
+
+  const sidebarCategories = sidebarCategoriesRaw.filter((c) => {
+    if (!isMedicineShopEnabled() && c.isMedicineCategory) return false
+    if (!isGroceryShopEnabled() && c.slug === GROCERY_CATEGORY_SLUG) return false
+    return true
+  })
 
   const flashSaleProducts: MobileShopProduct[] = flashSaleProductsRaw.map(p => ({
     id: p.id,
@@ -88,6 +104,10 @@ export async function MobileShopServer() {
           categoryId: { in: categoryIds },
           isActive: true,
           deletedAt: null,
+          ...(!isMedicineShopEnabled() ? { type: 'GENERAL' as const } : {}),
+          ...(!isGroceryShopEnabled()
+            ? { NOT: { category: { slug: GROCERY_CATEGORY_SLUG } } }
+            : {}),
         },
         orderBy: { createdAt: 'desc' },
         take: 10,

@@ -3,6 +3,7 @@ import { Search } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { AddToCartButton } from '@/components/AddToCartButton'
+import { isMedicineShopEnabled } from '@/lib/site-features'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -12,6 +13,21 @@ export default async function MedicinesPage({
 }: {
   searchParams: Promise<{ search?: string; category?: string }>
 }) {
+  if (!isMedicineShopEnabled()) {
+    return (
+      <div className="bg-gray-50 py-16 text-center">
+        <p className="text-lg font-semibold text-gray-900">ঔষধ সেকশন সাময়িক বন্ধ</p>
+        <p className="mt-2 text-gray-600">অনলাইনে এখন অন্যান্য পণ্য পাওয়া যাচ্ছে।</p>
+        <Link
+          href="/products"
+          className="mt-6 inline-block rounded-lg bg-teal-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-teal-700"
+        >
+          পণ্য দেখুন
+        </Link>
+      </div>
+    )
+  }
+
   const params = await searchParams
   const search = params.search || ''
   const categoryId = params.category || ''

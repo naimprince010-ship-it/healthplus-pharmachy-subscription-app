@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { sendSMS, sendEmail } from '@/lib/notifications'
 import { processOrderOtp } from '@/lib/settings/server'
 import { resolveDeliveryChargeByZoneName } from '@/lib/delivery-charge'
+import { GROCERY_CATEGORY_SLUG, isGroceryShopEnabled, isMedicineShopEnabled } from '@/lib/site-features'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -115,9 +116,12 @@ export async function POST(request: NextRequest) {
       medicineIds.length > 0 ? prisma.medicine.findMany({
         where: { id: { in: medicineIds } },
       }) : Promise.resolve([]),
-      productIds.length > 0 ? prisma.product.findMany({
-        where: { id: { in: productIds } },
-      }) : Promise.resolve([]),
+      productIds.length > 0
+        ? prisma.product.findMany({
+            where: { id: { in: productIds } },
+            include: { category: { select: { slug: true } } },
+          })
+        : Promise.resolve([]),
       membershipPlanIds.length > 0 ? prisma.membershipPlan.findMany({
         where: { id: { in: membershipPlanIds }, isActive: true },
       }) : Promise.resolve([]),
@@ -125,6 +129,32 @@ export async function POST(request: NextRequest) {
 
     if (medicines.length !== medicineIds.length || products.length !== productIds.length) {
       return NextResponse.json({ error: 'Some items not found' }, { status: 400 })
+    }
+
+    if (!isMedicineShopEnabled()) {
+      if (medicineIds.length > 0) {
+        return NextResponse.json(
+          { error: 'Medicine orders are temporarily unavailable' },
+          { status: 403 },
+        )
+      }
+      const blockedMedProduct = products.find((p) => p.type === 'MEDICINE')
+      if (blockedMedProduct) {
+        return NextResponse.json(
+          { error: 'Medicine products are temporarily unavailable' },
+          { status: 403 },
+        )
+      }
+    }
+
+    if (!isGroceryShopEnabled()) {
+      const hasGrocery = products.some((p) => p.category?.slug === GROCERY_CATEGORY_SLUG)
+      if (hasGrocery) {
+        return NextResponse.json(
+          { error: 'Grocery is temporarily unavailable' },
+          { status: 403 },
+        )
+      }
     }
 
     if (membershipPlans.length !== membershipPlanIds.length) {

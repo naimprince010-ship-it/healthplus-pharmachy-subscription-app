@@ -7,6 +7,7 @@ import { Shield, Package, Heart, Baby, Activity, Users, ChevronRight, FileText, 
 import { PrescriptionUploadModal } from '@/components/PrescriptionUploadModal'
 import { ProductCard } from '@/components/ProductCard'
 import type { SubscriptionPlan } from '@prisma/client'
+import { isGroceryShopEnabled, isMedicineShopEnabled, isPrescriptionFlowEnabled } from '@/lib/site-features'
 
 interface HomeSection {
   section: {
@@ -24,16 +25,37 @@ interface MobileHomeProps {
   homeSections: HomeSection[]
 }
 
-const CATEGORIES = [
-  { label: 'ঔষধ',      iconSrc: '/icons/categories/medicine.svg', href: '/medicines' },
-  { label: 'গ্রোসারি', iconSrc: '/icons/categories/grocery.svg', href: '/products?category=grocery' },
-  { label: 'কসমেটিক', iconSrc: '/icons/categories/cosmetics.svg', href: '/products?category=cosmetics' },
-  { label: 'বেবি',      iconSrc: '/icons/categories/baby.svg', href: '/products?category=baby' },
-  { label: 'সকল',      iconSrc: '/icons/categories/all.svg', href: '/products' },
+const CATEGORY_LINKS: Array<{
+  label: string
+  iconSrc: string
+  href: string
+  kind: 'medicine' | 'grocery' | 'other'
+}> = [
+  { label: 'ঔষধ', iconSrc: '/icons/categories/medicine.svg', href: '/medicines', kind: 'medicine' },
+  {
+    label: 'গ্রোসারি',
+    iconSrc: '/icons/categories/grocery.svg',
+    href: '/products?category=grocery',
+    kind: 'grocery',
+  },
+  {
+    label: 'কসমেটিক',
+    iconSrc: '/icons/categories/cosmetics.svg',
+    href: '/products?category=cosmetics',
+    kind: 'other',
+  },
+  { label: 'বেবি', iconSrc: '/icons/categories/baby.svg', href: '/products?category=baby', kind: 'other' },
+  { label: 'সকল', iconSrc: '/icons/categories/all.svg', href: '/products', kind: 'other' },
 ]
 
 export function MobileHome({ subscriptionPlans, homeSections }: MobileHomeProps) {
   const [isPrescriptionOpen, setIsPrescriptionOpen] = useState(false)
+
+  const categoryStrip = CATEGORY_LINKS.filter((c) => {
+    if (c.kind === 'medicine' && !isMedicineShopEnabled()) return false
+    if (c.kind === 'grocery' && !isGroceryShopEnabled()) return false
+    return true
+  })
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -55,7 +77,34 @@ export function MobileHome({ subscriptionPlans, homeSections }: MobileHomeProps)
             হালাল শপিং · দ্রুত ডেলিভারি
           </p>
           <h1 className="text-[1.6rem] font-extrabold leading-tight text-white">
-            ঔষধ, গ্রোসারি ও<br />বেবি ফুড — একটি অ্যাপে।
+            {isMedicineShopEnabled() && isGroceryShopEnabled() && (
+              <>
+                ঔষধ, গ্রোসারি ও
+                <br />
+                বেবি ফুড — একটি অ্যাপে।
+              </>
+            )}
+            {isMedicineShopEnabled() && !isGroceryShopEnabled() && (
+              <>
+                ঔষধ, কসমেটিক্স ও
+                <br />
+                বেবি কেয়ার — একটি অ্যাপে।
+              </>
+            )}
+            {!isMedicineShopEnabled() && isGroceryShopEnabled() && (
+              <>
+                গ্রোসারি, কসমেটিক্স ও
+                <br />
+                বেবি — একটি অ্যাপে।
+              </>
+            )}
+            {!isMedicineShopEnabled() && !isGroceryShopEnabled() && (
+              <>
+                কসমেটিক্স ও বেবি কেয়ার
+                <br />
+                — একটি অ্যাপে।
+              </>
+            )}
           </h1>
           <p className="mt-2 text-sm text-white/80">
             অর্ডার করুন, আমরা পৌঁছে দেব।
@@ -80,7 +129,7 @@ export function MobileHome({ subscriptionPlans, homeSections }: MobileHomeProps)
       {/* ── Category Icon Strip ── */}
       <section className="bg-white px-2 py-3 shadow-sm">
         <div className="flex items-center justify-around gap-1">
-          {CATEGORIES.map(cat => (
+          {categoryStrip.map(cat => (
             <Link
               key={cat.href}
               href={cat.href}
@@ -103,25 +152,29 @@ export function MobileHome({ subscriptionPlans, homeSections }: MobileHomeProps)
 
       {/* ── Compact Prescription + Quick Delivery ── */}
       <section className="px-4 pt-4 pb-2">
-        <div className="flex gap-3">
-          {/* Prescription card */}
-          <button
-            onClick={() => setIsPrescriptionOpen(true)}
-            className="flex flex-1 items-center gap-3 rounded-2xl border border-teal-100 bg-white px-4 py-3 shadow-sm text-left"
-          >
-            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-teal-500 text-white">
-              <FileText className="h-5 w-5" />
-            </span>
-            <div>
-              <p className="text-xs font-bold text-gray-900 leading-tight">প্রেসক্রিপশন</p>
-              <p className="text-[11px] text-teal-600 font-semibold">আপলোড করুন →</p>
-            </div>
-          </button>
+        <div
+          className={`flex gap-3 ${!isPrescriptionFlowEnabled() ? 'justify-center' : ''}`}
+        >
+          {isPrescriptionFlowEnabled() && (
+            <button
+              onClick={() => setIsPrescriptionOpen(true)}
+              className="flex flex-1 items-center gap-3 rounded-2xl border border-teal-100 bg-white px-4 py-3 shadow-sm text-left"
+            >
+              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-teal-500 text-white">
+                <FileText className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-xs font-bold text-gray-900 leading-tight">প্রেসক্রিপশন</p>
+                <p className="text-[11px] text-teal-600 font-semibold">আপলোড করুন →</p>
+              </div>
+            </button>
+          )}
 
-          {/* Quick delivery card */}
           <Link
             href="/products"
-            className="flex flex-1 items-center gap-3 rounded-2xl border border-amber-100 bg-white px-4 py-3 shadow-sm"
+            className={`flex items-center gap-3 rounded-2xl border border-amber-100 bg-white px-4 py-3 shadow-sm ${
+              isPrescriptionFlowEnabled() ? 'flex-1' : 'w-full'
+            }`}
           >
             <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-amber-400 text-white">
               <Zap className="h-5 w-5" />

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { GROCERY_CATEGORY_SLUG, isGroceryShopEnabled, isMedicineShopEnabled } from '@/lib/site-features'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -68,16 +69,46 @@ export async function GET(request: NextRequest) {
     const query = queryResult.data
     const skip = (query.page - 1) * query.limit
 
+    if (!isMedicineShopEnabled() && query.type === 'MEDICINE') {
+      return NextResponse.json({
+        products: [],
+        pagination: {
+          page: query.page,
+          limit: query.limit,
+          total: 0,
+          totalPages: 0,
+        },
+      })
+    }
+
+    if (!isGroceryShopEnabled() && query.categorySlug === GROCERY_CATEGORY_SLUG) {
+      return NextResponse.json({
+        products: [],
+        pagination: {
+          page: query.page,
+          limit: query.limit,
+          total: 0,
+          totalPages: 0,
+        },
+      })
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const productWhere: any = {
       deletedAt: null,
       isActive: true,
     }
 
-    if (query.type === 'MEDICINE') {
+    if (!isMedicineShopEnabled()) {
+      productWhere.type = 'GENERAL'
+    } else if (query.type === 'MEDICINE') {
       productWhere.type = 'MEDICINE'
     } else if (query.type === 'GENERAL') {
       productWhere.type = 'GENERAL'
+    }
+
+    if (!isGroceryShopEnabled()) {
+      productWhere.NOT = { category: { slug: GROCERY_CATEGORY_SLUG } }
     }
 
     if (query.search) {
@@ -162,7 +193,10 @@ export async function GET(request: NextRequest) {
     let medicineRecords: any[] = []
     let medicineCount = 0
 
-    if (query.type === 'all' || query.type === 'MEDICINE') {
+    const includeLegacyMedicines =
+      isMedicineShopEnabled() && (query.type === 'all' || query.type === 'MEDICINE')
+
+    if (includeLegacyMedicines) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const medicineWhere: any = {
         deletedAt: null,

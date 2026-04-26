@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { getCachedData, setCachedData, invalidateCache } from '@/lib/cache'
+import { GROCERY_CATEGORY_SLUG, isGroceryShopEnabled, isMedicineShopEnabled } from '@/lib/site-features'
 
 const CACHE_KEY_TOP_PRODUCTS = 'search:top-products'
 const CACHE_TTL_TOP_PRODUCTS = 60 * 60 * 24 // 24 hours
@@ -78,6 +79,10 @@ export async function getTopProducts(limit: number = 40): Promise<{ products: Se
       where: {
         isActive: true,
         deletedAt: null,
+        ...(!isMedicineShopEnabled() ? { type: 'GENERAL' as const } : {}),
+        ...(!isGroceryShopEnabled()
+          ? { NOT: { category: { slug: GROCERY_CATEGORY_SLUG } } }
+          : {}),
       },
       include: {
         category: true,
@@ -113,6 +118,14 @@ export function invalidateSearchIndex(): void {
   // Clear the top products cache.
   // We can't easily clear all search permutations, but they expire in 1 hr.
   invalidateCache(CACHE_KEY_TOP_PRODUCTS).catch(console.error)
+}
+
+function filterSearchResultsByRetailScope(results: SearchResult[]): SearchResult[] {
+  return results.filter((r) => {
+    if (!isMedicineShopEnabled() && r.item.isMedicine) return false
+    if (!isGroceryShopEnabled() && r.item.categorySlug === GROCERY_CATEGORY_SLUG) return false
+    return true
+  })
 }
 
 /** Latin / numeric tokens only — used for Postgres FTS prefix query. */
@@ -170,11 +183,13 @@ export async function searchProducts(
   const rawQuery = query.trim()
   if (!rawQuery || rawQuery.length < 2) {
     const { products } = await getTopProducts(limit)
-    return products.map((item) => ({
-      item,
-      score: 1, // Max score for exact
-      combinedScore: item.popularityScore,
-    }))
+    return filterSearchResultsByRetailScope(
+      products.map((item) => ({
+        item,
+        score: 1, // Max score for exact
+        combinedScore: item.popularityScore,
+      })),
+    )
   }
 
   const ftsTerms = ftsTermsForPostgres(rawQuery)
@@ -182,12 +197,14 @@ export async function searchProducts(
 
   if (containsTerms.length === 0) {
     const { products } = await getTopProducts(limit)
-    return products.map((item) => ({ item, score: 1, combinedScore: item.popularityScore }))
+    return filterSearchResultsByRetailScope(
+      products.map((item) => ({ item, score: 1, combinedScore: item.popularityScore })),
+    )
   }
 
   const cacheKey = `search:query:v3:${rawQuery.toLowerCase()}:${limit}`
   const cachedResults = await getCachedData<SearchResult[]>(cacheKey)
-  if (cachedResults) return cachedResults
+  if (cachedResults) return filterSearchResultsByRetailScope(cachedResults)
 
   try {
     let products: any[] = []
@@ -300,7 +317,7 @@ export async function searchProducts(
 
     // Sort by combined score
     searchResults.sort((a, b) => b.combinedScore - a.combinedScore)
-    let finalResults = searchResults.slice(0, limit)
+    let finalResults = filterSearchResultsByRetailScope(searchResults).slice(0, limit)
 
     // --- NEW: Fuzzy Logic Fallback ---
     // If we still have 0 results, let's try a very basic fuzzy match against known names/generics
@@ -310,12 +327,14 @@ export async function searchProducts(
         // Recursively call search with the corrected term, but prevent infinite loop
         const correctedResults = await searchProducts(fuzzyMatch, limit, true)
         if (correctedResults.length > 0) {
-          return correctedResults.map(r => ({
-            ...r,
-            isFuzzyMatch: true,
-            originalQuery: query,
-            correctedQuery: fuzzyMatch
-          }))
+          return filterSearchResultsByRetailScope(
+            correctedResults.map((r) => ({
+              ...r,
+              isFuzzyMatch: true,
+              originalQuery: query,
+              correctedQuery: fuzzyMatch,
+            })),
+          )
         }
       }
     }

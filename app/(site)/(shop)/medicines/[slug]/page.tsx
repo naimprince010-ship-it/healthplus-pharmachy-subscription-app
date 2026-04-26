@@ -6,6 +6,7 @@ import { ArrowLeft } from 'lucide-react'
 import { AddToCartButton } from '@/components/AddToCartButton'
 import type { Metadata } from 'next'
 import { GenericAlternatives } from '@/components/GenericAlternatives'
+import { isMedicineShopEnabled } from '@/lib/site-features'
 
 export const revalidate = 60 // Revalidate page every 60 seconds (ISR)
 
@@ -49,6 +50,10 @@ export async function generateMetadata({
 export default async function MedicineDetailPage({
   params,
 }: MedicineDetailPageProps) {
+  if (!isMedicineShopEnabled()) {
+    notFound()
+  }
+
   const { slug } = await params
   const medicine = await prisma.medicine.findUnique({
     where: {

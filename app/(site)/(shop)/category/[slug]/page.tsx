@@ -5,6 +5,7 @@ import { AddToCartButton } from '@/components/AddToCartButton'
 import { getEffectivePrices } from '@/lib/pricing'
 import { getStorefrontImageUrl } from '@/lib/image-url'
 import type { Metadata } from 'next'
+import { GROCERY_CATEGORY_SLUG, isGroceryShopEnabled, isMedicineShopEnabled } from '@/lib/site-features'
 
 export const revalidate = 60 // Revalidate page every 60 seconds (ISR)
 
@@ -75,6 +76,14 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   if (!category || !category.isActive) {
     notFound()
   }
+
+  if (!isMedicineShopEnabled() && category.isMedicineCategory) {
+    notFound()
+  }
+  if (!isGroceryShopEnabled() && slug === GROCERY_CATEGORY_SLUG) {
+    notFound()
+  }
+
   const categoryImageUrl = getStorefrontImageUrl(category.imageUrl)
 
   // Find ALL descendant categories recursively (not just direct children)
