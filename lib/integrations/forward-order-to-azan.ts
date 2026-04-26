@@ -2,6 +2,8 @@ import { format } from 'date-fns'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import {
+  appendAzanAllProductsFailedHint,
+  formatAzanOrderStoreFailureForAdmin,
   getAzanPlatformSource,
   getAzanWholesaleApiBaseUrl,
   isAzanOrderAlreadyExistsResponse,
@@ -186,18 +188,18 @@ export async function forwardOrderToAzanById(orderId: string): Promise<{
     return { ok: true, lineCount: details.length, skipped: 'already_exists_at_azan' }
   }
 
-  const errText =
-    typeof res.data === 'object' && res.data !== null && 'message' in res.data
-      ? String((res.data as { message: unknown }).message)
-      : `HTTP ${res.status}`
-
-  const withHint = appendAzanApiAuthErrorHint(errText)
-  const truncated = withHint.length > 4000 ? withHint.slice(0, 4000) : withHint
+  const errText = formatAzanOrderStoreFailureForAdmin(res.data, res.status)
+  const withProductHint = appendAzanAllProductsFailedHint(errText)
+  const withAuth = appendAzanApiAuthErrorHint(withProductHint)
+  const final = withAuth.length > 4000 ? withAuth.slice(0, 4000) : withAuth
   await prisma.order.update({
     where: { id: orderId },
-    data: { azanPushError: truncated },
+    data: {
+      azanPushError: final,
+      azanStatusRaw: toNullableInputJsonValue(res.data),
+    },
   })
-  return { ok: false, lineCount: details.length, error: errText }
+  return { ok: false, lineCount: details.length, error: final }
 }
 
 /**

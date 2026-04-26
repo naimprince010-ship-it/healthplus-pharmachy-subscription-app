@@ -214,7 +214,8 @@ export default function OrderDetailsPage() {
         await fetchOrder()
         const r = data.result
         if (r?.error) {
-          setAzanForwardMessage({ type: 'error', text: r.error })
+          // Error text is in order.azanPushError after refetch; avoid duplicate red banners
+          setAzanForwardMessage(null)
         } else if (r?.skipped) {
           setAzanForwardMessage({
             type: 'success',
@@ -562,7 +563,9 @@ export default function OrderDetailsPage() {
             </div>
           </div>
           {order.azanPushError && (
-            <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-800">{order.azanPushError}</div>
+            <div className="mt-4 max-h-96 overflow-y-auto rounded-lg bg-red-50 p-3 text-sm whitespace-pre-wrap text-red-800">
+              {order.azanPushError}
+            </div>
           )}
         </div>
 

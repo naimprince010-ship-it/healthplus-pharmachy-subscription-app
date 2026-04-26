@@ -142,6 +142,43 @@ export function isAzanOrderAlreadyExistsResponse(data: unknown): boolean {
 }
 
 /**
+ * One string for admin/DB: top-level message + optional full JSON (Azan often puts details outside `message`,
+ * e.g. per-SKU errors for "All products failed.").
+ */
+export function formatAzanOrderStoreFailureForAdmin(data: unknown, httpStatus: number): string {
+  const summary = getAzanOrderStoreErrorText(data)
+  if (typeof data === 'string' && data.trim() && !summary) {
+    return data.length > 2000 ? `${data.slice(0, 2000)}…` : data
+  }
+  if (data == null) {
+    return `HTTP ${httpStatus}`
+  }
+  const full = (() => {
+    try {
+      return JSON.stringify(data)
+    } catch {
+      return String(data)
+    }
+  })()
+  if (!summary) {
+    return full.length > 3500 ? `${full.slice(0, 3500)}…\n(HTTP ${httpStatus})` : `${full}\n(HTTP ${httpStatus})`
+  }
+  if (full.length < 500) {
+    return summary
+  }
+  const cap = 3200
+  return `${summary}\n[Azan body: ${full.slice(0, cap)}${full.length > cap ? '…' : ''}]`
+}
+
+/** When Azan accepts the request but rejects every line (wrong SKU, supplier, or env vs synced catalog). */
+export function appendAzanAllProductsFailedHint(message: string): string {
+  if (!/all products failed|every product|no valid product|line.*rejected|sku.*not found|invalid sku/i.test(message)) {
+    return message
+  }
+  return `${message}\n\n— Tips: re-sync the catalog on the *same* host as orders (AZAN_WHOLESALE_BASE_URL). Staging keys + products synced from live (or the reverse) usually cause this. Check AZAN_WHOLESALE_SUPPLIER_NAME matches the supplier string Azan gave you (default AzanWholeSale). Ensure each line’s supplierSku exists on that Azan server.`
+}
+
+/**
  * GET order status from Azan.
  * Configure endpoint template in env:
  * AZAN_WHOLESALE_ORDER_STATUS_PATH="/api/orders/status?platform_order_id={platform_order_id}"
