@@ -8,6 +8,7 @@ import {
   isAzanAutoCreateSourceCategoriesEnabled,
 } from '@/lib/integrations/azan-source-categories'
 import { parseAzanWholesaleProductNumericId } from '@/lib/integrations/azan-catalog'
+import { getAzanRetailMultiplierFromEnv } from '@/lib/azan-pricing'
 
 type AnyRecord = Record<string, unknown>
 
@@ -450,7 +451,7 @@ async function fetchAzanProducts(): Promise<AzanProduct[]> {
 
 async function upsertAzanProducts(products: AzanProduct[]) {
   const prismaClient = getPrismaClient()
-  const markupMultiplier = Number.parseFloat(process.env.AZAN_WHOLESALE_MARKUP || '1.6')
+  const markupMultiplier = getAzanRetailMultiplierFromEnv()
   const categoryName = process.env.AZAN_WHOLESALE_CATEGORY || 'Azan Wholesale'
   const categorySlug = slugify(categoryName) || 'azan-wholesale'
 

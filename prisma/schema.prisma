@@ -253,6 +253,8 @@ model Product {
   flashSalePrice   Float?
   flashSaleStart   DateTime?
   flashSaleEnd     DateTime?
+  /// "auto" = set by /api/cron/flash-rotation; null/empty = staff set manual flash
+  flashSaleSource  String?
 
   // Campaign/Rule-based Discount Fields (set by discount engine)
   campaignPrice    Float?    // Discounted price set by discount rule

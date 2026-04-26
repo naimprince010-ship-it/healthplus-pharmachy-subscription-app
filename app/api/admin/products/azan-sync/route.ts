@@ -9,6 +9,7 @@ import {
 import { slugify } from '@/lib/slugify'
 import { invalidateSearchIndex } from '@/lib/search-index'
 import { getAzanOrderForwardEnvSummary } from '@/lib/integrations/azan-wholesale'
+import { getAzanRetailMultiplierFromEnv } from '@/lib/azan-pricing'
 
 type AnyRecord = Record<string, unknown>
 
@@ -326,8 +327,8 @@ export async function POST() {
     }
 
     const categoryName = process.env.AZAN_WHOLESALE_CATEGORY || 'Azan Wholesale'
-    const defaultMarginPercent = Number.parseFloat(process.env.AZAN_WHOLESALE_DEFAULT_MARGIN_PERCENT || '30')
-    const multiplier = 1 + (Number.isFinite(defaultMarginPercent) ? defaultMarginPercent : 30) / 100
+    /** Same rule as `scripts/sync-azan-api.ts`: 60% markup on cost = ×1.6 unless `AZAN_WHOLESALE_MARKUP` set */
+    const multiplier = getAzanRetailMultiplierFromEnv()
 
     let category = await prisma.category.findUnique({ where: { name: categoryName } })
     if (!category) {
@@ -434,6 +435,7 @@ export async function POST() {
       success: true,
       endpoint,
       summary: {
+        retailMultiplier: multiplier,
         fetched: products.length,
         created,
         updated,
