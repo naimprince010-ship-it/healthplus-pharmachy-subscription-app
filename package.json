@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma migrate deploy && next build",
+    "build": "next build",
+    "vercel:build": "prisma migrate deploy && next build",
     "start": "next start",
     "lint": "eslint",
     "check:nextjs16": "node scripts/check-nextjs16-params.js",
