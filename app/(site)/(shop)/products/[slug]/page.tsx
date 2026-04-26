@@ -8,6 +8,7 @@ import { ArrowLeft } from 'lucide-react'
 import { Metadata } from 'next'
 import { getEffectivePrices } from '@/lib/pricing'
 import { isProductLinkedToAzanCatalog } from '@/lib/integrations/azan-catalog'
+import { getStorefrontImageUrl } from '@/lib/image-url'
 
 export const runtime = 'nodejs'
 export const revalidate = 60 // Revalidate page every 60 seconds (ISR)
@@ -362,6 +363,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
     category: { name: product.category?.name ?? '' },
   })
   const customerFacingLeafLabel = isAzanCatalogProduct ? 'Verified by Halalzi' : leafCategoryName
+  const displayImageUrl = getStorefrontImageUrl(product.imageUrl)
 
   // Top line text: dosage form (for medicines) OR parent department (for general products with hierarchy)
   const topLineText = isMedicine ? dosageForm : parentCategoryName
@@ -421,9 +423,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
           <div className="mt-8 grid grid-cols-1 lg:grid-cols-[minmax(0,1.8fr)_minmax(0,1.4fr)] gap-6 lg:gap-8 items-start">
             {/* Image container - max 600px width, 360px height like MedEasy (~573x343px) */}
             <div className="w-full max-w-[600px] h-[360px] mx-auto lg:mx-0 bg-white rounded-xl flex items-center justify-center overflow-hidden">
-              {product.imageUrl ? (
+              {displayImageUrl ? (
                 <img
-                  src={product.imageUrl}
+                  src={displayImageUrl}
                   alt={product.name}
                   className="h-full w-full object-contain"
                 />
@@ -505,7 +507,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 sellingPrice={sellingPrice}
                 mrp={mrp}
                 stockQuantity={stockQuantity}
-                imageUrl={product.imageUrl}
+                imageUrl={displayImageUrl}
                 category={product.category?.name ?? 'General'}
                 unit={isMedicine && product.unit === 'pcs' ? 'strip' : product.unit}
                 discountPercentage={discountPercentage}

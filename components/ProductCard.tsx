@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { AddToCartButton } from '@/components/AddToCartButton'
 import { getEffectivePrices } from '@/lib/pricing'
+import { getStorefrontImageUrl } from '@/lib/image-url'
 
 interface ProductCardProps {
   id: string
@@ -50,6 +51,7 @@ export function ProductCard({ product, variant = 'default', className = '' }: Pr
   const productId = product.cartInfo?.kind === 'product' ? product.cartInfo.productId : product.id
 
   const isCompact = variant === 'compact'
+  const displayImageUrl = getStorefrontImageUrl(product.imageUrl)
 
   // Use pre-computed values from server if available (avoids hydration mismatch)
   // Fall back to computing on client for pages that don't pre-compute
@@ -98,9 +100,9 @@ export function ProductCard({ product, variant = 'default', className = '' }: Pr
       )}
 
       <div className={`overflow-hidden rounded-lg bg-gray-100 ${isCompact ? 'aspect-[4/3]' : 'aspect-square'}`}>
-        {product.imageUrl ? (
+        {displayImageUrl ? (
           <img
-            src={product.imageUrl}
+            src={displayImageUrl}
             alt={product.name}
             className="h-full w-full object-cover transition-transform group-hover:scale-105"
           />
@@ -144,7 +146,7 @@ export function ProductCard({ product, variant = 'default', className = '' }: Pr
             productId={productId}
             name={product.name}
             price={price}
-            image={product.imageUrl || undefined}
+            image={displayImageUrl || undefined}
             stockQuantity={product.stockQuantity}
             category={product.category.name}
             mrp={mrp}

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { AddToCartButton } from '@/components/AddToCartButton'
 import { getEffectivePrices } from '@/lib/pricing'
+import { getStorefrontImageUrl } from '@/lib/image-url'
 import type { Metadata } from 'next'
 
 export const revalidate = 60 // Revalidate page every 60 seconds (ISR)
@@ -75,6 +76,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   if (!category || !category.isActive) {
     notFound()
   }
+  const categoryImageUrl = getStorefrontImageUrl(category.imageUrl)
 
   // Find ALL descendant categories recursively (not just direct children)
   // This allows parent categories (like "Women's Choice") to show products from all nested subcategories
@@ -261,10 +263,10 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             </nav>
 
             <div className="flex items-center gap-4">
-              {category.imageUrl && (
+              {categoryImageUrl && (
                 <div className="relative h-16 w-16 overflow-hidden rounded-lg">
                   <Image
-                    src={category.imageUrl}
+                    src={categoryImageUrl}
                     alt={category.name}
                     fill
                     className="object-cover"
@@ -309,6 +311,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                 const discountedPrice = pricing.price
                 const isCampaign = pricing.isCampaign
 
+                const displayImageUrl = getStorefrontImageUrl(item.imageUrl)
                 return (
                   <div
                     key={item.id}
@@ -316,9 +319,9 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                   >
                     <Link href={detailPath} className="flex-1">
                       <div className="relative mb-4 h-48 overflow-hidden rounded-lg bg-gray-100">
-                        {item.imageUrl ? (
+                        {displayImageUrl ? (
                           <Image
-                            src={item.imageUrl}
+                            src={displayImageUrl}
                             alt={item.name}
                             fill
                             className="object-cover"
@@ -377,7 +380,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                           medicineId={item.id}
                           name={item.name}
                           price={discountedPrice}
-                          image={item.imageUrl || undefined}
+                            image={displayImageUrl || undefined}
                           requiresPrescription={item.requiresPrescription}
                           stockQuantity={item.stockQuantity}
                           className="w-full"
@@ -387,7 +390,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                           productId={item.id}
                           name={item.name}
                           price={discountedPrice}
-                          image={item.imageUrl || undefined}
+                            image={displayImageUrl || undefined}
                           stockQuantity={item.stockQuantity}
                           className="w-full"
                         />
