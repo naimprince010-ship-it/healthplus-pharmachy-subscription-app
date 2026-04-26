@@ -100,7 +100,11 @@ export async function forwardOrderToAzanById(orderId: string): Promise<{
     }
     const lineUnit = toAzanBdtAmount(rawUnit, intTaka)
     const mrpVal = Math.max(rawUnit, p.mrp != null && p.mrp > 0 ? p.mrp : rawUnit)
-    const mrp = toAzanBdtAmount(mrpVal, intTaka)
+    let mrp = toAzanBdtAmount(mrpVal, intTaka)
+    // Some Azan builds reject mrp_price === unit_price; keep MRP strictly above the selling line.
+    if (mrp <= lineUnit) {
+      mrp = intTaka ? lineUnit + 1 : roundMoney(lineUnit + 0.01)
+    }
     const wholesale = toAzanBdtAmount(computeWholesaleForAzanLineRaw(p.purchasePrice, rawUnit), intTaka)
     const totalLine = toAzanBdtAmount(lineUnit * line.quantity, intTaka)
 
@@ -330,12 +334,14 @@ function resolveAzanLineUnitBdt(
 }
 
 /**
- * Azan often rejects wholesale_price = 0. Prefer supplier cost; else a safe fraction of raw unit.
+ * Azan validates wholesale against their catalog. Prefer our synced `purchasePrice` (their wholesale);
+ * if we used a strict `w < rawUnit` only, the common case `w === rawUnit` fell through to 50% and caused
+ * "Invalid price". When cost exceeds retail (discount), keep wholesale below the line in the line payload.
  */
 function computeWholesaleForAzanLineRaw(purchase: number | null | undefined, rawUnit: number): number {
   if (typeof purchase === 'number' && Number.isFinite(purchase) && purchase > 0) {
     const w = roundMoney(purchase)
-    if (w < rawUnit) return w
+    if (w <= rawUnit) return w
   }
   return roundMoney(Math.max(0.01, rawUnit * 0.5))
 }
