@@ -221,7 +221,8 @@ export async function forwardOrderToAzanById(orderId: string): Promise<{
 
   const errText = formatAzanOrderStoreFailureForAdmin(res.data, res.status)
   const withProductHint = appendAzanAllProductsFailedHint(errText)
-  const withAuth = appendAzanApiAuthErrorHint(withProductHint)
+  const withPriceHint = appendAzanInvalidPriceHint(withProductHint)
+  const withAuth = appendAzanApiAuthErrorHint(withPriceHint)
   const final = withAuth.length > 4000 ? withAuth.slice(0, 4000) : withAuth
   await prisma.order.update({
     where: { id: orderId },
