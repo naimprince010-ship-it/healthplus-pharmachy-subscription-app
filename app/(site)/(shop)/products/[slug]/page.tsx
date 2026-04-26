@@ -9,6 +9,7 @@ import { Metadata } from 'next'
 import { getEffectivePrices } from '@/lib/pricing'
 import { isProductLinkedToAzanCatalog } from '@/lib/integrations/azan-catalog'
 import { getStorefrontImageUrl } from '@/lib/image-url'
+import { getCachedProductBySlug } from './get-product-by-slug'
 
 export const runtime = 'nodejs'
 export const revalidate = 60 // Revalidate page every 60 seconds (ISR)
@@ -172,24 +173,7 @@ interface ProductPageProps {
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   try {
     const { slug } = await params
-    const { prisma } = await import('@/lib/prisma')
-
-    const product = await prisma.product.findUnique({
-      where: { slug },
-      select: {
-        name: true,
-        description: true,
-        imageUrl: true,
-        seoTitle: true,
-        seoDescription: true,
-        seoKeywords: true,
-        category: {
-          select: {
-            name: true,
-          },
-        },
-      },
-    })
+    const product = await getCachedProductBySlug(slug)
 
     if (!product) {
       return {}
@@ -224,85 +208,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params
   const { prisma } = await import('@/lib/prisma')
-
-  const product = await prisma.product.findUnique({
-    where: { slug },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      imageUrl: true,
-      sellingPrice: true,
-      mrp: true,
-      stockQuantity: true,
-      brandName: true,
-      description: true,
-      keyFeatures: true,
-      specSummary: true,
-      sizeLabel: true,
-      unit: true,
-      type: true,
-      isActive: true,
-      discountPercentage: true,
-      flashSalePrice: true,
-      flashSaleStart: true,
-      flashSaleEnd: true,
-      isFlashSale: true,
-      campaignPrice: true,
-      campaignStart: true,
-      campaignEnd: true,
-      supplierSku: true,
-      sourceCategoryName: true,
-      category: {
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          parentCategory: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-            },
-          },
-        },
-      },
-      manufacturer: {
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-        },
-      },
-      medicine: {
-        select: {
-          discountPercentage: true,
-          genericName: true,
-          dosageForm: true,
-          strength: true,
-          manufacturer: true,
-          unitPrice: true,
-          stripPrice: true,
-          tabletsPerStrip: true,
-        },
-      },
-      variants: {
-        where: { isActive: true },
-        orderBy: { sortOrder: 'asc' },
-        select: {
-          id: true,
-          variantName: true,
-          unitLabel: true,
-          sizeLabel: true,
-          mrp: true,
-          sellingPrice: true,
-          discountPercentage: true,
-          stockQuantity: true,
-          isDefault: true,
-        },
-      },
-    },
-  })
+  const product = await getCachedProductBySlug(slug)
 
   if (!product || !product.isActive) {
     notFound()
