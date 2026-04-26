@@ -160,6 +160,7 @@ function normalizeProduct(item: AnyRecord): AzanNormalizedProduct | null {
     brandName: getStringValue(item, ['brand_name', 'brand']),
     sourceCategoryKey: sourceCategory.key,
     sourceCategoryLabel: sourceCategory.label,
+    supplierProductId: parseAzanWholesaleProductNumericId(item as Record<string, unknown>),
   }
 }
 
