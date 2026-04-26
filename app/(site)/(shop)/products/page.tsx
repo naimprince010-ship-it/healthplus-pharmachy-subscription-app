@@ -2,6 +2,9 @@ import { Suspense } from 'react'
 import { MobileShopServer } from '@/components/MobileShopServer'
 import { ProductsContentClient } from './ProductsContentClient'
 
+/** Avoid SSG that hits Prisma when DB is mid-migration; also keeps catalog fresh. */
+export const dynamic = 'force-dynamic'
+
 export default async function ProductsPage() {
   return (
     <>
