@@ -44,6 +44,7 @@ interface Order {
   azanCourierName: string | null
   azanTrackingUrl: string | null
   azanStatusSyncedAt: string | null
+  azanPushedAt: string | null
   azanPushError: string | null
   user: {
     name: string
@@ -86,6 +87,8 @@ export default function OrderDetailsPage() {
     const [estimatedDeliveryText, setEstimatedDeliveryText] = useState('')
     const [isSavingRider, setIsSavingRider] = useState(false)
     const [riderMessage, setRiderMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+    const [isForwardingAzan, setIsForwardingAzan] = useState(false)
+    const [azanForwardMessage, setAzanForwardMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
     useEffect(() => {
       if (orderId) {
@@ -191,6 +194,39 @@ export default function OrderDetailsPage() {
         setRiderMessage({ type: 'error', text: 'Failed to save rider info' })
       } finally {
         setIsSavingRider(false)
+      }
+    }
+
+    const forwardToAzan = async () => {
+      if (!orderId) return
+      setIsForwardingAzan(true)
+      setAzanForwardMessage(null)
+      try {
+        const res = await fetch(`/api/admin/orders/${encodeURIComponent(orderId)}/forward-azan`, {
+          method: 'POST',
+          credentials: 'include',
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          setAzanForwardMessage({ type: 'error', text: data.error || 'Forward request failed' })
+          return
+        }
+        await fetchOrder()
+        const r = data.result
+        if (r?.error) {
+          setAzanForwardMessage({ type: 'error', text: r.error })
+        } else if (r?.skipped) {
+          setAzanForwardMessage({
+            type: 'success',
+            text: `Skipped: ${r.skipped}${r.lineCount != null ? ` (${r.lineCount} line(s))` : ''}`,
+          })
+        } else {
+          setAzanForwardMessage({ type: 'success', text: 'Order sent to Azan (or already recorded).' })
+        }
+      } catch (e) {
+        setAzanForwardMessage({ type: 'error', text: 'Network error' })
+      } finally {
+        setIsForwardingAzan(false)
       }
     }
 
@@ -461,8 +497,33 @@ export default function OrderDetailsPage() {
         )}
 
         <div className="mb-8 rounded-lg bg-white p-6 shadow">
-          <h2 className="mb-4 text-xl font-bold text-gray-900">Azan Fulfillment</h2>
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-xl font-bold text-gray-900">Azan Fulfillment</h2>
+            <button
+              type="button"
+              onClick={() => void forwardToAzan()}
+              disabled={isForwardingAzan}
+              className="w-full rounded-lg border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-100 disabled:opacity-50 sm:w-auto"
+            >
+              {isForwardingAzan ? 'Pushing to Azan…' : 'Push to Azan now'}
+            </button>
+          </div>
+          {azanForwardMessage && (
+            <div
+              className={`mb-4 rounded-lg p-3 text-sm ${
+                azanForwardMessage.type === 'success' ? 'bg-emerald-50 text-emerald-900' : 'bg-red-50 text-red-800'
+              }`}
+            >
+              {azanForwardMessage.text}
+            </div>
+          )}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <p className="text-sm text-gray-600">Pushed to Azan at</p>
+              <p className="font-medium text-gray-900">
+                {order.azanPushedAt ? new Date(order.azanPushedAt).toLocaleString('en-US') : 'N/A'}
+              </p>
+            </div>
             <div>
               <p className="text-sm text-gray-600">Azan Order ID</p>
               <p className="font-medium text-gray-900">{order.azanOrderId || 'N/A'}</p>
