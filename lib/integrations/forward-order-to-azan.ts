@@ -1,7 +1,13 @@
 import { format } from 'date-fns'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
-import { getAzanPlatformSource, submitAzanResellerOrder, type AzanOrderLine } from '@/lib/integrations/azan-wholesale'
+import {
+  getAzanPlatformSource,
+  isAzanOrderAlreadyExistsResponse,
+  isAzanOrderForwardingEnabled,
+  submitAzanResellerOrder,
+  type AzanOrderLine,
+} from '@/lib/integrations/azan-wholesale'
 import { getAzanResellerCategoryName, isProductLinkedToAzanCatalog } from '@/lib/integrations/azan-catalog'
 import { slugify } from '@/lib/slugify'
 
@@ -11,7 +17,7 @@ function getSupplierNameForLine() {
 
 /**
  * If enabled, send order lines (Azan category products) to Azan POST /api/orders/store.
- * Opt-in: AZAN_WHOLESALE_FORWARD_ORDERS=true
+ * Opt-in: AZAN_WHOLESALE_FORWARD_ORDERS=true|1|yes|on
  */
 export async function forwardOrderToAzanById(orderId: string): Promise<{
   ok: boolean
@@ -19,8 +25,8 @@ export async function forwardOrderToAzanById(orderId: string): Promise<{
   lineCount?: number
   error?: string
 }> {
-  if (process.env.AZAN_WHOLESALE_FORWARD_ORDERS !== 'true') {
-    return { ok: true, skipped: 'AZAN_WHOLESALE_FORWARD_ORDERS is not true' }
+  if (!isAzanOrderForwardingEnabled()) {
+    return { ok: true, skipped: 'forward_orders_disabled' }
   }
   if (!process.env.AZAN_WHOLESALE_APP_ID || !process.env.AZAN_WHOLESALE_SECRET_KEY) {
     const msg = 'Missing Azan API credentials'
@@ -158,6 +164,25 @@ export async function forwardOrderToAzanById(orderId: string): Promise<{
       },
     })
     return { ok: true, lineCount: details.length }
+  }
+
+  // Duplicate platform_order_id: order is already at Azan — mark forwarded so status sync / admin UI stay consistent.
+  if (isAzanOrderAlreadyExistsResponse(res.data)) {
+    const meta = extractAzanOrderMetaFromResponse(res.data)
+    await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        azanPushedAt: now,
+        azanPushError: null,
+        ...(meta.azanOrderId ? { azanOrderId: meta.azanOrderId } : {}),
+        ...(meta.azanStatus ? { azanStatus: meta.azanStatus } : {}),
+        ...(meta.trackingNumber ? { azanTrackingNumber: meta.trackingNumber } : {}),
+        ...(meta.courierName ? { azanCourierName: meta.courierName } : {}),
+        ...(meta.trackingUrl ? { azanTrackingUrl: meta.trackingUrl } : {}),
+        azanStatusRaw: toNullableInputJsonValue(res.data),
+      },
+    })
+    return { ok: true, lineCount: details.length, skipped: 'already_exists_at_azan' }
   }
 
   const errText =

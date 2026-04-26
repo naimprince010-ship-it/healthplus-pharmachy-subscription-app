@@ -355,10 +355,14 @@ export async function POST(request: NextRequest) {
     try {
       const { forwardOrderToAzanById } = await import('@/lib/integrations/forward-order-to-azan')
       const r = await forwardOrderToAzanById(order.id)
-      if (!r.ok && r.error) {
-        console.error('[Azan order forward]', r.error)
-      } else if (r.ok && r.lineCount) {
-        console.log(`[Azan order forward] ${order.orderNumber} → ${r.lineCount} line(s)`)
+      if (r.error) {
+        console.error(`[Azan order forward] ${order.orderNumber} failed:`, r.error)
+      } else if (r.skipped) {
+        const detail = r.lineCount != null ? ` (${r.lineCount} Azan line(s) in cart)` : ''
+        console.warn(`[Azan order forward] ${order.orderNumber} skipped: ${r.skipped}${detail}`)
+      } else {
+        const lines = r.lineCount != null ? `${r.lineCount} line(s) to Azan` : 'ok'
+        console.log(`[Azan order forward] ${order.orderNumber} → ${lines}`)
       }
     } catch (forwardErr) {
       console.error('[Azan order forward] unhandled error:', forwardErr)

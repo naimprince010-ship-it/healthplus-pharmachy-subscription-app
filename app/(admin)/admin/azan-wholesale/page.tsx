@@ -63,6 +63,14 @@ interface UnmappedItem {
   products: number
 }
 
+interface OrderForwardStatus {
+  forwardOrdersEnabled: boolean
+  hasApiCredentials: boolean
+  apiBaseUrl: string
+  envVar: string
+  hint: string | null
+}
+
 function SectionLabel({ step, title, subtitle }: { step: string; title: string; subtitle: string }) {
   return (
     <div className="mb-4 flex items-start gap-3">
@@ -92,6 +100,7 @@ export default function AzanWholesalePage() {
   const [sourceCategoryInput, setSourceCategoryInput] = useState('')
   const [selectedLocalCategoryId, setSelectedLocalCategoryId] = useState('')
   const [savingMapping, setSavingMapping] = useState(false)
+  const [orderForward, setOrderForward] = useState<OrderForwardStatus | null>(null)
 
   const fetchSummary = useCallback(async () => {
     setLoadingSummary(true)
@@ -104,6 +113,9 @@ export default function AzanWholesalePage() {
       }
       setSummary(data.summary)
       setCoverage(data.coverage ?? null)
+      if (data.orderForward) {
+        setOrderForward(data.orderForward as OrderForwardStatus)
+      }
     } catch {
       toast.error('Failed to load Azan stats')
     } finally {
@@ -324,6 +336,54 @@ export default function AzanWholesalePage() {
           </span>
         </p>
       </div>
+
+      {orderForward && (!orderForward.forwardOrdersEnabled || !orderForward.hasApiCredentials) && (
+        <div
+          className={`flex flex-col gap-2 rounded-2xl border p-4 sm:flex-row sm:items-center sm:justify-between ${
+            !orderForward.forwardOrdersEnabled
+              ? 'border-amber-200 bg-amber-50/90 text-amber-950'
+              : 'border-rose-200 bg-rose-50/90 text-rose-950'
+          }`}
+        >
+          <div className="flex items-start gap-3">
+            <AlertCircle
+              className={`mt-0.5 h-5 w-5 shrink-0 ${!orderForward.forwardOrdersEnabled ? 'text-amber-600' : 'text-rose-600'}`}
+            />
+            <div>
+              <p className="text-sm font-semibold">
+                {!orderForward.forwardOrdersEnabled
+                  ? 'Production: customer orders are not being forwarded to Azan'
+                  : 'Production: missing Azan API credentials for order forward'}
+              </p>
+              <p className="mt-1 text-sm opacity-90">
+                {orderForward.hint}{' '}
+                <span className="whitespace-nowrap text-xs opacity-80">
+                  (Store API: <code className="rounded bg-white/60 px-1 font-mono">{orderForward.apiBaseUrl}</code>)
+                </span>
+              </p>
+              <p className="mt-2 text-xs font-medium opacity-80">
+                Set <code className="rounded bg-white/60 px-1 font-mono">{orderForward.envVar}=true</code> in your
+                hosting env (Vercel → Settings → Environment Variables), then redeploy.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {orderForward && orderForward.forwardOrdersEnabled && orderForward.hasApiCredentials && (
+        <div className="flex items-start gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4 text-emerald-950">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+            <Link2 className="h-4 w-4" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold">Order forwarding to Azan is enabled on this environment</p>
+            <p className="mt-0.5 text-xs text-emerald-800/80">
+              Checkout will POST to Azan <code className="rounded bg-white/60 px-1 font-mono">{orderForward.apiBaseUrl}</code> for
+              lines that belong to the Azan catalog (supplier SKUs / synced products).
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">

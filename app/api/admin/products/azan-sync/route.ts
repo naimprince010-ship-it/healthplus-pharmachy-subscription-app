@@ -8,6 +8,7 @@ import {
 } from '@/lib/integrations/azan-source-categories'
 import { slugify } from '@/lib/slugify'
 import { invalidateSearchIndex } from '@/lib/search-index'
+import { getAzanOrderForwardEnvSummary } from '@/lib/integrations/azan-wholesale'
 
 type AnyRecord = Record<string, unknown>
 
@@ -513,6 +514,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    const of = getAzanOrderForwardEnvSummary()
     return NextResponse.json({
       success: true,
       summary: {
@@ -523,6 +525,15 @@ export async function GET(request: NextRequest) {
         missingPrice,
       },
       coverage,
+      orderForward: {
+        ...of,
+        envVar: 'AZAN_WHOLESALE_FORWARD_ORDERS',
+        hint: !of.forwardOrdersEnabled
+          ? 'Customer orders are NOT sent to Azan until you set AZAN_WHOLESALE_FORWARD_ORDERS=true (or 1) on the production environment.'
+          : !of.hasApiCredentials
+            ? 'Set AZAN_WHOLESALE_APP_ID and AZAN_WHOLESALE_SECRET_KEY on production.'
+            : null,
+      },
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to fetch Azan stats'

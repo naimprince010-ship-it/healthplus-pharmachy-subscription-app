@@ -107,6 +107,36 @@ export async function submitAzanResellerOrder(payload: AzanOrderPayload) {
 }
 
 /**
+ * Best-effort text from a failed order-store response (message / error / Laravel-style errors).
+ * Used to detect idempotent cases like "Order already exists".
+ */
+export function getAzanOrderStoreErrorText(data: unknown): string {
+  if (typeof data === 'string') return data
+  if (!data || typeof data !== 'object') return ''
+  const bag = data as Record<string, unknown>
+  const chunks: string[] = []
+  for (const key of ['message', 'error']) {
+    const v = bag[key]
+    if (typeof v === 'string') chunks.push(v)
+  }
+  const errors = bag.errors
+  if (errors && typeof errors === 'object') {
+    for (const v of Object.values(errors as Record<string, unknown>)) {
+      if (Array.isArray(v)) chunks.push(v.map(String).join(' '))
+      else if (v != null) chunks.push(String(v))
+    }
+  }
+  return chunks.join(' ').trim()
+}
+
+/** Azan may reject duplicate platform_order_id with a 4xx and "Order already exists" — treat as already forwarded. */
+export function isAzanOrderAlreadyExistsResponse(data: unknown): boolean {
+  const t = getAzanOrderStoreErrorText(data).toLowerCase()
+  if (!t) return false
+  return t.includes('already exists') && (t.includes('order') || t.includes('duplicate'))
+}
+
+/**
  * GET order status from Azan.
  * Configure endpoint template in env:
  * AZAN_WHOLESALE_ORDER_STATUS_PATH="/api/orders/status?platform_order_id={platform_order_id}"
@@ -133,4 +163,34 @@ export async function submitAzanProductUpdate(payload: AzanProductUpdatePayload)
 /** platform_source default for new orders */
 export function getAzanPlatformSource(): string {
   return process.env.AZAN_WHOLESALE_PLATFORM_SOURCE || 'Halalzi'
+}
+
+/**
+ * Order forwarding to Azan (POST /api/orders/store) is opt-in.
+ * Accept common truthy values so production (e.g. Vercel) is not broken by "1" vs "true".
+ */
+export function isAzanOrderForwardingEnabled(): boolean {
+  const raw = (process.env.AZAN_WHOLESALE_FORWARD_ORDERS || '').trim().toLowerCase()
+  if (!raw) return false
+  return ['true', '1', 'yes', 'on'].includes(raw)
+}
+
+export function getAzanOrderForwardEnvSummary(): {
+  forwardOrdersEnabled: boolean
+  hasApiCredentials: boolean
+  apiBaseUrl: string
+} {
+  return {
+    forwardOrdersEnabled: isAzanOrderForwardingEnabled(),
+    hasApiCredentials: Boolean(
+      process.env.AZAN_WHOLESALE_APP_ID?.trim() && process.env.AZAN_WHOLESALE_SECRET_KEY?.trim(),
+    ),
+    apiBaseUrl: (() => {
+      try {
+        return new URL(process.env.AZAN_WHOLESALE_BASE_URL || 'https://api.azanwholesale.com').origin
+      } catch {
+        return 'https://api.azanwholesale.com'
+      }
+    })(),
+  }
 }
