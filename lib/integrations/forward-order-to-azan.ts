@@ -72,6 +72,7 @@ export async function forwardOrderToAzanById(orderId: string): Promise<{
   const shippingText = addressParts.join(', ')
 
   const details: AzanOrderLine[] = []
+  const intTaka = isAzanOrderIntegerTaka()
 
   for (const line of order.items) {
     if (line.medicineId) continue
@@ -88,16 +89,20 @@ export async function forwardOrderToAzanById(orderId: string): Promise<{
       continue
     }
 
-    const lineUnit = roundMoney(normalizeAzanLinePrice(p.mrp, line.price))
-    if (lineUnit <= 0 || !Number.isFinite(lineUnit)) {
+    // Prefer order-line snapshot (what customer paid), then live selling, then MRP. Sending MRP as unit
+    // while the sale was at line.price is a common cause of Azan "Invalid price".
+    const rawUnit = resolveAzanLineUnitBdt(p, line)
+    if (rawUnit == null || rawUnit <= 0 || !Number.isFinite(rawUnit)) {
       console.warn(
         `[Azan] Order ${order.orderNumber}: product ${p.id} has invalid line price, skipping line.`,
       )
       continue
     }
-    const mrp = p.mrp != null && p.mrp > 0 && p.mrp + 0.0001 >= lineUnit ? roundMoney(p.mrp) : lineUnit
-    const wholesale = computeWholesaleForAzanLine(lineUnit, p.purchasePrice)
-    const totalLine = roundMoney(lineUnit * line.quantity)
+    const lineUnit = toAzanBdtAmount(rawUnit, intTaka)
+    const mrpVal = Math.max(rawUnit, p.mrp != null && p.mrp > 0 ? p.mrp : rawUnit)
+    const mrp = toAzanBdtAmount(mrpVal, intTaka)
+    const wholesale = toAzanBdtAmount(computeWholesaleForAzanLineRaw(p.purchasePrice, rawUnit), intTaka)
+    const totalLine = toAzanBdtAmount(lineUnit * line.quantity, intTaka)
 
     details.push({
       name: p.name,
@@ -139,7 +144,10 @@ export async function forwardOrderToAzanById(orderId: string): Promise<{
   }
 
   // Azan validates grand_total against line totals; order.total often includes delivery / discounts.
-  const grandFromLines = roundMoney(details.reduce((s, d) => s + d.total_price, 0))
+  const grandFromLines = toAzanBdtAmount(
+    details.reduce((s, d) => s + d.total_price, 0),
+    intTaka,
+  )
 
   const payload = {
     date: format(now, 'yyyy-MM-dd HH:mm:ss'),
@@ -269,28 +277,52 @@ function extractIntegerUserId(userId: string, phone?: string | null): number | n
   return null
 }
 
-/**
- * Keep all Azan-facing price fields aligned to a single canonical value
- * to avoid payload-level price mismatches.
- */
-function normalizeAzanLinePrice(mrp: number | null | undefined, fallback: number): number {
-  if (typeof mrp === 'number' && Number.isFinite(mrp) && mrp > 0) return mrp
-  return fallback
-}
-
 function roundMoney(n: number): number {
   return Math.round(n * 100) / 100
 }
 
 /**
- * Azan often rejects wholesale_price = 0. Prefer supplier cost; else a safe fraction of unit.
+ * When true (default), send whole-taka amounts — some Azan builds reject float cents.
+ * Set AZAN_WHOLESALE_ORDER_INTEGER_TAKA=false to use two decimal places.
  */
-function computeWholesaleForAzanLine(unit: number, purchase: number | null | undefined): number {
+function isAzanOrderIntegerTaka(): boolean {
+  const raw = (process.env.AZAN_WHOLESALE_ORDER_INTEGER_TAKA || 'true').trim().toLowerCase()
+  if (!raw) return true
+  return !['false', '0', 'no', 'off'].includes(raw)
+}
+
+function toAzanBdtAmount(n: number, asInteger: boolean): number {
+  if (!Number.isFinite(n) || n <= 0) return 1
+  if (asInteger) return Math.max(1, Math.round(n))
+  return roundMoney(n)
+}
+
+/** Order line unit in BDT: what was charged (snapshot), then product selling price, then MRP. */
+function resolveAzanLineUnitBdt(
+  p: { mrp: number | null; sellingPrice: number },
+  line: { price: number },
+): number | null {
+  if (line.price > 0 && Number.isFinite(line.price)) {
+    return line.price
+  }
+  if (p.sellingPrice > 0 && Number.isFinite(p.sellingPrice)) {
+    return p.sellingPrice
+  }
+  if (p.mrp != null && p.mrp > 0 && Number.isFinite(p.mrp)) {
+    return p.mrp
+  }
+  return null
+}
+
+/**
+ * Azan often rejects wholesale_price = 0. Prefer supplier cost; else a safe fraction of raw unit.
+ */
+function computeWholesaleForAzanLineRaw(purchase: number | null | undefined, rawUnit: number): number {
   if (typeof purchase === 'number' && Number.isFinite(purchase) && purchase > 0) {
     const w = roundMoney(purchase)
-    if (w < unit) return w
+    if (w < rawUnit) return w
   }
-  return roundMoney(Math.max(0.01, unit * 0.5))
+  return roundMoney(Math.max(0.01, rawUnit * 0.5))
 }
 
 function extractAzanOrderMetaFromResponse(data: unknown): {

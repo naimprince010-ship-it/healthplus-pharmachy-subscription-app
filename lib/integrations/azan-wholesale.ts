@@ -187,7 +187,7 @@ export function appendAzanInvalidPriceHint(message: string): string {
   if (!/invalid price/i.test(message)) {
     return message
   }
-  return `${message}\n\n— “Invalid price” is often: (1) grand_total did not match sum of line total_price, (2) wholesale_price was 0, or (3) mrp < unit. Halalzi aligns grand_total to lines and sets a non-zero wholesale; redeploy and push again.`
+  return `${message}\n\n— We now send the order line’s unit price (what the customer paid), not MRP as unit, and use whole taka by default. Optional env: AZAN_WHOLESALE_ORDER_INTEGER_TAKA=false for decimals. If it still fails, Azan may require your unit/wholesale to match their catalog — confirm with their team.`
 }
 
 /**
