@@ -24,14 +24,29 @@ export function buildProductWhereClause(section: HomeSection): Prisma.ProductWhe
     stockQuantity: { gt: 0 },
   }
 
-  if (section.filterType === 'category' && section.categoryId) {
+  if (section.filterType === 'category') {
+    // Guardrail: if category filter is selected but categoryId is missing,
+    // return no products instead of leaking products from other categories.
+    if (!section.categoryId) {
+      return {
+        ...baseWhere,
+        id: { in: [] },
+      }
+    }
     return {
       ...baseWhere,
       categoryId: section.categoryId,
     }
   }
 
-  if (section.filterType === 'brand' && section.brandName) {
+  if (section.filterType === 'brand') {
+    // Guardrail: missing brand should not fallback to all products.
+    if (!section.brandName?.trim()) {
+      return {
+        ...baseWhere,
+        id: { in: [] },
+      }
+    }
     return {
       ...baseWhere,
       brandName: section.brandName,
