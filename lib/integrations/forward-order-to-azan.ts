@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import {
   appendAzanAllProductsFailedHint,
+  appendAzanInvalidPriceHint,
   formatAzanOrderStoreFailureForAdmin,
   getAzanPlatformSource,
   getAzanWholesaleApiBaseUrl,
@@ -87,20 +88,25 @@ export async function forwardOrderToAzanById(orderId: string): Promise<{
       continue
     }
 
-    const normalizedPrice = normalizeAzanLinePrice(p.mrp, line.price)
-    const unit = normalizedPrice
-    const totalLine = normalizedPrice * line.quantity
-    const wholesale = p.purchasePrice ?? 0
-    const mrp = normalizedPrice
+    const lineUnit = roundMoney(normalizeAzanLinePrice(p.mrp, line.price))
+    if (lineUnit <= 0 || !Number.isFinite(lineUnit)) {
+      console.warn(
+        `[Azan] Order ${order.orderNumber}: product ${p.id} has invalid line price, skipping line.`,
+      )
+      continue
+    }
+    const mrp = p.mrp != null && p.mrp > 0 && p.mrp + 0.0001 >= lineUnit ? roundMoney(p.mrp) : lineUnit
+    const wholesale = computeWholesaleForAzanLine(lineUnit, p.purchasePrice)
+    const totalLine = roundMoney(lineUnit * line.quantity)
 
     details.push({
       name: p.name,
-      sales_price: unit,
+      sales_price: lineUnit,
       discount: 0,
       quantity: line.quantity,
       supplier: getSupplierNameForLine(),
       mrp_price: mrp,
-      unit_price: unit,
+      unit_price: lineUnit,
       total_price: totalLine,
       wholesale_price: wholesale,
       reward_point_used: 0,
@@ -132,6 +138,9 @@ export async function forwardOrderToAzanById(orderId: string): Promise<{
     return { ok: false, lineCount: details.length, error: msg }
   }
 
+  // Azan validates grand_total against line totals; order.total often includes delivery / discounts.
+  const grandFromLines = roundMoney(details.reduce((s, d) => s + d.total_price, 0))
+
   const payload = {
     date: format(now, 'yyyy-MM-dd HH:mm:ss'),
     order_details: details,
@@ -145,7 +154,7 @@ export async function forwardOrderToAzanById(orderId: string): Promise<{
       address: shippingText,
     },
     platform_order_id: platformOrderId,
-    grand_total: order.total,
+    grand_total: grandFromLines,
   }
 
   const res = await submitAzanResellerOrder(payload)
@@ -267,6 +276,21 @@ function extractIntegerUserId(userId: string, phone?: string | null): number | n
 function normalizeAzanLinePrice(mrp: number | null | undefined, fallback: number): number {
   if (typeof mrp === 'number' && Number.isFinite(mrp) && mrp > 0) return mrp
   return fallback
+}
+
+function roundMoney(n: number): number {
+  return Math.round(n * 100) / 100
+}
+
+/**
+ * Azan often rejects wholesale_price = 0. Prefer supplier cost; else a safe fraction of unit.
+ */
+function computeWholesaleForAzanLine(unit: number, purchase: number | null | undefined): number {
+  if (typeof purchase === 'number' && Number.isFinite(purchase) && purchase > 0) {
+    const w = roundMoney(purchase)
+    if (w < unit) return w
+  }
+  return roundMoney(Math.max(0.01, unit * 0.5))
 }
 
 function extractAzanOrderMetaFromResponse(data: unknown): {

@@ -131,6 +131,11 @@ export function getAzanOrderStoreErrorText(data: unknown): string {
       else if (v != null) chunks.push(String(v))
     }
   }
+  for (const [k, v] of Object.entries(bag)) {
+    if (/^\d+$/.test(k) && typeof v === 'string' && v.trim()) {
+      chunks.push(`[${k}] ${v.trim()}`)
+    }
+  }
   return chunks.join(' ').trim()
 }
 
@@ -176,6 +181,13 @@ export function appendAzanAllProductsFailedHint(message: string): string {
     return message
   }
   return `${message}\n\n— Tips: re-sync the catalog on the *same* host as orders (AZAN_WHOLESALE_BASE_URL). Staging keys + products synced from live (or the reverse) usually cause this. Check AZAN_WHOLESALE_SUPPLIER_NAME matches the supplier string Azan gave you (default AzanWholeSale). Ensure each line’s supplierSku exists on that Azan server.`
+}
+
+export function appendAzanInvalidPriceHint(message: string): string {
+  if (!/invalid price/i.test(message)) {
+    return message
+  }
+  return `${message}\n\n— “Invalid price” is often: (1) grand_total did not match sum of line total_price, (2) wholesale_price was 0, or (3) mrp < unit. Halalzi aligns grand_total to lines and sets a non-zero wholesale; redeploy and push again.`
 }
 
 /**
