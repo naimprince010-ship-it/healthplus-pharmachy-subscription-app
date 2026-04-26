@@ -532,7 +532,9 @@ export async function GET(request: NextRequest) {
           ? 'Customer orders are NOT sent to Azan until you set AZAN_WHOLESALE_FORWARD_ORDERS=true (or 1) on the production environment.'
           : !of.hasApiCredentials
             ? 'Set AZAN_WHOLESALE_APP_ID and AZAN_WHOLESALE_SECRET_KEY on production.'
-            : null,
+            : of.usingDefaultBaseUrl
+              ? 'If your App-Id/Secret are for Azan **sandbox/staging**, you must also set AZAN_WHOLESALE_BASE_URL to that API origin (e.g. https://staging.azanwholesale.com). The default is https://api.azanwholesale.com (live) and will reject sandbox keys.'
+              : null,
       },
     })
   } catch (error) {

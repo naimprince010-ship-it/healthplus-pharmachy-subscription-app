@@ -3,9 +3,14 @@
  * Auth: App-Id + Secret-Key (same as product sync). Base URL from AZAN_WHOLESALE_BASE_URL.
  */
 
-function getBaseUrl(): string {
+/** Resolves the Azan API origin (no trailing slash). Used for all Azan HTTP calls. */
+export function getAzanWholesaleApiBaseUrl(): string {
   const u = process.env.AZAN_WHOLESALE_BASE_URL || 'https://api.azanwholesale.com'
   return u.replace(/\/$/, '')
+}
+
+function getBaseUrl(): string {
+  return getAzanWholesaleApiBaseUrl()
 }
 
 function getAuthHeaders(): Record<string, string> {
@@ -179,7 +184,10 @@ export function getAzanOrderForwardEnvSummary(): {
   forwardOrdersEnabled: boolean
   hasApiCredentials: boolean
   apiBaseUrl: string
+  /** True when AZAN_WHOLESALE_BASE_URL is not set (defaults to live API host). */
+  usingDefaultBaseUrl: boolean
 } {
+  const usingDefaultBaseUrl = !process.env.AZAN_WHOLESALE_BASE_URL?.trim()
   return {
     forwardOrdersEnabled: isAzanOrderForwardingEnabled(),
     hasApiCredentials: Boolean(
@@ -187,10 +195,11 @@ export function getAzanOrderForwardEnvSummary(): {
     ),
     apiBaseUrl: (() => {
       try {
-        return new URL(process.env.AZAN_WHOLESALE_BASE_URL || 'https://api.azanwholesale.com').origin
+        return new URL(getAzanWholesaleApiBaseUrl()).origin
       } catch {
         return 'https://api.azanwholesale.com'
       }
     })(),
+    usingDefaultBaseUrl,
   }
 }

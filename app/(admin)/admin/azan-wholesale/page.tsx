@@ -67,6 +67,8 @@ interface OrderForwardStatus {
   forwardOrdersEnabled: boolean
   hasApiCredentials: boolean
   apiBaseUrl: string
+  /** Unset env → default live host; pair with staging keys = auth errors. */
+  usingDefaultBaseUrl?: boolean
   envVar: string
   hint: string | null
 }
@@ -381,6 +383,11 @@ export default function AzanWholesalePage() {
               Checkout will POST to Azan <code className="rounded bg-white/60 px-1 font-mono">{orderForward.apiBaseUrl}</code> for
               lines that belong to the Azan catalog (supplier SKUs / synced products).
             </p>
+            {orderForward.usingDefaultBaseUrl && orderForward.hint && (
+              <p className="mt-2 rounded-lg border border-amber-200/80 bg-amber-50/90 p-2.5 text-xs text-amber-950">
+                <strong className="font-semibold">Using default live API host.</strong> {orderForward.hint}
+              </p>
+            )}
           </div>
         </div>
       )}

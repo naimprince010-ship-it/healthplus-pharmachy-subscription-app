@@ -508,6 +508,10 @@ export default function OrderDetailsPage() {
               {isForwardingAzan ? 'Pushing to Azan…' : 'Push to Azan now'}
             </button>
           </div>
+          <p className="mb-4 text-xs text-gray-500">
+            Sandbox App-Id/Secret only work if the server env <code className="rounded bg-gray-100 px-1 font-mono">AZAN_WHOLESALE_BASE_URL</code> is set
+            to that same API (e.g. <code className="font-mono">https://staging.azanwholesale.com</code>), not the default live host.
+          </p>
           {azanForwardMessage && (
             <div
               className={`mb-4 rounded-lg p-3 text-sm ${

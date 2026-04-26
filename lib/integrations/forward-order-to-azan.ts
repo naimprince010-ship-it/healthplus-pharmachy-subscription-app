@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import {
   getAzanPlatformSource,
+  getAzanWholesaleApiBaseUrl,
   isAzanOrderAlreadyExistsResponse,
   isAzanOrderForwardingEnabled,
   submitAzanResellerOrder,
@@ -190,12 +191,26 @@ export async function forwardOrderToAzanById(orderId: string): Promise<{
       ? String((res.data as { message: unknown }).message)
       : `HTTP ${res.status}`
 
-  const truncated = errText.length > 4000 ? errText.slice(0, 4000) : errText
+  const withHint = appendAzanApiAuthErrorHint(errText)
+  const truncated = withHint.length > 4000 ? withHint.slice(0, 4000) : withHint
   await prisma.order.update({
     where: { id: orderId },
     data: { azanPushError: truncated },
   })
   return { ok: false, lineCount: details.length, error: errText }
+}
+
+/**
+ * Azan "Invalid App-ID or Secret-Key" usually means credentials don't match the **host** being called
+ * (e.g. sandbox keys + default https://api.azanwholesale.com).
+ */
+function appendAzanApiAuthErrorHint(message: string): string {
+  const m = message.toLowerCase()
+  if (!/invalid app|secret-key|unauthorized|app-id|secret key/.test(m)) {
+    return message
+  }
+  const base = getAzanWholesaleApiBaseUrl()
+  return `${message} [Current API: ${base}. Sandbox keys only work on the sandbox base URL. Set AZAN_WHOLESALE_BASE_URL to the same host Azan gave you for those keys, e.g. https://staging.azanwholesale.com, redeploy, retry.]`
 }
 
 /** Last slug segment if it looks like a numeric barcode. */
