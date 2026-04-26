@@ -34,6 +34,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
         azanPushedAt: true,
         azanPushError: true,
         azanOrderId: true,
+        azanStatusRaw: true,
       },
     })
 

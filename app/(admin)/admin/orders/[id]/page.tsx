@@ -19,6 +19,7 @@ interface OrderItem {
   product: {
     name: string
     imageUrl: string | null
+    supplierSku?: string | null
   } | null
 }
 
@@ -46,6 +47,8 @@ interface Order {
   azanStatusSyncedAt: string | null
   azanPushedAt: string | null
   azanPushError: string | null
+  /** Last Azan API JSON (e.g. error body when push failed). */
+  azanStatusRaw?: unknown | null
   user: {
     name: string
     phone: string
@@ -567,6 +570,20 @@ export default function OrderDetailsPage() {
               {order.azanPushError}
             </div>
           )}
+          {order.azanStatusRaw != null && order.azanStatusRaw !== undefined && (
+            <details className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm">
+              <summary className="cursor-pointer font-medium text-gray-800">Azan API response (raw JSON)</summary>
+              <pre className="mt-2 max-h-64 overflow-auto rounded border border-gray-200 bg-white p-2 text-xs text-gray-800">
+                {(() => {
+                  try {
+                    return JSON.stringify(order.azanStatusRaw, null, 2)
+                  } catch {
+                    return String(order.azanStatusRaw)
+                  }
+                })()}
+              </pre>
+            </details>
+          )}
         </div>
 
         <div className="grid gap-8 lg:grid-cols-2">
@@ -657,10 +674,16 @@ export default function OrderDetailsPage() {
               <div className="space-y-4">
                 {order.items.map((item) => {
                   const itemName = item.medicine?.name ?? item.product?.name ?? 'Unknown Item'
+                  const supplierSku = item.product?.supplierSku?.trim() || null
                   return (
                     <div key={item.id} className="flex items-start gap-4 border-b border-gray-200 pb-4 last:border-0">
                       <div className="flex-1">
                         <p className="font-medium text-gray-900">{itemName}</p>
+                        {supplierSku && (
+                          <p className="text-xs text-gray-500">
+                            Azan supplierSku: <code className="rounded bg-gray-100 px-1 font-mono">{supplierSku}</code>
+                          </p>
+                        )}
                         <p className="text-sm text-gray-600">
                           ৳{item.price.toFixed(2)} × {item.quantity}
                         </p>
