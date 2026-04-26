@@ -8,15 +8,32 @@ const DEFAULT_ALLOWED_HOSTS = [
   'staging.azanwholesale.com',
   'extent.azanwholesale.com',
   'azanwholesale.com',
+  'euadmin.eurasiasupplies.com',
   'antgoexirugyssoddvun.supabase.co',
 ]
 
 function getAllowedHosts(): Set<string> {
+  const fromUrlEnv = [
+    process.env.AZAN_WHOLESALE_BASE_URL,
+    ...(process.env.AZAN_WHOLESALE_FALLBACK_BASE_URLS || '')
+      .split(',')
+      .map((v) => v.trim())
+      .filter(Boolean),
+  ]
+    .map((raw) => {
+      try {
+        return raw ? new URL(raw).hostname.toLowerCase() : ''
+      } catch {
+        return ''
+      }
+    })
+    .filter(Boolean)
+
   const envHosts = (process.env.IMAGE_PROXY_ALLOWED_HOSTS || '')
     .split(',')
     .map((h) => h.trim().toLowerCase())
     .filter(Boolean)
-  return new Set([...DEFAULT_ALLOWED_HOSTS, ...envHosts])
+  return new Set([...DEFAULT_ALLOWED_HOSTS, ...fromUrlEnv, ...envHosts])
 }
 
 function isAllowedImageUrl(rawUrl: string): boolean {
