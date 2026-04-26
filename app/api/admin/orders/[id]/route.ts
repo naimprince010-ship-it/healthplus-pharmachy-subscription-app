@@ -29,7 +29,7 @@ export async function GET(
               select: { name: true, imageUrl: true },
             },
             product: {
-              select: { name: true, imageUrl: true, supplierSku: true },
+              select: { name: true, imageUrl: true, supplierSku: true, supplierProductId: true },
             },
           },
         },

@@ -27,9 +27,11 @@ function getAuthHeaders(): Record<string, string> {
   }
 }
 
-/** Line item for POST /api/orders/store (Azan docs — adjust fields if their API changes). */
+/** Line item for POST /api/orders/store (Azan docs). */
 export interface AzanOrderLine {
   name: string
+  /** Reseller (Halalzi) product id — required by Azan */
+  product_id: string
   sales_price: number
   discount?: number
   quantity: number
@@ -39,6 +41,7 @@ export interface AzanOrderLine {
   total_price: number
   wholesale_price?: number
   reward_point_used?: number
+  /** Azan Wholesale catalog id (from sync) — use with or instead of sku per Azan */
   supplier_product_id?: number
   sku?: string | number
 }
@@ -47,7 +50,8 @@ export interface AzanOrderPayload {
   date: string
   order_details: AzanOrderLine[]
   platform_source: string
-  platform_user_id?: number
+  /** Azan sample uses string user id */
+  platform_user_id: string
   order_source?: string
   shipping_address: {
     name: string
@@ -55,7 +59,7 @@ export interface AzanOrderPayload {
     phone?: string
     address: string
   }
-  platform_order_id: number
+  platform_order_id: string
   grand_total?: number
 }
 

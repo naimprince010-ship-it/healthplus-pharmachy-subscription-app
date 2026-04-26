@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { prismaWhereAzanCatalogProducts } from '@/lib/integrations/azan-catalog'
+import { parseAzanWholesaleProductNumericId, prismaWhereAzanCatalogProducts } from '@/lib/integrations/azan-catalog'
 import {
   buildAutoSourceCategoryIdMap,
   isAzanAutoCreateSourceCategoriesEnabled,
@@ -21,6 +21,8 @@ interface AzanNormalizedProduct {
   brandName: string | null
   sourceCategoryKey: string | null
   sourceCategoryLabel: string | null
+  /** Azan API product id (supplier_product_id in order store) */
+  supplierProductId: number | null
 }
 
 function parseNumber(value: unknown): number | null {
@@ -399,6 +401,7 @@ export async function POST() {
         deletedAt: null,
         supplierSku: product.sku,
         sourceCategoryName: product.sourceCategoryLabel || product.sourceCategoryKey,
+        supplierProductId: product.supplierProductId,
         ...(product.purchasePrice ? { purchasePrice: product.purchasePrice, sellingPrice, mrp: sellingPrice } : {}),
       }
 

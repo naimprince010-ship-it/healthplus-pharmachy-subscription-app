@@ -261,7 +261,8 @@ model Product {
   campaignRuleId   String?   // Reference to the DiscountRule that applied this price
 
   // Supplier / dropship (Azan import — used for /api/orders/store)
-  supplierSku String? // Barcode on supplier (Azan line item)
+  supplierSku        String? // Barcode on supplier (Azan line item)
+  supplierProductId  Int? // Azan catalog id; POST /api/orders/store supplier_product_id — run Azan sync to fill
   sourceCategoryName String? // Source category from supplier payload (e.g., Azan)
 
   // General Product Fields

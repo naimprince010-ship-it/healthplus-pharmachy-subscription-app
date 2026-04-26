@@ -20,6 +20,7 @@ interface OrderItem {
     name: string
     imageUrl: string | null
     supplierSku?: string | null
+    supplierProductId?: number | null
   } | null
 }
 
@@ -682,6 +683,13 @@ export default function OrderDetailsPage() {
                         {supplierSku && (
                           <p className="text-xs text-gray-500">
                             Azan supplierSku: <code className="rounded bg-gray-100 px-1 font-mono">{supplierSku}</code>
+                            {item.product?.supplierProductId != null && (
+                              <>
+                                {' '}
+                                · supplier_product_id:{' '}
+                                <code className="rounded bg-gray-100 px-1 font-mono">{item.product.supplierProductId}</code>
+                              </>
+                            )}
                           </p>
                         )}
                         <p className="text-sm text-gray-600">

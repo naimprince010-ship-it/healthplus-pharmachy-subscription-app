@@ -1,5 +1,20 @@
 import type { Prisma } from '@prisma/client'
 
+/** Azan product list: numeric catalog id (POST /api/orders/store `supplier_product_id`). */
+export function parseAzanWholesaleProductNumericId(item: Record<string, unknown>): number | null {
+  for (const k of ['id', 'product_id', 'supplier_product_id'] as const) {
+    const c = item[k]
+    if (typeof c === 'number' && Number.isInteger(c) && c > 0) {
+      return c
+    }
+    if (typeof c === 'string' && /^\d+$/.test(c.trim())) {
+      const n = parseInt(c.trim(), 10)
+      if (n > 0) return n
+    }
+  }
+  return null
+}
+
 /**
  * Reseller "bucket" category name (env or default). Products without a mapping
  * land here; mapped products use other local categories but stay Azan-sourced.

@@ -7,6 +7,7 @@ import {
   buildAutoSourceCategoryIdMap,
   isAzanAutoCreateSourceCategoriesEnabled,
 } from '@/lib/integrations/azan-source-categories'
+import { parseAzanWholesaleProductNumericId } from '@/lib/integrations/azan-catalog'
 
 type AnyRecord = Record<string, unknown>
 
@@ -18,6 +19,7 @@ interface AzanProduct {
   imageUrl: string | null
   sourceCategoryKey: string | null
   sourceCategoryLabel: string | null
+  supplierProductId: number | null
 }
 
 let prisma: PrismaClient | null = null
@@ -355,6 +357,7 @@ function normalizeProduct(raw: unknown): AzanProduct | null {
     imageUrl: normalizedImage ?? null,
     sourceCategoryKey: sourceCategory.key,
     sourceCategoryLabel: sourceCategory.label,
+    supplierProductId: parseAzanWholesaleProductNumericId(item as AnyRecord),
   }
 }
 
@@ -515,6 +518,7 @@ async function upsertAzanProducts(products: AzanProduct[]) {
           sourceCategoryName: item.sourceCategoryLabel || item.sourceCategoryKey,
           categoryId: resolvedCategoryId,
           deletedAt: null,
+          supplierProductId: item.supplierProductId,
         },
         create: {
           type: 'GENERAL',
@@ -531,6 +535,7 @@ async function upsertAzanProducts(products: AzanProduct[]) {
           inStock: hasStock,
           supplierSku: item.sku,
           sourceCategoryName: item.sourceCategoryLabel || item.sourceCategoryKey,
+          supplierProductId: item.supplierProductId,
         },
       })
       success++

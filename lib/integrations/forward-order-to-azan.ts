@@ -104,7 +104,8 @@ export async function forwardOrderToAzanById(orderId: string): Promise<{
     const wholesale = toAzanBdtAmount(computeWholesaleForAzanLineRaw(p.purchasePrice, rawUnit), intTaka)
     const totalLine = toAzanBdtAmount(lineUnit * line.quantity, intTaka)
 
-    details.push({
+    const linePayload: AzanOrderLine = {
+      product_id: p.id,
       name: p.name,
       sales_price: lineUnit,
       discount: 0,
@@ -115,8 +116,21 @@ export async function forwardOrderToAzanById(orderId: string): Promise<{
       total_price: totalLine,
       wholesale_price: wholesale,
       reward_point_used: 0,
-      sku: String(sku),
-    })
+    }
+    if (p.supplierProductId != null) {
+      linePayload.supplier_product_id = p.supplierProductId
+    }
+    // Azan sample uses numeric barcode when it is all digits
+    const skuStr = String(sku)
+    if (/^\d{4,20}$/.test(skuStr)) {
+      const n = Number(skuStr)
+      if (Number.isSafeInteger(n)) linePayload.sku = n
+      else linePayload.sku = skuStr
+    } else {
+      linePayload.sku = skuStr
+    }
+
+    details.push(linePayload)
   }
 
   if (details.length === 0) {
@@ -153,7 +167,7 @@ export async function forwardOrderToAzanById(orderId: string): Promise<{
     date: format(now, 'yyyy-MM-dd HH:mm:ss'),
     order_details: details,
     platform_source: getAzanPlatformSource(),
-    platform_user_id: platformUserId,
+    platform_user_id: String(platformUserId),
     order_source: 'website',
     shipping_address: {
       name: order.address.fullName,
@@ -161,7 +175,7 @@ export async function forwardOrderToAzanById(orderId: string): Promise<{
       phone: order.address.phone,
       address: shippingText,
     },
-    platform_order_id: platformOrderId,
+    platform_order_id: String(platformOrderId),
     grand_total: grandFromLines,
   }
 
