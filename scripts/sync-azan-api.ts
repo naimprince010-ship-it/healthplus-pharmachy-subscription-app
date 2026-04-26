@@ -498,6 +498,7 @@ async function upsertAzanProducts(products: AzanProduct[]) {
         resolvedCategoryId = autoByKey.get(k)!
       }
     }
+    const hasStock = item.stock > 0
     try {
       await prismaClient.product.upsert({
         where: { slug },
@@ -507,11 +508,13 @@ async function upsertAzanProducts(products: AzanProduct[]) {
           sellingPrice,
           mrp: sellingPrice,
           stockQuantity: item.stock,
-          inStock: item.stock > 0,
+          inStock: hasStock,
+          isActive: hasStock,
           imageUrl: item.imageUrl,
           supplierSku: item.sku,
           sourceCategoryName: item.sourceCategoryLabel || item.sourceCategoryKey,
           categoryId: resolvedCategoryId,
+          deletedAt: null,
         },
         create: {
           type: 'GENERAL',
@@ -522,10 +525,10 @@ async function upsertAzanProducts(products: AzanProduct[]) {
           mrp: sellingPrice,
           imageUrl: item.imageUrl,
           stockQuantity: item.stock,
-          isActive: false,
+          isActive: hasStock,
           categoryId: resolvedCategoryId,
           unit: 'pcs',
-          inStock: item.stock > 0,
+          inStock: hasStock,
           supplierSku: item.sku,
           sourceCategoryName: item.sourceCategoryLabel || item.sourceCategoryKey,
         },

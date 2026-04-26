@@ -26,7 +26,7 @@ const DEFAULT_SETTINGS: CheckoutSettings = {
   orderIdLabelBn: 'অর্ডার আইডি:',
   successTotalLabelBn: 'সর্বমোট:',
   successPaymentLabelBn: 'পেমেন্ট মেথড:',
-  infoNoteBn: 'আমাদের একজন ফার্মাসিস্ট শীঘ্রই আপনাকে ফোন করে অর্ডারটি কনফার্ম করবেন।',
+  infoNoteBn: 'আমাদের টিম শীঘ্রই আপনার সাথে যোগাযোগ করে অর্ডারটি নিশ্চিত করবে।',
   trackOrderButtonBn: 'অর্ডার ট্র্যাক করুন',
   goHomeButtonBn: 'হোম পেজে যান',
   codLabelBn: 'ক্যাশ অন ডেলিভারি',

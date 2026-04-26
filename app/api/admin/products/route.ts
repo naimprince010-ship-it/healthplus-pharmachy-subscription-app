@@ -126,16 +126,16 @@ export async function GET(request: NextRequest) {
     const query = queryResult.data
     const skip = (query.page - 1) * query.limit
 
-    const where: any = {
+    const baseWhere: any = {
       deletedAt: null,
     }
 
     if (query.type !== 'all') {
-      where.type = query.type
+      baseWhere.type = query.type
     }
 
     if (query.search) {
-      where.OR = [
+      baseWhere.OR = [
         { name: { contains: query.search, mode: 'insensitive' } },
         { brandName: { contains: query.search, mode: 'insensitive' } },
         { description: { contains: query.search, mode: 'insensitive' } },
@@ -143,18 +143,23 @@ export async function GET(request: NextRequest) {
     }
 
     if (query.categoryId) {
-      where.categoryId = query.categoryId
-    }
-
-    if (query.isActive !== 'all') {
-      where.isActive = query.isActive === 'true'
+      baseWhere.categoryId = query.categoryId
     }
 
     if (query.isFeatured !== 'all') {
-      where.isFeatured = query.isFeatured === 'true'
+      baseWhere.isFeatured = query.isFeatured === 'true'
     }
 
-    const total = await prisma.product.count({ where })
+    const where =
+      query.isActive === 'all'
+        ? baseWhere
+        : { ...baseWhere, isActive: query.isActive === 'true' }
+
+    const [total, activeCount, draftCount] = await Promise.all([
+      prisma.product.count({ where }),
+      prisma.product.count({ where: { ...baseWhere, isActive: true } }),
+      prisma.product.count({ where: { ...baseWhere, isActive: false } }),
+    ])
 
     const products = await prisma.product.findMany({
       where,
@@ -180,6 +185,11 @@ export async function GET(request: NextRequest) {
         limit: query.limit,
         total,
         totalPages: Math.ceil(total / query.limit),
+      },
+      statusCounts: {
+        all: activeCount + draftCount,
+        active: activeCount,
+        draft: draftCount,
       },
     })
   } catch (error) {

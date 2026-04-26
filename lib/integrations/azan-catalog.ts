@@ -27,7 +27,7 @@ export function isProductLinkedToAzanCatalog(
 }
 
 const nonEmpty = (field: 'supplierSku' | 'sourceCategoryName'): Prisma.ProductWhereInput => ({
-  AND: [{ [field]: { isNot: null } }, { NOT: { [field]: { equals: '' } } }],
+  AND: [{ [field]: { not: null } }, { NOT: { [field]: { equals: '' } } }],
 })
 
 /**

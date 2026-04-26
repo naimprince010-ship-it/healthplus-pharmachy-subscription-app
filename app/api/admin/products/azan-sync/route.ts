@@ -386,14 +386,16 @@ export async function POST() {
       }
 
       const existing = await prisma.product.findUnique({ where: { slug } })
+      const hasStock = product.stockQuantity > 0
       const updatePayload = {
         name: product.name,
         brandName: product.brandName,
         imageUrl: product.imageUrl,
         stockQuantity: product.stockQuantity,
-        inStock: product.stockQuantity > 0,
+        inStock: hasStock,
         categoryId: resolvedCategoryId,
-        isActive: false,
+        isActive: hasStock,
+        deletedAt: null,
         supplierSku: product.sku,
         sourceCategoryName: product.sourceCategoryLabel || product.sourceCategoryKey,
         ...(product.purchasePrice ? { purchasePrice: product.purchasePrice, sellingPrice, mrp: sellingPrice } : {}),

@@ -54,7 +54,7 @@ export default async function CategoriesPage({
       parentCategoryId: true,
       sortOrder: true,
       _count: {
-        select: { medicines: true },
+        select: { medicines: true, products: true },
       },
     },
     orderBy: [
@@ -93,6 +93,9 @@ export default async function CategoriesPage({
                   Slug
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  Products
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                   Medicines
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
@@ -113,6 +116,9 @@ export default async function CategoriesPage({
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                     {category.slug}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                    {category._count.products}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                     {category._count.medicines}

@@ -20,7 +20,7 @@ CREATE TABLE "CheckoutPageSettings" (
     "orderIdLabelBn" TEXT NOT NULL DEFAULT 'অর্ডার আইডি:',
     "successTotalLabelBn" TEXT NOT NULL DEFAULT 'সর্বমোট:',
     "successPaymentLabelBn" TEXT NOT NULL DEFAULT 'পেমেন্ট মেথড:',
-    "infoNoteBn" TEXT NOT NULL DEFAULT 'আমাদের একজন ফার্মাসিস্ট শীঘ্রই আপনাকে ফোন করে অর্ডারটি কনফার্ম করবেন।',
+    "infoNoteBn" TEXT NOT NULL DEFAULT 'আমাদের টিম শীঘ্রই আপনার সাথে যোগাযোগ করে অর্ডারটি নিশ্চিত করবে।',
     "trackOrderButtonBn" TEXT NOT NULL DEFAULT 'অর্ডার ট্র্যাক করুন',
     "goHomeButtonBn" TEXT NOT NULL DEFAULT 'হোম পেজে যান',
     "updatedAt" TIMESTAMP(3) NOT NULL,

@@ -30,6 +30,12 @@ interface Category {
   name: string
 }
 
+interface StatusCounts {
+  all: number
+  active: number
+  draft: number
+}
+
 export default function ProductsPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -41,6 +47,11 @@ export default function ProductsPage() {
     limit: 20,
     total: 0,
     totalPages: 0,
+  })
+  const [statusCounts, setStatusCounts] = useState<StatusCounts>({
+    all: 0,
+    active: 0,
+    draft: 0,
   })
 
   const [search, setSearch] = useState(searchParams.get('search') || '')
@@ -77,6 +88,9 @@ export default function ProductsPage() {
       if (res.ok) {
         setProducts(data.products)
         setPagination(data.pagination)
+        if (data.statusCounts) {
+          setStatusCounts(data.statusCounts)
+        }
       }
     } catch (error) {
       console.error('Failed to fetch products:', error)
@@ -109,6 +123,11 @@ export default function ProductsPage() {
       isActive: statusFilter,
       page: '1'
     })
+  }
+
+  const handleQuickStatusChange = (nextStatus: 'all' | 'true' | 'false') => {
+    setStatusFilter(nextStatus)
+    updateFilters({ isActive: nextStatus, page: '1' })
   }
 
   const updateFilters = (filters: Record<string, string>) => {
@@ -369,6 +388,37 @@ export default function ProductsPage() {
       </div>
 
       <div className="space-y-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">View:</span>
+          <button
+            type="button"
+            onClick={() => handleQuickStatusChange('all')}
+            className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+              statusFilter === 'all' ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            All ({statusCounts.all})
+          </button>
+          <button
+            type="button"
+            onClick={() => handleQuickStatusChange('true')}
+            className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+              statusFilter === 'true' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-700 hover:bg-green-200'
+            }`}
+          >
+            Active ({statusCounts.active})
+          </button>
+          <button
+            type="button"
+            onClick={() => handleQuickStatusChange('false')}
+            className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+              statusFilter === 'false' ? 'bg-amber-600 text-white' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+            }`}
+          >
+            Draft ({statusCounts.draft})
+          </button>
+        </div>
+
         <form onSubmit={handleSearch} className="flex items-center gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />

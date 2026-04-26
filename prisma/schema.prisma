@@ -838,7 +838,7 @@ model CheckoutPageSettings {
   orderIdLabelBn           String   @default("অর্ডার আইডি:")
   successTotalLabelBn      String   @default("সর্বমোট:")
   successPaymentLabelBn    String   @default("পেমেন্ট মেথড:")
-  infoNoteBn               String   @default("আমাদের একজন ফার্মাসিস্ট শীঘ্রই আপনাকে ফোন করে অর্ডারটি কনফার্ম করবেন।")
+  infoNoteBn               String   @default("আমাদের টিম শীঘ্রই আপনার সাথে যোগাযোগ করে অর্ডারটি নিশ্চিত করবে।")
   trackOrderButtonBn       String   @default("অর্ডার ট্র্যাক করুন")
   goHomeButtonBn           String   @default("হোম পেজে যান")
   updatedAt                DateTime @updatedAt
