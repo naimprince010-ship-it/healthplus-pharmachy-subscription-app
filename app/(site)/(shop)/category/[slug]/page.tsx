@@ -1,7 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
 import { AddToCartButton } from '@/components/AddToCartButton'
 import { getEffectivePrices } from '@/lib/pricing'
 import { getStorefrontImageUrl } from '@/lib/image-url'
@@ -265,11 +264,10 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             <div className="flex items-center gap-4">
               {categoryImageUrl && (
                 <div className="relative h-16 w-16 overflow-hidden rounded-lg">
-                  <Image
+                  <img
                     src={categoryImageUrl}
                     alt={category.name}
-                    fill
-                    className="object-cover"
+                    className="h-full w-full object-cover"
                   />
                 </div>
               )}
@@ -320,11 +318,10 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                     <Link href={detailPath} className="flex-1">
                       <div className="relative mb-4 h-48 overflow-hidden rounded-lg bg-gray-100">
                         {displayImageUrl ? (
-                          <Image
+                          <img
                             src={displayImageUrl}
                             alt={item.name}
-                            fill
-                            className="object-cover"
+                            className="h-full w-full object-cover"
                           />
                         ) : (
                           <div className="flex h-full items-center justify-center text-gray-400">
