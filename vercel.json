@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/market-intel",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/facebook-marketing",
+      "schedule": "0 3 * * *"
     }
   ]
 }
