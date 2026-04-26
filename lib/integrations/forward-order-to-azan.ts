@@ -98,12 +98,32 @@ export async function forwardOrderToAzanById(orderId: string): Promise<{
       )
       continue
     }
+    // Net unit actually charged (after any cart/checkout discount captured on the line)
     const lineUnit = toAzanBdtAmount(rawUnit, intTaka)
-    const mrpVal = Math.max(rawUnit, p.mrp != null && p.mrp > 0 ? p.mrp : rawUnit)
-    let mrp = toAzanBdtAmount(mrpVal, intTaka)
-    // Some Azan builds reject mrp_price === unit_price; keep MRP strictly above the selling line.
+    // Sticker / list: Azan often validates that sales_price is the public list and unit_price is what
+    // you charge; when both were identical, their API can return "Invalid price" (see order line [0]).
+    const listRaw =
+      p.sellingPrice > 0 && Number.isFinite(p.sellingPrice) ? Math.max(p.sellingPrice, rawUnit) : rawUnit
+    let salesListUnit = toAzanBdtAmount(listRaw, intTaka)
+    if (salesListUnit < lineUnit) {
+      salesListUnit = lineUnit
+    }
+    const discountPerUnit = intTaka
+      ? Math.max(0, salesListUnit - lineUnit)
+      : roundMoney(Math.max(0, salesListUnit - lineUnit))
+
+    const mrpRaw = Math.max(
+      p.mrp != null && p.mrp > 0 ? p.mrp : 0,
+      listRaw,
+      rawUnit,
+    )
+    const mrpBase = mrpRaw > 0 ? mrpRaw : Math.max(listRaw, rawUnit)
+    let mrp = toAzanBdtAmount(mrpBase, intTaka)
     if (mrp <= lineUnit) {
       mrp = intTaka ? lineUnit + 1 : roundMoney(lineUnit + 0.01)
+    }
+    if (mrp <= salesListUnit) {
+      mrp = intTaka ? salesListUnit + 1 : roundMoney(salesListUnit + 0.01)
     }
     const wholesale = toAzanBdtAmount(computeWholesaleForAzanLineRaw(p.purchasePrice, rawUnit), intTaka)
     const totalLine = toAzanBdtAmount(lineUnit * line.quantity, intTaka)
@@ -111,8 +131,8 @@ export async function forwardOrderToAzanById(orderId: string): Promise<{
     const linePayload: AzanOrderLine = {
       product_id: p.id,
       name: p.name,
-      sales_price: lineUnit,
-      discount: 0,
+      sales_price: salesListUnit,
+      discount: discountPerUnit,
       quantity: line.quantity,
       supplier: getSupplierNameForLine(),
       mrp_price: mrp,

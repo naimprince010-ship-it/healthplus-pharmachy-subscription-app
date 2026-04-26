@@ -191,7 +191,7 @@ export function appendAzanInvalidPriceHint(message: string): string {
   if (!/invalid price/i.test(message)) {
     return message
   }
-  return `${message}\n\n— We now send the order line’s unit price (what the customer paid), not MRP as unit, and use whole taka by default. Optional env: AZAN_WHOLESALE_ORDER_INTEGER_TAKA=false for decimals. If it still fails, Azan may require your unit/wholesale to match their catalog — confirm with their team.`
+  return `${message}\n\n— We send unit_price = what the line charged, sales_price = list (product selling) when set (with per-unit discount when list is higher), and whole taka by default. Optional env: AZAN_WHOLESALE_ORDER_INTEGER_TAKA=false for decimals. If it still fails, check AZAN_WHOLESALE_BASE_URL + catalog re-sync, or ask Azan to confirm required price fields.`
 }
 
 /**
