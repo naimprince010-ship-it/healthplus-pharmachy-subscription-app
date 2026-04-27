@@ -21,14 +21,31 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
+    const { searchParams } = new URL(request.url)
+    const categoryId = searchParams.get('categoryId')?.trim() || undefined
+    const q = searchParams.get('q')?.trim() || undefined
+
     // Find products with external image URLs from any of the known domains
     const products = await prisma.product.findMany({
       where: {
-        OR: EXTERNAL_IMAGE_DOMAINS.map(domain => ({
-          imageUrl: {
-            contains: domain,
+        AND: [
+          ...(categoryId ? [{ categoryId }] : []),
+          ...(q
+            ? [{
+              OR: [
+                { name: { contains: q, mode: 'insensitive' } },
+                { slug: { contains: q, mode: 'insensitive' } },
+              ],
+            }]
+            : []),
+          {
+            OR: EXTERNAL_IMAGE_DOMAINS.map(domain => ({
+              imageUrl: {
+                contains: domain,
+              },
+            })),
           },
-        })),
+        ],
       },
       select: {
         id: true,

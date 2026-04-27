@@ -1,13 +1,18 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { AlertCircle, CheckCircle, Loader2, Image as ImageIcon, RefreshCw } from 'lucide-react'
+import { AlertCircle, CheckCircle, Loader2, Image as ImageIcon, RefreshCw, Search } from 'lucide-react'
 
 interface Product {
   id: string
   name: string
   slug: string
   imageUrl: string | null
+}
+
+interface Category {
+  id: string
+  name: string
 }
 
 interface FixResult {
@@ -21,21 +26,43 @@ interface FixResult {
 
 export default function FixImagesPage() {
   const [products, setProducts] = useState<Product[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [fixing, setFixing] = useState(false)
   const [fixingId, setFixingId] = useState<string | null>(null)
   const [results, setResults] = useState<FixResult[]>([])
   const [error, setError] = useState('')
+  const [selectedCategoryId, setSelectedCategoryId] = useState('')
+  const [appliedCategoryId, setAppliedCategoryId] = useState('')
+  const [searchInput, setSearchInput] = useState('')
+  const [appliedSearch, setAppliedSearch] = useState('')
 
   useEffect(() => {
+    fetchCategories()
     fetchProducts()
   }, [])
 
-  const fetchProducts = async () => {
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch('/api/categories')
+      const data = await res.json()
+      if (res.ok) {
+        setCategories(data.categories || [])
+      }
+    } catch {
+      // Keep page usable even if categories fail to load.
+    }
+  }
+
+  const fetchProducts = async (filters?: { categoryId?: string; q?: string }) => {
     setLoading(true)
     setError('')
     try {
-      const res = await fetch('/api/admin/fix-external-images')
+      const params = new URLSearchParams()
+      if (filters?.categoryId) params.set('categoryId', filters.categoryId)
+      if (filters?.q) params.set('q', filters.q)
+      const query = params.toString()
+      const res = await fetch(`/api/admin/fix-external-images${query ? `?${query}` : ''}`)
       const data = await res.json()
       if (res.ok) {
         setProducts(data.products || [])
@@ -86,8 +113,8 @@ export default function FixImagesPage() {
       const data = await res.json()
       if (res.ok) {
         setResults(data.results || [])
-        // Refresh the list
-        await fetchProducts()
+        // Refresh the list (preserve active filters)
+        await fetchProducts({ categoryId: appliedCategoryId, q: appliedSearch })
       } else {
         setError(data.error || 'Failed to fix images')
       }
@@ -96,6 +123,22 @@ export default function FixImagesPage() {
     } finally {
       setFixing(false)
     }
+  }
+
+  const handleSearch = () => {
+    const categoryId = selectedCategoryId.trim()
+    const q = searchInput.trim()
+    setAppliedCategoryId(categoryId)
+    setAppliedSearch(q)
+    fetchProducts({ categoryId, q })
+  }
+
+  const handleResetFilters = () => {
+    setSelectedCategoryId('')
+    setSearchInput('')
+    setAppliedCategoryId('')
+    setAppliedSearch('')
+    fetchProducts()
   }
 
   return (
@@ -123,7 +166,7 @@ export default function FixImagesPage() {
           </div>
           <div className="flex gap-2">
             <button
-              onClick={fetchProducts}
+              onClick={() => fetchProducts({ categoryId: appliedCategoryId, q: appliedSearch })}
               disabled={loading}
               className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
             >
@@ -151,6 +194,60 @@ export default function FixImagesPage() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Filters */}
+      <div className="mb-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-col gap-3 md:flex-row md:items-end">
+          <div className="w-full md:w-64">
+            <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-gray-500">
+              Category
+            </label>
+            <select
+              value={selectedCategoryId}
+              onChange={(e) => setSelectedCategoryId(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none"
+            >
+              <option value="">All Categories</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="w-full md:flex-1">
+            <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-gray-500">
+              Search Product
+            </label>
+            <input
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Name or slug"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none"
+            />
+          </div>
+          <button
+            onClick={handleSearch}
+            disabled={loading}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 disabled:opacity-50"
+          >
+            <Search className="h-4 w-4" />
+            Search
+          </button>
+          <button
+            onClick={handleResetFilters}
+            disabled={loading}
+            className="inline-flex items-center justify-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            Reset
+          </button>
+        </div>
+        {(appliedCategoryId || appliedSearch) && (
+          <p className="mt-3 text-xs text-gray-500">
+            Showing filtered results
+          </p>
+        )}
       </div>
 
       {/* Results */}
