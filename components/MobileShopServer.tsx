@@ -6,6 +6,26 @@ import {
   isMedicineShopEnabled,
 } from '@/lib/site-features'
 
+/** Only columns the shop needs — avoids `SELECT`ing newer schema fields missing on old/local DBs. */
+const productForMobileShop = {
+  id: true,
+  type: true,
+  name: true,
+  slug: true,
+  brandName: true,
+  description: true,
+  sellingPrice: true,
+  mrp: true,
+  stockQuantity: true,
+  imageUrl: true,
+  discountPercentage: true,
+  flashSalePrice: true,
+  flashSaleStart: true,
+  flashSaleEnd: true,
+  isFlashSale: true,
+  category: { select: { id: true, name: true, slug: true } },
+} as const
+
 async function getAllDescendantCategoryIds(parentId: string): Promise<string[]> {
   const children = await prisma.category.findMany({
     where: { parentCategoryId: parentId },
@@ -42,11 +62,7 @@ export async function MobileShopServer() {
       },
       orderBy: { createdAt: 'desc' },
       take: 10,
-      include: {
-        category: {
-          select: { id: true, name: true, slug: true },
-        },
-      },
+      select: productForMobileShop,
     }),
     prisma.category.findMany({
       where: {
@@ -111,11 +127,7 @@ export async function MobileShopServer() {
         },
         orderBy: { createdAt: 'desc' },
         take: 10,
-        include: {
-          category: {
-            select: { id: true, name: true, slug: true },
-          },
-        },
+        select: productForMobileShop,
       })
 
       return {
