@@ -809,9 +809,56 @@ async function extractProductsFromChaldalCategory(url: string): Promise<Category
   const html = await response.text()
   const $ = cheerio.load(html)
 
+  const seen = new Set<string>()
+
+  const pushProduct = (
+    rawHref: string,
+    rawName: string | null | undefined,
+    price: number | null,
+    imageUrl: string | null,
+  ) => {
+    if (!rawHref) return
+
+    const fullUrl = rawHref.startsWith('http')
+      ? rawHref
+      : `https://chaldal.com${rawHref.startsWith('/') ? '' : '/'}${rawHref}`
+
+    let pathname = ''
+    try {
+      pathname = new URL(fullUrl).pathname
+    } catch {
+      return
+    }
+
+    const excludedPrefixes = ['/search', '/offers', '/help', '/login', '/categories', '/category']
+    if (
+      pathname === '/' ||
+      excludedPrefixes.some((prefix) => pathname.startsWith(prefix)) ||
+      pathname.split('/').filter(Boolean).length !== 1
+    ) {
+      return
+    }
+
+    const slug = pathname.replace(/^\//, '').trim()
+    if (!slug || slug.length < 3 || !slug.includes('-')) return
+    if (seen.has(fullUrl)) return
+
+    const derivedName = slug
+      .split('-')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
+
+    const name = cleanProductName((rawName || '').trim() || derivedName)
+    if (!name || name.length < 3) return
+
+    seen.add(fullUrl)
+    products.push({ name, url: fullUrl, price, imageUrl })
+  }
+
+  // Legacy Chaldal layout selector.
   $('a.btnShowDetails').each((_, el) => {
     const href = $(el).attr('href')
-    if (!href || href.length < 5) return
+    if (!href) return
 
     let productContainer = $(el).parent()
     for (let i = 0; i < 10 && productContainer.length; i++) {
@@ -820,34 +867,46 @@ async function extractProductsFromChaldalCategory(url: string): Promise<Category
       productContainer = productContainer.parent()
     }
 
-    const nameFromHref = href
-      .replace(/^\//, '')
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ')
-
-    if (nameFromHref.length < 3) return
-
     const containerText = productContainer.text()
-    const priceMatches = containerText.match(/৳\s*([\d,.]+)/g)
+    const priceMatches = containerText.match(/(?:৳|Tk)\s*([\d,.০-৯]+)/gi)
     let price: number | null = null
-
     if (priceMatches && priceMatches.length > 0) {
-      const prices = priceMatches.map(p => parsePrice(p)).filter((p): p is number => p !== null)
-      if (prices.length > 0) {
-        price = Math.max(...prices)
-      }
+      const prices = priceMatches.map((p) => parsePrice(p)).filter((p): p is number => p !== null)
+      if (prices.length > 0) price = Math.max(...prices)
     }
 
-    const img = productContainer.find('img[src*="chaldn.com"]').first()
-    const imageUrl = img.attr('src') || null
+    const img = productContainer.find('img[src*="chaldn.com"], img[src*="chaldal"]').first()
+    const imageUrl = img.attr('src') || img.attr('data-src') || null
 
-    const fullUrl = `https://chaldal.com${href}`
-
-    if (!products.some(p => p.url === fullUrl)) {
-      products.push({ name: nameFromHref, url: fullUrl, price, imageUrl })
-    }
+    pushProduct(href, $(el).text(), price, imageUrl)
   })
+
+  // Fallback for newer layouts where product anchors/classes changed.
+  if (products.length === 0) {
+    $('a[href]').each((_, el) => {
+      const href = $(el).attr('href')
+      if (!href) return
+
+      let container = $(el)
+      for (let i = 0; i < 6 && container.length; i++) {
+        const text = container.text().replace(/\s+/g, ' ').trim()
+        if (/(?:৳|Tk)\s*[\d,.০-৯]+/i.test(text) && text.length > 15) break
+        container = container.parent()
+      }
+
+      const containerText = container.text().replace(/\s+/g, ' ').trim()
+      const priceMatches = containerText.match(/(?:৳|Tk)\s*([\d,.০-৯]+)/gi)
+      if (!priceMatches || priceMatches.length === 0) return
+
+      const prices = priceMatches.map((p) => parsePrice(p)).filter((p): p is number => p !== null)
+      const price = prices.length > 0 ? Math.max(...prices) : null
+
+      const imageUrl = container.find('img').first().attr('src') || container.find('img').first().attr('data-src') || null
+      const rawName = $(el).text() || container.find('img').first().attr('alt') || null
+
+      pushProduct(href, rawName, price, imageUrl)
+    })
+  }
 
   return products
 }
