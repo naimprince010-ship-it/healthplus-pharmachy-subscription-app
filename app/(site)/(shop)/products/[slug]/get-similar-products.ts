@@ -137,7 +137,7 @@ export async function getSimilarProducts(
       }
     })
 
-    return mapped.filter((p): p is SimilarProduct => p !== null)
+    return mapped.filter((p: SimilarProduct | null): p is SimilarProduct => p !== null)
   } catch (error) {
     console.error('Error fetching similar products:', error)
     return []
