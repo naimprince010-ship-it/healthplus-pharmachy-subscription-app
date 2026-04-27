@@ -60,7 +60,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
 
   // Fetch suggestions when debounced query changes
   useEffect(() => {
-    if (!debouncedQuery || debouncedQuery.length < 2) {
+    if (!debouncedQuery) {
       setSuggestions([])
       setShowSuggestions(false)
       return
@@ -248,7 +248,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                           </Link>
                         ))}
                       </div>
-                    ) : debouncedQuery.length >= 2 ? (
+                    ) : debouncedQuery.length >= 1 ? (
                       <div className="py-4 text-center text-sm text-gray-500">
                         No products found
                       </div>

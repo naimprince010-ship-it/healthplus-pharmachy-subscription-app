@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { searchProducts, getSearchIndex } from '@/lib/search-index'
+import { searchProducts, getSearchIndex, searchProductsByPrefix } from '@/lib/search-index'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     const limit = Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 40) : 40
     const mode = searchParams.get('mode') || 'full'
 
-    if (!q || q.length < 2) {
+    if (!q) {
       if (mode === 'suggestions') {
         return NextResponse.json({ items: [], query: q })
       }
@@ -23,6 +23,27 @@ export async function GET(request: NextRequest) {
         items: topProducts.slice(0, 10).map(formatSuggestion),
         query: q,
         count: topProducts.length,
+      })
+    }
+
+    if (q.length === 1) {
+      const prefixResults = await searchProductsByPrefix(q, limit)
+      if (mode === 'suggestions') {
+        const items = prefixResults.slice(0, Math.min(limit, 10)).map((r) => formatSuggestion(r.item))
+        return NextResponse.json({
+          items,
+          query: q,
+          count: items.length,
+        })
+      }
+
+      const products = prefixResults.map((r) => formatProduct(r.item))
+      const items = prefixResults.slice(0, 10).map((r) => formatSuggestion(r.item))
+      return NextResponse.json({
+        products,
+        items,
+        query: q,
+        count: products.length,
       })
     }
 

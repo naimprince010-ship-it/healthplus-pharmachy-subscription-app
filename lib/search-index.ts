@@ -351,6 +351,60 @@ export async function searchProducts(
 }
 
 /**
+ * Fast prefix search for very short queries (e.g. single-character input).
+ * This keeps suggestions useful without flooding results with unrelated contains matches.
+ */
+export async function searchProductsByPrefix(
+  query: string,
+  limit: number = 20,
+): Promise<SearchResult[]> {
+  const rawQuery = query.trim()
+  if (!rawQuery) return []
+
+  try {
+    const rows = await prisma.product.findMany({
+      where: {
+        isActive: true,
+        deletedAt: null,
+        OR: [
+          { name: { startsWith: rawQuery, mode: 'insensitive' as const } },
+          { slug: { startsWith: rawQuery, mode: 'insensitive' as const } },
+          { brandName: { startsWith: rawQuery, mode: 'insensitive' as const } },
+        ],
+      },
+      include: {
+        category: true,
+        medicine: true,
+      },
+      orderBy: [
+        { isFeatured: 'desc' },
+        { popularityScore: 'desc' },
+        { name: 'asc' },
+      ],
+      take: limit * 3,
+    })
+
+    const mapped: SearchResult[] = rows.map((p) => {
+      const item = mapToSearchableProduct(p)
+      const startsName = item.name.toLowerCase().startsWith(rawQuery.toLowerCase())
+      const startsBrand = (item.brandName || '').toLowerCase().startsWith(rawQuery.toLowerCase())
+      const score = startsName ? 1 : startsBrand ? 0.8 : 0.7
+      return {
+        item,
+        score,
+        combinedScore: score + (item.popularityScore ?? 0) / 100000,
+      }
+    })
+
+    mapped.sort((a, b) => b.combinedScore - a.combinedScore)
+    return filterSearchResultsByRetailScope(mapped).slice(0, limit)
+  } catch (error) {
+    console.error('Prefix search failed:', error)
+    return []
+  }
+}
+
+/**
  * Very basic Levenshtein distance for fuzzy matching
  */
 function levenshteinDistance(a: string, b: string): number {
