@@ -11,6 +11,89 @@ export const maxDuration = 60
 // External image domains to check (not hosted on Supabase)
 const EXTERNAL_IMAGE_DOMAINS = ['chaldn.com', 'arogga.com', 'medeasy.health', 'othoba.com']
 
+function extractCandidateImageUrls(imageUrl: string): string[] {
+  const candidates: string[] = []
+  const push = (u: string | null | undefined) => {
+    if (!u) return
+    const normalized = u.trim()
+    if (!normalized) return
+    if (!candidates.includes(normalized)) candidates.push(normalized)
+  }
+
+  push(imageUrl)
+
+  try {
+    const parsed = new URL(imageUrl)
+    // Chaldal proxy links often carry the original URL in `src` or `url`.
+    const src = parsed.searchParams.get('src')
+    const url = parsed.searchParams.get('url')
+    if (src) push(decodeURIComponent(src))
+    if (url) push(decodeURIComponent(url))
+  } catch {
+    // keep original candidate only
+  }
+
+  return candidates
+}
+
+async function downloadImageWithFallback(imageUrl: string): Promise<{
+  buffer: Buffer
+  contentType: string
+}> {
+  const candidates = extractCandidateImageUrls(imageUrl)
+  const userAgent =
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+  let lastError = 'Unknown download error'
+
+  for (const candidate of candidates) {
+    const headersList: Array<Record<string, string>> = [
+      {
+        'User-Agent': userAgent,
+        Accept: 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+      },
+      {
+        'User-Agent': userAgent,
+        Accept: 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+        Referer: 'https://chaldal.com/',
+        Origin: 'https://chaldal.com',
+      },
+    ]
+
+    for (const headers of headersList) {
+      try {
+        const response = await fetch(candidate, {
+          headers,
+          redirect: 'follow',
+        })
+
+        if (!response.ok) {
+          lastError = `Failed to download ${candidate}: ${response.status} ${response.statusText}`
+          continue
+        }
+
+        const contentType = response.headers.get('content-type') || 'image/webp'
+        if (!contentType.includes('image')) {
+          lastError = `Invalid content-type for ${candidate}: ${contentType}`
+          continue
+        }
+
+        const arrayBuffer = await response.arrayBuffer()
+        const buffer = Buffer.from(arrayBuffer)
+        if (!buffer.length) {
+          lastError = `Downloaded empty file from ${candidate}`
+          continue
+        }
+
+        return { buffer, contentType }
+      } catch (error) {
+        lastError = error instanceof Error ? error.message : `Failed to download ${candidate}`
+      }
+    }
+  }
+
+  throw new Error(lastError)
+}
+
 /**
  * GET /api/admin/fix-external-images
  * List all products with external image URLs (Chaldal, Arogga, MedEasy, etc.)
@@ -147,30 +230,7 @@ export async function POST(request: NextRequest) {
         }
 
         console.log(`[FixImages] Downloading from: ${product.imageUrl}`)
-        // Download the image with improved headers
-        const response = await fetch(product.imageUrl, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
-          },
-        })
-
-        if (!response.ok) {
-          const errorMsg = `Failed to download: ${response.status} ${response.statusText}`
-          console.error(`[FixImages] ${errorMsg} for ${product.imageUrl}`)
-          results.push({
-            id: product.id,
-            name: product.name,
-            status: 'failed',
-            oldUrl: product.imageUrl,
-            error: errorMsg,
-          })
-          continue
-        }
-
-        const contentType = response.headers.get('content-type') || 'image/webp'
-        const arrayBuffer = await response.arrayBuffer()
-        const buffer = Buffer.from(arrayBuffer)
+        const { buffer, contentType } = await downloadImageWithFallback(product.imageUrl)
         console.log(`[FixImages] Downloaded ${buffer.length} bytes. Content-Type: ${contentType}`)
 
         // Determine file extension from content type
