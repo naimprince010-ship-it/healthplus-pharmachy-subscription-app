@@ -28,6 +28,7 @@ interface Product {
 interface Category {
   id: string
   name: string
+  slug: string
 }
 
 export function ProductsContentClient() {
@@ -37,6 +38,7 @@ export function ProductsContentClient() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState(searchParams.get('search') || '')
   const [categoryFilter, setCategoryFilter] = useState(searchParams.get('categoryId') || '')
+  const [sectionTitle, setSectionTitle] = useState<string | null>(null)
   const [showFilters, setShowFilters] = useState(false)
 
   useEffect(() => {
@@ -55,17 +57,27 @@ export function ProductsContentClient() {
       const params = new URLSearchParams()
       params.set('type', 'all')
       if (search) params.set('search', search)
-      if (categoryFilter) params.set('categoryId', categoryFilter)
+      const sectionParam = searchParams.get('section')
+      const categorySlugParam = searchParams.get('categorySlug')
+      if (sectionParam) {
+        params.set('section', sectionParam)
+      } else {
+        if (categoryFilter) params.set('categoryId', categoryFilter)
+        if (categorySlugParam) params.set('categorySlug', categorySlugParam)
+      }
 
       const res = await fetch(`/api/products?${params}`)
       const data = await res.json()
 
       if (res.ok) {
         setProducts(data.products || [])
+        setSectionTitle(typeof data.sectionTitle === 'string' ? data.sectionTitle : null)
       } else {
+        setSectionTitle(null)
         console.error('Failed to fetch products:', data.error)
       }
     } catch (error) {
+      setSectionTitle(null)
       console.error('Failed to fetch products:', error)
     } finally {
       setLoading(false)
@@ -90,7 +102,14 @@ export function ProductsContentClient() {
     e.preventDefault()
     const params = new URLSearchParams()
     if (search) params.set('search', search)
-    if (categoryFilter) params.set('categoryId', categoryFilter)
+    const sectionParam = searchParams.get('section')
+    const categorySlugParam = searchParams.get('categorySlug')
+    if (sectionParam) {
+      params.set('section', sectionParam)
+    } else {
+      if (categoryFilter) params.set('categoryId', categoryFilter)
+      if (categorySlugParam) params.set('categorySlug', categorySlugParam)
+    }
     window.location.href = `/products?${params}`
   }
 
@@ -99,13 +118,26 @@ export function ProductsContentClient() {
     [categories, categoryFilter]
   )
 
+  const categoryFromSlug = useMemo(() => {
+    const slug = searchParams.get('categorySlug')
+    if (!slug) return null
+    return categories.find((c) => c.slug === slug) || null
+  }, [categories, searchParams])
+
+  const hasActiveFilters = Boolean(
+    searchParams.get('section') || searchParams.get('categorySlug') || categoryFilter
+  )
+
   const getPageTitle = () => {
+    if (sectionTitle) return sectionTitle
     if (currentCategory) return currentCategory.name
+    if (categoryFromSlug) return categoryFromSlug.name
     return 'Shop All Products'
   }
 
   const getPageDescription = () => {
-    if (currentCategory) return `Browse ${currentCategory.name}`
+    const label = sectionTitle || currentCategory?.name || categoryFromSlug?.name
+    if (label) return `Browse ${label}`
     return 'Browse our complete catalog of medicines and general products'
   }
 
@@ -122,7 +154,7 @@ export function ProductsContentClient() {
                 {getPageDescription()}
               </p>
             </div>
-            {currentCategory && (
+            {hasActiveFilters && (
               <Link
                 href="/products"
                 className="flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
@@ -142,7 +174,7 @@ export function ProductsContentClient() {
                 window.location.href = '/products'
               }}
               className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                !categoryFilter
+                !searchParams.get('section') && !searchParams.get('categorySlug') && !categoryFilter
                   ? 'bg-teal-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
@@ -160,7 +192,7 @@ export function ProductsContentClient() {
                   window.location.href = `/products?${params}`
                 }}
                 className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                  categoryFilter === cat.id
+                  !searchParams.get('section') && !searchParams.get('categorySlug') && categoryFilter === cat.id
                     ? 'bg-teal-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}

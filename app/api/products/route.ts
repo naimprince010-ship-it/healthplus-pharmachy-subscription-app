@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { GROCERY_CATEGORY_SLUG, isGroceryShopEnabled, isMedicineShopEnabled } from '@/lib/site-features'
+import { buildProductWhereClause } from '@/lib/homeSections'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -32,6 +33,8 @@ const productListQuerySchema = z.object({
   search: z.string().optional(),
   categoryId: z.string().optional(),
   categorySlug: z.string().optional(),
+  /** HomeSection slug — same product filter as the home carousel for that block */
+  section: z.string().optional(),
   isFlashSale: z.string().optional(),
   type: z.enum(['MEDICINE', 'GENERAL', 'all']).default('all'),
   sortBy: z.enum(['createdAt', 'name', 'sellingPrice', 'stockQuantity']).default('createdAt'),
@@ -53,6 +56,7 @@ export async function GET(request: NextRequest) {
       search: searchParams.get('search') || undefined,
       categoryId: searchParams.get('categoryId') || undefined,
       categorySlug: searchParams.get('categorySlug') || undefined,
+      section: searchParams.get('section') || undefined,
       isFlashSale: searchParams.get('isFlashSale') || undefined,
       type: searchParams.get('type') || 'all',
       sortBy: searchParams.get('sortBy') || 'createdAt',
@@ -68,6 +72,9 @@ export async function GET(request: NextRequest) {
 
     const query = queryResult.data
     const skip = (query.page - 1) * query.limit
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let homeSectionEntity: any = null
+    let sectionTitle: string | null = null
 
     if (!isMedicineShopEnabled() && query.type === 'MEDICINE') {
       return NextResponse.json({
@@ -119,20 +126,43 @@ export async function GET(request: NextRequest) {
       ]
     }
 
-    if (query.categoryId) {
-      const categoryIds = await getCategoryWithDescendants(query.categoryId)
-      productWhere.categoryId = { in: categoryIds }
-    }
-
-    // Support filtering by category slug
-    if (query.categorySlug) {
-      const category = await prisma.category.findFirst({
-        where: { slug: query.categorySlug },
-        select: { id: true },
+    if (query.section) {
+      const hs = await prisma.homeSection.findFirst({
+        where: { slug: query.section },
       })
-      if (category) {
-        const categoryIds = await getCategoryWithDescendants(category.id)
+      if (!hs) {
+        return NextResponse.json({
+          products: [],
+          sectionTitle: null,
+          pagination: {
+            page: query.page,
+            limit: query.limit,
+            total: 0,
+            totalPages: 0,
+          },
+        })
+      }
+      homeSectionEntity = hs
+      sectionTitle = hs.title
+      const hsWhere = buildProductWhereClause(hs)
+      const existingAnd = productWhere.AND
+      const andArr = Array.isArray(existingAnd) ? existingAnd : existingAnd != null ? [existingAnd] : []
+      productWhere.AND = [...andArr, hsWhere]
+    } else {
+      if (query.categoryId) {
+        const categoryIds = await getCategoryWithDescendants(query.categoryId)
         productWhere.categoryId = { in: categoryIds }
+      }
+
+      if (query.categorySlug) {
+        const category = await prisma.category.findFirst({
+          where: { slug: query.categorySlug },
+          select: { id: true },
+        })
+        if (category) {
+          const categoryIds = await getCategoryWithDescendants(category.id)
+          productWhere.categoryId = { in: categoryIds }
+        }
       }
     }
 
@@ -212,7 +242,20 @@ export async function GET(request: NextRequest) {
         ]
       }
 
-      if (query.categoryId) {
+      if (query.section && homeSectionEntity) {
+        const hs = homeSectionEntity
+        if (hs.filterType === 'category') {
+          if (hs.categoryId) {
+            medicineWhere.categoryId = hs.categoryId
+          } else {
+            medicineWhere.id = { in: [] }
+          }
+        } else if (hs.filterType === 'brand' && hs.brandName?.trim()) {
+          medicineWhere.brandName = hs.brandName
+        } else {
+          medicineWhere.id = { in: [] }
+        }
+      } else if (query.categoryId) {
         const categoryIds = await getCategoryWithDescendants(query.categoryId)
         medicineWhere.categoryId = { in: categoryIds }
       }
@@ -294,6 +337,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       products,
+      sectionTitle: query.section ? sectionTitle : undefined,
       pagination: {
         page: query.page,
         limit: query.limit,
