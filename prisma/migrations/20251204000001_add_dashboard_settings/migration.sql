@@ -1,5 +1,5 @@
--- CreateTable
-CREATE TABLE "DashboardPageSettings" (
+-- CreateTable (IF NOT EXISTS: table may already exist from partial / manual apply)
+CREATE TABLE IF NOT EXISTS "DashboardPageSettings" (
     "id" TEXT NOT NULL,
     "pageTitleBn" TEXT NOT NULL DEFAULT 'আমার ড্যাশবোর্ড',
     "welcomeTextBn" TEXT NOT NULL DEFAULT 'স্বাগতম,',

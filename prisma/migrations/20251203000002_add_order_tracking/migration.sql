@@ -1,11 +1,11 @@
--- Add rider info and estimated delivery fields to Order table
-ALTER TABLE "Order" ADD COLUMN "riderName" TEXT;
-ALTER TABLE "Order" ADD COLUMN "riderPhone" TEXT;
-ALTER TABLE "Order" ADD COLUMN "estimatedDeliveryAt" TIMESTAMP(3);
-ALTER TABLE "Order" ADD COLUMN "estimatedDeliveryText" TEXT;
+-- Add rider info and estimated delivery fields to Order table (idempotent for partial apply recovery)
+ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "riderName" TEXT;
+ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "riderPhone" TEXT;
+ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "estimatedDeliveryAt" TIMESTAMP(3);
+ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "estimatedDeliveryText" TEXT;
 
 -- Create OrderStatusHistory table for tracking status changes with timestamps
-CREATE TABLE "OrderStatusHistory" (
+CREATE TABLE IF NOT EXISTS "OrderStatusHistory" (
     "id" TEXT NOT NULL,
     "orderId" TEXT NOT NULL,
     "status" "OrderStatus" NOT NULL,
@@ -16,14 +16,21 @@ CREATE TABLE "OrderStatusHistory" (
 );
 
 -- Create indexes for OrderStatusHistory
-CREATE INDEX "OrderStatusHistory_orderId_idx" ON "OrderStatusHistory"("orderId");
-CREATE INDEX "OrderStatusHistory_orderId_changedAt_idx" ON "OrderStatusHistory"("orderId", "changedAt");
+CREATE INDEX IF NOT EXISTS "OrderStatusHistory_orderId_idx" ON "OrderStatusHistory"("orderId");
+CREATE INDEX IF NOT EXISTS "OrderStatusHistory_orderId_changedAt_idx" ON "OrderStatusHistory"("orderId", "changedAt");
 
--- Add foreign key constraint
-ALTER TABLE "OrderStatusHistory" ADD CONSTRAINT "OrderStatusHistory_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- Add foreign key constraint (idempotent)
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'OrderStatusHistory_orderId_fkey'
+  ) THEN
+    ALTER TABLE "OrderStatusHistory" ADD CONSTRAINT "OrderStatusHistory_orderId_fkey"
+      FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;
 
 -- Create OrderTrackingSettings table (singleton for admin-configurable text)
-CREATE TABLE "OrderTrackingSettings" (
+CREATE TABLE IF NOT EXISTS "OrderTrackingSettings" (
     "id" TEXT NOT NULL,
     "headerTitlePrefixBn" TEXT NOT NULL DEFAULT 'অর্ডার',
     "statusSectionTitleBn" TEXT NOT NULL DEFAULT 'স্ট্যাটাস',
