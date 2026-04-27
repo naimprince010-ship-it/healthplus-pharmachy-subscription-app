@@ -25,6 +25,8 @@ interface FixResult {
 }
 
 export default function FixImagesPage() {
+  const FIX_ALL_BATCH_SIZE = 20
+  const MAX_FIX_ALL_RUNS = 10
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
@@ -36,6 +38,7 @@ export default function FixImagesPage() {
   const [appliedCategoryId, setAppliedCategoryId] = useState('')
   const [searchInput, setSearchInput] = useState('')
   const [appliedSearch, setAppliedSearch] = useState('')
+  const [fixAllProgress, setFixAllProgress] = useState('')
 
   useEffect(() => {
     fetchCategories()
@@ -103,24 +106,50 @@ export default function FixImagesPage() {
 
   const fixAllProducts = async () => {
     setFixing(true)
+    setFixAllProgress('')
     setResults([])
     try {
-      const res = await fetch('/api/admin/fix-external-images', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fixAll: true }),
-      })
-      const data = await res.json()
-      if (res.ok) {
-        setResults(data.results || [])
-        // Refresh the list (preserve active filters)
-        await fetchProducts({ categoryId: appliedCategoryId, q: appliedSearch })
-      } else {
-        setError(data.error || 'Failed to fix images')
+      const allResults: FixResult[] = []
+
+      for (let run = 1; run <= MAX_FIX_ALL_RUNS; run++) {
+        setFixAllProgress(`Running batch ${run}...`)
+        const res = await fetch('/api/admin/fix-external-images', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fixAll: true }),
+        })
+        const data = await res.json()
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to fix images')
+        }
+
+        const batchResults: FixResult[] = data.results || []
+        if (batchResults.length === 0) {
+          break
+        }
+
+        allResults.push(...batchResults)
+        setResults([...allResults])
+
+        const fixedInBatch = batchResults.filter((r) => r.status === 'success').length
+        // If nothing could be fixed in this batch, stop to avoid retrying the same failing items forever.
+        if (fixedInBatch === 0) {
+          break
+        }
+
+        // If batch is smaller than server max batch size, we are likely done.
+        if (batchResults.length < FIX_ALL_BATCH_SIZE) {
+          break
+        }
       }
+
+      // Refresh the list (preserve active filters)
+      await fetchProducts({ categoryId: appliedCategoryId, q: appliedSearch })
     } catch {
       setError('Failed to fix images')
     } finally {
+      setFixAllProgress('')
       setFixing(false)
     }
   }
@@ -182,7 +211,7 @@ export default function FixImagesPage() {
                 {fixing ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Fixing...
+                    {fixAllProgress || 'Fixing...'}
                   </>
                 ) : (
                   <>
