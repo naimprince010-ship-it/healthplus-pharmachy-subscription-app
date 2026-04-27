@@ -77,7 +77,7 @@ export async function getSimilarProducts(
       },
     })
 
-    const mapped = rawProducts.map((p) => {
+    const mapped = rawProducts.map((p: any) => {
       try {
         if (!p || !p.id || !p.slug || !p.name) {
           console.error('similarProducts: missing required fields for product', p?.id)
