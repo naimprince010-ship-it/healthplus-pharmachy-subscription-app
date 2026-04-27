@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { searchProducts, getSearchIndex, searchProductsByPrefix } from '@/lib/search-index'
+import { getSearchProvider } from '@/lib/search/providers'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
+    const searchProvider = getSearchProvider()
     const { searchParams } = new URL(request.url)
     const q = (searchParams.get('q') || '').trim()
     const limitParam = Number(searchParams.get('limit') ?? '40')
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest) {
       if (mode === 'suggestions') {
         return NextResponse.json({ items: [], query: q })
       }
-      const { products } = await getSearchIndex()
+      const { products } = await searchProvider.getTopProducts(limit)
       const topProducts = products.slice(0, limit)
       return NextResponse.json({
         products: topProducts.map(formatProduct),
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (q.length === 1) {
-      const prefixResults = await searchProductsByPrefix(q, limit)
+      const prefixResults = await searchProvider.searchProductsByPrefix(q, limit)
       if (mode === 'suggestions') {
         const items = prefixResults.slice(0, Math.min(limit, 10)).map((r) => formatSuggestion(r.item))
         return NextResponse.json({
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const results = await searchProducts(q, limit)
+    const results = await searchProvider.searchProducts(q, limit)
 
     if (mode === 'suggestions') {
       const items = results.slice(0, Math.min(limit, 10)).map((r) => formatSuggestion(r.item))
