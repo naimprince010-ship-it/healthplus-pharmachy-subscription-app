@@ -867,7 +867,7 @@ async function extractProductsFromChaldalCategory(url: string): Promise<Category
   }
 
   const parseChaldalState = (html: string): unknown | null => {
-    const stateMatch = html.match(/window\.__reactAsyncStatePacket\s*=\s*(\{.*?\})\s*<\/script>/s)
+    const stateMatch = html.match(/window\.__reactAsyncStatePacket\s*=\s*(\{[\s\S]*?\})\s*<\/script>/)
     if (!stateMatch) return null
     try {
       return JSON.parse(stateMatch[1])
