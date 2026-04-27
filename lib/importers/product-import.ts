@@ -178,16 +178,56 @@ async function importFromChaldal(url: string): Promise<ImportedProduct> {
   let sellingPrice: number | null = null
   let mrp: number | null = null
 
-  const priceText = $('body').text()
-  const priceMatches = priceText.match(/৳\s*([\d,.]+)/g) || []
-  const validPrices = priceMatches
-    .map(p => parsePrice(p))
-    .filter((p): p is number => p !== null && p > 0)
+  // Prefer structured data first when available.
+  $('script[type="application/ld+json"]').each((_, el) => {
+    if (sellingPrice !== null) return
+    const raw = $(el).contents().text().trim()
+    if (!raw) return
+    try {
+      const parsed = JSON.parse(raw)
+      const entries = Array.isArray(parsed) ? parsed : [parsed]
+      for (const entry of entries) {
+        if (!entry || typeof entry !== 'object') continue
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rec = entry as any
+        const offers = Array.isArray(rec.offers) ? rec.offers : rec.offers ? [rec.offers] : []
+        if (!offers.length) continue
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const offer = offers.find((o: any) => o && typeof o === 'object') || offers[0]
+        if (!offer) continue
 
-  if (validPrices.length >= 1) {
-    sellingPrice = validPrices[0]
-    if (validPrices.length >= 2 && validPrices[1] > validPrices[0]) {
-      mrp = validPrices[1]
+        const offerPrice = parsePrice(offer.price)
+        const highPrice = parsePrice(offer.highPrice)
+        const lowPrice = parsePrice(offer.lowPrice)
+        const price = offerPrice ?? lowPrice ?? highPrice
+        if (price !== null) {
+          sellingPrice = price
+          const strikePrice = parsePrice(offer.priceBeforeDiscount || offer.mrp || offer.listPrice)
+          if (strikePrice !== null && strikePrice > price) {
+            mrp = strikePrice
+          } else if (highPrice !== null && highPrice > price) {
+            mrp = highPrice
+          }
+          break
+        }
+      }
+    } catch {
+      // ignore malformed JSON-LD block
+    }
+  })
+
+  const priceText = $('body').text()
+  if (sellingPrice === null) {
+    const priceMatches = priceText.match(/৳\s*([\d,.]+)/g) || []
+    const validPrices = priceMatches
+      .map(p => parsePrice(p))
+      .filter((p): p is number => p !== null && p > 0)
+
+    if (validPrices.length >= 1) {
+      sellingPrice = validPrices[0]
+      if (validPrices.length >= 2 && validPrices[1] > validPrices[0]) {
+        mrp = validPrices[1]
+      }
     }
   }
 
