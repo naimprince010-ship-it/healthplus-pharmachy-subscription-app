@@ -1,12 +1,23 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 import { useCart } from '@/contexts/CartContext'
+
+/** Eagerly prefetch RSC payload for all tab targets so navigation feels instant after first paint. */
+const BOTTOM_TAB_HREFS = ['/', '/products', '/subscriptions', '/cart', '/dashboard'] as const
 
 export function MobileBottomNav() {
   const pathname = usePathname()
+  const router = useRouter()
   const { itemCount } = useCart()
+
+  useEffect(() => {
+    BOTTOM_TAB_HREFS.forEach((href) => {
+      router.prefetch(href)
+    })
+  }, [router])
 
   const navItems = [
     { href: '/', label: 'Home', iconType: 'home' },
@@ -76,7 +87,8 @@ export function MobileBottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`relative flex flex-1 flex-col items-center justify-center py-2 text-xs transition-all duration-100 active:scale-95 active:opacity-70 ${
+              prefetch
+              className={`relative flex min-h-[48px] min-w-0 flex-1 touch-manipulation flex-col items-center justify-center py-2 text-xs transition-transform duration-75 will-change-transform active:scale-95 active:opacity-80 ${
                 isActive
                   ? 'text-teal-600'
                   : 'text-gray-500 hover:text-teal-600'
