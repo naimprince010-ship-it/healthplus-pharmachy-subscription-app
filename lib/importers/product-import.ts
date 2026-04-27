@@ -795,21 +795,23 @@ async function extractProductsFromAroggaCategory(url: string): Promise<CategoryP
 async function extractProductsFromChaldalCategory(url: string): Promise<CategoryProduct[]> {
   const products: CategoryProduct[] = []
 
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-    },
-  })
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch page: ${response.status}`)
-  }
-
-  const html = await response.text()
-  const $ = cheerio.load(html)
-
   const seen = new Set<string>()
+  const visitedCategorySlugs = new Set<string>()
+
+  const fetchHtml = async (targetUrl: string): Promise<string> => {
+    const response = await fetch(targetUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch page: ${response.status}`)
+    }
+
+    return response.text()
+  }
 
   const pushProduct = (
     rawHref: string,
@@ -855,34 +857,129 @@ async function extractProductsFromChaldalCategory(url: string): Promise<Category
     products.push({ name, url: fullUrl, price, imageUrl })
   }
 
-  // Legacy Chaldal layout selector.
-  $('a.btnShowDetails').each((_, el) => {
-    const href = $(el).attr('href')
-    if (!href) return
+  const parseBigDtoPrice = (val: unknown): number | null => {
+    if (typeof val === 'number') return val
+    if (val && typeof val === 'object' && 'Lo' in (val as Record<string, unknown>)) {
+      const lo = (val as Record<string, unknown>).Lo
+      if (typeof lo === 'number') return lo
+    }
+    return null
+  }
 
-    let productContainer = $(el).parent()
-    for (let i = 0; i < 10 && productContainer.length; i++) {
-      const text = productContainer.text()
-      if (text.includes('৳') && text.length > 50) break
-      productContainer = productContainer.parent()
+  const parseChaldalState = (html: string): unknown | null => {
+    const stateMatch = html.match(/window\.__reactAsyncStatePacket\s*=\s*(\{.*?\})\s*<\/script>/s)
+    if (!stateMatch) return null
+    try {
+      return JSON.parse(stateMatch[1])
+    } catch {
+      return null
+    }
+  }
+
+  const parseProductsFromState = (state: unknown) => {
+    if (!state || typeof state !== 'object') return [] as Array<Record<string, unknown>>
+    const blocks = Object.values(state as Record<string, unknown>)
+      .filter((block): block is Record<string, unknown> => !!block && typeof block === 'object')
+    for (const block of blocks) {
+      const maybeProducts = block.products
+      if (maybeProducts && typeof maybeProducts === 'object' && Array.isArray((maybeProducts as { items?: unknown[] }).items)) {
+        return ((maybeProducts as { items: unknown[] }).items
+          .filter((it): it is Record<string, unknown> => !!it && typeof it === 'object'))
+      }
+    }
+    return [] as Array<Record<string, unknown>>
+  }
+
+  const parseSubcategorySlugsFromState = (state: unknown): string[] => {
+    if (!state || typeof state !== 'object') return []
+    const blocks = Object.values(state as Record<string, unknown>)
+      .filter((block): block is Record<string, unknown> => !!block && typeof block === 'object')
+    const slugs: string[] = []
+    for (const block of blocks) {
+      const categories = block.categories
+      if (!Array.isArray(categories)) continue
+      for (const cat of categories) {
+        if (!cat || typeof cat !== 'object') continue
+        const rec = cat as Record<string, unknown>
+        let slug: string | null = null
+        const picture = rec.Picture
+        if (picture && typeof picture === 'object') {
+          const seo = (picture as Record<string, unknown>).SeoFilename
+          if (typeof seo === 'string' && seo.trim().length > 0) {
+            slug = seo.trim()
+          }
+        }
+        if (!slug && typeof rec.Name === 'string' && rec.Name.trim().length > 0) {
+          slug = slugify(rec.Name)
+        }
+        if (slug && !slugs.includes(slug)) slugs.push(slug)
+      }
+    }
+    return slugs
+  }
+
+  const collectFromHtml = (html: string) => {
+    const state = parseChaldalState(html)
+    const stateProducts = parseProductsFromState(state)
+
+    // Prefer embedded state data: it is more stable than CSS selectors.
+    if (stateProducts.length > 0) {
+      for (const item of stateProducts) {
+        const slug = typeof item.Slug === 'string' ? item.Slug : null
+        const href = slug ? `/${slug}` : null
+        if (!href) continue
+
+        const name = typeof item.Name === 'string' ? item.Name : null
+        const discounted = parseBigDtoPrice(item.DiscountedPrice)
+        const regular = parseBigDtoPrice(item.Price)
+        const price = discounted ?? regular ?? null
+
+        let imageUrl: string | null = null
+        if (Array.isArray(item.PictureUrls) && item.PictureUrls.length > 0) {
+          const first = item.PictureUrls.find((p) => typeof p === 'string')
+          if (typeof first === 'string') imageUrl = first
+        }
+        if (!imageUrl && Array.isArray(item.OfferPictureUrls) && item.OfferPictureUrls.length > 0) {
+          const first = item.OfferPictureUrls.find((p) => typeof p === 'string')
+          if (typeof first === 'string') imageUrl = first
+        }
+
+        pushProduct(href, name, price, imageUrl)
+      }
+      return
     }
 
-    const containerText = productContainer.text()
-    const priceMatches = containerText.match(/(?:৳|Tk)\s*([\d,.০-৯]+)/gi)
-    let price: number | null = null
-    if (priceMatches && priceMatches.length > 0) {
-      const prices = priceMatches.map((p) => parsePrice(p)).filter((p): p is number => p !== null)
-      if (prices.length > 0) price = Math.max(...prices)
-    }
+    const $ = cheerio.load(html)
 
-    const img = productContainer.find('img[src*="chaldn.com"], img[src*="chaldal"]').first()
-    const imageUrl = img.attr('src') || img.attr('data-src') || null
+    // Legacy Chaldal layout selector.
+    $('a.btnShowDetails').each((_, el) => {
+      const href = $(el).attr('href')
+      if (!href) return
 
-    pushProduct(href, $(el).text(), price, imageUrl)
-  })
+      let productContainer = $(el).parent()
+      for (let i = 0; i < 10 && productContainer.length; i++) {
+        const text = productContainer.text()
+        if (text.includes('৳') && text.length > 50) break
+        productContainer = productContainer.parent()
+      }
 
-  // Fallback for newer layouts where product anchors/classes changed.
-  if (products.length === 0) {
+      const containerText = productContainer.text()
+      const priceMatches = containerText.match(/(?:৳|Tk)\s*([\d,.০-৯]+)/gi)
+      let price: number | null = null
+      if (priceMatches && priceMatches.length > 0) {
+        const prices = priceMatches.map((p) => parsePrice(p)).filter((p): p is number => p !== null)
+        if (prices.length > 0) price = Math.max(...prices)
+      }
+
+      const img = productContainer.find('img[src*="chaldn.com"], img[src*="chaldal"]').first()
+      const imageUrl = img.attr('src') || img.attr('data-src') || null
+
+      pushProduct(href, $(el).text(), price, imageUrl)
+    })
+
+    if (products.length > 0) return
+
+    // Fallback for newer layouts where product anchors/classes changed.
     $('a[href]').each((_, el) => {
       const href = $(el).attr('href')
       if (!href) return
@@ -906,6 +1003,25 @@ async function extractProductsFromChaldalCategory(url: string): Promise<Category
 
       pushProduct(href, rawName, price, imageUrl)
     })
+  }
+
+  const rootHtml = await fetchHtml(url)
+  collectFromHtml(rootHtml)
+
+  // Some parent categories show only subcategories and no products.
+  if (products.length === 0) {
+    const rootState = parseChaldalState(rootHtml)
+    const childSlugs = parseSubcategorySlugsFromState(rootState)
+    for (const childSlug of childSlugs) {
+      if (!childSlug || visitedCategorySlugs.has(childSlug)) continue
+      visitedCategorySlugs.add(childSlug)
+      try {
+        const childHtml = await fetchHtml(`https://chaldal.com/${childSlug}`)
+        collectFromHtml(childHtml)
+      } catch {
+        // Continue with other sub-categories even if one fails.
+      }
+    }
   }
 
   return products
