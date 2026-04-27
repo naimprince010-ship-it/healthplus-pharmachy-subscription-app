@@ -88,6 +88,7 @@ export function ProductCard({ product, variant = 'default', className = '' }: Pr
   return (
     <Link
       href={href}
+      prefetch
       className={`group relative flex flex-col rounded-lg border border-gray-200 bg-white transition-shadow hover:shadow-lg ${
         isCompact ? 'p-3 lg:p-4' : 'p-4'
       } ${className}`}
