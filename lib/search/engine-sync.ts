@@ -130,7 +130,7 @@ export async function reindexAllProductsToSearchEngine(opts?: {
   let failed = 0
 
   while (batches < maxBatches) {
-    const rows = await prisma.product.findMany({
+    const rows: ProductRow[] = (await prisma.product.findMany({
       where: {
         isActive: true,
         deletedAt: null,
@@ -139,7 +139,7 @@ export async function reindexAllProductsToSearchEngine(opts?: {
       orderBy: { id: 'asc' },
       take: batchSize,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-    })
+    })) as unknown as ProductRow[]
 
     if (!rows.length) break
 
