@@ -148,6 +148,7 @@ export async function MobileShopServer() {
 
   return (
     <MobileShop
+      categoryGrid={sidebarCategories}
       flashSaleProducts={flashSaleProducts}
       categorySections={categorySections}
     />

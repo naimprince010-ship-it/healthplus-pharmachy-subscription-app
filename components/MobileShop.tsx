@@ -41,14 +41,53 @@ export interface MobileShopCategorySection {
 }
 
 interface MobileShopProps {
+  /** Shown first: grid of category shortcuts (replaces desktop sidebar on mobile). */
+  categoryGrid: MobileShopCategory[]
   flashSaleProducts: MobileShopProduct[]
   categorySections: MobileShopCategorySection[]
 }
 
-export function MobileShop({ flashSaleProducts, categorySections }: MobileShopProps) {
+function categoryHref(c: MobileShopCategory) {
+  return c.sidebarLinkUrl?.trim() || `/category/${c.slug}`
+}
+
+export function MobileShop({ categoryGrid, flashSaleProducts, categorySections }: MobileShopProps) {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      {/* Flash Sale Section */}
+      {/* 1) Category grid first — no sidebar on mobile / webapp */}
+      {categoryGrid.length > 0 && (
+        <section className="border-b border-gray-100 py-4">
+          <h2 className="mb-3 px-4 text-lg font-bold text-gray-900">Categories</h2>
+          <div className="grid grid-cols-3 gap-3 px-4 sm:grid-cols-4">
+            {categoryGrid.map((category) => (
+              <Link
+                key={category.id}
+                href={categoryHref(category)}
+                className="flex flex-col items-center gap-2 rounded-xl bg-white p-3 text-center shadow-sm ring-1 ring-gray-100 active:scale-[0.98] active:opacity-90"
+              >
+                {category.sidebarIconUrl ? (
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gray-100">
+                    <img
+                      src={category.sidebarIconUrl}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-teal-100">
+                    <span className="text-lg font-bold text-teal-700">{category.name.charAt(0)}</span>
+                  </div>
+                )}
+                <span className="line-clamp-2 min-h-8 text-xs font-medium leading-tight text-gray-800">
+                  {category.name}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 2) Flash sale */}
       {flashSaleProducts.length > 0 && (
         <section className="py-4">
           <div className="mb-3 flex items-center justify-between px-4">
@@ -77,7 +116,7 @@ export function MobileShop({ flashSaleProducts, categorySections }: MobileShopPr
         </section>
       )}
 
-      {/* Category Sections */}
+      {/* 3) Product rows by category */}
       {categorySections.map(({ category, products }) => (
         <section key={category.id} className="py-4">
           <div className="mb-3 flex items-center justify-between px-4">
@@ -115,7 +154,7 @@ export function MobileShop({ flashSaleProducts, categorySections }: MobileShopPr
         </section>
       ))}
 
-      {categorySections.length === 0 && flashSaleProducts.length === 0 && (
+      {categoryGrid.length === 0 && categorySections.length === 0 && flashSaleProducts.length === 0 && (
         <div className="flex min-h-[50vh] items-center justify-center px-4">
           <div className="text-center">
             <h3 className="text-lg font-medium text-gray-900">No products available</h3>
