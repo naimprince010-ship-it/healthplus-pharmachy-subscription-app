@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import type { Prisma } from '@prisma/client'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { supabaseAdmin } from '@/lib/supabase'
@@ -24,28 +25,33 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const categoryId = searchParams.get('categoryId')?.trim() || undefined
     const q = searchParams.get('q')?.trim() || undefined
+    const whereAnd: Prisma.ProductWhereInput[] = []
+
+    if (categoryId) {
+      whereAnd.push({ categoryId })
+    }
+
+    if (q) {
+      whereAnd.push({
+        OR: [
+          { name: { contains: q, mode: 'insensitive' } },
+          { slug: { contains: q, mode: 'insensitive' } },
+        ],
+      })
+    }
+
+    whereAnd.push({
+      OR: EXTERNAL_IMAGE_DOMAINS.map((domain) => ({
+        imageUrl: {
+          contains: domain,
+        },
+      })),
+    })
 
     // Find products with external image URLs from any of the known domains
     const products = await prisma.product.findMany({
       where: {
-        AND: [
-          ...(categoryId ? [{ categoryId }] : []),
-          ...(q
-            ? [{
-              OR: [
-                { name: { contains: q, mode: 'insensitive' } },
-                { slug: { contains: q, mode: 'insensitive' } },
-              ],
-            }]
-            : []),
-          {
-            OR: EXTERNAL_IMAGE_DOMAINS.map(domain => ({
-              imageUrl: {
-                contains: domain,
-              },
-            })),
-          },
-        ],
+        AND: whereAnd,
       },
       select: {
         id: true,
