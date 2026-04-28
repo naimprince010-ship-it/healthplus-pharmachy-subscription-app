@@ -72,6 +72,7 @@ export function ProductDetailClient({
   const [quantity, setQuantity] = useState(1)
   const [isAdding, setIsAdding] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [shortLinkCopied, setShortLinkCopied] = useState(false)
 
   const defaultVariant = variants.find(v => v.isDefault) || variants[0]
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
