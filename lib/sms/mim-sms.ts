@@ -11,6 +11,17 @@ const MIM_SMS_SENDER_ID = process.env.MIM_SMS_SENDER_ID
 const MIM_SMS_API_URL = process.env.MIM_SMS_API_URL || 'https://api.mimsms.com/api/SmsSending/SMS'
 const MIM_SMS_USERNAME = process.env.MIM_SMS_USERNAME
 
+function getCandidateApiUrls(): string[] {
+    const configured = (MIM_SMS_API_URL || '').trim()
+    const defaults = [
+        'https://api.mimsms.com/api/SmsSending/SMS',
+        'https://api.mimsms.com/api/SmsSending/Send',
+    ]
+
+    if (!configured) return defaults
+    return [configured, ...defaults.filter((u) => u !== configured)]
+}
+
 export interface SendSmsResult {
     ok: boolean
     error?: string
@@ -40,33 +51,42 @@ export async function sendMIMSMS(phone: string, message: string): Promise<SendSm
             Message: message,
         }
 
-        console.log(`[MIM SMS Payload] Sending to ${MIM_SMS_API_URL}:`, { ...payload, ApiKey: '***' })
+        const candidateUrls = getCandidateApiUrls()
+        let lastReason = 'Unknown SMS gateway error'
 
-        const response = await fetch(
-            MIM_SMS_API_URL,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Accept: "application/json",
-                },
-                body: JSON.stringify(payload),
+        for (const apiUrl of candidateUrls) {
+            console.log(`[MIM SMS Payload] Sending to ${apiUrl}:`, { ...payload, ApiKey: '***' })
+
+            const response = await fetch(
+                apiUrl,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Accept: "application/json",
+                    },
+                    body: JSON.stringify(payload),
+                }
+            )
+
+            const textResponse = await response.text()
+            console.log(`[MIM SMS Raw Response] (${apiUrl}) for ${bdPhoneFormat}:`, textResponse)
+
+            if (response.ok && !textResponse.toLowerCase().includes('error') && !textResponse.toLowerCase().includes('invalid')) {
+                console.log(`[MIM SMS] Successfully sent via ${apiUrl} to ${bdPhoneFormat}.`)
+                return { ok: true }
             }
-        );
 
-        const textResponse = await response.text();
+            lastReason = `Gateway rejected SMS via ${apiUrl}. status=${response.status}, body=${textResponse.slice(0, 300)}`
+            console.error(`[MIM SMS] ${lastReason}`)
 
-        // Let's print out the response to debug any issues precisely
-        console.log(`[MIM SMS Raw Response] for ${bdPhoneFormat}:`, textResponse);
-
-        if (response.ok && !textResponse.toLowerCase().includes('error') && !textResponse.toLowerCase().includes('invalid')) {
-            console.log(`[MIM SMS] Successfully sending via JSON POST to ${bdPhoneFormat}.`)
-            return { ok: true }
-        } else {
-            const reason = `Gateway rejected SMS. status=${response.status}, body=${textResponse.slice(0, 300)}`
-            console.error(`[MIM SMS] ${reason}`)
-            return { ok: false, error: reason }
+            // Continue to next URL only for 404 endpoint mismatch. For other statuses stop immediately.
+            if (response.status !== 404) {
+                return { ok: false, error: lastReason }
+            }
         }
+
+        return { ok: false, error: lastReason }
     } catch (error) {
         const reason = error instanceof Error ? error.message : 'Unknown network/execution error'
         console.error('[MIM SMS] Network or execution error while sending SMS:', error)
