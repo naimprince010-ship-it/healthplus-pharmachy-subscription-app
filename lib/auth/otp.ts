@@ -49,9 +49,16 @@ export async function sendOTP(phone: string): Promise<{ sessionId: string; messa
 
     const isSent = await sendMIMSMS(normalizedPhone, smsMessage)
 
+    const allowFallback = process.env.OTP_ALLOW_FALLBACK === 'true' || process.env.NODE_ENV !== 'production'
+
     if (!isSent) {
       console.warn(`[OTP STUB ERROR] Failed to send real SMS for ${normalizedPhone}, falling back to console log for developmental purposes`)
       console.log(`[OTP FALLBACK STUB] OTP for ${normalizedPhone}: ${otp} (expires in 5 minutes)`)
+
+      if (!allowFallback) {
+        otpSessions.delete(sessionId)
+        throw new Error('OTP SMS delivery failed. Please try again later.')
+      }
     }
 
     return {

@@ -6,21 +6,22 @@ import { normalizeBDPhone } from '@/lib/utils'
  * Interacts with the MIM SMS gateway to send real mobile OTPs
  */
 
-const MIM_SMS_API_KEY = process.env.MIM_SMS_API_KEY || 'HGY5QT4ZRSDZ2XAODOZ0PXLEJ'
-const MIM_SMS_SENDER_ID = process.env.MIM_SMS_SENDER_ID || '8809617623081'
-const MIM_SMS_API_URL = process.env.MIM_SMS_API_URL || 'https://api.mimsms.com/api/SmsSending/Send'
-// We also need the username which the API requires
-const MIM_SMS_USERNAME = process.env.MIM_SMS_USERNAME || 'naimprince010@gmail.com'
+const MIM_SMS_API_KEY = process.env.MIM_SMS_API_KEY
+const MIM_SMS_SENDER_ID = process.env.MIM_SMS_SENDER_ID
+const MIM_SMS_API_URL = process.env.MIM_SMS_API_URL || 'https://api.mimsms.com/api/SmsSending/SMS'
+const MIM_SMS_USERNAME = process.env.MIM_SMS_USERNAME
 
 export async function sendMIMSMS(phone: string, message: string): Promise<boolean> {
     try {
+        if (!MIM_SMS_API_KEY || !MIM_SMS_SENDER_ID || !MIM_SMS_USERNAME) {
+            console.error('[MIM SMS] Missing required env config: MIM_SMS_API_KEY, MIM_SMS_SENDER_ID, or MIM_SMS_USERNAME')
+            return false
+        }
+
         const normalizedPhone = normalizeBDPhone(phone)
 
         // MIM SMS API expects the 880 format usually, normalizeBDPhone returns +880
         const bdPhoneFormat = normalizedPhone.replace('+', '')
-
-        // We'll use the specific URL for JSON POST from their documentation
-        const apiUrl = "https://api.mimsms.com/api/SmsSending/SMS"
 
         const payload = {
             UserName: MIM_SMS_USERNAME,
@@ -31,10 +32,10 @@ export async function sendMIMSMS(phone: string, message: string): Promise<boolea
             Message: message,
         }
 
-        console.log(`[MIM SMS Payload] Sending to ${apiUrl}:`, { ...payload, Apikey: '***' })
+        console.log(`[MIM SMS Payload] Sending to ${MIM_SMS_API_URL}:`, { ...payload, ApiKey: '***' })
 
         const response = await fetch(
-            apiUrl,
+            MIM_SMS_API_URL,
             {
                 method: "POST",
                 headers: {
