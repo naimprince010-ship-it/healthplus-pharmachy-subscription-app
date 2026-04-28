@@ -1,11 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { Clock, Zap } from 'lucide-react'
 import { AddToCartButton } from '@/components/AddToCartButton'
 import { MAIN_CONTAINER } from '@/lib/layout'
+import { getStorefrontImageUrl } from '@/lib/image-url'
 
 interface Product {
   id: string
@@ -189,72 +189,74 @@ export default function FlashSalePage() {
         </div>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-          {data.products.map((product) => (
-            <div
-              key={product.id}
-              className="group overflow-hidden rounded-lg bg-white shadow-sm transition-shadow hover:shadow-md"
-            >
-              {/* Product Image */}
-              <Link href={`/products/${product.slug}`} className="block">
-                <div className="relative aspect-square overflow-hidden bg-gray-100">
-                  {product.imageUrl ? (
-                    <Image
-                      src={product.imageUrl}
-                      alt={product.name}
-                      fill
-                      className="object-cover transition-transform group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-gray-400 text-xs">
-                      No Image
+          {data.products.map((product) => {
+            const displayImageUrl = getStorefrontImageUrl(product.imageUrl)
+            return (
+              <div
+                key={product.id}
+                className="group overflow-hidden rounded-lg bg-white shadow-sm transition-shadow hover:shadow-md"
+              >
+                {/* Product Image */}
+                <Link href={`/products/${product.slug}`} className="block">
+                  <div className="relative aspect-square overflow-hidden bg-gray-100">
+                    {displayImageUrl ? (
+                      <img
+                        src={displayImageUrl}
+                        alt={product.name}
+                        className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-gray-400 text-xs">
+                        No Image
+                      </div>
+                    )}
+                    {/* Discount Badge */}
+                    <div className="absolute right-1 top-1 rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white shadow">
+                      {product.discountPercentage}% OFF
                     </div>
-                  )}
-                  {/* Discount Badge */}
-                  <div className="absolute right-1 top-1 rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white shadow">
-                    {product.discountPercentage}% OFF
                   </div>
-                </div>
-              </Link>
-
-              {/* Product Info */}
-              <div className="p-2">
-                <Link href={`/products/${product.slug}`}>
-                  <h3 className="mb-1 line-clamp-2 text-xs font-semibold text-gray-900 hover:text-teal-600">
-                    {product.name}
-                  </h3>
                 </Link>
-                <p className="mb-1 text-[10px] text-gray-500">{product.category.name}</p>
 
-                {/* Pricing */}
-                <div className="mb-2">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-sm font-bold text-teal-600">
-                      ৳{product.flashSalePrice?.toFixed(0)}
-                    </span>
-                    <span className="text-[10px] text-gray-500 line-through">
-                      ৳{product.sellingPrice.toFixed(0)}
-                    </span>
+                {/* Product Info */}
+                <div className="p-2">
+                  <Link href={`/products/${product.slug}`}>
+                    <h3 className="mb-1 line-clamp-2 text-xs font-semibold text-gray-900 hover:text-teal-600">
+                      {product.name}
+                    </h3>
+                  </Link>
+                  <p className="mb-1 text-[10px] text-gray-500">{product.category.name}</p>
+
+                  {/* Pricing */}
+                  <div className="mb-2">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-sm font-bold text-teal-600">
+                        ৳{product.flashSalePrice?.toFixed(0)}
+                      </span>
+                      <span className="text-[10px] text-gray-500 line-through">
+                        ৳{product.sellingPrice.toFixed(0)}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-green-600">
+                      Save ৳{(product.sellingPrice - (product.flashSalePrice || 0)).toFixed(0)}
+                    </p>
                   </div>
-                  <p className="text-[10px] text-green-600">
-                    Save ৳{(product.sellingPrice - (product.flashSalePrice || 0)).toFixed(0)}
-                  </p>
-                </div>
 
-                {/* Add to Cart Button */}
-                <AddToCartButton
-                  productId={product.id}
-                  name={product.name}
-                  price={product.flashSalePrice ?? product.sellingPrice}
-                  mrp={product.sellingPrice}
-                  image={product.imageUrl ?? undefined}
-                  stockQuantity={product.stockQuantity}
-                  category={product.category?.name ?? 'General'}
-                  type="PRODUCT"
-                  className="w-full text-xs py-1.5"
-                />
+                  {/* Add to Cart Button */}
+                  <AddToCartButton
+                    productId={product.id}
+                    name={product.name}
+                    price={product.flashSalePrice ?? product.sellingPrice}
+                    mrp={product.sellingPrice}
+                    image={displayImageUrl ?? undefined}
+                    stockQuantity={product.stockQuantity}
+                    category={product.category?.name ?? 'General'}
+                    type="PRODUCT"
+                    className="w-full text-xs py-1.5"
+                  />
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </div>
