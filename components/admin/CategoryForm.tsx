@@ -269,6 +269,9 @@ export default function CategoryForm({ category, categories }: CategoryFormProps
             onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
             className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
           />
+          <p className="mt-1 text-xs text-gray-500">
+            Also used as the mobile home &quot;Categories&quot; grid photo when sidebar icon URL is empty. Square, realistic thumbnails look best (like Hair/Baby Care).
+          </p>
         </div>
 
         {/* Sort Order */}
@@ -394,7 +397,7 @@ export default function CategoryForm({ category, categories }: CategoryFormProps
               placeholder="https://example.com/icon.png"
             />
             <p className="mt-1 text-xs text-gray-500">
-              Small round icon for the sidebar (optional)
+              Small square photo for the mobile home category grid (overrides category image URL). Optional if image URL is set.
             </p>
           </div>
 

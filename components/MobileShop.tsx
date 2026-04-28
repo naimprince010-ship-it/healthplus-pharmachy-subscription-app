@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Zap, ChevronRight } from 'lucide-react'
 import { ProductCard } from '@/components/ProductCard'
+import { getStorefrontImageUrl } from '@/lib/image-url'
 
 export interface MobileShopProduct {
   id: string
@@ -31,7 +32,10 @@ export interface MobileShopCategory {
   id: string
   name: string
   slug: string
+  /** Square thumbnail for mobile category grid; overrides category imageUrl when set */
   sidebarIconUrl: string | null
+  /** Category banner/header image; used for grid when sidebar icon is empty */
+  imageUrl?: string | null
   sidebarLinkUrl: string | null
 }
 
@@ -51,6 +55,10 @@ function categoryHref(c: MobileShopCategory) {
   return c.sidebarLinkUrl?.trim() || `/category/${c.slug}`
 }
 
+function categoryGridImageUrl(c: MobileShopCategory): string | null {
+  return getStorefrontImageUrl(c.sidebarIconUrl || c.imageUrl || null)
+}
+
 export function MobileShop({ categoryGrid, flashSaleProducts, categorySections }: MobileShopProps) {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -59,17 +67,19 @@ export function MobileShop({ categoryGrid, flashSaleProducts, categorySections }
         <section className="border-b border-gray-100 py-4">
           <h2 className="mb-3 px-4 text-lg font-bold text-gray-900">Categories</h2>
           <div className="grid grid-cols-3 gap-3 px-4 sm:grid-cols-4">
-            {categoryGrid.map((category) => (
+            {categoryGrid.map((category) => {
+              const gridImg = categoryGridImageUrl(category)
+              return (
               <Link
                 key={category.id}
                 href={categoryHref(category)}
                 className="flex flex-col items-center gap-2 rounded-xl bg-white p-3 text-center shadow-sm ring-1 ring-gray-100 active:scale-[0.98] active:opacity-90"
               >
-                {category.sidebarIconUrl ? (
+                {gridImg ? (
                   <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gray-100">
                     <img
-                      src={category.sidebarIconUrl}
-                      alt=""
+                      src={gridImg}
+                      alt={category.name}
                       className="h-full w-full object-cover"
                     />
                   </div>
@@ -82,7 +92,8 @@ export function MobileShop({ categoryGrid, flashSaleProducts, categorySections }
                   {category.name}
                 </span>
               </Link>
-            ))}
+            )
+            })}
           </div>
         </section>
       )}

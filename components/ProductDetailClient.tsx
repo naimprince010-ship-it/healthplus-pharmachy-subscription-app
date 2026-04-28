@@ -20,6 +20,8 @@ interface ProductVariant {
 
 interface ProductDetailClientProps {
   productId: string
+  /** Canonical short URL for sharing (e.g. Facebook): `/p/{id}` → product page */
+  shortShareUrl?: string
   name: string
   sellingPrice: number
   mrp: number | null
@@ -44,6 +46,7 @@ interface ProductDetailClientProps {
 
 export function ProductDetailClient({
   productId,
+  shortShareUrl,
   name,
   sellingPrice,
   mrp,
@@ -335,6 +338,24 @@ export function ProductDetailClient({
         <div className="rounded-lg bg-red-50 px-4 py-3 text-center">
           <span className="font-medium text-red-600">Out of Stock</span>
         </div>
+      )}
+
+      {shortShareUrl && (
+        <button
+          type="button"
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(shortShareUrl)
+              setShortLinkCopied(true)
+              setTimeout(() => setShortLinkCopied(false), 2500)
+            } catch {
+              // ignore
+            }
+          }}
+          className="w-full rounded-lg border border-gray-200 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        >
+          {shortLinkCopied ? 'ছোট লিংক কপি হয়েছে' : 'Facebook-এ ছোট লিংক কপি করুন'}
+        </button>
       )}
 
       {currentStock > 0 && currentStock < 10 && (

@@ -76,6 +76,7 @@ export async function MobileShopServer() {
         id: true,
         name: true,
         slug: true,
+        imageUrl: true,
         sidebarIconUrl: true,
         sidebarLinkUrl: true,
         isMedicineCategory: true,

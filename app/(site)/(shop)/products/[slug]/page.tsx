@@ -111,6 +111,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
   })
   const customerFacingLeafLabel = isAzanCatalogProduct ? 'Verified by Halalzi' : leafCategoryName
   const displayImageUrl = getStorefrontImageUrl(product.imageUrl)
+  const siteBase = (process.env.NEXT_PUBLIC_SITE_URL || 'https://halalzi.com').replace(/\/$/, '')
+  const shortShareUrl = `${siteBase}/p/${product.id}`
 
   // Top line text: dosage form (for medicines) OR parent department (for general products with hierarchy)
   const topLineText = isMedicine ? dosageForm : parentCategoryName
@@ -250,6 +252,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
               <ProductDetailClient
                 productId={product.id}
+                shortShareUrl={shortShareUrl}
                 name={product.name}
                 sellingPrice={sellingPrice}
                 mrp={mrp}
