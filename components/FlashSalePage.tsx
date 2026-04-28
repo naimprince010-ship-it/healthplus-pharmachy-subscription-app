@@ -194,7 +194,7 @@ export default function FlashSalePage() {
             return (
               <div
                 key={product.id}
-                className="group overflow-hidden rounded-lg bg-white shadow-sm transition-shadow hover:shadow-md"
+                className="group flex h-full flex-col overflow-hidden rounded-lg bg-white shadow-sm transition-shadow hover:shadow-md"
               >
                 {/* Product Image */}
                 <Link href={`/products/${product.slug}`} className="block">
@@ -218,13 +218,13 @@ export default function FlashSalePage() {
                 </Link>
 
                 {/* Product Info */}
-                <div className="p-2">
+                <div className="flex flex-1 flex-col p-2">
                   <Link href={`/products/${product.slug}`}>
-                    <h3 className="mb-1 line-clamp-2 text-xs font-semibold text-gray-900 hover:text-teal-600">
+                    <h3 className="mb-1 min-h-[2.5rem] line-clamp-2 text-xs font-semibold text-gray-900 hover:text-teal-600">
                       {product.name}
                     </h3>
                   </Link>
-                  <p className="mb-1 text-[10px] text-gray-500">{product.category.name}</p>
+                  <p className="mb-1 min-h-[1rem] text-[10px] text-gray-500 line-clamp-1">{product.category.name}</p>
 
                   {/* Pricing */}
                   <div className="mb-2">
@@ -242,17 +242,19 @@ export default function FlashSalePage() {
                   </div>
 
                   {/* Add to Cart Button */}
-                  <AddToCartButton
-                    productId={product.id}
-                    name={product.name}
-                    price={product.flashSalePrice ?? product.sellingPrice}
-                    mrp={product.sellingPrice}
-                    image={displayImageUrl ?? undefined}
-                    stockQuantity={product.stockQuantity}
-                    category={product.category?.name ?? 'General'}
-                    type="PRODUCT"
-                    className="w-full text-xs py-1.5"
-                  />
+                  <div className="mt-auto pt-1">
+                    <AddToCartButton
+                      productId={product.id}
+                      name={product.name}
+                      price={product.flashSalePrice ?? product.sellingPrice}
+                      mrp={product.sellingPrice}
+                      image={displayImageUrl ?? undefined}
+                      stockQuantity={product.stockQuantity}
+                      category={product.category?.name ?? 'General'}
+                      type="PRODUCT"
+                      className="w-full text-xs py-1.5"
+                    />
+                  </div>
                 </div>
               </div>
             )
