@@ -10,6 +10,7 @@ const MIM_SMS_API_KEY = process.env.MIM_SMS_API_KEY
 const MIM_SMS_SENDER_ID = process.env.MIM_SMS_SENDER_ID
 const MIM_SMS_API_URL = process.env.MIM_SMS_API_URL || 'https://api.mimsms.com/api/SmsSending/SMS'
 const MIM_SMS_USERNAME = process.env.MIM_SMS_USERNAME
+const MIM_SMS_TRANSACTION_TYPE = (process.env.MIM_SMS_TRANSACTION_TYPE || 'T').trim().toUpperCase()
 
 function getCandidateApiUrls(): string[] {
     const configured = (MIM_SMS_API_URL || '').trim()
@@ -25,6 +26,10 @@ function getCandidateApiUrls(): string[] {
 export interface SendSmsResult {
     ok: boolean
     error?: string
+}
+
+function getTransactionType(): 'T' | 'P' {
+    return MIM_SMS_TRANSACTION_TYPE === 'P' ? 'P' : 'T'
 }
 
 export async function sendMIMSMS(phone: string, message: string): Promise<SendSmsResult> {
@@ -47,7 +52,7 @@ export async function sendMIMSMS(phone: string, message: string): Promise<SendSm
             MobileNumber: bdPhoneFormat,
             SenderName: MIM_SMS_SENDER_ID,
             SenderId: MIM_SMS_SENDER_ID,
-            TransactionType: "T",
+            TransactionType: getTransactionType(),
             Message: message,
         }
 
@@ -72,7 +77,15 @@ export async function sendMIMSMS(phone: string, message: string): Promise<SendSm
             const textResponse = await response.text()
             console.log(`[MIM SMS Raw Response] (${apiUrl}) for ${bdPhoneFormat}:`, textResponse)
 
-            if (response.ok && !textResponse.toLowerCase().includes('error') && !textResponse.toLowerCase().includes('invalid')) {
+            const lowered = textResponse.toLowerCase()
+            const looksFailed =
+                lowered.includes('"status":"failed"') ||
+                lowered.includes('"status":"fail"') ||
+                lowered.includes('insufficient balance') ||
+                lowered.includes('invalid') ||
+                lowered.includes('error')
+
+            if (response.ok && !looksFailed) {
                 console.log(`[MIM SMS] Successfully sent via ${apiUrl} to ${bdPhoneFormat}.`)
                 return { ok: true }
             }
