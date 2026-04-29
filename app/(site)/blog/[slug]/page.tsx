@@ -14,18 +14,24 @@ interface BlogDetailPageProps {
 }
 
 export async function generateMetadata({ params }: BlogDetailPageProps): Promise<Metadata> {
-    const blog = await prisma.blog.findUnique({
-        where: { slug: params.slug },
-    })
+    try {
+        const blog = await prisma.blog.findUnique({
+            where: { slug: params.slug },
+        })
 
-    if (!blog) {
-        return { title: 'Blog Not Found - Halalzi' }
-    }
+        if (!blog) {
+            return { title: 'Blog Not Found - Halalzi' }
+        }
 
-    return {
-        title: `${blog.seoTitle || blog.title} - Halalzi`,
-        description: blog.seoDescription || blog.summary || `Read ${blog.title} on Halalzi Blog.`,
-        keywords: blog.seoKeywords || undefined,
+        return {
+            title: `${blog.seoTitle || blog.title} - Halalzi`,
+            description: blog.seoDescription || blog.summary || `Read ${blog.title} on Halalzi Blog.`,
+            keywords: blog.seoKeywords || undefined,
+        }
+    } catch (error) {
+        // In production, Next hides server error details; return a safe metadata fallback.
+        console.error('Blog generateMetadata error:', error)
+        return { title: 'Halalzi Blog' }
     }
 }
 
@@ -46,32 +52,45 @@ const typeLabels: Record<BlogType, string> = {
 }
 
 export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
-    const blog = await prisma.blog.findUnique({
-        where: {
-            slug: params.slug,
-            status: BlogStatus.PUBLISHED, // Ensure only published blogs can be viewed
-        },
-        include: {
-            topic: true,
-            blogProducts: {
-                include: {
-                    product: {
-                        select: {
-                            id: true,
-                            name: true,
-                            slug: true,
-                            imageUrl: true,
-                            sellingPrice: true,
-                            mrp: true,
+    let blog: Awaited<ReturnType<typeof prisma.blog.findUnique>> | null = null
+    try {
+        blog = await prisma.blog.findUnique({
+            where: {
+                slug: params.slug,
+                status: BlogStatus.PUBLISHED, // Ensure only published blogs can be viewed
+            },
+            include: {
+                topic: true,
+                blogProducts: {
+                    include: {
+                        product: {
+                            select: {
+                                id: true,
+                                name: true,
+                                slug: true,
+                                imageUrl: true,
+                                sellingPrice: true,
+                                mrp: true,
+                            }
                         }
+                    },
+                    orderBy: {
+                        stepOrder: 'asc'
                     }
-                },
-                orderBy: {
-                    stepOrder: 'asc'
                 }
-            }
-        },
-    })
+            },
+        })
+    } catch (error) {
+        console.error('BlogDetailPage error:', error)
+        return (
+            <div className="bg-slate-50 min-h-screen pb-20">
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
+                    <h1 className="text-2xl font-bold text-slate-900 mb-2">Blog is temporarily unavailable</h1>
+                    <p className="text-slate-600">Please try again in a few minutes.</p>
+                </div>
+            </div>
+        )
+    }
 
     if (!blog) {
         notFound()
