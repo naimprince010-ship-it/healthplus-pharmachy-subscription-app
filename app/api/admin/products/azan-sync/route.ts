@@ -326,21 +326,8 @@ export async function POST() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
-    const categoryName = process.env.AZAN_WHOLESALE_CATEGORY || 'Azan Wholesale'
     /** Same rule as `scripts/sync-azan-api.ts`: 60% markup on cost = ×1.6 unless `AZAN_WHOLESALE_MARKUP` set */
     const multiplier = getAzanRetailMultiplierFromEnv()
-
-    let category = await prisma.category.findUnique({ where: { name: categoryName } })
-    if (!category) {
-      category = await prisma.category.create({
-        data: {
-          name: categoryName,
-          slug: slugify(categoryName),
-          isActive: true,
-          isMedicineCategory: false,
-        },
-      })
-    }
 
     const { endpoint, products } = await fetchAzanProducts()
     let created = 0
@@ -349,6 +336,7 @@ export async function POST() {
     let mappedToLocalCategory = 0
     let assignedViaAutoCategory = 0
     let fallbackToDefaultCategory = 0
+    let skippedUnmappedCategory = 0
     const autoCreateEnabled = isAzanAutoCreateSourceCategoriesEnabled()
 
     const mappings = await prisma.azanCategoryMapping.findMany({
@@ -374,7 +362,7 @@ export async function POST() {
       const slug = product.sku ? `${baseSlug}-${slugify(product.sku)}` : baseSlug
       const sellingPrice = product.purchasePrice ? Math.ceil(product.purchasePrice * multiplier) : 0
       const k = product.sourceCategoryKey?.trim().toLowerCase() ?? null
-      let resolvedCategoryId = category.id
+      let resolvedCategoryId: string | null = null
       if (k) {
         const explicit = mappingByKey.get(k)
         if (explicit) {
@@ -385,9 +373,16 @@ export async function POST() {
           assignedViaAutoCategory++
         } else {
           fallbackToDefaultCategory++
+          skippedUnmappedCategory++
         }
       } else {
         fallbackToDefaultCategory++
+        skippedUnmappedCategory++
+      }
+
+      // Do not place products into default Azan category when no local mapping exists.
+      if (!resolvedCategoryId) {
+        continue
       }
 
       const existing = await prisma.product.findUnique({ where: { slug } })
@@ -445,6 +440,7 @@ export async function POST() {
         newSourceCategoriesCreated: autoCreateEnabled ? newSourceCategoriesCreated : 0,
         assignedViaAutoCategory: autoCreateEnabled ? assignedViaAutoCategory : 0,
         fallbackToDefaultCategory,
+        skippedUnmappedCategory,
         /** @deprecated use fallbackToDefaultCategory */
         fallbackToAzanCategory: fallbackToDefaultCategory,
       },

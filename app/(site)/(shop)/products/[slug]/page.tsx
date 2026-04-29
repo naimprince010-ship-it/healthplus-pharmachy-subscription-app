@@ -29,7 +29,9 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     }
 
     const categoryName = product.category?.name || ''
-    const seoTitle = product.seoTitle || `${product.name}${categoryName ? ` - ${categoryName}` : ''} | Halalzi`
+    const shouldHideCategoryInSeoTitle = categoryName.trim().toLowerCase() === 'azan wholesale'
+    const safeCategorySuffix = categoryName && !shouldHideCategoryInSeoTitle ? ` - ${categoryName}` : ''
+    const seoTitle = product.seoTitle || `${product.name}${safeCategorySuffix} | Halalzi`
     const seoDescription = product.seoDescription || product.description || `Buy ${product.name} online at best price from Halalzi. Fast delivery across Bangladesh.`
 
     return {
