@@ -30,7 +30,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "Halalzi - HealthPlus Pharmacy",
+  title: "Halalzi - Top Ecommerce in Bangladesh",
   description: "Affordable medicine subscriptions with 100 BDT membership and 10% discount on all medicines. Monthly plans for BP, Diabetes, Baby Care, and Family Pack.",
   keywords: "pharmacy, medicine, subscription, healthcare, Bangladesh, online pharmacy, medicine delivery, halalzi",
   authors: [{ name: "Halalzi" }],
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     telephone: true,
   },
   openGraph: {
-    title: "Halalzi - HealthPlus Pharmacy",
+    title: "Halalzi - Top Ecommerce in Bangladesh",
     description: "Affordable medicine subscriptions with 100 BDT membership and 10% discount on all medicines.",
     type: "website",
     locale: "en_BD",
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Halalzi - HealthPlus Pharmacy",
+    title: "Halalzi - Top Ecommerce in Bangladesh",
     description: "Affordable medicine subscriptions with 100 BDT membership and 10% discount on all medicines.",
   },
   alternates: {
