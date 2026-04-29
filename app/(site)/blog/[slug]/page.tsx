@@ -170,7 +170,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                                 </h3>
 
                                 <div className="space-y-4">
-                                    {blog.blogProducts.map((bp) => (
+                                    {blog.blogProducts.filter(bp => bp.product).map((bp) => (
                                         <Link
                                             key={bp.id}
                                             href={`/products/${bp.product.slug}`}
@@ -178,12 +178,10 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                                         >
                                             <div className="relative w-16 h-16 rounded-lg bg-white border border-gray-100 overflow-hidden flex-shrink-0">
                                                 {bp.product.imageUrl ? (
-                                                    <Image
+                                                    <img
                                                         src={bp.product.imageUrl}
                                                         alt={bp.product.name}
-                                                        fill
-                                                        className="object-contain p-1"
-                                                        sizes="64px"
+                                                        className="w-full h-full object-contain p-1"
                                                     />
                                                 ) : (
                                                     <div className="w-full h-full bg-gray-50 flex items-center justify-center text-gray-400">

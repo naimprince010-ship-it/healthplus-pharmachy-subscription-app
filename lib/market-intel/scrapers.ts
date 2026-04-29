@@ -1,7 +1,9 @@
 import * as cheerio from 'cheerio'
+import { slugify } from '@/lib/slugify'
 
 export type SiteName = 'chaldal' | 'arogga' | 'shajgoj' | 'medeasy'
 export type CategoryKey =
+  | 'cooking'
   | 'rice'
   | 'oil'
   | 'paracetamol'
@@ -47,12 +49,14 @@ export interface RawScoreComponents {
 
 // All 15 categories for the frontend
 export const ALL_CATEGORIES: CategoryKey[] = [
+  'cooking',
   'rice', 'oil', 'paracetamol', 'cough-syrup', 'face-wash',
   'baby-food', 'diapers', 'milk', 'tea-coffee', 'biscuits',
   'snacks', 'soap', 'shampoo', 'toothpaste', 'detergent'
 ]
 
 export const CATEGORY_LABELS: Record<CategoryKey, string> = {
+  'cooking': 'Cooking',
   'rice': 'Rice',
   'oil': 'Cooking Oil',
   'paracetamol': 'Paracetamol',
@@ -78,6 +82,7 @@ const HEADERS = {
 
 const CATEGORY_URLS: Record<SiteName, Record<CategoryKey, string>> = {
   chaldal: {
+    'cooking': 'https://chaldal.com/cooking',
     'rice': 'https://chaldal.com/search/rice',
     'oil': 'https://chaldal.com/search/cooking%20oil',
     'paracetamol': 'https://chaldal.com/search/napa',
@@ -95,6 +100,7 @@ const CATEGORY_URLS: Record<SiteName, Record<CategoryKey, string>> = {
     'detergent': 'https://chaldal.com/search/detergent',
   },
   arogga: {
+    'cooking': '',
     'rice': '',
     'oil': '',
     'paracetamol': 'paracetamol', // Category slug for API
@@ -112,6 +118,7 @@ const CATEGORY_URLS: Record<SiteName, Record<CategoryKey, string>> = {
     'detergent': 'detergent',
   },
   shajgoj: {
+    'cooking': '',
     'rice': '',
     'oil': '',
     'paracetamol': '',
@@ -129,6 +136,7 @@ const CATEGORY_URLS: Record<SiteName, Record<CategoryKey, string>> = {
     'detergent': '',
   },
   medeasy: {
+    'cooking': '',
     'rice': '',
     'oil': '',
     'paracetamol': 'https://medeasy.health/medicines/search?q=napa',
@@ -148,6 +156,67 @@ const CATEGORY_URLS: Record<SiteName, Record<CategoryKey, string>> = {
 }
 
 const CHALDAL_COOKING_ROOT_URL = 'https://chaldal.com/cooking'
+
+function parseChaldalState(pageHtml: string): unknown | null {
+  const stateMatch = pageHtml.match(/window\.__reactAsyncStatePacket\s*=\s*(\{[\s\S]*?\})\s*<\/script>/)
+  if (!stateMatch) return null
+  try {
+    return JSON.parse(stateMatch[1])
+  } catch {
+    return null
+  }
+}
+
+function parseSubcategorySlugsFromChaldalCookingState(state: unknown): string[] {
+  if (!state || typeof state !== 'object') return []
+  const blocks = Object.values(state as Record<string, unknown>).filter(
+    block => !!block && typeof block === 'object'
+  ) as Array<Record<string, unknown>>
+
+  const slugs: string[] = []
+  for (const block of blocks) {
+    const categories = (block as any).categories
+    if (!Array.isArray(categories)) continue
+
+    for (const cat of categories) {
+      if (!cat || typeof cat !== 'object') continue
+      const rec = cat as Record<string, unknown>
+
+      let slug: string | null = null
+      const picture = rec.Picture
+      if (picture && typeof picture === 'object') {
+        const seo = (picture as Record<string, unknown>).SeoFilename
+        if (typeof seo === 'string' && seo.trim().length > 0) {
+          slug = seo.trim()
+        }
+      }
+
+      if (!slug && typeof rec.Name === 'string' && rec.Name.trim().length > 0) {
+        slug = slugify(rec.Name.trim())
+      }
+
+      if (slug && !slugs.includes(slug)) slugs.push(slug)
+    }
+  }
+
+  return slugs
+}
+
+async function getChaldalCookingSubcategoryUrlsFromState(maxSlugs: number = 30): Promise<string[]> {
+  try {
+    const response = await fetch(CHALDAL_COOKING_ROOT_URL, { headers: HEADERS })
+    if (!response.ok) return []
+    const html = await response.text()
+
+    const state = parseChaldalState(html)
+    if (!state) return []
+
+    const slugs = parseSubcategorySlugsFromChaldalCookingState(state)
+    return slugs.slice(0, maxSlugs).map(slug => `https://chaldal.com/${slug}`)
+  } catch {
+    return []
+  }
+}
 
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
@@ -342,13 +411,11 @@ async function getChaldalCookingSubcategoryUrls(maxLinks: number = 20): Promise<
 
 async function scrapeChaldalCategory(category: CategoryKey): Promise<ScrapedCompetitorProduct[]> {
   const baseUrl = CATEGORY_URLS.chaldal[category]
-  const urlCandidates = new Set<string>()
-  urlCandidates.add(baseUrl)
+  if (!baseUrl) return []
 
-  // "Cooking" hub includes many subcategories. Expand crawl for oil category.
-  if (category === 'oil') {
-    urlCandidates.add(CHALDAL_COOKING_ROOT_URL)
-    const subUrls = await getChaldalCookingSubcategoryUrls()
+  const urlCandidates = new Set<string>([baseUrl])
+  if (category === 'cooking') {
+    const subUrls = await getChaldalCookingSubcategoryUrlsFromState()
     for (const subUrl of subUrls) urlCandidates.add(subUrl)
   }
 
@@ -357,7 +424,7 @@ async function scrapeChaldalCategory(category: CategoryKey): Promise<ScrapedComp
 
   const productsByKey = new Map<string, ScrapedCompetitorProduct>()
   let nextPosition = 0
-  const maxPagesPerUrl = category === 'oil' ? 3 : 1
+  const maxPagesPerUrl = 1
 
   for (const url of urls) {
     for (let page = 1; page <= maxPagesPerUrl; page++) {

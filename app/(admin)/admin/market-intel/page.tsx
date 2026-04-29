@@ -43,6 +43,7 @@ interface SyncLog {
 }
 
 const CATEGORIES = [
+  'cooking',
   'rice', 'oil', 'paracetamol', 'cough-syrup', 'face-wash',
   'baby-food', 'diapers', 'milk', 'tea-coffee', 'biscuits',
   'snacks', 'soap', 'shampoo', 'toothpaste', 'detergent'
@@ -50,6 +51,7 @@ const CATEGORIES = [
 const SITES = ['chaldal', 'arogga', 'shajgoj']
 
 const CATEGORY_LABELS: Record<string, string> = {
+  'cooking': 'Cooking',
   'rice': 'Rice',
   'oil': 'Cooking Oil',
   'paracetamol': 'Paracetamol',
@@ -166,7 +168,7 @@ export default function MarketIntelPage() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Market Intelligence</h1>
             <p className="text-sm text-gray-500 mt-1">
-              Competitor analysis across 15 categories from Chaldal
+              Competitor analysis across {CATEGORIES.length} categories from Chaldal
             </p>
           </div>
           <div className="flex items-center gap-4">
