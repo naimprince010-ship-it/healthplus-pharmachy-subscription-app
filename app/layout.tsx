@@ -31,8 +31,8 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: "Halalzi - Top Ecommerce in Bangladesh",
-  description: "Affordable medicine subscriptions with 100 BDT membership and 10% discount on all medicines. Monthly plans for BP, Diabetes, Baby Care, and Family Pack.",
-  keywords: "pharmacy, medicine, subscription, healthcare, Bangladesh, online pharmacy, medicine delivery, halalzi",
+  description: "Halalzi is a top e-commerce platform in Bangladesh offering authentic medicines, cosmetics, groceries, and baby care products. Enjoy fast home delivery and exclusive discounts.",
+  keywords: "ecommerce Bangladesh, online shopping bd, online pharmacy, authentic cosmetics, grocery delivery, baby care products, halalzi, best ecommerce site, fast delivery",
   authors: [{ name: "Halalzi" }],
   manifest: '/manifest.json',
   appleWebApp: {
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Halalzi - Top Ecommerce in Bangladesh",
-    description: "Affordable medicine subscriptions with 100 BDT membership and 10% discount on all medicines.",
+    description: "Halalzi is a top e-commerce platform in Bangladesh offering authentic medicines, cosmetics, groceries, and baby care products.",
     type: "website",
     locale: "en_BD",
     url: siteUrl,
@@ -53,7 +53,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Halalzi - Top Ecommerce in Bangladesh",
-    description: "Affordable medicine subscriptions with 100 BDT membership and 10% discount on all medicines.",
+    description: "Halalzi is a top e-commerce platform in Bangladesh offering authentic medicines, cosmetics, groceries, and baby care products.",
   },
   alternates: {
     canonical: '/',
