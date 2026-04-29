@@ -614,6 +614,7 @@ export async function scrapeAllSitesOnce(): Promise<ScrapedCompetitorProduct[]> 
   const allProducts: ScrapedCompetitorProduct[] = []
   const sites: SiteName[] = ['chaldal', 'arogga', 'medeasy']
   const categories: CategoryKey[] = [
+    'cooking',
     'rice', 'oil', 'paracetamol', 'cough-syrup', 'face-wash',
     'baby-food', 'diapers', 'milk', 'tea-coffee', 'biscuits',
     'snacks', 'soap', 'shampoo', 'toothpaste', 'detergent'
