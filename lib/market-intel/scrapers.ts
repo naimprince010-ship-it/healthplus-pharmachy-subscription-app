@@ -147,43 +147,90 @@ const CATEGORY_URLS: Record<SiteName, Record<CategoryKey, string>> = {
   },
 }
 
+const CHALDAL_COOKING_ROOT_URL = 'https://chaldal.com/cooking'
+
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-async function scrapeChaldalCategory(category: CategoryKey): Promise<ScrapedCompetitorProduct[]> {
-  const url = CATEGORY_URLS.chaldal[category]
-  if (!url) return []
-
-  const products: ScrapedCompetitorProduct[] = []
-
-  try {
-    const response = await fetch(url, { headers: HEADERS })
-    if (!response.ok) {
-      console.error(`Chaldal ${category}: HTTP ${response.status}`)
-      return []
+function extractChaldalProductsFromHtml(html: string, category: CategoryKey): ScrapedCompetitorProduct[] {
+  const parseChaldalState = (pageHtml: string): unknown | null => {
+    const stateMatch = pageHtml.match(/window\.__reactAsyncStatePacket\s*=\s*(\{[\s\S]*?\})\s*<\/script>/)
+    if (!stateMatch) return null
+    try {
+      return JSON.parse(stateMatch[1])
+    } catch {
+      return null
     }
+  }
 
-    const html = await response.text()
-    const $ = cheerio.load(html)
+  const parseChaldalProductsFromState = (state: unknown): Array<Record<string, unknown>> => {
+    if (!state || typeof state !== 'object') return []
+    const blocks = Object.values(state as Record<string, unknown>).filter(
+      block => !!block && typeof block === 'object'
+    ) as Array<Record<string, unknown>>
 
-    // Chaldal often uses div.productPane or similar for products
-    let positionIndex = 0
-    $('div.productPane').each((_, el) => {
-      const $el = $(el)
-      const name = $el.find('.name').text().trim()
-      const priceText = $el.find('.price').text().trim()
-      const priceMatch = priceText.match(/৳\s*([\d,]+)/)
-      const price = priceMatch ? parseFloat(priceMatch[1].replace(/,/g, '')) : null
+    for (const block of blocks) {
+      const maybeProducts = (block as any).products
+      if (
+        maybeProducts &&
+        typeof maybeProducts === 'object' &&
+        Array.isArray((maybeProducts as { items?: unknown[] }).items)
+      ) {
+        return (maybeProducts as { items: unknown[] }).items.filter(
+          (it): it is Record<string, unknown> => !!it && typeof it === 'object'
+        )
+      }
+    }
+    return []
+  }
 
-      const img = $el.find('img').first()
-      const imageUrl = img.attr('src') || null
+  const parseBigDtoPrice = (val: unknown): number | null => {
+    if (typeof val === 'number' && Number.isFinite(val)) return val
+    if (!val || typeof val !== 'object') return null
+    const v = val as Record<string, unknown>
+    const lo = typeof v.Lo === 'number' ? v.Lo : null
+    const mid = typeof v.Mid === 'number' ? v.Mid : null
+    const hi = typeof v.Hi === 'number' ? v.Hi : null
+    if (mid != null && mid > 0) return mid
+    if (lo != null && lo > 0) return lo
+    if (hi != null && hi > 0) return hi
+    return lo ?? null
+  }
 
-      const link = $el.find('a').first()
-      const href = link.attr('href')
-      const fullUrl = href ? `https://chaldal.com${href}` : null
+  const pickFirstString = (val: unknown): string | null => {
+    if (typeof val === 'string') return val
+    if (Array.isArray(val)) {
+      const first = val.find((x): x is string => typeof x === 'string' && x.trim().length > 0)
+      return first ?? null
+    }
+    return null
+  }
 
-      if (price && name) {
+  // Prefer embedded state parsing: stable and avoids "Loading more..." artifacts.
+  const state = parseChaldalState(html)
+  if (state) {
+    const items = parseChaldalProductsFromState(state)
+    if (items.length > 0) {
+      const products: ScrapedCompetitorProduct[] = []
+      let positionIndex = 0
+
+      for (const item of items) {
+        const slug = typeof item.Slug === 'string' ? item.Slug.trim() : null
+        const name =
+          (typeof item.NameWithoutSubText === 'string' && item.NameWithoutSubText.trim()) ? item.NameWithoutSubText.trim() :
+          (typeof item.Name === 'string' && item.Name.trim()) ? item.Name.trim() :
+          null
+
+        const discounted = parseBigDtoPrice(item.DiscountedPrice)
+        const regular = parseBigDtoPrice(item.Price)
+        const price = discounted ?? regular
+
+        const imageUrl =
+          pickFirstString(item.PictureUrls) || pickFirstString(item.OfferPictureUrls)
+
+        if (!slug || !name || price == null || !Number.isFinite(price)) continue
+
         products.push({
           siteName: 'chaldal',
           category,
@@ -191,51 +238,160 @@ async function scrapeChaldalCategory(category: CategoryKey): Promise<ScrapedComp
           price,
           reviewCount: 0,
           position: positionIndex++,
-          productUrl: fullUrl,
+          productUrl: `https://chaldal.com/${slug}`,
           imageUrl,
         })
       }
-    })
 
-    // Fallback if div.productPane fails
-    if (products.length === 0) {
-      $('a.btnShowDetails').each((_, el) => {
-        // ... (existing logic as fallback)
-        const href = $(el).attr('href')
-        if (!href) return
-
-        let productContainer = $(el).parent()
-        for (let i = 0; i < 10; i++) {
-          const text = productContainer.text()
-          if (text.includes('৳')) break
-          productContainer = productContainer.parent()
-        }
-
-        const containerText = productContainer.text()
-        const priceMatch = containerText.match(/৳\s*([\d,]+)/)
-        const price = priceMatch ? parseFloat(priceMatch[1].replace(/,/g, '')) : null
-
-        if (price) {
-          products.push({
-            siteName: 'chaldal',
-            category,
-            productName: href.split('/').pop()?.replace(/-/g, ' ') || 'Product',
-            price,
-            reviewCount: 0,
-            position: positionIndex++,
-            productUrl: `https://chaldal.com${href}`,
-            imageUrl: null
-          })
-        }
-      })
+      if (products.length > 0) return products
     }
-
-    console.log(`Chaldal ${category}: found ${products.length} products`)
-  } catch (error) {
-    console.error(`Error scraping Chaldal ${category}:`, error)
   }
 
-  return products.slice(0, 50) // Limit to top 50 products
+  const $ = cheerio.load(html)
+  const products: ScrapedCompetitorProduct[] = []
+  let positionIndex = 0
+
+  $('div.productPane').each((_, el) => {
+    const $el = $(el)
+    const name = $el.find('.name').text().trim()
+    const priceText = $el.find('.price').text().trim()
+    const priceMatch = priceText.match(/৳\s*([\d,]+)/)
+    const price = priceMatch ? parseFloat(priceMatch[1].replace(/,/g, '')) : null
+
+    const img = $el.find('img').first()
+    const imageUrl = img.attr('src') || null
+
+    const link = $el.find('a').first()
+    const href = link.attr('href')
+    const fullUrl = href ? `https://chaldal.com${href}` : null
+
+    if (price && name) {
+      products.push({
+        siteName: 'chaldal',
+        category,
+        productName: name,
+        price,
+        reviewCount: 0,
+        position: positionIndex++,
+        productUrl: fullUrl,
+        imageUrl,
+      })
+    }
+  })
+
+  // Fallback if div.productPane fails
+  if (products.length === 0) {
+    $('a.btnShowDetails').each((_, el) => {
+      const href = $(el).attr('href')
+      if (!href) return
+
+      let productContainer = $(el).parent()
+      for (let i = 0; i < 10; i++) {
+        const text = productContainer.text()
+        if (text.includes('৳')) break
+        productContainer = productContainer.parent()
+      }
+
+      const containerText = productContainer.text()
+      const priceMatch = containerText.match(/৳\s*([\d,]+)/)
+      const price = priceMatch ? parseFloat(priceMatch[1].replace(/,/g, '')) : null
+
+      if (price) {
+        products.push({
+          siteName: 'chaldal',
+          category,
+          productName: href.split('/').pop()?.replace(/-/g, ' ') || 'Product',
+          price,
+          reviewCount: 0,
+          position: positionIndex++,
+          productUrl: `https://chaldal.com${href}`,
+          imageUrl: null,
+        })
+      }
+    })
+  }
+
+  return products
+}
+
+async function getChaldalCookingSubcategoryUrls(maxLinks: number = 20): Promise<string[]> {
+  try {
+    const response = await fetch(CHALDAL_COOKING_ROOT_URL, { headers: HEADERS })
+    if (!response.ok) return []
+
+    const html = await response.text()
+    const $ = cheerio.load(html)
+    const urls = new Set<string>()
+
+    $('a[href]').each((_, el) => {
+      const href = ($(el).attr('href') || '').trim()
+      if (!href) return
+      if (!href.startsWith('/')) return
+      if (!href.toLowerCase().includes('/cooking')) return
+
+      // Skip root category and keep likely subcategory/filter URLs
+      if (href === '/cooking' || href === '/cooking/') return
+      urls.add(`https://chaldal.com${href}`)
+    })
+
+    return Array.from(urls).slice(0, maxLinks)
+  } catch {
+    return []
+  }
+}
+
+async function scrapeChaldalCategory(category: CategoryKey): Promise<ScrapedCompetitorProduct[]> {
+  const baseUrl = CATEGORY_URLS.chaldal[category]
+  const urlCandidates = new Set<string>()
+  urlCandidates.add(baseUrl)
+
+  // "Cooking" hub includes many subcategories. Expand crawl for oil category.
+  if (category === 'oil') {
+    urlCandidates.add(CHALDAL_COOKING_ROOT_URL)
+    const subUrls = await getChaldalCookingSubcategoryUrls()
+    for (const subUrl of subUrls) urlCandidates.add(subUrl)
+  }
+
+  const urls = Array.from(urlCandidates).filter(Boolean)
+  if (!urls.length) return []
+
+  const productsByKey = new Map<string, ScrapedCompetitorProduct>()
+  let nextPosition = 0
+  const maxPagesPerUrl = category === 'oil' ? 3 : 1
+
+  for (const url of urls) {
+    for (let page = 1; page <= maxPagesPerUrl; page++) {
+      const pageUrl = new URL(url)
+      if (page > 1) pageUrl.searchParams.set('page', String(page))
+
+      try {
+        const response = await fetch(pageUrl.toString(), { headers: HEADERS })
+        if (!response.ok) break
+
+        const html = await response.text()
+        const extracted = extractChaldalProductsFromHtml(html, category)
+        if (extracted.length === 0) break
+
+        let newlyAdded = 0
+        for (const product of extracted) {
+          const key = (product.productUrl || `${product.productName}|${product.price}`).toLowerCase()
+          if (productsByKey.has(key)) continue
+          productsByKey.set(key, { ...product, position: nextPosition++ })
+          newlyAdded++
+        }
+
+        // Stop pagination if this page had only duplicates.
+        if (newlyAdded === 0) break
+      } catch (error) {
+        console.error(`Error scraping Chaldal ${category} ${pageUrl.toString()}:`, error)
+        break
+      }
+    }
+  }
+
+  const products = Array.from(productsByKey.values())
+  console.log(`Chaldal ${category}: found ${products.length} products across ${urls.length} page groups`)
+  return products.slice(0, 300) // Keep higher ceiling for cooking coverage
 }
 
 async function scrapeAroggaCategory(category: CategoryKey): Promise<ScrapedCompetitorProduct[]> {

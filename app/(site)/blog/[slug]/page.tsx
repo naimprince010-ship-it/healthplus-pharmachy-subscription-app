@@ -129,13 +129,10 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                 {/* Featured Image */}
                 {blog.imageUrl && (
                     <div className="relative aspect-[21/9] w-full mb-12 rounded-2xl overflow-hidden shadow-md">
-                        <Image
+                        <img
                             src={blog.imageUrl}
                             alt={blog.title}
-                            fill
-                            className="object-cover"
-                            priority
-                            sizes="(max-width: 1024px) 100vw, 1024px"
+                            className="w-full h-full object-cover"
                         />
                     </div>
                 )}
