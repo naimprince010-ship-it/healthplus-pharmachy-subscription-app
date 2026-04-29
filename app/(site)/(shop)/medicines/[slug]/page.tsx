@@ -131,11 +131,46 @@ export default async function MedicineDetailPage({
     },
   }
 
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: 'https://halalzi.com',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Medicines',
+        item: 'https://halalzi.com/medicines',
+      },
+      ...(medicine.category ? [{
+        '@type': 'ListItem',
+        position: 3,
+        name: medicine.category.name,
+        item: `https://halalzi.com/medicines?category=${medicine.category.id}`,
+      }] : []),
+      {
+        '@type': 'ListItem',
+        position: medicine.category ? 4 : 3,
+        name: medicine.name,
+        item: `https://halalzi.com/medicines/${slug}`,
+      },
+    ],
+  }
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <div className="bg-white py-8">
         <div className="w-full px-4 sm:px-6 lg:px-8">

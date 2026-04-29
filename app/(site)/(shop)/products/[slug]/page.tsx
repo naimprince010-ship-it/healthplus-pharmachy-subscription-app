@@ -151,11 +151,40 @@ export default async function ProductPage({ params }: ProductPageProps) {
     },
   }
 
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: 'https://halalzi.com',
+      },
+      ...(leafCategoryName && leafCategorySlug ? [{
+        '@type': 'ListItem',
+        position: 2,
+        name: customerFacingLeafLabel || leafCategoryName,
+        item: `https://halalzi.com/category/${leafCategorySlug}`,
+      }] : []),
+      {
+        '@type': 'ListItem',
+        position: (leafCategoryName && leafCategorySlug) ? 3 : 2,
+        name: product.name,
+        item: `https://halalzi.com/products/${slug}`,
+      },
+    ],
+  }
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <div className="bg-gray-50 py-8">
         {/* MedEasy-style layout: centered container matching home page */}
