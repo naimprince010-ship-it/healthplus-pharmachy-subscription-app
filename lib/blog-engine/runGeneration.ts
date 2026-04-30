@@ -1,5 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { BlogStatus, BlogType, Prisma, ProductType } from '@prisma/client'
+import OpenAI from 'openai'
+import { supabaseAdmin } from '@/lib/supabase'
 import { generateBeautyBlog } from './beautyWriter'
 import { generateGroceryBlog } from './groceryWriter'
 import { generateRecipeBlog } from './recipeWriter'
@@ -89,6 +91,66 @@ function linkProductMentionsInMarkdown(
   }
 
   return lines.join('\n')
+}
+
+async function generateBlogCoverImageUrl(
+  blogId: string,
+  type: BlogType,
+  title: string,
+  summary?: string
+): Promise<string | null> {
+  const apiKey = process.env.OPENAI_API_KEY
+  if (!apiKey) return null
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) return null
+
+  try {
+    const openai = new OpenAI({ apiKey })
+    const styleHint =
+      type === BlogType.BEAUTY
+        ? 'clean skincare flat-lay, soft pastel colors, product silhouettes, no readable text'
+        : type === BlogType.RECIPE
+          ? 'bangladeshi cooking ingredients and plated food, warm tones, no readable text'
+          : type === BlogType.MONEY_SAVING
+            ? 'smart shopping cart, grocery and beauty icons, budget vibe, no readable text'
+            : 'fresh grocery and wellness lifestyle composition, no readable text'
+
+    const prompt = `Create a premium ecommerce blog cover image for Halalzi (Bangladesh).
+Title context: ${title}
+Summary context: ${summary || 'Helpful consumer guide.'}
+Visual style: ${styleHint}
+Requirements: high-quality, editorial hero, no logos, no watermark, no readable text, no faces, safe general audience.`
+
+    const imageRes = await openai.images.generate({
+      model: 'gpt-image-1',
+      prompt,
+      size: '1536x1024',
+      quality: 'medium',
+      response_format: 'b64_json',
+    })
+
+    const b64 = imageRes.data?.[0]?.b64_json
+    if (!b64) return null
+    const buffer = Buffer.from(b64, 'base64')
+
+    const bucket = process.env.SUPABASE_BLOG_BUCKET || process.env.SUPABASE_MEDICINE_BUCKET || 'medicine-images'
+    const filePath = `blogs/${blogId}/cover-${Date.now()}.png`
+
+    const { data, error } = await supabaseAdmin.storage.from(bucket).upload(filePath, buffer, {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: 'image/png',
+    })
+    if (error || !data?.path) {
+      console.error('generateBlogCoverImageUrl upload error:', error)
+      return null
+    }
+
+    const { data: urlData } = supabaseAdmin.storage.from(bucket).getPublicUrl(data.path)
+    return urlData.publicUrl || null
+  } catch (error) {
+    console.error('generateBlogCoverImageUrl error:', error)
+    return null
+  }
 }
 
 /**
@@ -194,6 +256,12 @@ export async function runBlogDraftGeneration(blogId: string): Promise<RunBlogDra
     )
 
     const linkedContentMd = linkProductMentionsInMarkdown(result.content.contentMd, uniqueInlineProducts)
+    const aiCoverUrl = await generateBlogCoverImageUrl(
+      blogId,
+      blog.type,
+      result.content.title,
+      result.content.summary
+    )
 
     const updatedBlog = await prisma.blog.update({
       where: { id: blogId },
@@ -201,6 +269,7 @@ export async function runBlogDraftGeneration(blogId: string): Promise<RunBlogDra
         title: result.content.title,
         summary: result.content.summary,
         contentMd: linkedContentMd,
+        imageUrl: aiCoverUrl || undefined,
         seoTitle: result.content.seoTitle,
         seoDescription: result.content.seoDescription,
         seoKeywords: result.content.seoKeywords,
