@@ -27,7 +27,8 @@
     "cron:facebook": "npx tsx scripts/cron-facebook-marketing.ts",
     "blog:publish-sample": "npx tsx scripts/publish-sample-blog.ts",
     "blog:generate-draft": "npx tsx scripts/generate-topic-only-blog-draft.ts",
-    "blog:backfill-inline-links": "npx tsx scripts/backfill-blog-inline-product-links.ts"
+    "blog:backfill-inline-links": "npx tsx scripts/backfill-blog-inline-product-links.ts",
+    "blog:cleanup-missing": "npx tsx scripts/cleanup-false-missing-products.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
