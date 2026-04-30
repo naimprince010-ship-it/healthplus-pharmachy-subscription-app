@@ -64,34 +64,43 @@ export async function POST(request: NextRequest) {
       : ''
 
     const typeDescriptions: Record<string, string> = {
-      BEAUTY: 'skincare routines, beauty tips, product recommendations for skin types',
-      GROCERY: 'grocery buying guides, product comparisons, storage tips',
-      RECIPE: 'recipes using available ingredients, cooking tips, meal planning',
-      MONEY_SAVING: 'budget shopping tips, bulk buying guides, price comparisons',
+      BEAUTY:
+        'বিউটি/স্কিনকেয়ার — রুটিন, টিপস, ত্বকের ধরন, ফেসওয়াশ·সিরাম·সানস্ক্রিন ইত্যাদি রিলেটেড টপিক',
+      GROCERY:
+        'গ্রোসারি — কেনাকাটা গাইড, তুলনা, সংরক্ষণ, ব্র্যান্ড টিপস, বাংলাদেশি রান্নাবান্নার উপযোগী পণ্য',
+      RECIPE:
+        'রেসিপি ও রান্না — উপলব্ধ উপকরণ, মील প্ল্যান, সহজ বাংলা রান্না, স্বাস্থ্যকর বিকল্প',
+      MONEY_SAVING:
+        'টাকা বাঁচানো ও স্মার্ট শপিং — অফার ও বাজেট, বাল্ক কেনা, মেয়াদ/প্যাক সাইজ, পরিবার খরচ',
     }
 
-    const prompt = `You are a content strategist for Halalzi.com, a Bangladeshi e-commerce store.
+    const typeFocus = typeDescriptions[type] || typeDescriptions.GROCERY
 
-Generate ${count} unique blog topic ideas for the ${type} category in the ${block} block.
+    const prompt = `You plan blog topics for Halalzi.com — pharmacy, grocery, cosmetics e-commerce for Bangladesh (${block} site section).
 
-Topic type focus: ${typeDescriptions[type] || 'general content'}
+Generate exactly ${count} unique blog TOPIC suggestions.
+
+Content angle (BlogType=${type}) — explain topics in this vein:
+${typeFocus}
+
+LANGUAGE (mandatory): Write BOTH "title" and "description" in **Bangla (Bengali)** using natural, readable Bengali prose. Occasional English product/category words are OK when shoppers search that way (e.g. Serum, SPF, cleanser names).
+
+SEO: Titles should be clear and clickable for Bangla search; avoid stuffing.
 
 ${productContext}
 
 ${existingContext}
 
-Requirements:
-1. Topics should be relevant to Bangladeshi consumers
-2. Topics should be SEO-friendly and searchable
-3. Each topic should be specific enough to write a detailed blog post
-4. Mix evergreen content with seasonal/trending topics
-5. Consider local preferences and cultural context
+Rules:
+1. Topics must resonate with shoppers in Bangladesh (climate, festivals, habits)
+2. Each topic specific enough for an 800+ word article later
+3. Mix evergreen + seasonal/festival angles where natural
+4. Do not duplicate or closely echo the "avoid" list titles
 
-Return a JSON array with exactly ${count} objects, each having:
-- "title": A compelling blog title (in English, 50-80 characters)
-- "description": A brief description of what the blog will cover (in English, 100-150 characters)
+Respond with ONLY valid JSON in this shape (no markdown fences):
+{"topics":[{"title":"...Bangla title...","description":"...Bangla 1-2 sentences..."}]}
 
-Return ONLY the JSON array, no other text.`
+Exactly ${count} items in "topics".`
 
     const openai = getOpenAIClient()
 
@@ -100,7 +109,8 @@ Return ONLY the JSON array, no other text.`
       messages: [
         {
           role: 'system',
-          content: 'You are a helpful content strategist. Always respond with valid JSON arrays only.',
+          content:
+            'You are a Bangladesh-focused content strategist. Reply with ONLY valid JSON matching the user schema (object with key "topics" = array of {title, description}). Title and description must be in Bengali (Bangla). No markdown fences.',
         },
         {
           role: 'user',

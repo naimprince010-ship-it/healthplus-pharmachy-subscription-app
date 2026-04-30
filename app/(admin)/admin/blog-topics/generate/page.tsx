@@ -119,7 +119,11 @@ export default function GenerateTopicsPage() {
           </Link>
           <h1 className="text-3xl font-bold text-gray-900">AI Generate Topics</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Use AI to generate blog topic suggestions based on your product catalog
+            Use AI to generate blog topic suggestions based on your product catalog.
+          </p>
+          <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            <span className="font-medium">ভাষা:</span> হালালজির ব্লগ বাংলায় প্রকাশিত হয় — AI থেকে টপিকের{' '}
+            <span className="font-medium">শিরোনাম ও বর্ণনা বাংলায়</span> আসবে (প্রয়োজনে পণ্যের ইংরেজি নাম রাখা যায়)।
           </p>
         </div>
 
@@ -130,15 +134,7 @@ export default function GenerateTopicsPage() {
               <label className="block text-sm font-medium text-gray-700">Block</label>
               <select
                 value={block}
-                onChange={(e) => {
-                  const newBlock = e.target.value as 'BEAUTY' | 'GROCERY'
-                  setBlock(newBlock)
-                  if (newBlock === 'BEAUTY' && type === 'GROCERY') {
-                    setType('BEAUTY')
-                  } else if (newBlock === 'GROCERY' && type === 'BEAUTY') {
-                    setType('GROCERY')
-                  }
-                }}
+                onChange={(e) => setBlock(e.target.value as 'BEAUTY' | 'GROCERY')}
                 className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
               >
                 <option value="BEAUTY">Beauty</option>
@@ -146,20 +142,22 @@ export default function GenerateTopicsPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Type</label>
+              <label className="block text-sm font-medium text-gray-700">
+                ব্লগ টাইপ <span className="font-normal text-gray-500">(Type)</span>
+              </label>
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value as 'BEAUTY' | 'GROCERY' | 'RECIPE' | 'MONEY_SAVING')}
                 className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
               >
-                {block === 'BEAUTY' ? (
-                  <option value="BEAUTY">Beauty (Skincare Routines)</option>
-                ) : (
-                  <option value="GROCERY">Grocery (Buying Guides)</option>
-                )}
-                <option value="RECIPE">Recipe</option>
-                <option value="MONEY_SAVING">Money Saving</option>
+                <option value="BEAUTY">বিউটি ও স্কিনকেয়ার — BEAUTY</option>
+                <option value="GROCERY">গ্রোসারি ও কেনাকাটা গাইড — GROCERY</option>
+                <option value="RECIPE">রান্না ও রেসিপি — RECIPE</option>
+                <option value="MONEY_SAVING">বাজেট ও স্মার্ট শপিং — MONEY_SAVING</option>
               </select>
+              <p className="mt-1 text-xs text-gray-500">
+                ব্লক = সাইট সেকশন (বিউটি/গ্রোসারি); টাইপ = কন্টেন্ট স্টাইল। যেকোনো টাইপ যেকোনো ব্লকে বেছে নিতে পারেন।
+              </p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Number of Topics</label>
