@@ -51,35 +51,39 @@ const typeLabels: Record<BlogType, string> = {
     MONEY_SAVING: 'Money Saving',
 }
 
-export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
-    let blog: Awaited<ReturnType<typeof prisma.blog.findUnique>> | null = null
-    try {
-        blog = await prisma.blog.findUnique({
-            where: {
-                slug: params.slug,
-                status: BlogStatus.PUBLISHED, // Ensure only published blogs can be viewed
-            },
-            include: {
-                topic: true,
-                blogProducts: {
-                    include: {
-                        product: {
-                            select: {
-                                id: true,
-                                name: true,
-                                slug: true,
-                                imageUrl: true,
-                                sellingPrice: true,
-                                mrp: true,
-                            }
-                        }
+async function getPublishedBlogBySlug(slug: string) {
+    return prisma.blog.findUnique({
+        where: {
+            slug,
+            status: BlogStatus.PUBLISHED, // Ensure only published blogs can be viewed
+        },
+        include: {
+            topic: true,
+            blogProducts: {
+                include: {
+                    product: {
+                        select: {
+                            id: true,
+                            name: true,
+                            slug: true,
+                            imageUrl: true,
+                            sellingPrice: true,
+                            mrp: true,
+                        },
                     },
-                    orderBy: {
-                        stepOrder: 'asc'
-                    }
-                }
+                },
+                orderBy: {
+                    stepOrder: 'asc',
+                },
             },
-        })
+        },
+    })
+}
+
+export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
+    let blog: Awaited<ReturnType<typeof getPublishedBlogBySlug>> | null = null
+    try {
+        blog = await getPublishedBlogBySlug(params.slug)
     } catch (error) {
         console.error('BlogDetailPage error:', error)
         return (
