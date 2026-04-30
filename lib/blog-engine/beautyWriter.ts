@@ -29,17 +29,29 @@ export async function generateBeautyBlog(context: WriterContext): Promise<BlogGe
       )
     )
 
+    const matchStepProducts = (
+      step: (typeof SKINCARE_ROUTINE_STEPS)[number],
+      pool: typeof skincareProducts,
+    ): typeof skincareProducts => {
+      const byTag = pool.filter(p => p.aiTags.some(tag => step.tags.includes(tag)))
+      if (byTag.length > 0) return byTag
+      /* Fallback when aiTags are empty or wrong: English name/category often matches step keywords */
+      const needles = [...step.tags, step.name.toLowerCase()]
+      return pool.filter(p => {
+        const hay = `${p.name} ${p.category?.name ?? ''}`.toLowerCase()
+        return needles.some(n => hay.includes(n))
+      })
+    }
+
     const productsByStep: Record<number, typeof skincareProducts> = {}
     SKINCARE_ROUTINE_STEPS.forEach(step => {
-      productsByStep[step.step] = skincareProducts.filter(p =>
-        p.aiTags.some(tag => step.tags.includes(tag))
-      )
+      productsByStep[step.step] = matchStepProducts(step, skincareProducts)
     })
 
     const productContext = SKINCARE_ROUTINE_STEPS.map(step => {
       const products = productsByStep[step.step]
       if (products.length === 0) {
-        return `Step ${step.step} (${step.name}): No products available - MARK AS MISSING`
+        return `Step ${step.step} (${step.name}): No catalogue items matched this step (tags/name/category). Add entry to missingProducts with a concrete product suggestion name — still describe the skincare step helpfully without claiming our site has zero products in this category forever.`
       }
       return `Step ${step.step} (${step.name}): ${products.slice(0, 5).map(p => `${p.name} (ID: ${p.id}, ৳${p.sellingPrice})`).join(', ')}`
     }).join('\n')
@@ -86,8 +98,9 @@ RESPOND IN THIS EXACT JSON FORMAT:
 }
 
 IMPORTANT:
-- Only use product IDs from the available products list
-- If a skincare step has no products, add to missingProducts
+- Only use product IDs from the AVAILABLE PRODUCTS BY SKINCARE STEP lines above for recommendedProducts — never invent IDs
+- When a step has no matched products above, include it in missingProducts for the team — but in contentMd explain that step educationally (what to choose, skin-type tips); do NOT use harsh storefront language like headings "পণ্য অনুপস্থিত" / "এখন প্ল্যাটফর্মে নেই" as if the entire category is unavailable — inventory changes and products may appear later.
+- Whenever you recommend a matched product ID, weave its name (+ price if helpful) into the prose for that step, not only in JSON.
 - Include at least 3 FAQs
 - Suggest 2-3 internal links from existing blogs
 - Write naturally in Bangla, not translated English`
