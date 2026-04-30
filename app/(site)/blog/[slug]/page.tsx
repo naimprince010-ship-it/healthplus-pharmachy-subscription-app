@@ -49,6 +49,11 @@ const typeLabels: Record<BlogType, string> = {
     MONEY_SAVING: 'Money Saving',
 }
 
+function removeLeadingMarkdownTitle(contentMd: string): string {
+    // Page header already renders title; remove duplicated first markdown H1 from AI content.
+    return contentMd.replace(/^\s*#\s+.+\n+/, '').trimStart()
+}
+
 async function getPublishedBlogBySlug(slug: string) {
     return prisma.blog.findUnique({
         where: {
@@ -172,7 +177,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                     {/* Markdown Content — typography from BlogMarkdown (headings, lists, spacing) */}
                     <div className="flex-1 min-w-0 rounded-2xl border border-slate-200/80 bg-white px-5 py-10 shadow-sm sm:px-10 sm:py-12">
                         {blog.contentMd ? (
-                            <BlogMarkdown content={blog.contentMd} />
+                            <BlogMarkdown content={removeLeadingMarkdownTitle(blog.contentMd)} />
                         ) : (
                             <p className="text-slate-600 text-lg">Content is currently being written.</p>
                         )}
