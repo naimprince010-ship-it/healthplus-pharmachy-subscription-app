@@ -1,13 +1,10 @@
 import { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 import { notFound } from 'next/navigation'
-import Image from 'next/image'
 import Link from 'next/link'
 import { format } from 'date-fns'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
 import { BlogStatus, BlogType } from '@prisma/client'
-import { MDXRemote } from 'next-mdx-remote/rsc'
+import { BlogMarkdown } from '@/components/blog/BlogMarkdown'
 
 interface BlogDetailPageProps {
     params: Promise<{ slug: string }>
@@ -172,14 +169,12 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                 {/* Main Content Area */}
                 <div className="flex flex-col lg:flex-row gap-12">
 
-                    {/* Markdown Content */}
-                    <div className="flex-1 min-w-0 prose prose-lg prose-slate prose-headings:font-bold prose-headings:text-slate-900 prose-a:text-emerald-600 hover:prose-a:text-emerald-700 prose-img:rounded-xl">
+                    {/* Markdown Content — typography from BlogMarkdown (headings, lists, spacing) */}
+                    <div className="flex-1 min-w-0 rounded-2xl border border-slate-200/80 bg-white px-5 py-10 shadow-sm sm:px-10 sm:py-12">
                         {blog.contentMd ? (
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                {blog.contentMd}
-                            </ReactMarkdown>
+                            <BlogMarkdown content={blog.contentMd} />
                         ) : (
-                            <p>Content is currently being written.</p>
+                            <p className="text-slate-600 text-lg">Content is currently being written.</p>
                         )}
                     </div>
 
