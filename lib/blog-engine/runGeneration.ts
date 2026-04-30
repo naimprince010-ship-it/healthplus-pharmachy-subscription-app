@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { BlogStatus, BlogType, Prisma } from '@prisma/client'
+import { BlogStatus, BlogType, Prisma, ProductType } from '@prisma/client'
 import { generateBeautyBlog } from './beautyWriter'
 import { generateGroceryBlog } from './groceryWriter'
 import { generateRecipeBlog } from './recipeWriter'
@@ -44,6 +44,7 @@ export async function runBlogDraftGeneration(blogId: string): Promise<RunBlogDra
     const availableProducts = await prisma.product.findMany({
       where: {
         isActive: true,
+        type: ProductType.GENERAL,
         OR: [{ aiTags: { isEmpty: false } }, { isIngredient: true }],
       },
       select: {

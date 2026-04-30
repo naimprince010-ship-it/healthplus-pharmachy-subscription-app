@@ -69,6 +69,7 @@ async function getPublishedBlogBySlug(slug: string) {
                             id: true,
                             name: true,
                             slug: true,
+                            type: true,
                             imageUrl: true,
                             sellingPrice: true,
                             mrp: true,
@@ -195,7 +196,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                                 </h3>
 
                                 <div className="space-y-4">
-                                    {blog.blogProducts.filter(bp => bp.product).map((bp) => (
+                                    {blog.blogProducts.filter(bp => bp.product && bp.product.type === 'GENERAL').map((bp) => (
                                         <Link
                                             key={bp.id}
                                             href={`/products/${bp.product.slug}`}
