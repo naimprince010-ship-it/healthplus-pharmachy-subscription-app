@@ -16,6 +16,31 @@ function getOpenAIClient() {
   })
 }
 
+const STEP_ALIASES: Record<number, string[]> = {
+  1: ['cleanser', 'face wash', 'facewash', 'foam wash', 'cleansing', 'ক্লিনজার', 'ফেসওয়াশ', 'ফেস ওয়াশ'],
+  2: ['toner', 'toning', 'টোনার'],
+  3: ['serum', 'essence', 'ampoule', 'vitamin c', 'niacinamide', 'সিরাম', 'এস্যেন্স', 'এমপুল'],
+  4: ['moisturizer', 'moisturiser', 'cream', 'lotion', 'gel cream', 'ময়েশ্চারাইজার', 'ময়েশ্চারাইজার'],
+  5: ['sunscreen', 'sun screen', 'sunblock', 'spf', 'সানস্ক্রিন', 'সান স্ক্রিন'],
+}
+
+function scoreProductForStep(
+  product: WriterContext['availableProducts'][number],
+  step: (typeof SKINCARE_ROUTINE_STEPS)[number]
+): number {
+  const aliases = STEP_ALIASES[step.step] || []
+  const hay = `${product.name} ${product.category?.name ?? ''}`.toLowerCase()
+  let score = 0
+
+  if (product.aiTags.some((tag) => step.tags.includes(tag))) score += 12
+  if (product.aiTags.some((tag) => aliases.includes(tag))) score += 10
+  if (aliases.some((a) => hay.includes(a))) score += 8
+  if (step.tags.some((t) => hay.includes(t))) score += 6
+  if (product.aiTags.some((tag) => ['skincare', 'beauty', 'face', 'skin'].includes(tag))) score += 2
+
+  return score
+}
+
 export async function generateBeautyBlog(context: WriterContext): Promise<BlogGenerationResult> {
   const { topic, availableProducts, existingBlogSlugs } = context
 
@@ -53,23 +78,21 @@ export async function generateBeautyBlog(context: WriterContext): Promise<BlogGe
       return globalBeautyKeywords.some((k) => hay.includes(k))
     })
 
-    const matchStepProducts = (
+    const rankStepProducts = (
       step: (typeof SKINCARE_ROUTINE_STEPS)[number],
-      pool: typeof skincareProducts,
-    ): typeof skincareProducts => {
-      const byTag = pool.filter(p => p.aiTags.some(tag => step.tags.includes(tag)))
-      if (byTag.length > 0) return byTag
-      /* Fallback when aiTags are empty or wrong: English name/category often matches step keywords */
-      const needles = [...step.tags, step.name.toLowerCase()]
-      return pool.filter(p => {
-        const hay = `${p.name} ${p.category?.name ?? ''}`.toLowerCase()
-        return needles.some(n => hay.includes(n))
-      })
+      pool: typeof skincareProducts
+    ) => {
+      return pool
+        .map((p) => ({ product: p, score: scoreProductForStep(p, step) }))
+        .filter((x) => x.score > 0)
+        .sort((a, b) => b.score - a.score)
     }
 
+    const rankedByStep: Record<number, Array<{ product: (typeof skincareProducts)[number]; score: number }>> = {}
     const productsByStep: Record<number, typeof skincareProducts> = {}
     SKINCARE_ROUTINE_STEPS.forEach(step => {
-      productsByStep[step.step] = matchStepProducts(step, skincareProducts)
+      rankedByStep[step.step] = rankStepProducts(step, skincareProducts)
+      productsByStep[step.step] = rankedByStep[step.step].map((x) => x.product)
     })
 
     const productContext = SKINCARE_ROUTINE_STEPS.map(step => {
@@ -77,7 +100,10 @@ export async function generateBeautyBlog(context: WriterContext): Promise<BlogGe
       if (products.length === 0) {
         return `Step ${step.step} (${step.name}): No catalogue items matched this step (tags/name/category). Add entry to missingProducts with a concrete product suggestion name — still describe the skincare step helpfully without claiming our site has zero products in this category forever.`
       }
-      return `Step ${step.step} (${step.name}): ${products.slice(0, 5).map(p => `${p.name} (ID: ${p.id}, ৳${p.sellingPrice})`).join(', ')}`
+      return `Step ${step.step} (${step.name}): ${products
+        .slice(0, 5)
+        .map((p) => `${p.name} (ID: ${p.id}, ৳${p.sellingPrice})`)
+        .join(', ')}`
     }).join('\n')
 
     const prompt = `You are a skincare expert writing for Halalzi.com, Bangladesh's trusted halal beauty and grocery platform.
@@ -173,7 +199,24 @@ IMPORTANT:
       notes: p.notes,
     }))
     const validProductIds = new Set(availableProducts.map((p) => p.id))
-    const aiProducts = productsFromAi.filter((p) => validProductIds.has(p.productId))
+    const byId = new Map(availableProducts.map((p) => [p.id, p]))
+    const aiProductsValidated = productsFromAi.filter((p) => validProductIds.has(p.productId))
+
+    // Repair low-confidence AI step mappings (wrong step/wrong product) using deterministic ranking.
+    const aiProducts = aiProductsValidated.map((p) => {
+      if (p.role !== 'step' || !p.stepOrder || !rankedByStep[p.stepOrder]?.length) return p
+      const aiProduct = byId.get(p.productId)
+      if (!aiProduct) return p
+      const aiScore = scoreProductForStep(aiProduct, SKINCARE_ROUTINE_STEPS[p.stepOrder - 1])
+      if (aiScore >= 8) return p
+      const replacement = rankedByStep[p.stepOrder][0]?.product
+      if (!replacement) return p
+      return {
+        ...p,
+        productId: replacement.id,
+        notes: `${p.notes ? `${p.notes}; ` : ''}Auto-corrected to best match for step ${p.stepOrder}`,
+      }
+    })
     const existingProductIds = new Set(aiProducts.map((p) => p.productId))
 
     // Deterministic fallback: ensure each step gets at least one mapped product when available.
