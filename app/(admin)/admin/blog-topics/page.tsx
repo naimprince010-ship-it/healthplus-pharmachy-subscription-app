@@ -179,6 +179,17 @@ export default function BlogTopicsPage() {
           </div>
         </div>
 
+        <div className="mb-6 rounded-xl border border-teal-100 bg-teal-50 px-4 py-3 text-sm text-teal-950">
+          <strong className="font-semibold">ব্লগ লিখতে যাবেন কোথায়?</strong>{' '}
+          নিচের টেবিলের ডান দিকে <span className="inline-flex items-center rounded bg-teal-100 px-1 py-0.5 font-medium text-teal-800">Actions</span> থেকে টিল রঙের দলিল{' '}
+          <FileText className="inline-block h-4 w-4 align-middle text-teal-600" /> আইকন চাপুন — এর নাম{' '}
+          <em>Create Blog</em>। এতে স্বয়ংক্রিয়ভাবে{' '}
+          <Link href="/admin/blog-queue" className="font-medium text-teal-800 underline underline-offset-2 hover:text-teal-950">
+            Blog Queue
+          </Link>
+          {' '}খুলবে। সেখান থেকে জেনেরেট করলে AI পুরো পোস্ট (বাংলা মার্কডাউন) লিখে দেবে, অথবা Edit থেকে নিজে এডিট করুন।
+        </div>
+
         <div className="mb-6 rounded-lg bg-white p-4 shadow">
           <form onSubmit={handleSearch} className="flex flex-wrap gap-4">
             <div className="flex-1 min-w-[200px]">
@@ -300,13 +311,17 @@ export default function BlogTopicsPage() {
                                             <button
                                               onClick={() => handleCreateBlog(topic.id)}
                                               disabled={creatingBlog === topic.id || !topic.isActive}
-                                              className="rounded p-1 text-teal-500 hover:bg-teal-100 hover:text-teal-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                                              title={topic.isActive ? 'Create Blog' : 'Topic is inactive'}
+                                              className="inline-flex items-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-xs font-medium text-teal-700 hover:bg-teal-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                              title={topic.isActive ? 'Create Blog → Blog Queue' : 'Topic is inactive'}
+                                              type="button"
                                             >
                                               {creatingBlog === topic.id ? (
                                                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-teal-500 border-t-transparent" />
                                               ) : (
-                                                <FileText className="h-4 w-4" />
+                                                <>
+                                                  <FileText className="h-4 w-4 shrink-0" />
+                                                  <span>Blog Queue</span>
+                                                </>
                                               )}
                                             </button>
                                             <button
