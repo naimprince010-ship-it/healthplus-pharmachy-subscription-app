@@ -20,14 +20,38 @@ export async function generateBeautyBlog(context: WriterContext): Promise<BlogGe
   const { topic, availableProducts, existingBlogSlugs } = context
 
   try {
-    const skincareProducts = availableProducts.filter(p => 
-      p.aiTags.some(tag => 
-        SKINCARE_ROUTINE_STEPS.flatMap(s => s.tags).includes(tag) ||
-        SKIN_TYPES.includes(tag) ||
-        SKIN_CONCERNS.includes(tag) ||
-        ['skincare', 'beauty', 'face', 'skin'].includes(tag)
+    const globalBeautyKeywords = [
+      'skincare',
+      'beauty',
+      'face',
+      'skin',
+      'cleanser',
+      'face wash',
+      'facewash',
+      'toner',
+      'serum',
+      'moisturizer',
+      'moisturiser',
+      'cream',
+      'lotion',
+      'sunscreen',
+      'sun screen',
+      'spf',
+    ]
+    const allStepTags = SKINCARE_ROUTINE_STEPS.flatMap(s => s.tags)
+    const skincareProducts = availableProducts.filter((p) => {
+      const byTags = p.aiTags.some(
+        (tag) =>
+          allStepTags.includes(tag) ||
+          SKIN_TYPES.includes(tag) ||
+          SKIN_CONCERNS.includes(tag) ||
+          globalBeautyKeywords.includes(tag)
       )
-    )
+      if (byTags) return true
+      // Fallback for products with weak/empty aiTags but clear product/category names.
+      const hay = `${p.name} ${p.category?.name ?? ''}`.toLowerCase()
+      return globalBeautyKeywords.some((k) => hay.includes(k))
+    })
 
     const matchStepProducts = (
       step: (typeof SKINCARE_ROUTINE_STEPS)[number],
@@ -137,7 +161,7 @@ IMPORTANT:
       })),
     }
 
-    const products: ProductRecommendation[] = (parsed.recommendedProducts || []).map((p: {
+    const productsFromAi: ProductRecommendation[] = (parsed.recommendedProducts || []).map((p: {
       productId: string
       role: string
       stepOrder?: number
@@ -148,6 +172,27 @@ IMPORTANT:
       stepOrder: p.stepOrder,
       notes: p.notes,
     }))
+    const validProductIds = new Set(availableProducts.map((p) => p.id))
+    const aiProducts = productsFromAi.filter((p) => validProductIds.has(p.productId))
+    const existingProductIds = new Set(aiProducts.map((p) => p.productId))
+
+    // Deterministic fallback: ensure each step gets at least one mapped product when available.
+    const autoStepProducts: ProductRecommendation[] = SKINCARE_ROUTINE_STEPS.flatMap((step) => {
+      const hasStepMapped = aiProducts.some((p) => p.role === 'step' && p.stepOrder === step.step)
+      if (hasStepMapped) return []
+      const candidate = productsByStep[step.step]?.[0]
+      if (!candidate || existingProductIds.has(candidate.id)) return []
+      existingProductIds.add(candidate.id)
+      return [
+        {
+          productId: candidate.id,
+          role: 'step',
+          stepOrder: step.step,
+          notes: `Auto-mapped fallback for ${step.name} step`,
+        } satisfies ProductRecommendation,
+      ]
+    })
+    const products: ProductRecommendation[] = [...aiProducts, ...autoStepProducts]
 
     const missingProducts: MissingProductInfo[] = (parsed.missingProducts || []).map((m: {
       name: string
