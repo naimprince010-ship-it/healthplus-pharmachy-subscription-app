@@ -46,8 +46,16 @@ const TYPE_LABELS: Record<string, string> = {
   MONEY_SAVING: 'Money Saving',
 }
 
+const defaultStats = {
+  TOPIC_ONLY: 0,
+  DRAFT: 0,
+  QUEUED: 0,
+  PUBLISHED: 0,
+}
+
 export default function BlogQueuePage() {
   const [blogs, setBlogs] = useState<Blog[]>([])
+  const [queueStats, setQueueStats] = useState(defaultStats)
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [typeFilter, setTypeFilter] = useState<string>('all')
@@ -68,6 +76,9 @@ export default function BlogQueuePage() {
       const data = await res.json()
       if (res.ok) {
         setBlogs(data.blogs || [])
+        if (data.queueStats && typeof data.queueStats === 'object') {
+          setQueueStats({ ...defaultStats, ...data.queueStats })
+        }
       } else {
         toast.error(data.error || 'Failed to fetch blogs')
       }
@@ -143,65 +154,106 @@ export default function BlogQueuePage() {
     }
   }
 
-  const pendingCount = blogs.filter(b => b.status === 'TOPIC_ONLY').length
-  const draftCount = blogs.filter(b => b.status === 'DRAFT').length
-  const queuedCount = blogs.filter(b => b.status === 'QUEUED').length
+  const pendingCount = queueStats.TOPIC_ONLY
+  const draftCount = queueStats.DRAFT
+  const queuedCount = queueStats.QUEUED
+  const publishedCount = queueStats.PUBLISHED
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Blog Queue</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Manage AI-generated blog content. Pending: {pendingCount} | Drafts: {draftCount} | Queued: {queuedCount}
-          </p>
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Blog Queue</h1>
+            <p className="mt-1 text-sm text-gray-500">
+              Manage AI-generated blog content. Pending: {pendingCount} | Drafts: {draftCount} | Queued: {queuedCount}
+            </p>
+          </div>
+          <Link
+            href="/admin/blog-topics"
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-teal-700"
+          >
+            <FileText className="h-4 w-4" />
+            নতুন ব্লগ — টপিক থেকে খুলুন
+          </Link>
         </div>
 
-        <div className="mb-6 grid grid-cols-4 gap-4">
-          <div className="rounded-lg bg-white p-4 shadow">
+        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          <strong className="font-semibold">«AI জেনারেট» বাটন কখন দেখাবে?</strong> শুধু যখন স্ট্যাটাস{' '}
+          <span className="rounded bg-amber-200 px-1.5 py-0.5 font-medium">Topic Only</span>। উপরের সবুজ বাটন দিয়ে{' '}
+          <Link href="/admin/blog-topics" className="font-medium underline underline-offset-2">
+            Blog Topics
+          </Link>
+          {' '}এ যান → আপনার টপিকের সারিতে <strong>Blog Queue</strong> চাপুন — তখন এখানে নতুন সারি আসবে এবং সেখানেই নীল রঙের{' '}
+          <strong>AI জেনারেট</strong> পাবেন। ইতিমধ্যে <strong>Published</strong> পোস্টে শুধু ভিউ ও সম্পাদনা আছে।
+        </div>
+
+        <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+          <button
+            type="button"
+            onClick={() => setStatusFilter('TOPIC_ONLY')}
+            className={`rounded-lg bg-white p-4 text-left shadow ring-2 transition-colors ${statusFilter === 'TOPIC_ONLY' ? 'ring-teal-500' : 'ring-transparent hover:ring-gray-200'}`}
+          >
             <div className="flex items-center gap-3">
               <div className="rounded-full bg-gray-100 p-2">
                 <FileText className="h-5 w-5 text-gray-600" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{pendingCount}</p>
-                <p className="text-sm text-gray-500">Topics Only</p>
+                <p className="text-sm text-gray-500">Topics Only · জেনারেট করুন</p>
               </div>
             </div>
-          </div>
-          <div className="rounded-lg bg-white p-4 shadow">
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatusFilter('DRAFT')}
+            className={`rounded-lg bg-white p-4 text-left shadow ring-2 transition-colors ${statusFilter === 'DRAFT' ? 'ring-teal-500' : 'ring-transparent hover:ring-gray-200'}`}
+          >
             <div className="flex items-center gap-3">
               <div className="rounded-full bg-yellow-100 p-2">
                 <Edit className="h-5 w-5 text-yellow-600" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{draftCount}</p>
-                <p className="text-sm text-gray-500">Drafts</p>
+                <p className="text-sm text-gray-500">Drafts · রিভিউ</p>
               </div>
             </div>
-          </div>
-          <div className="rounded-lg bg-white p-4 shadow">
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatusFilter('QUEUED')}
+            className={`rounded-lg bg-white p-4 text-left shadow ring-2 transition-colors ${statusFilter === 'QUEUED' ? 'ring-teal-500' : 'ring-transparent hover:ring-gray-200'}`}
+          >
             <div className="flex items-center gap-3">
               <div className="rounded-full bg-blue-100 p-2">
                 <Clock className="h-5 w-5 text-blue-600" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{queuedCount}</p>
-                <p className="text-sm text-gray-500">Queued</p>
+                <p className="text-sm text-gray-500">Queued · প্রকাশ</p>
               </div>
             </div>
-          </div>
-          <div className="rounded-lg bg-white p-4 shadow">
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatusFilter('PUBLISHED')}
+            className={`rounded-lg bg-white p-4 text-left shadow ring-2 transition-colors ${statusFilter === 'PUBLISHED' ? 'ring-teal-500' : 'ring-transparent hover:ring-gray-200'}`}
+          >
             <div className="flex items-center gap-3">
               <div className="rounded-full bg-green-100 p-2">
                 <Check className="h-5 w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{blogs.filter(b => b.status === 'PUBLISHED').length}</p>
-                <p className="text-sm text-gray-500">Published</p>
+                <p className="text-2xl font-bold">{publishedCount}</p>
+                <p className="text-sm text-gray-500">Published · লাইভ</p>
               </div>
             </div>
-          </div>
+          </button>
+        </div>
+        <div className="mb-6 flex justify-end gap-2 text-xs text-gray-500">
+          <button type="button" className="hover:text-gray-800 hover:underline" onClick={() => setStatusFilter('all')}>
+            সব স্ট্যাটাস দেখান
+          </button>
         </div>
 
         <div className="mb-6 rounded-lg bg-white p-4 shadow">
@@ -220,7 +272,9 @@ export default function BlogQueuePage() {
             </div>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setStatusFilter(e.target.value)
+              }}
               className="rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
             >
               <option value="all">All Statuses</option>
@@ -254,8 +308,31 @@ export default function BlogQueuePage() {
           {loading ? (
             <div className="p-8 text-center text-gray-500">Loading blogs...</div>
           ) : blogs.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
-              No blogs found. Create topics in Blog Topics page first.
+            <div className="space-y-2 p-8 text-center text-gray-600">
+              {statusFilter === 'TOPIC_ONLY' ? (
+                <>
+                  <p className="font-medium text-gray-900">
+                    এখন কোনো “Topic Only” ব্লগ নেই — তাই AI জেনারেট বাটন দেখা যাবে না।
+                  </p>
+                  <p className="text-sm">
+                    <Link href="/admin/blog-topics" className="font-semibold text-teal-700 underline hover:text-teal-900">
+                      Blog Topics →
+                    </Link>{' '}
+                    খুলুন, একটি টপিকের সারিতে{' '}
+                    <strong>Blog Queue</strong> চাপুন; তারপর এখানে ফিরে এসে এই ফিল্টারে জেনারেট করুন।
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p>এই ফিল্টারে কিছু নেই।</p>
+                  <p className="text-sm">
+                    টপিক দিয়ে শুরু করতে:{' '}
+                    <Link href="/admin/blog-topics" className="text-teal-700 underline">
+                      Blog Topics
+                    </Link>
+                  </p>
+                </>
+              )}
             </div>
           ) : (
             <table className="min-w-full divide-y divide-gray-200">
@@ -314,61 +391,72 @@ export default function BlogQueuePage() {
                       {new Date(blog.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex flex-wrap items-center justify-end gap-2">
                         <button
-                          onClick={() => { setSelectedBlog(blog); setShowPreview(true) }}
-                          className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                          title="Preview"
+                          type="button"
+                          onClick={() => {
+                            setSelectedBlog(blog)
+                            setShowPreview(true)
+                          }}
+                          className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
                         >
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-3.5 w-3.5" />
+                          ভিউ
                         </button>
                         {blog.status === 'TOPIC_ONLY' && (
                           <button
+                            type="button"
                             onClick={() => generateContent(blog.id)}
                             disabled={generating === blog.id}
-                            className="rounded p-1 text-blue-400 hover:bg-blue-50 hover:text-blue-600 disabled:opacity-50"
-                            title="Generate Content"
+                            className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
                           >
                             {generating === blog.id ? (
-                              <Clock className="h-4 w-4 animate-spin" />
+                              <Clock className="h-3.5 w-3.5 animate-spin" />
                             ) : (
-                              <Send className="h-4 w-4" />
+                              <Send className="h-3.5 w-3.5" />
                             )}
+                            AI জেনারেট
                           </button>
                         )}
                         {blog.status === 'DRAFT' && (
                           <>
                             <button
+                              type="button"
                               onClick={() => updateBlogStatus(blog.id, 'QUEUED')}
-                              className="rounded p-1 text-green-400 hover:bg-green-50 hover:text-green-600"
+                              className="inline-flex items-center gap-1 rounded-lg border border-green-300 bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-800 hover:bg-green-100"
                               title="Approve"
                             >
-                              <Check className="h-4 w-4" />
+                              <Check className="h-3.5 w-3.5" />
+                              অনুমোদন
                             </button>
                             <button
+                              type="button"
                               onClick={() => updateBlogStatus(blog.id, 'REJECTED')}
-                              className="rounded p-1 text-red-400 hover:bg-red-50 hover:text-red-600"
+                              className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-medium text-red-800 hover:bg-red-100"
                               title="Reject"
                             >
-                              <X className="h-4 w-4" />
+                              <X className="h-3.5 w-3.5" />
+                              বাতিল
                             </button>
                           </>
                         )}
                         {blog.status === 'QUEUED' && (
                           <button
+                            type="button"
                             onClick={() => publishBlog(blog.id)}
-                            className="rounded p-1 text-green-400 hover:bg-green-50 hover:text-green-600"
+                            className="inline-flex items-center gap-1 rounded-lg bg-green-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-green-700"
                             title="Publish Now"
                           >
-                            <Send className="h-4 w-4" />
+                            <Send className="h-3.5 w-3.5" />
+                            প্রকাশ
                           </button>
                         )}
                         <Link
                           href={`/admin/blog-queue/${blog.id}/edit`}
-                          className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                          title="Edit"
+                          className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-800 hover:bg-gray-50"
                         >
-                          <Edit className="h-4 w-4" />
+                          <Edit className="h-3.5 w-3.5" />
+                          এডিট
                         </Link>
                       </div>
                     </td>
@@ -441,18 +529,24 @@ export default function BlogQueuePage() {
                 </button>
                 {selectedBlog.status === 'TOPIC_ONLY' && (
                   <button
-                    onClick={() => { generateContent(selectedBlog.id); setShowPreview(false) }}
+                    onClick={() => {
+                      generateContent(selectedBlog.id)
+                      setShowPreview(false)
+                    }}
                     className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
                   >
-                    Generate Content
+                    AI জেনারেট
                   </button>
                 )}
                 {selectedBlog.status === 'DRAFT' && (
                   <button
-                    onClick={() => { updateBlogStatus(selectedBlog.id, 'QUEUED'); setShowPreview(false) }}
+                    onClick={() => {
+                      updateBlogStatus(selectedBlog.id, 'QUEUED')
+                      setShowPreview(false)
+                    }}
                     className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
                   >
-                    Approve
+                    অনুমোদন (Queued)
                   </button>
                 )}
               </div>

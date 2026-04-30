@@ -37,34 +37,47 @@ export async function GET(request: NextRequest) {
       ]
     }
 
-    const blogs = await prisma.blog.findMany({
-      where,
-      select: {
-        id: true,
-        slug: true,
-        title: true,
-        type: true,
-        block: true,
-        status: true,
-        summary: true,
-        contentMd: true,
-        seoTitle: true,
-        seoDescription: true,
-        scheduledAt: true,
-        publishedAt: true,
-        createdAt: true,
-        topic: { select: { title: true } },
-        _count: {
-          select: {
-            blogProducts: true,
-            missingProducts: true,
+    const [blogs, topicOnlyCt, draftCt, queuedCt, publishedCt] = await Promise.all([
+      prisma.blog.findMany({
+        where,
+        select: {
+          id: true,
+          slug: true,
+          title: true,
+          type: true,
+          block: true,
+          status: true,
+          summary: true,
+          contentMd: true,
+          seoTitle: true,
+          seoDescription: true,
+          scheduledAt: true,
+          publishedAt: true,
+          createdAt: true,
+          topic: { select: { title: true } },
+          _count: {
+            select: {
+              blogProducts: true,
+              missingProducts: true,
+            },
           },
         },
-      },
-      orderBy: { createdAt: 'desc' },
-    })
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.blog.count({ where: { status: BlogStatus.TOPIC_ONLY } }),
+      prisma.blog.count({ where: { status: BlogStatus.DRAFT } }),
+      prisma.blog.count({ where: { status: BlogStatus.QUEUED } }),
+      prisma.blog.count({ where: { status: BlogStatus.PUBLISHED } }),
+    ])
 
-    return NextResponse.json({ blogs })
+    const queueStats = {
+      TOPIC_ONLY: topicOnlyCt,
+      DRAFT: draftCt,
+      QUEUED: queuedCt,
+      PUBLISHED: publishedCt,
+    }
+
+    return NextResponse.json({ blogs, queueStats })
   } catch (error) {
     console.error('Error fetching blog queue:', error)
     return NextResponse.json(
