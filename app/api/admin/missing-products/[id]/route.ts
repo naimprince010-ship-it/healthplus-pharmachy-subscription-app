@@ -38,9 +38,47 @@ export async function PUT(
       updateData.resolvedProductId = body.resolvedProductId
     }
 
-    const missingProduct = await prisma.missingProduct.update({
-      where: { id },
-      data: updateData,
+    const stepMatch = typeof existing.reason === 'string'
+      ? existing.reason.match(/\bstep\s*(\d+)\b/i)
+      : null
+    const inferredStepOrder = stepMatch ? Number(stepMatch[1]) : null
+
+    const missingProduct = await prisma.$transaction(async (tx) => {
+      const updated = await tx.missingProduct.update({
+        where: { id },
+        data: updateData,
+      })
+
+      // If admin links an existing product, also link it to the related blog.
+      if (
+        body.isResolved === true &&
+        typeof body.resolvedProductId === 'string' &&
+        body.resolvedProductId &&
+        existing.blogId
+      ) {
+        await tx.blogProduct.upsert({
+          where: {
+            blogId_productId_role: {
+              blogId: existing.blogId,
+              productId: body.resolvedProductId,
+              role: inferredStepOrder ? 'step' : 'recommended',
+            },
+          },
+          update: {
+            stepOrder: inferredStepOrder || undefined,
+            notes: `Linked from Missing Products (${existing.name})`,
+          },
+          create: {
+            blogId: existing.blogId,
+            productId: body.resolvedProductId,
+            role: inferredStepOrder ? 'step' : 'recommended',
+            stepOrder: inferredStepOrder || undefined,
+            notes: `Linked from Missing Products (${existing.name})`,
+          },
+        })
+      }
+
+      return updated
     })
 
     return NextResponse.json({ missingProduct })
