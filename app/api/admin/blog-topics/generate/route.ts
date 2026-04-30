@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import OpenAI from 'openai'
 import { prisma } from '@/lib/prisma'
+import { BlogType, ProductType, TopicBlock } from '@prisma/client'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -12,6 +13,49 @@ function getOpenAIClient() {
     throw new Error('OPENAI_API_KEY is not configured')
   }
   return new OpenAI({ apiKey })
+}
+
+function getTypeKeywords(type: BlogType): string[] {
+  switch (type) {
+    case 'BEAUTY':
+      return [
+        'beauty',
+        'skincare',
+        'skin',
+        'cleanser',
+        'toner',
+        'serum',
+        'moisturizer',
+        'sunscreen',
+        'face wash',
+      ]
+    case 'GROCERY':
+      return ['grocery', 'rice', 'oil', 'dal', 'flour', 'spice', 'snack', 'beverage', 'food']
+    case 'RECIPE':
+      return ['recipe', 'ingredient', 'cooking', 'rice', 'oil', 'spice', 'vegetable', 'meat', 'fish']
+    case 'MONEY_SAVING':
+      return ['budget', 'offer', 'combo', 'save', 'family', 'value', 'discount']
+    default:
+      return []
+  }
+}
+
+function scoreProductForTopicGeneration(
+  type: BlogType,
+  block: TopicBlock,
+  p: { name: string; aiTags: string[]; category: { name: string } | null; isIngredient: boolean }
+): number {
+  const keywords = getTypeKeywords(type)
+  const hay = `${p.name} ${p.category?.name || ''} ${(p.aiTags || []).join(' ')}`.toLowerCase()
+  let score = 0
+
+  if (keywords.some((k) => hay.includes(k))) score += 8
+  if (block === 'BEAUTY' && ['beauty', 'skin', 'cosmetic', 'skincare'].some((k) => hay.includes(k))) score += 4
+  if (block === 'GROCERY' && ['grocery', 'food', 'ingredient', 'cooking'].some((k) => hay.includes(k))) score += 4
+  if (type === 'RECIPE' && p.isIngredient) score += 6
+  if (p.aiTags.length > 0) score += 1
+
+  return score
 }
 
 export async function POST(request: NextRequest) {
@@ -34,18 +78,28 @@ export async function POST(request: NextRequest) {
     const products = await prisma.product.findMany({
       where: {
         isActive: true,
+        type: ProductType.GENERAL,
         OR: [
           { aiTags: { isEmpty: false } },
           { isIngredient: true },
         ],
       },
       select: {
+        id: true,
         name: true,
         aiTags: true,
+        isIngredient: true,
         category: { select: { name: true } },
       },
-      take: 100,
+      take: 300,
     })
+
+    const typedProducts = products
+      .map((p) => ({ p, score: scoreProductForTopicGeneration(type as BlogType, block as TopicBlock, p) }))
+      .filter((x) => x.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map((x) => x.p)
+      .slice(0, 60)
 
     const existingTopics = await prisma.blogTopic.findMany({
       where: { block, type },
@@ -55,8 +109,11 @@ export async function POST(request: NextRequest) {
 
     const existingTitles = existingTopics.map(t => t.title)
 
-    const productContext = products.length > 0
-      ? `Available products include: ${products.slice(0, 30).map(p => `${p.name} (${p.category?.name || 'General'})`).join(', ')}`
+    const productContext = typedProducts.length > 0
+      ? `Use these catalog-backed products/categories as grounding: ${typedProducts
+          .slice(0, 35)
+          .map((p) => `${p.name} (${p.category?.name || 'General'})`)
+          .join(', ')}`
       : 'Focus on general topics for a Bangladeshi e-commerce store selling groceries and beauty products.'
 
     const existingContext = existingTitles.length > 0
@@ -96,6 +153,7 @@ Rules:
 2. Each topic specific enough for an 800+ word article later
 3. Mix evergreen + seasonal/festival angles where natural
 4. Do not duplicate or closely echo the "avoid" list titles
+5. Ground topics in the available catalog context above (avoid topics that likely need unavailable product classes)
 
 Respond with ONLY valid JSON in this shape (no markdown fences):
 {"topics":[{"title":"...Bangla title...","description":"...Bangla 1-2 sentences..."}]}
@@ -170,6 +228,7 @@ Exactly ${count} items in "topics".`
       success: true,
       topics: validTopics,
       count: validTopics.length,
+      productGroundingCount: typedProducts.length,
     })
   } catch (error) {
     console.error('Error generating topics:', error)

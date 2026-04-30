@@ -22,10 +22,12 @@ export default function GenerateTopicsPage() {
   const [generating, setGenerating] = useState(false)
   const [saving, setSaving] = useState(false)
   const [generatedTopics, setGeneratedTopics] = useState<GeneratedTopic[]>([])
+  const [groundingCount, setGroundingCount] = useState<number>(0)
 
   const handleGenerate = async () => {
     setGenerating(true)
     setGeneratedTopics([])
+    setGroundingCount(0)
 
     try {
       const res = await fetch('/api/admin/blog-topics/generate', {
@@ -37,6 +39,7 @@ export default function GenerateTopicsPage() {
       const data = await res.json()
 
       if (res.ok && data.topics) {
+        setGroundingCount(Number(data.productGroundingCount || 0))
         setGeneratedTopics(
           data.topics.map((t: { title: string; description: string }) => ({
             ...t,
@@ -180,6 +183,11 @@ export default function GenerateTopicsPage() {
             <Sparkles className="h-4 w-4" />
             {generating ? 'Generating...' : 'Generate Topics with AI'}
           </button>
+          {groundingCount > 0 && (
+            <p className="mt-2 text-xs text-emerald-700">
+              Catalog grounding active: {groundingCount} relevant products used before topic generation.
+            </p>
+          )}
         </div>
 
         {generatedTopics.length > 0 && (
