@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, Eye, Check, X, Edit, Send, Clock, FileText, AlertCircle } from 'lucide-react'
+import { Search, Eye, Check, X, Edit, Send, Clock, FileText, AlertCircle, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 import { BlogMarkdown } from '@/components/blog/BlogMarkdown'
@@ -138,6 +138,21 @@ export default function BlogQueuePage() {
     }
   }
 
+  const cleanupMissing = async () => {
+    try {
+      const res = await fetch('/api/admin/missing-products?action=cleanup', { method: 'DELETE' })
+      const data = await res.json()
+      if (res.ok) {
+        toast.success(`${data.deleted} টি false-missing রেকর্ড মুছে ফেলা হয়েছে`)
+        fetchBlogs()
+      } else {
+        toast.error(data.error || 'Cleanup failed')
+      }
+    } catch {
+      toast.error('Cleanup failed')
+    }
+  }
+
   const publishBlog = async (blogId: string) => {
     try {
       const res = await fetch(`/api/admin/blog-queue/${blogId}/publish`, {
@@ -170,13 +185,24 @@ export default function BlogQueuePage() {
               Manage AI-generated blog content. Pending: {pendingCount} | Drafts: {draftCount} | Queued: {queuedCount}
             </p>
           </div>
-          <Link
-            href="/admin/blog-topics"
-            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-teal-700"
-          >
-            <FileText className="h-4 w-4" />
-            নতুন ব্লগ — টপিক থেকে খুলুন
-          </Link>
+          <div className="flex shrink-0 gap-2">
+            <button
+              type="button"
+              onClick={cleanupMissing}
+              className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-600 shadow-sm hover:bg-red-50"
+              title="False-positive missing product rows মুছুন"
+            >
+              <Trash2 className="h-4 w-4" />
+              Missing Cleanup
+            </button>
+            <Link
+              href="/admin/blog-topics"
+              className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-teal-700"
+            >
+              <FileText className="h-4 w-4" />
+              নতুন ব্লগ — টপিক থেকে খুলুন
+            </Link>
+          </div>
         </div>
 
         <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
