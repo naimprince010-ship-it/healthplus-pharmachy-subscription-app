@@ -17,6 +17,80 @@ export type RunBlogDraftGenerationResult =
     }
   | { ok: false; httpStatus: number; error: string; details?: string }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function replaceFirstPlainMentionInLine(line: string, name: string, slug: string): string {
+  const lowerLine = line.toLowerCase()
+  const lowerName = name.toLowerCase()
+  let fromIdx = 0
+
+  while (true) {
+    const idx = lowerLine.indexOf(lowerName, fromIdx)
+    if (idx === -1) return line
+
+    // Skip if mention is already inside markdown link syntax: [..](..)
+    const linkMatches = [...line.matchAll(/\[[^\]]+\]\([^)]+\)/g)]
+    const insideLink = linkMatches.some((m) => {
+      const start = m.index ?? -1
+      const end = start + m[0].length
+      return idx >= start && idx < end
+    })
+    if (insideLink) {
+      fromIdx = idx + lowerName.length
+      continue
+    }
+
+    const raw = line.slice(idx, idx + name.length)
+    const linked = `[${raw}](/products/${slug})`
+    return `${line.slice(0, idx)}${linked}${line.slice(idx + name.length)}`
+  }
+}
+
+function linkProductMentionsInMarkdown(
+  contentMd: string,
+  products: Array<{ name: string; slug: string }>
+): string {
+  if (!contentMd || products.length === 0) return contentMd
+
+  // Longer names first so specific matches win.
+  const sortedProducts = [...products]
+    .filter((p) => !!p.name && !!p.slug)
+    .sort((a, b) => b.name.length - a.name.length)
+
+  const lines = contentMd.split('\n')
+  const linkedNames = new Set<string>()
+  let insideCodeFence = false
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
+    if (line.trimStart().startsWith('```')) {
+      insideCodeFence = !insideCodeFence
+      continue
+    }
+    if (insideCodeFence || !line.trim()) continue
+
+    let nextLine = line
+    for (const p of sortedProducts) {
+      if (linkedNames.has(p.name)) continue
+
+      // Fast pre-check to avoid unnecessary work
+      const escaped = escapeRegExp(p.name)
+      if (!new RegExp(escaped, 'i').test(nextLine)) continue
+
+      const replaced = replaceFirstPlainMentionInLine(nextLine, p.name, p.slug)
+      if (replaced !== nextLine) {
+        nextLine = replaced
+        linkedNames.add(p.name)
+      }
+    }
+    lines[i] = nextLine
+  }
+
+  return lines.join('\n')
+}
+
 /**
  * Turns a TOPIC_ONLY blog into DRAFT using the same typed writers as the admin
  * blog queue (OpenAI — beauty/grocery/recipe/money-saving). Links blogProduct /
@@ -107,12 +181,26 @@ export async function runBlogDraftGeneration(blogId: string): Promise<RunBlogDra
       }
     }
 
+    const validProductIds = new Set(availableProducts.map((p) => p.id))
+    const validProducts = result.products.filter((p) => validProductIds.has(p.productId))
+    const productById = new Map(availableProducts.map((p) => [p.id, p]))
+    const uniqueInlineProducts = Array.from(
+      new Map(
+        validProducts
+          .map((p) => productById.get(p.productId))
+          .filter((p): p is NonNullable<typeof p> => !!p)
+          .map((p) => [p.id, { name: p.name, slug: p.slug }])
+      ).values()
+    )
+
+    const linkedContentMd = linkProductMentionsInMarkdown(result.content.contentMd, uniqueInlineProducts)
+
     const updatedBlog = await prisma.blog.update({
       where: { id: blogId },
       data: {
         title: result.content.title,
         summary: result.content.summary,
-        contentMd: result.content.contentMd,
+        contentMd: linkedContentMd,
         seoTitle: result.content.seoTitle,
         seoDescription: result.content.seoDescription,
         seoKeywords: result.content.seoKeywords,
@@ -121,9 +209,6 @@ export async function runBlogDraftGeneration(blogId: string): Promise<RunBlogDra
         status: BlogStatus.DRAFT,
       },
     })
-
-    const validProductIds = new Set(availableProducts.map((p) => p.id))
-    const validProducts = result.products.filter((p) => validProductIds.has(p.productId))
 
     if (validProducts.length > 0) {
       await prisma.blogProduct.createMany({
