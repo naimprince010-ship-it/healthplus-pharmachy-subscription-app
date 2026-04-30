@@ -10,13 +10,14 @@ import { BlogStatus, BlogType } from '@prisma/client'
 import { MDXRemote } from 'next-mdx-remote/rsc'
 
 interface BlogDetailPageProps {
-    params: { slug: string }
+    params: Promise<{ slug: string }>
 }
 
 export async function generateMetadata({ params }: BlogDetailPageProps): Promise<Metadata> {
     try {
+        const { slug } = await params;
         const blog = await prisma.blog.findUnique({
-            where: { slug: params.slug },
+            where: { slug },
         })
 
         if (!blog) {
@@ -83,7 +84,8 @@ async function getPublishedBlogBySlug(slug: string) {
 export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
     let blog: Awaited<ReturnType<typeof getPublishedBlogBySlug>> | null = null
     try {
-        blog = await getPublishedBlogBySlug(params.slug)
+        const { slug } = await params;
+        blog = await getPublishedBlogBySlug(slug)
     } catch (error) {
         console.error('BlogDetailPage error:', error)
         return (
