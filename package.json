@@ -26,7 +26,8 @@
     "azan:coverage-hint": "node scripts/azan-coverage-hint.mjs",
     "cron:facebook": "npx tsx scripts/cron-facebook-marketing.ts",
     "blog:publish-sample": "npx tsx scripts/publish-sample-blog.ts",
-    "blog:generate-draft": "npx tsx scripts/generate-topic-only-blog-draft.ts"
+    "blog:generate-draft": "npx tsx scripts/generate-topic-only-blog-draft.ts",
+    "blog:backfill-inline-links": "npx tsx scripts/backfill-blog-inline-product-links.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
