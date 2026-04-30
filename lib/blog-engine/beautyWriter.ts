@@ -194,7 +194,17 @@ IMPORTANT:
     })
     const products: ProductRecommendation[] = [...aiProducts, ...autoStepProducts]
 
-    const missingProducts: MissingProductInfo[] = (parsed.missingProducts || []).map((m: {
+    const mappedStepIds = new Set(
+      products.filter((p) => p.role === 'step' && typeof p.stepOrder === 'number').map((p) => p.stepOrder as number)
+    )
+    const stepAliasMap: Record<number, string[]> = {
+      1: ['cleanser', 'face wash', 'facewash', 'ক্লিনজার', 'ফেসওয়াশ', 'ফেস ওয়াশ'],
+      2: ['toner', 'টোনার'],
+      3: ['serum', 'essence', 'ampoule', 'সিরাম', 'এস্যেন্স', 'এমপুল'],
+      4: ['moisturizer', 'moisturiser', 'cream', 'lotion', 'ময়েশ্চারাইজার', 'ময়েশ্চারাইজার'],
+      5: ['sunscreen', 'sun screen', 'spf', 'সানস্ক্রিন', 'সান স্ক্রিন'],
+    }
+    const rawMissingProducts: MissingProductInfo[] = (parsed.missingProducts || []).map((m: {
       name: string
       categorySuggestion?: string
       reason: string
@@ -203,6 +213,16 @@ IMPORTANT:
       categorySuggestion: m.categorySuggestion,
       reason: m.reason,
     }))
+    const missingProducts: MissingProductInfo[] = rawMissingProducts.filter((m) => {
+      const text = `${m.name} ${m.reason} ${m.categorySuggestion ?? ''}`.toLowerCase()
+      const matchedStep = Object.entries(stepAliasMap).find(([, aliases]) =>
+        aliases.some((alias) => text.includes(alias))
+      )
+      if (!matchedStep) return true
+      const stepNum = Number(matchedStep[0])
+      // If we already linked a product for this step, don't keep "missing" noise.
+      return !mappedStepIds.has(stepNum)
+    })
 
     return {
       success: true,
