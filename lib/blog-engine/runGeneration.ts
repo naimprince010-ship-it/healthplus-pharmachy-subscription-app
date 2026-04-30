@@ -6,7 +6,7 @@ import { generateBeautyBlog } from './beautyWriter'
 import { generateGroceryBlog } from './groceryWriter'
 import { generateRecipeBlog } from './recipeWriter'
 import { generateMoneySavingBlog } from './moneySavingWriter'
-import type { WriterContext, BlogGenerationResult } from './types'
+import type { WriterContext, BlogGenerationResult, AvailableProduct, MissingProductInfo } from './types'
 
 export type RunBlogDraftGenerationResult =
   | {
@@ -91,6 +91,125 @@ function linkProductMentionsInMarkdown(
   }
 
   return lines.join('\n')
+}
+
+function uniqById(products: AvailableProduct[]): AvailableProduct[] {
+  return Array.from(new Map(products.map((p) => [p.id, p])).values())
+}
+
+function scoreProductRelevanceForBlog(
+  blogType: BlogType,
+  product: AvailableProduct,
+  topicText: string
+): number {
+  const hay = `${product.name} ${product.category?.name || ''} ${(product.aiTags || []).join(' ')}`.toLowerCase()
+  const topic = topicText.toLowerCase()
+  let score = 0
+
+  if (blogType === BlogType.BEAUTY) {
+    const beautyKeys = [
+      'beauty',
+      'skincare',
+      'skin',
+      'cleanser',
+      'toner',
+      'serum',
+      'moisturizer',
+      'sunscreen',
+      'face wash',
+      'spf',
+    ]
+    if (beautyKeys.some((k) => hay.includes(k))) score += 8
+    if (beautyKeys.some((k) => topic.includes(k) && hay.includes(k))) score += 5
+  } else if (blogType === BlogType.GROCERY || blogType === BlogType.RECIPE) {
+    const groceryKeys = [
+      'grocery',
+      'rice',
+      'oil',
+      'dal',
+      'flour',
+      'spice',
+      'salt',
+      'sugar',
+      'vegetable',
+      'fruit',
+      'meat',
+      'fish',
+      'cooking',
+      'ingredient',
+    ]
+    if (product.isIngredient || product.ingredientType) score += 10
+    if (groceryKeys.some((k) => hay.includes(k))) score += 6
+    if (groceryKeys.some((k) => topic.includes(k) && hay.includes(k))) score += 4
+  } else if (blogType === BlogType.MONEY_SAVING) {
+    score += 3 // broad catalog coverage helps comparison blogs
+    if (product.budgetLevel === 'BUDGET') score += 3
+    if (product.budgetLevel === 'MID') score += 2
+  }
+
+  if (product.budgetLevel) score += 1
+  return score
+}
+
+function retrieveProductsForBlog(
+  blogType: BlogType,
+  allProducts: AvailableProduct[],
+  topicTitle: string,
+  topicDescription?: string | null,
+  limit = 120
+): AvailableProduct[] {
+  const topicText = `${topicTitle} ${topicDescription || ''}`
+  const scored = allProducts
+    .map((p) => ({ p, score: scoreProductRelevanceForBlog(blogType, p, topicText) }))
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map((x) => x.p)
+
+  return uniqById(scored).slice(0, limit)
+}
+
+function getMinimumProductThreshold(blogType: BlogType): number {
+  switch (blogType) {
+    case BlogType.BEAUTY:
+      return 10
+    case BlogType.GROCERY:
+      return 12
+    case BlogType.RECIPE:
+      return 8
+    case BlogType.MONEY_SAVING:
+      return 10
+    default:
+      return 8
+  }
+}
+
+function suppressFalseMissingProducts(
+  missingProducts: MissingProductInfo[],
+  validProducts: Array<{ role: string; stepOrder?: number }>
+): MissingProductInfo[] {
+  const mappedSteps = new Set(
+    validProducts
+      .filter((p) => p.role === 'step' && typeof p.stepOrder === 'number')
+      .map((p) => p.stepOrder as number)
+  )
+  if (mappedSteps.size === 0) return missingProducts
+
+  const stepAliases: Record<number, string[]> = {
+    1: ['step 1', 'cleanser', 'face wash', 'ক্লিনজার'],
+    2: ['step 2', 'toner', 'টোনার'],
+    3: ['step 3', 'serum', 'essence', 'সিরাম'],
+    4: ['step 4', 'moisturizer', 'cream', 'ময়েশ্চারাইজার'],
+    5: ['step 5', 'sunscreen', 'spf', 'সানস্ক্রিন'],
+  }
+
+  return missingProducts.filter((m) => {
+    const text = `${m.name} ${m.reason} ${m.categorySuggestion || ''}`.toLowerCase()
+    for (const [step, aliases] of Object.entries(stepAliases)) {
+      if (!mappedSteps.has(Number(step))) continue
+      if (aliases.some((a) => text.includes(a))) return false
+    }
+    return true
+  })
 }
 
 async function generateBlogCoverImageUrl(
@@ -194,7 +313,7 @@ export async function runBlogDraftGeneration(blogId: string): Promise<RunBlogDra
       }
     }
 
-    const availableProducts = await prisma.product.findMany({
+    const allProducts = await prisma.product.findMany({
       where: {
         isActive: true,
         type: ProductType.GENERAL,
@@ -212,6 +331,21 @@ export async function runBlogDraftGeneration(blogId: string): Promise<RunBlogDra
         category: { select: { name: true } },
       },
     })
+    const minThreshold = getMinimumProductThreshold(blog.type)
+    const retrievedProducts = retrieveProductsForBlog(
+      blog.type,
+      allProducts,
+      blog.title,
+      blog.topic?.description,
+      120
+    )
+    if (retrievedProducts.length < minThreshold) {
+      return {
+        ok: false,
+        httpStatus: 422,
+        error: `Not enough relevant products for this topic (${retrievedProducts.length}/${minThreshold}). Add/tag products, then retry.`,
+      }
+    }
 
     const existingBlogSlugs = await prisma.blog
       .findMany({
@@ -229,7 +363,7 @@ export async function runBlogDraftGeneration(blogId: string): Promise<RunBlogDra
         type: blog.type,
         block: blog.block,
       },
-      availableProducts,
+      availableProducts: retrievedProducts,
       existingBlogSlugs,
     }
 
@@ -252,6 +386,38 @@ export async function runBlogDraftGeneration(blogId: string): Promise<RunBlogDra
         result = await generateGroceryBlog(context)
     }
 
+    // Retry once with a wider product pool if AI returns too few usable links.
+    const firstPassValidIds = new Set(retrievedProducts.map((p) => p.id))
+    const firstPassValidCount = result.products.filter((p) => firstPassValidIds.has(p.productId)).length
+    if (result.success && firstPassValidCount < 3) {
+      const fallbackContext: WriterContext = {
+        ...context,
+        availableProducts: retrieveProductsForBlog(
+          blog.type,
+          allProducts,
+          blog.title,
+          blog.topic?.description,
+          220
+        ),
+      }
+      switch (blog.type) {
+        case BlogType.BEAUTY:
+          result = await generateBeautyBlog(fallbackContext)
+          break
+        case BlogType.GROCERY:
+          result = await generateGroceryBlog(fallbackContext)
+          break
+        case BlogType.RECIPE:
+          result = await generateRecipeBlog(fallbackContext)
+          break
+        case BlogType.MONEY_SAVING:
+          result = await generateMoneySavingBlog(fallbackContext)
+          break
+        default:
+          result = await generateGroceryBlog(fallbackContext)
+      }
+    }
+
     if (!result.success || !result.content) {
       return {
         ok: false,
@@ -260,12 +426,13 @@ export async function runBlogDraftGeneration(blogId: string): Promise<RunBlogDra
       }
     }
 
-    const validProductIds = new Set(availableProducts.map((p) => p.id))
+    const validProductIds = new Set(retrievedProducts.map((p) => p.id))
     const validProducts = result.products.filter((p) => validProductIds.has(p.productId))
-    const productById = new Map(availableProducts.map((p) => [p.id, p]))
+    const dedupedValidProducts = Array.from(new Map(validProducts.map((p) => [p.productId, p])).values())
+    const productById = new Map(retrievedProducts.map((p) => [p.id, p]))
     const uniqueInlineProducts = Array.from(
       new Map(
-        validProducts
+        dedupedValidProducts
           .map((p) => productById.get(p.productId))
           .filter((p): p is NonNullable<typeof p> => !!p)
           .map((p) => [p.id, { name: p.name, slug: p.slug }])
@@ -297,9 +464,9 @@ export async function runBlogDraftGeneration(blogId: string): Promise<RunBlogDra
       },
     })
 
-    if (validProducts.length > 0) {
+    if (dedupedValidProducts.length > 0) {
       await prisma.blogProduct.createMany({
-        data: validProducts.map((p) => ({
+        data: dedupedValidProducts.map((p) => ({
           blogId,
           productId: p.productId,
           role: p.role,
@@ -310,9 +477,10 @@ export async function runBlogDraftGeneration(blogId: string): Promise<RunBlogDra
       })
     }
 
-    if (result.missingProducts.length > 0) {
+    const filteredMissingProducts = suppressFalseMissingProducts(result.missingProducts, dedupedValidProducts)
+    if (filteredMissingProducts.length > 0) {
       await prisma.missingProduct.createMany({
-        data: result.missingProducts.map((m) => ({
+        data: filteredMissingProducts.map((m) => ({
           name: m.name,
           categorySuggestion: m.categorySuggestion,
           reason: m.reason,
@@ -326,8 +494,8 @@ export async function runBlogDraftGeneration(blogId: string): Promise<RunBlogDra
       blogId,
       title: updatedBlog.title,
       status: updatedBlog.status,
-      productsLinked: result.products.length,
-      missingProductsReported: result.missingProducts.length,
+      productsLinked: dedupedValidProducts.length,
+      missingProductsReported: filteredMissingProducts.length,
     }
   } catch (error) {
     console.error('runBlogDraftGeneration:', error)

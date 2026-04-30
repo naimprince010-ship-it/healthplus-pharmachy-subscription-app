@@ -19,15 +19,40 @@ const GROCERY_CATEGORIES = [
   'breakfast', 'cooking', 'baking', 'condiment', 'sauce',
 ]
 
+const GROCERY_INCLUDE_KEYWORDS = [
+  'rice', 'atta', 'flour', 'oil', 'ghee', 'spice', 'masala', 'dal', 'lentil', 'salt', 'sugar',
+  'noodle', 'pasta', 'biscuit', 'snack', 'juice', 'tea', 'coffee', 'milk', 'dairy', 'egg',
+  'meat', 'fish', 'chicken', 'beef', 'mutton', 'vegetable', 'fruit', 'sauce', 'ketchup',
+  'mayonnaise', 'pickle', 'honey', 'dates', 'breakfast', 'cooking', 'baking', 'grocery',
+]
+
+const NON_GROCERY_EXCLUDE_KEYWORDS = [
+  'serum', 'cleanser', 'toner', 'moisturizer', 'moisturiser', 'sunscreen', 'sunblock',
+  'lipstick', 'makeup', 'cosmetic', 'skincare', 'face wash', 'facewash',
+  'baby soft', 'baby cream', 'diaper', 'nappy',
+]
+
+function includesAny(text: string, words: string[]): boolean {
+  return words.some((w) => text.includes(w))
+}
+
+function isGroceryProduct(p: WriterContext['availableProducts'][number]): boolean {
+  const searchable = `${p.name} ${p.category?.name || ''} ${(p.aiTags || []).join(' ')}`.toLowerCase()
+  const hasGroceryHint =
+    p.isIngredient ||
+    !!p.ingredientType ||
+    p.aiTags.some((tag) => GROCERY_CATEGORIES.includes(tag.toLowerCase())) ||
+    includesAny(searchable, GROCERY_INCLUDE_KEYWORDS)
+  const hasNonGroceryHint = includesAny(searchable, NON_GROCERY_EXCLUDE_KEYWORDS)
+
+  return hasGroceryHint && !hasNonGroceryHint
+}
+
 export async function generateGroceryBlog(context: WriterContext): Promise<BlogGenerationResult> {
   const { topic, availableProducts, existingBlogSlugs } = context
 
   try {
-    const groceryProducts = availableProducts.filter(p =>
-      p.isIngredient ||
-      p.ingredientType ||
-      p.aiTags.some(tag => GROCERY_CATEGORIES.includes(tag))
-    )
+    const groceryProducts = availableProducts.filter(isGroceryProduct)
 
     const productsByBudget = {
       budget: groceryProducts.filter(p => p.budgetLevel === 'BUDGET'),
