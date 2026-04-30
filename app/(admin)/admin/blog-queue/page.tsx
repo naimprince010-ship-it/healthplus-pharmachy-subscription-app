@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Search, Eye, Check, X, Edit, Send, Clock, FileText, AlertCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
+import { BlogMarkdown } from '@/components/blog/BlogMarkdown'
 
 interface Blog {
   id: string
@@ -469,7 +470,7 @@ export default function BlogQueuePage() {
 
         {showPreview && selectedBlog && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-            <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-white p-6">
+            <div className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-lg bg-white p-6">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-xl font-bold">{selectedBlog.title}</h2>
                 <button
@@ -507,9 +508,9 @@ export default function BlogQueuePage() {
               )}
               {selectedBlog.contentMd ? (
                 <div className="mb-4">
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">Content (Markdown)</h3>
-                  <div className="rounded-lg bg-gray-50 p-4 max-h-96 overflow-y-auto">
-                    <pre className="whitespace-pre-wrap text-sm text-gray-700">{selectedBlog.contentMd}</pre>
+                  <h3 className="mb-2 text-sm font-medium text-gray-500">Content Preview</h3>
+                  <div className="max-h-[60vh] overflow-y-auto rounded-lg border border-slate-200 bg-white p-5">
+                    <BlogMarkdown content={selectedBlog.contentMd} />
                   </div>
                 </div>
               ) : (
