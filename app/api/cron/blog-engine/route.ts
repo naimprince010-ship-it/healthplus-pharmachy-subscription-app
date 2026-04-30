@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { TopicBlock, BlogStatus } from '@prisma/client'
+import { runBlogDraftGeneration } from '@/lib/blog-engine/runGeneration'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -18,6 +19,7 @@ export async function GET(request: NextRequest) {
     }
 
     const dryRun = request.nextUrl.searchParams.get('dryRun') === 'true'
+    const autoGenerate = request.nextUrl.searchParams.get('autoGenerate') === 'true'
     const forceBlock = request.nextUrl.searchParams.get('block') as TopicBlock | null
 
     const today = new Date()
@@ -31,15 +33,9 @@ export async function GET(request: NextRequest) {
       where: {
         block: block as TopicBlock,
         isActive: true,
-        OR: [
-          { lastUsedAt: null },
-          { lastUsedAt: { lt: sixtyDaysAgo } },
-        ],
+        OR: [{ lastUsedAt: null }, { lastUsedAt: { lt: sixtyDaysAgo } }],
       },
-      orderBy: [
-        { timesUsed: 'asc' },
-        { lastUsedAt: 'asc' },
-      ],
+      orderBy: [{ timesUsed: 'asc' }, { lastUsedAt: 'asc' }],
       take: 10,
     })
 
@@ -59,6 +55,7 @@ export async function GET(request: NextRequest) {
         success: true,
         dryRun: true,
         block,
+        autoGenerate,
         selectedTopic: {
           id: selectedTopic.id,
           title: selectedTopic.title,
@@ -67,7 +64,7 @@ export async function GET(request: NextRequest) {
           timesUsed: selectedTopic.timesUsed,
         },
         availableTopicsCount: availableTopics.length,
-        message: 'Dry run - no changes made',
+        message: 'Dry run — no changes made',
       })
     }
 
@@ -106,7 +103,7 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({
+    const basePayload = {
       success: true,
       block,
       blog: {
@@ -117,12 +114,45 @@ export async function GET(request: NextRequest) {
         status: blog.status,
       },
       message: `Created blog entry for topic: ${selectedTopic.title}`,
-      nextStep: 'AI content generation pending',
+      nextStep: autoGenerate ? 'Ran unified OpenAI draft generation' : 'Call POST generate or admin Generate; or rerun GET with autoGenerate=true',
+    }
+
+    if (!autoGenerate) {
+      return NextResponse.json(basePayload)
+    }
+
+    const gen = await runBlogDraftGeneration(blog.id)
+    if (!gen.ok) {
+      return NextResponse.json({
+        ...basePayload,
+        generation: {
+          success: false,
+          error: gen.error,
+          details: gen.details,
+        },
+      })
+    }
+
+    return NextResponse.json({
+      ...basePayload,
+      blog: {
+        ...basePayload.blog,
+        status: gen.status,
+        title: gen.title,
+      },
+      generation: {
+        success: true,
+        productsLinked: gen.productsLinked,
+        missingProductsReported: gen.missingProductsReported,
+      },
     })
   } catch (error) {
     console.error('Blog engine cron error:', error)
     return NextResponse.json(
-      { error: 'Blog engine cron failed', details: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        error: 'Blog engine cron failed',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
     )
   }
@@ -138,137 +168,32 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { blogId, action } = body
+    const { blogId, action } = body as { blogId?: string; action?: string }
 
-    if (action === 'generate') {
-      const blog = await prisma.blog.findUnique({
-        where: { id: blogId },
-        include: { topic: true },
-      })
+    if (action === 'generate' && typeof blogId === 'string') {
+      const result = await runBlogDraftGeneration(blogId)
 
-      if (!blog) {
-        return NextResponse.json({ error: 'Blog not found' }, { status: 404 })
+      if (!result.ok) {
+        return NextResponse.json(
+          { success: false, error: result.error, ...(result.details && { details: result.details }) },
+          { status: result.httpStatus }
+        )
       }
-
-      if (blog.status !== BlogStatus.TOPIC_ONLY) {
-        return NextResponse.json({
-          error: 'Blog already has content or is not in TOPIC_ONLY status',
-          currentStatus: blog.status,
-        }, { status: 400 })
-      }
-
-      // Initialize Gemini API
-      const { GoogleGenAI } = await import('@google/genai')
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
-
-      const prompt = `
-        You are an expert copywriter for "Halalzi", a premium pharmacy and health/grocery e-commerce platform in Bangladesh.
-        Write a highly engaging, SEO-optimized blog post in complete Markdown format.
-
-        Topic Context:
-        - Title Idea: "${blog.title}"
-        - Category/Type: "${blog.type}"
-        - Block: "${blog.block}"
-
-        Instructions:
-        1. Write a catchy, SEO-friendly H1 title at the very beginning (you can improve the raw title idea).
-        2. Write a comprehensive, well-structured article (at least 600 words). Use H2 and H3 tags for readability.
-        3. Include practical tips, advice, and facts.
-        4. The tone should be helpful, authoritative, friendly, and trustworthy.
-        5. At the end of the markdown content, provide exactly 3-4 specific product keywords or generic names (e.g., "Paracetamol", "Face Wash", "Basmati Rice") that naturally relate to this article. 
-        
-        CRITICAL FORMAT REQUIREMENT:
-        You must return ONLY a JSON object with this exact structure (no markdown code blocks, no other text):
-        {
-          "title": "Improved Catchy Blog Title",
-          "summary": "A 2-sentence engaging summary for the blog card.",
-          "contentMd": "# The Full Markdown Content Here...",
-          "suggestedProductKeywords": ["keyword1", "keyword2", "keyword3"]
-        }
-      `
-
-      let aiResponse
-      try {
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: prompt,
-          config: {
-            responseMimeType: "application/json",
-          }
-        })
-        aiResponse = JSON.parse(response.text || '{}')
-      } catch (e) {
-        console.error('Gemini API Error:', e)
-        return NextResponse.json({ error: 'Failed to generate content from AI' }, { status: 500 })
-      }
-
-      if (!aiResponse || !aiResponse.contentMd) {
-        return NextResponse.json({ error: 'AI returned malformed response' }, { status: 500 })
-      }
-
-      // Find matching products
-      const matchedProducts: any[] = []
-      if (Array.isArray(aiResponse.suggestedProductKeywords)) {
-        for (const keyword of aiResponse.suggestedProductKeywords) {
-          const products = await prisma.product.findMany({
-            where: {
-              isActive: true,
-              inStock: true,
-              deletedAt: null,
-              OR: [
-                { name: { contains: keyword, mode: 'insensitive' } },
-                { description: { contains: keyword, mode: 'insensitive' } },
-                { aiTags: { has: keyword.toLowerCase() } }
-              ]
-            },
-            take: 1
-          })
-          if (products.length > 0) {
-            matchedProducts.push(products[0])
-          }
-        }
-      }
-
-      // Update the blog with content and link products
-      const updatedBlog = await prisma.$transaction(async (tx) => {
-        const blg = await tx.blog.update({
-          where: { id: blogId },
-          data: {
-            title: aiResponse.title || blog.title,
-            summary: aiResponse.summary,
-            contentMd: aiResponse.contentMd,
-            status: BlogStatus.PUBLISHED,
-            publishedAt: new Date(),
-          }
-        })
-
-        // Link products
-        for (let i = 0; i < matchedProducts.length; i++) {
-          await tx.blogProduct.create({
-            data: {
-              blogId: blg.id,
-              productId: matchedProducts[i].id,
-              role: 'recommended',
-              stepOrder: i + 1
-            }
-          })
-        }
-        return blg
-      })
 
       return NextResponse.json({
         success: true,
-        message: 'Blog generated and published successfully',
+        message: 'Blog draft generated (same pipeline as admin). Review in blog queue before publish.',
         blog: {
-          id: updatedBlog.id,
-          title: updatedBlog.title,
-          status: updatedBlog.status,
+          id: result.blogId,
+          title: result.title,
+          status: result.status,
         },
-        productsMatched: matchedProducts.length
+        productsLinked: result.productsLinked,
+        missingProductsReported: result.missingProductsReported,
       })
     }
 
-    return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid action. Use action: "generate" with blogId.' }, { status: 400 })
   } catch (error) {
     console.error('Blog engine POST error:', error)
     return NextResponse.json(
