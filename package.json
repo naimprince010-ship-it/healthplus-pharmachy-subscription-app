@@ -28,7 +28,8 @@
     "blog:publish-sample": "npx tsx scripts/publish-sample-blog.ts",
     "blog:generate-draft": "npx tsx scripts/generate-topic-only-blog-draft.ts",
     "blog:backfill-inline-links": "npx tsx scripts/backfill-blog-inline-product-links.ts",
-    "blog:cleanup-missing": "npx tsx scripts/cleanup-false-missing-products.ts"
+    "blog:cleanup-missing": "npx tsx scripts/cleanup-false-missing-products.ts",
+    "blog:autotag-beauty": "npx tsx scripts/autotag-beauty-products.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

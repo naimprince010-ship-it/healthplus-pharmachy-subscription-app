@@ -153,6 +153,23 @@ Requirements: high-quality, editorial hero, no logos, no watermark, no readable 
   }
 }
 
+function getFallbackCoverImageUrl(type: BlogType): string {
+  const envDefault = process.env.BLOG_DEFAULT_COVER_IMAGE_URL?.trim()
+  if (envDefault) return envDefault
+
+  switch (type) {
+    case BlogType.BEAUTY:
+      return '/images/blog/default-cover-beauty.svg'
+    case BlogType.RECIPE:
+      return '/images/blog/default-cover-recipe.svg'
+    case BlogType.MONEY_SAVING:
+      return '/images/blog/default-cover-money-saving.svg'
+    case BlogType.GROCERY:
+    default:
+      return '/images/blog/default-cover-grocery.svg'
+  }
+}
+
 /**
  * Turns a TOPIC_ONLY blog into DRAFT using the same typed writers as the admin
  * blog queue (OpenAI — beauty/grocery/recipe/money-saving). Links blogProduct /
@@ -262,6 +279,7 @@ export async function runBlogDraftGeneration(blogId: string): Promise<RunBlogDra
       result.content.title,
       result.content.summary
     )
+    const coverImageUrl = aiCoverUrl || getFallbackCoverImageUrl(blog.type)
 
     const updatedBlog = await prisma.blog.update({
       where: { id: blogId },
@@ -269,7 +287,7 @@ export async function runBlogDraftGeneration(blogId: string): Promise<RunBlogDra
         title: result.content.title,
         summary: result.content.summary,
         contentMd: linkedContentMd,
-        imageUrl: aiCoverUrl || undefined,
+        imageUrl: coverImageUrl,
         seoTitle: result.content.seoTitle,
         seoDescription: result.content.seoDescription,
         seoKeywords: result.content.seoKeywords,
