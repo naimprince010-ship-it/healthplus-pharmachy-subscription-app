@@ -205,10 +205,10 @@ export default function BlogQueuePage() {
       <div className="mx-auto max-w-7xl">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Blog Queue</h1>
-            <p className="mt-1 text-sm text-gray-500">
-              Manage AI-generated blog content. Pending: {pendingCount} | Drafts: {draftCount} | Queued: {queuedCount}
-            </p>
+          <h1 className="text-3xl font-bold text-gray-900">Blog Queue</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Manage AI-generated blog content. Pending: {pendingCount} | Drafts: {draftCount} | Queued: {queuedCount}
+          </p>
           </div>
           <div className="flex shrink-0 gap-2">
             <button
@@ -301,7 +301,7 @@ export default function BlogQueuePage() {
               </div>
             </div>
           </button>
-        </div>
+          </div>
         <div className="mb-6 flex justify-end gap-2 text-xs text-gray-500">
           <button type="button" className="hover:text-gray-800 hover:underline" onClick={() => setStatusFilter('all')}>
             সব স্ট্যাটাস দেখান
