@@ -473,7 +473,17 @@ export async function runBlogDraftGeneration(blogId: string): Promise<RunBlogDra
       ).values()
     )
 
-    const linkedContentMd = linkProductMentionsInMarkdown(result.content.contentMd, uniqueInlineProducts)
+    // Pass ALL known products for linking so any product name mentioned in blog text gets
+    // auto-linked, even if AI forgot to include it in recommendedProducts JSON.
+    const allProductsForLinking = Array.from(
+      new Map(
+        allKnownProducts
+          .filter((p) => !!p.name && !!p.slug)
+          .map((p) => [p.id, { name: p.name, slug: p.slug }])
+      ).values()
+    )
+
+    const linkedContentMd = linkProductMentionsInMarkdown(result.content.contentMd, allProductsForLinking)
     const aiCoverUrl = await generateBlogCoverImageUrl(
       blogId,
       blog.type,
