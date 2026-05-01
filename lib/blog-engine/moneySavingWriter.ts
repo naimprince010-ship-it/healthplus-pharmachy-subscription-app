@@ -1,4 +1,3 @@
-import OpenAI from 'openai'
 import {
   BlogGenerationResult,
   WriterContext,
@@ -6,11 +5,20 @@ import {
   MissingProductInfo,
   FAQSchema,
 } from './types'
+import { getOpenAIClient } from './openaiClient' // Bug #12 fix: shared client
 
-function getOpenAIClient() {
-  return new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  })
+const VALID_ROLES = new Set(['recommended', 'ingredient', 'alternative', 'combo', 'step'])
+
+// Bug #8 fix: Bangla keywords যোগ করা হয়েছে bulk buy detection-এ
+const BULK_BUY_KEYWORDS_EN = ['kg', 'liter', 'pack', 'bundle', 'litre', 'gm', 'gram']
+const BULK_BUY_KEYWORDS_BN = ['কেজি', 'লিটার', 'প্যাক', 'বান্ডেল', 'গ্রাম', 'কার্টন', 'বস্তা']
+
+function isBulkProduct(name: string): boolean {
+  const lower = name.toLowerCase()
+  return (
+    BULK_BUY_KEYWORDS_EN.some(kw => lower.includes(kw)) ||
+    BULK_BUY_KEYWORDS_BN.some(kw => name.includes(kw))
+  )
 }
 
 export async function generateMoneySavingBlog(context: WriterContext): Promise<BlogGenerationResult> {
@@ -21,10 +29,8 @@ export async function generateMoneySavingBlog(context: WriterContext): Promise<B
     const midProducts = availableProducts.filter(p => p.budgetLevel === 'MID')
     const premiumProducts = availableProducts.filter(p => p.budgetLevel === 'PREMIUM')
 
-    const bulkBuyOpportunities = availableProducts.filter(p => {
-      const name = p.name.toLowerCase()
-      return name.includes('kg') || name.includes('liter') || name.includes('pack') || name.includes('bundle')
-    })
+    // Bug #8 fix: Bangla ও English উভয় keyword check করা হচ্ছে
+    const bulkBuyOpportunities = availableProducts.filter(p => isBulkProduct(p.name))
 
     const productContext = `
 BUDGET-FRIENDLY PRODUCTS (সস্তা - Best Value):
@@ -48,8 +54,8 @@ ${topic.description ? `DESCRIPTION: ${topic.description}` : ''}
 AVAILABLE PRODUCTS:
 ${productContext}
 
-EXISTING BLOG SLUGS (for internal linking):
-${existingBlogSlugs.slice(0, 10).join(', ')}
+EXISTING BLOG SLUGS (for internal linking — ONLY use slugs from this list, do NOT invent slugs):
+${existingBlogSlugs.length > 0 ? existingBlogSlugs.slice(0, 10).join(', ') : 'None available — leave internalLinkSlugs as empty array []'}
 
 Write a comprehensive money-saving guide in Bangla (Bengali) with some English terms where appropriate for SEO. The blog should:
 
@@ -77,7 +83,7 @@ RESPOND IN THIS EXACT JSON FORMAT:
     {"question": "FAQ about saving money in Bangla", "answer": "Answer with practical tips"},
     {"question": "Another savings FAQ", "answer": "Another helpful answer"}
   ],
-  "internalLinkSlugs": ["related-savings-guide", "bulk-buying-guide"],
+  "internalLinkSlugs": ["only-slugs-from-the-list-above"],
   "recommendedProducts": [
     {"productId": "budget-product-id", "role": "recommended", "notes": "Best value for money"},
     {"productId": "bulk-product-id", "role": "combo", "notes": "Great for bulk buying"},
@@ -91,20 +97,22 @@ RESPOND IN THIS EXACT JSON FORMAT:
 }
 
 IMPORTANT:
-- Only use product IDs from the available products list
+- Only use product IDs from the available products list above
+- role must be one of: recommended, ingredient, alternative, combo, step
 - Focus on BUDGET level products for recommendations
 - Show price comparisons between budget and premium options
 - Calculate realistic monthly savings for a typical Bangladeshi family
 - If budget alternatives are missing for important categories, add to missingProducts
 - Include at least 3 FAQs about saving money on groceries
+- internalLinkSlugs MUST only contain slugs from the provided list (or empty array)
 - Write naturally in Bangla, not translated English
 - Be practical and relatable to middle-class Bangladeshi families`
 
-        const openai = getOpenAIClient()
-        const response = await openai.chat.completions.create({
-          model: 'gpt-4o',
-          messages: [
-            { role: 'system', content: 'You are a money-saving expert content writer for a Bangladeshi e-commerce platform. Always respond with valid JSON.' },
+    const openai = getOpenAIClient()
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: 'You are a money-saving expert content writer for a Bangladeshi e-commerce platform. Always respond with valid JSON.' },
         { role: 'user', content: prompt },
       ],
       temperature: 0.7,
@@ -132,17 +140,16 @@ IMPORTANT:
       })),
     }
 
-    const products: ProductRecommendation[] = (parsed.recommendedProducts || []).map((p: {
-      productId: string
-      role: string
-      stepOrder?: number
-      notes?: string
-    }) => ({
-      productId: p.productId,
-      role: p.role as ProductRecommendation['role'],
-      stepOrder: p.stepOrder,
-      notes: p.notes,
-    }))
+    // Bug #5 fix: role validate করা হচ্ছে
+    const existingSlugSet = new Set(existingBlogSlugs)
+    const products: ProductRecommendation[] = (parsed.recommendedProducts || [])
+      .filter((p: { role: string }) => VALID_ROLES.has(p.role))
+      .map((p: { productId: string; role: string; stepOrder?: number; notes?: string }) => ({
+        productId: p.productId,
+        role: p.role as ProductRecommendation['role'],
+        stepOrder: p.stepOrder,
+        notes: p.notes,
+      }))
 
     const missingProducts: MissingProductInfo[] = (parsed.missingProducts || []).map((m: {
       name: string
@@ -153,6 +160,11 @@ IMPORTANT:
       categorySuggestion: m.categorySuggestion,
       reason: m.reason,
     }))
+
+    // Bug #4 fix: internal link slugs validate করা হচ্ছে
+    const validatedInternalLinks = (parsed.internalLinkSlugs || []).filter(
+      (slug: string) => existingSlugSet.has(slug)
+    )
 
     const savingsMetadata = `
 ---
@@ -171,7 +183,7 @@ Potential Monthly Savings: ৳${parsed.potentialMonthlySavings || 'Varies'}
         seoDescription: parsed.seoDescription,
         seoKeywords: parsed.seoKeywords,
         faqJsonLd,
-        internalLinkSlugs: parsed.internalLinkSlugs || [],
+        internalLinkSlugs: validatedInternalLinks,
       },
       products,
       missingProducts,

@@ -112,19 +112,14 @@ export async function forwardOrderToAzanById(orderId: string): Promise<{
       ? Math.max(0, salesListUnit - lineUnit)
       : roundMoney(Math.max(0, salesListUnit - lineUnit))
 
-    const mrpRaw = Math.max(
-      p.mrp != null && p.mrp > 0 ? p.mrp : 0,
-      listRaw,
-      rawUnit,
-    )
-    const mrpBase = mrpRaw > 0 ? mrpRaw : Math.max(listRaw, rawUnit)
-    let mrp = toAzanBdtAmount(mrpBase, intTaka)
-    if (mrp <= lineUnit) {
-      mrp = intTaka ? lineUnit + 1 : roundMoney(lineUnit + 0.01)
-    }
-    if (mrp <= salesListUnit) {
-      mrp = intTaka ? salesListUnit + 1 : roundMoney(salesListUnit + 0.01)
-    }
+    // Use catalog MRP directly — Azan validates mrp_price against their own record.
+    // Do NOT inflate above actual MRP: if p.mrp (synced from Azan catalog) is 550 and
+    // our selling price is 560, still send 550 as mrp_price. Only fall back to selling
+    // price when mrp is not set in our DB.
+    const mrpBase = (p.mrp != null && p.mrp > 0 && Number.isFinite(p.mrp))
+      ? p.mrp
+      : Math.max(listRaw, rawUnit)
+    const mrp = Math.max(1, toAzanBdtAmount(mrpBase, intTaka))
     const wholesale = toAzanBdtAmount(computeWholesaleForAzanLineRaw(p.purchasePrice, rawUnit), intTaka)
     const totalLine = toAzanBdtAmount(lineUnit * line.quantity, intTaka)
 
@@ -191,7 +186,7 @@ export async function forwardOrderToAzanById(orderId: string): Promise<{
     date: format(now, 'yyyy-MM-dd HH:mm:ss'),
     order_details: details,
     platform_source: getAzanPlatformSource(),
-    platform_user_id: String(platformUserId),
+    platform_user_id: platformUserId,  // send as integer per Azan requirement
     order_source: 'website',
     shipping_address: {
       name: order.address.fullName,
@@ -199,7 +194,7 @@ export async function forwardOrderToAzanById(orderId: string): Promise<{
       phone: order.address.phone,
       address: shippingText,
     },
-    platform_order_id: String(platformOrderId),
+    platform_order_id: platformOrderId,  // send as integer per Azan requirement
     grand_total: grandFromLines,
   }
 
@@ -298,18 +293,21 @@ function extractIntegerOrderId(orderNumber: string, orderId: string): number | n
 
 /**
  * Azan validates platform_user_id as integer.
- * Prefer numeric DB ids, then phone digits as stable fallback.
+ * Prefer phone digits — CUIDs like "cmifv6j3w000004kw61j1jyh9" only yield digit
+ * sequences like "4" which are not unique. Phone (e.g. 8801938264923) is stable.
  */
 function extractIntegerUserId(userId: string, phone?: string | null): number | null {
-  const fromUserId = userId.replace(/\D/g, '')
-  if (fromUserId) {
-    const n = Number(fromUserId)
-    if (Number.isSafeInteger(n) && n > 0) return n
-  }
-
+  // Phone first: gives a meaningful, unique 10–13 digit number
   const fromPhone = (phone || '').replace(/\D/g, '')
   if (fromPhone) {
     const n = Number(fromPhone)
+    if (Number.isSafeInteger(n) && n > 0) return n
+  }
+
+  // Fallback: strip non-digits from userId (only useful for numeric DB ids, not CUIDs)
+  const fromUserId = userId.replace(/\D/g, '')
+  if (fromUserId) {
+    const n = Number(fromUserId)
     if (Number.isSafeInteger(n) && n > 0) return n
   }
 

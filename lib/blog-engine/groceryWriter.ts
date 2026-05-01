@@ -1,4 +1,3 @@
-import OpenAI from 'openai'
 import {
   BlogGenerationResult,
   WriterContext,
@@ -6,12 +5,9 @@ import {
   MissingProductInfo,
   FAQSchema,
 } from './types'
+import { getOpenAIClient } from './openaiClient' // Bug #12 fix: shared client
 
-function getOpenAIClient() {
-  return new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  })
-}
+const VALID_ROLES = new Set(['recommended', 'ingredient', 'alternative', 'combo', 'step'])
 
 const GROCERY_CATEGORIES = [
   'rice', 'oil', 'spice', 'dal', 'flour', 'sugar', 'salt',
@@ -83,8 +79,8 @@ ${topic.description ? `DESCRIPTION: ${topic.description}` : ''}
 AVAILABLE PRODUCTS:
 ${productContext}
 
-EXISTING BLOG SLUGS (for internal linking):
-${existingBlogSlugs.slice(0, 10).join(', ')}
+EXISTING BLOG SLUGS (for internal linking — ONLY use slugs from this list, do NOT invent slugs):
+${existingBlogSlugs.length > 0 ? existingBlogSlugs.slice(0, 10).join(', ') : 'None available — leave internalLinkSlugs as empty array []'}
 
 Write a comprehensive grocery buying guide in Bangla (Bengali) with some English terms where appropriate for SEO. The blog should:
 
@@ -107,7 +103,7 @@ RESPOND IN THIS EXACT JSON FORMAT:
     {"question": "FAQ question in Bangla", "answer": "Answer in Bangla"},
     {"question": "Another FAQ", "answer": "Another answer"}
   ],
-  "internalLinkSlugs": ["related-blog-slug-1", "related-blog-slug-2"],
+  "internalLinkSlugs": ["only-slugs-from-the-list-above"],
   "recommendedProducts": [
     {"productId": "actual-product-id", "role": "recommended", "notes": "Best budget option"},
     {"productId": "another-id", "role": "alternative", "notes": "Premium alternative"}
@@ -118,19 +114,20 @@ RESPOND IN THIS EXACT JSON FORMAT:
 }
 
 IMPORTANT:
-- Only use product IDs from the available products list
+- Only use product IDs from the available products list above
+- role must be one of: recommended, ingredient, alternative, combo, step
 - Include products from different budget levels for comparison
 - If important product categories are missing, add to missingProducts
 - Include at least 3 FAQs about buying/storing this grocery item
-- Suggest 2-3 internal links from existing blogs
+- internalLinkSlugs MUST only contain slugs from the provided list (or empty array)
 - Write naturally in Bangla, not translated English
 - Focus on helping Bangladeshi families make smart grocery choices`
 
-        const openai = getOpenAIClient()
-        const response = await openai.chat.completions.create({
-          model: 'gpt-4o',
-          messages: [
-            { role: 'system', content: 'You are a grocery shopping expert content writer for a Bangladeshi e-commerce platform. Always respond with valid JSON.' },
+    const openai = getOpenAIClient()
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: 'You are a grocery shopping expert content writer for a Bangladeshi e-commerce platform. Always respond with valid JSON.' },
         { role: 'user', content: prompt },
       ],
       temperature: 0.7,
@@ -158,17 +155,16 @@ IMPORTANT:
       })),
     }
 
-    const products: ProductRecommendation[] = (parsed.recommendedProducts || []).map((p: {
-      productId: string
-      role: string
-      stepOrder?: number
-      notes?: string
-    }) => ({
-      productId: p.productId,
-      role: p.role as ProductRecommendation['role'],
-      stepOrder: p.stepOrder,
-      notes: p.notes,
-    }))
+    // Bug #5 fix: role validate করা হচ্ছে
+    const existingSlugSet = new Set(existingBlogSlugs)
+    const products: ProductRecommendation[] = (parsed.recommendedProducts || [])
+      .filter((p: { role: string }) => VALID_ROLES.has(p.role))
+      .map((p: { productId: string; role: string; stepOrder?: number; notes?: string }) => ({
+        productId: p.productId,
+        role: p.role as ProductRecommendation['role'],
+        stepOrder: p.stepOrder,
+        notes: p.notes,
+      }))
 
     const missingProducts: MissingProductInfo[] = (parsed.missingProducts || []).map((m: {
       name: string
@@ -180,6 +176,11 @@ IMPORTANT:
       reason: m.reason,
     }))
 
+    // Bug #4 fix: internal link slugs validate করা হচ্ছে
+    const validatedInternalLinks = (parsed.internalLinkSlugs || []).filter(
+      (slug: string) => existingSlugSet.has(slug)
+    )
+
     return {
       success: true,
       content: {
@@ -190,7 +191,7 @@ IMPORTANT:
         seoDescription: parsed.seoDescription,
         seoKeywords: parsed.seoKeywords,
         faqJsonLd,
-        internalLinkSlugs: parsed.internalLinkSlugs || [],
+        internalLinkSlugs: validatedInternalLinks,
       },
       products,
       missingProducts,

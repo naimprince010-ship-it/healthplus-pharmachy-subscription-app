@@ -2,24 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { BlogStatus } from '@prisma/client'
+import { generateSlug, makeUniqueSlug } from '@/lib/blog-engine/slugUtils'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
-
-function generateSlug(title: string): string {
-  const date = new Date()
-  const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-  
-  const slug = title
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .trim()
-    .substring(0, 50)
-  
-  return `${slug}-${dateStr}`
-}
 
 export async function POST(
   request: NextRequest,
@@ -76,7 +62,7 @@ export async function POST(
     })
 
     const finalSlug = existingSlug 
-      ? `${slug}-${Date.now().toString(36)}`
+      ? makeUniqueSlug(slug)
       : slug
 
     const blog = await prisma.blog.create({

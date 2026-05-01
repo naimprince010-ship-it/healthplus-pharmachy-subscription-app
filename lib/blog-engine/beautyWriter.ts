@@ -1,4 +1,3 @@
-import OpenAI from 'openai'
 import {
   BlogGenerationResult,
   WriterContext,
@@ -9,12 +8,9 @@ import {
   SKIN_CONCERNS,
   FAQSchema,
 } from './types'
+import { getOpenAIClient } from './openaiClient' // Bug #12 fix: shared client
 
-function getOpenAIClient() {
-  return new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  })
-}
+const VALID_ROLES = new Set(['recommended', 'ingredient', 'alternative', 'combo', 'step'])
 
 const STEP_ALIASES: Record<number, string[]> = {
   1: ['cleanser', 'face wash', 'facewash', 'foam wash', 'cleansing', 'ক্লিনজার', 'ফেসওয়াশ', 'ফেস ওয়াশ'],
@@ -78,6 +74,11 @@ export async function generateBeautyBlog(context: WriterContext): Promise<BlogGe
       return globalBeautyKeywords.some((k) => hay.includes(k))
     })
 
+    const hasProducts = skincareProducts.length > 0
+    if (!hasProducts) {
+      console.warn('[BeautyWriter] No skincare products found. Blog will have no product links.')
+    }
+
     const rankStepProducts = (
       step: (typeof SKINCARE_ROUTINE_STEPS)[number],
       pool: typeof skincareProducts
@@ -114,8 +115,8 @@ ${topic.description ? `DESCRIPTION: ${topic.description}` : ''}
 AVAILABLE PRODUCTS BY SKINCARE STEP:
 ${productContext}
 
-EXISTING BLOG SLUGS (for internal linking):
-${existingBlogSlugs.slice(0, 10).join(', ')}
+EXISTING BLOG SLUGS (for internal linking — ONLY use slugs from this list, do NOT invent slugs):
+${existingBlogSlugs.length > 0 ? existingBlogSlugs.slice(0, 10).join(', ') : 'None available — leave internalLinkSlugs as empty array []'}
 
 Write a comprehensive skincare blog post in Bangla (Bengali) with some English terms where appropriate for SEO. The blog should:
 
@@ -137,7 +138,7 @@ RESPOND IN THIS EXACT JSON FORMAT:
     {"question": "FAQ question in Bangla", "answer": "Answer in Bangla"},
     {"question": "Another FAQ", "answer": "Another answer"}
   ],
-  "internalLinkSlugs": ["related-blog-slug-1", "related-blog-slug-2"],
+  "internalLinkSlugs": ["only-slugs-from-the-list-above"],
   "recommendedProducts": [
     {"productId": "actual-product-id", "role": "step", "stepOrder": 1, "notes": "Why this product"},
     {"productId": "another-id", "role": "recommended", "notes": "Alternative option"}
@@ -151,8 +152,9 @@ IMPORTANT:
 - Only use product IDs from the AVAILABLE PRODUCTS BY SKINCARE STEP lines above for recommendedProducts — never invent IDs
 - When a step has no matched products above, include it in missingProducts for the team — but in contentMd explain that step educationally (what to choose, skin-type tips); do NOT use harsh storefront language like headings "পণ্য অনুপস্থিত" / "এখন প্ল্যাটফর্মে নেই" as if the entire category is unavailable — inventory changes and products may appear later.
 - Whenever you recommend a matched product ID, weave its name (+ price if helpful) into the prose for that step, not only in JSON.
+- role must be one of: recommended, ingredient, alternative, combo, step
 - Include at least 3 FAQs
-- Suggest 2-3 internal links from existing blogs
+- internalLinkSlugs MUST only contain slugs from the provided list (or empty array)
 - Write naturally in Bangla, not translated English`
 
     const openai = getOpenAIClient()
@@ -187,17 +189,21 @@ IMPORTANT:
       })),
     }
 
-    const productsFromAi: ProductRecommendation[] = (parsed.recommendedProducts || []).map((p: {
-      productId: string
-      role: string
-      stepOrder?: number
-      notes?: string
-    }) => ({
-      productId: p.productId,
-      role: p.role as ProductRecommendation['role'],
-      stepOrder: p.stepOrder,
-      notes: p.notes,
-    }))
+    const existingSlugSet = new Set(existingBlogSlugs)
+    const productsFromAi: ProductRecommendation[] = (parsed.recommendedProducts || [])
+      .filter((p: { role: string }) => VALID_ROLES.has(p.role))
+      .map((p: {
+        productId: string
+        role: string
+        stepOrder?: number
+        notes?: string
+      }) => ({
+        productId: p.productId,
+        role: p.role as ProductRecommendation['role'],
+        stepOrder: p.stepOrder,
+        notes: p.notes,
+      }))
+
     const validProductIds = new Set(availableProducts.map((p) => p.id))
     const byId = new Map(availableProducts.map((p) => [p.id, p]))
     const aiProductsValidated = productsFromAi.filter((p) => validProductIds.has(p.productId))
@@ -267,6 +273,11 @@ IMPORTANT:
       return !mappedStepIds.has(stepNum)
     })
 
+    // Bug #4 fix: internal link slugs validate করা হচ্ছে
+    const validatedInternalLinks = (parsed.internalLinkSlugs || []).filter(
+      (slug: string) => existingSlugSet.has(slug)
+    )
+
     return {
       success: true,
       content: {
@@ -277,7 +288,7 @@ IMPORTANT:
         seoDescription: parsed.seoDescription,
         seoKeywords: parsed.seoKeywords,
         faqJsonLd,
-        internalLinkSlugs: parsed.internalLinkSlugs || [],
+        internalLinkSlugs: validatedInternalLinks,
       },
       products,
       missingProducts,

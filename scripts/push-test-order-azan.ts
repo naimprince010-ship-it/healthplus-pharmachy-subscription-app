@@ -2,11 +2,7 @@
  * One-off: find a recent order with Azan product lines and call forwardOrderToAzanById.
  * Run: npx tsx scripts/push-test-order-azan.ts
  */
-import { config } from 'dotenv'
-import { resolve } from 'path'
-config({ path: resolve(process.cwd(), '.env.local') })
-config({ path: resolve(process.cwd(), '.env') })
-
+import './load-local-env'
 import { forwardOrderToAzanById } from '@/lib/integrations/forward-order-to-azan'
 import { getAzanResellerCategoryName, isProductLinkedToAzanCatalog } from '@/lib/integrations/azan-catalog'
 import { prisma } from '@/lib/prisma'

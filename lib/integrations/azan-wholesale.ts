@@ -50,8 +50,8 @@ export interface AzanOrderPayload {
   date: string
   order_details: AzanOrderLine[]
   platform_source: string
-  /** Azan sample uses string user id */
-  platform_user_id: string
+  /** Azan requires integer user id — send phone digits for CUID-based systems */
+  platform_user_id: number
   order_source?: string
   shipping_address: {
     name: string
@@ -59,7 +59,8 @@ export interface AzanOrderPayload {
     phone?: string
     address: string
   }
-  platform_order_id: string
+  /** Azan requires integer order id — strip non-digit prefix (e.g. "ORD-") before sending */
+  platform_order_id: number
   grand_total?: number
 }
 

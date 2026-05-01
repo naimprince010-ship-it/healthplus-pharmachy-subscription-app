@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, Eye, Check, X, Edit, Send, Clock, FileText, AlertCircle, Trash2 } from 'lucide-react'
+import { Search, Eye, Check, X, Edit, Send, Clock, FileText, AlertCircle, Trash2, Image as ImageIcon } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 import { BlogMarkdown } from '@/components/blog/BlogMarkdown'
@@ -15,6 +15,7 @@ interface Blog {
   status: string
   summary: string | null
   contentMd: string | null
+  imageUrl: string | null
   seoTitle: string | null
   seoDescription: string | null
   scheduledAt: string | null
@@ -64,6 +65,7 @@ export default function BlogQueuePage() {
   const [selectedBlog, setSelectedBlog] = useState<Blog | null>(null)
   const [showPreview, setShowPreview] = useState(false)
   const [generating, setGenerating] = useState<string | null>(null)
+  const [generatingImage, setGeneratingImage] = useState<string | null>(null)
 
   const fetchBlogs = async () => {
     try {
@@ -150,6 +152,29 @@ export default function BlogQueuePage() {
       }
     } catch {
       toast.error('Cleanup failed')
+    }
+  }
+
+  const generateImage = async (blogId: string) => {
+    setGeneratingImage(blogId)
+    try {
+      const res = await fetch(`/api/admin/blog-queue/${blogId}/generate-image`, {
+        method: 'POST',
+      })
+      const data = await res.json()
+      if (res.ok) {
+        toast.success('Image generated successfully')
+        fetchBlogs()
+        if (selectedBlog?.id === blogId) {
+          setSelectedBlog(prev => prev ? { ...prev, imageUrl: data.imageUrl } : null)
+        }
+      } else {
+        toast.error(data.error || 'Failed to generate image')
+      }
+    } catch {
+      toast.error('Failed to generate image')
+    } finally {
+      setGeneratingImage(null)
     }
   }
 
@@ -430,6 +455,20 @@ export default function BlogQueuePage() {
                           <Eye className="h-3.5 w-3.5" />
                           ভিউ
                         </button>
+                        {blog.status !== 'TOPIC_ONLY' && (
+                          <button
+                            onClick={() => generateImage(blog.id)}
+                            disabled={generatingImage === blog.id}
+                            className="rounded p-1 text-purple-400 hover:bg-purple-50 hover:text-purple-600 disabled:opacity-50"
+                            title="Generate AI Cover Image"
+                          >
+                            {generatingImage === blog.id ? (
+                              <Clock className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <ImageIcon className="h-4 w-4" />
+                            )}
+                          </button>
+                        )}
                         {blog.status === 'TOPIC_ONLY' && (
                           <button
                             type="button"
@@ -518,6 +557,12 @@ export default function BlogQueuePage() {
                 <div className="mb-4">
                   <h3 className="text-sm font-medium text-gray-500">Summary</h3>
                   <p className="text-gray-700">{selectedBlog.summary}</p>
+                </div>
+              )}
+              {selectedBlog.imageUrl && (
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium text-gray-500 mb-2">Cover Image</h3>
+                  <img src={selectedBlog.imageUrl} alt="Blog Cover" className="w-full max-w-md rounded-lg object-cover shadow-sm" />
                 </div>
               )}
               {selectedBlog.seoTitle && (
