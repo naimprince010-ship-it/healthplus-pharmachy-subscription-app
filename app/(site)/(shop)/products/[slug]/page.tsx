@@ -221,11 +221,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
             {/* Details container - MedEasy style with white background card */}
             <div className="w-full bg-white rounded-xl p-6 shadow-sm">
-              {/* Product Name + Strength (MedEasy style: "Ace 500 mg") */}
+              {/* Product Name */}
               <div className="mb-2">
                 <h1 className="text-2xl font-bold text-gray-900 lg:text-3xl">
                   {product.name}
-                  {strength && (
+                  {/* Only show strength if it's NOT already part of the product name */}
+                  {strength && !product.name.toLowerCase().includes(strength.toLowerCase()) && (
                     <span className="ml-2 text-lg font-normal text-gray-500">
                       {strength}
                     </span>

@@ -355,7 +355,7 @@ export function ProductDetailClient({
           }}
           className="w-full rounded-lg border border-gray-200 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
         >
-          {shortLinkCopied ? 'ছোট লিংক কপি হয়েছে' : 'Facebook-এ ছোট লিংক কপি করুন'}
+          {shortLinkCopied ? 'লিংক কপি হয়েছে ✓' : '🔗 শেয়ার করুন'}
         </button>
       )}
 
