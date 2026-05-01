@@ -225,23 +225,7 @@ IMPORTANT:
     })
     const existingProductIds = new Set(aiProducts.map((p) => p.productId))
 
-    // Deterministic fallback: ensure each step gets at least one mapped product when available.
-    const autoStepProducts: ProductRecommendation[] = SKINCARE_ROUTINE_STEPS.flatMap((step) => {
-      const hasStepMapped = aiProducts.some((p) => p.role === 'step' && p.stepOrder === step.step)
-      if (hasStepMapped) return []
-      const candidate = productsByStep[step.step]?.[0]
-      if (!candidate || existingProductIds.has(candidate.id)) return []
-      existingProductIds.add(candidate.id)
-      return [
-        {
-          productId: candidate.id,
-          role: 'step',
-          stepOrder: step.step,
-          notes: `Auto-mapped fallback for ${step.name} step`,
-        } satisfies ProductRecommendation,
-      ]
-    })
-    const products: ProductRecommendation[] = [...aiProducts, ...autoStepProducts]
+    const products: ProductRecommendation[] = [...aiProducts]
 
     const mappedStepIds = new Set(
       products.filter((p) => p.role === 'step' && typeof p.stepOrder === 'number').map((p) => p.stepOrder as number)

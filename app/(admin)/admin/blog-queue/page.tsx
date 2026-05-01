@@ -457,16 +457,18 @@ export default function BlogQueuePage() {
                         </button>
                         {blog.status !== 'TOPIC_ONLY' && (
                           <button
+                            type="button"
                             onClick={() => generateImage(blog.id)}
                             disabled={generatingImage === blog.id}
-                            className="rounded p-1 text-purple-400 hover:bg-purple-50 hover:text-purple-600 disabled:opacity-50"
+                            className="inline-flex items-center gap-1 rounded-lg bg-purple-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-purple-700 disabled:opacity-50"
                             title="Generate AI Cover Image"
                           >
                             {generatingImage === blog.id ? (
-                              <Clock className="h-4 w-4 animate-spin" />
+                              <Clock className="h-3.5 w-3.5 animate-spin" />
                             ) : (
-                              <ImageIcon className="h-4 w-4" />
+                              <ImageIcon className="h-3.5 w-3.5" />
                             )}
+                            ইমেজ জেনারেট
                           </button>
                         )}
                         {blog.status === 'TOPIC_ONLY' && (
