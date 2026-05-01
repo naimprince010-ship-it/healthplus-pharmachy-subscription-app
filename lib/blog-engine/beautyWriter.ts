@@ -9,6 +9,7 @@ import {
   FAQSchema,
 } from './types'
 import { getOpenAIClient } from './openaiClient' // Bug #12 fix: shared client
+import { runAgenticChat } from './agent'
 
 const VALID_ROLES = new Set(['recommended', 'ingredient', 'alternative', 'combo', 'step'])
 
@@ -112,7 +113,7 @@ export async function generateBeautyBlog(context: WriterContext): Promise<BlogGe
 TOPIC: ${topic.title}
 ${topic.description ? `DESCRIPTION: ${topic.description}` : ''}
 
-AVAILABLE PRODUCTS BY SKINCARE STEP:
+AVAILABLE PRODUCTS BY SKINCARE STEP (Quick Reference):
 ${productContext}
 
 EXISTING BLOG SLUGS (for internal linking — ONLY use slugs from this list, do NOT invent slugs):
@@ -149,7 +150,8 @@ RESPOND IN THIS EXACT JSON FORMAT:
 }
 
 IMPORTANT:
-- Only use product IDs from the AVAILABLE PRODUCTS BY SKINCARE STEP lines above for recommendedProducts — never invent IDs
+- If you need a specific product that is not in the Quick Reference list, USE the searchProducts tool to find it in the database.
+- Only use product IDs from the AVAILABLE PRODUCTS BY SKINCARE STEP lines above OR from the results of your searchProducts tool calls. NEVER invent IDs.
 - When a step has no matched products above, include it in missingProducts for the team — but in contentMd explain that step educationally (what to choose, skin-type tips); do NOT use harsh storefront language like headings "পণ্য অনুপস্থিত" / "এখন প্ল্যাটফর্মে নেই" as if the entire category is unavailable — inventory changes and products may appear later.
 - Whenever you recommend a matched product ID, weave its name (+ price if helpful) into the prose for that step, not only in JSON.
 - role must be one of: recommended, ingredient, alternative, combo, step
@@ -157,19 +159,11 @@ IMPORTANT:
 - internalLinkSlugs MUST only contain slugs from the provided list (or empty array)
 - Write naturally in Bangla, not translated English`
 
-    const openai = getOpenAIClient()
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: 'You are a skincare expert content writer for a Bangladeshi e-commerce platform. Always respond with valid JSON.' },
-        { role: 'user', content: prompt },
-      ],
-      temperature: 0.7,
-      max_tokens: 4000,
-      response_format: { type: 'json_object' },
-    })
+    const content = await runAgenticChat(
+      'You are a skincare expert content writer for a Bangladeshi e-commerce platform. Always respond with valid JSON.',
+      prompt
+    )
 
-    const content = response.choices[0]?.message?.content
     if (!content) {
       return { success: false, error: 'No content generated', products: [], missingProducts: [] }
     }
