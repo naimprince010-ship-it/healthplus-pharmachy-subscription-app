@@ -187,7 +187,7 @@ export function ProductDetailClient({
             </div>
             <div className="flex items-baseline gap-1">
               <span className="text-gray-600">Best Price</span>
-              <span className="text-2xl font-bold text-gray-900">Tk {price.toFixed(2)}</span>
+              <span className="text-2xl font-bold text-teal-700">Tk {price.toFixed(2)}</span>
               {unitLabel && <span className="text-gray-500">{unitLabel}</span>}
             </div>
             {(unitPrice || stripPrice || tabletsPerStrip) && (
@@ -208,7 +208,7 @@ export function ProductDetailClient({
         ) : (
           <div className="flex flex-col gap-1">
             <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-bold text-gray-900">৳{price.toFixed(2)}</span>
+              <span className="text-2xl font-bold text-teal-700">৳{price.toFixed(2)}</span>
               {unitLabel && <span className="text-gray-500">{unitLabel}</span>}
             </div>
             {(unitPrice || stripPrice || tabletsPerStrip) && (
@@ -326,7 +326,7 @@ export function ProductDetailClient({
             disabled={isOutOfStock}
             className={`flex w-full items-center justify-center gap-2 rounded-xl px-8 py-3.5 text-base font-semibold transition-all duration-200 ${isAdding
               ? 'bg-green-600 text-white scale-[0.98]'
-              : 'bg-teal-600 text-white hover:bg-teal-700 active:scale-[0.98]'
+              : 'bg-orange-500 text-white hover:bg-orange-600 active:scale-[0.98]'
               }`}
           >
             <ShoppingCart className="h-5 w-5" />

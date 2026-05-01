@@ -154,7 +154,7 @@ export function AddToCartButton({
           ? 'cursor-not-allowed bg-gray-200 text-gray-400'
           : justAdded
           ? 'bg-green-500 text-white scale-95'
-          : 'bg-teal-600 text-white hover:bg-teal-700 hover:shadow-md active:scale-95'
+          : 'bg-orange-500 text-white hover:bg-orange-600 hover:shadow-md active:scale-95'
       } ${className}`}
     >
       {justAdded ? (

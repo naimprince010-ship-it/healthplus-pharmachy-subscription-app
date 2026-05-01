@@ -131,7 +131,7 @@ export function ProductCard({ product, variant = 'default', className = '' }: Pr
         )}
         <div className={`flex items-center ${isCompact ? 'mt-1' : 'mt-3'}`}>
           <div className="flex flex-wrap items-baseline gap-1">
-            <span className={`font-bold text-gray-900 ${isCompact ? 'text-sm' : 'text-lg'}`}>
+            <span className={`font-bold text-teal-700 ${isCompact ? 'text-sm' : 'text-lg'}`}>
               ৳{price.toFixed(2)}
             </span>
             {hasDiscount && (
