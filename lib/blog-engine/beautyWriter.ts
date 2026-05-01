@@ -61,7 +61,16 @@ export async function generateBeautyBlog(context: WriterContext): Promise<BlogGe
       'spf',
     ]
     const allStepTags = SKINCARE_ROUTINE_STEPS.flatMap(s => s.tags)
+
+    // Hard exclude baby/infant/kids/toddler products from adult skincare blogs
+    const BABY_EXCLUDE_KEYWORDS = ['baby', 'infant', 'toddler', 'kids', 'children', 'নবজাতক', 'শিশু']
+    const isAdultProduct = (p: WriterContext['availableProducts'][number]) => {
+      const hay = `${p.name} ${p.category?.name ?? ''}`.toLowerCase()
+      return !BABY_EXCLUDE_KEYWORDS.some((kw) => hay.includes(kw))
+    }
+
     const skincareProducts = availableProducts.filter((p) => {
+      if (!isAdultProduct(p)) return false
       const byTags = p.aiTags.some(
         (tag) =>
           allStepTags.includes(tag) ||
