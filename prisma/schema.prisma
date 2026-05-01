@@ -109,6 +109,8 @@ enum BlogStatus {
 enum TopicBlock {
   BEAUTY
   GROCERY
+  RECIPE
+  MONEY_SAVING
 }
 
 enum IngredientType {
