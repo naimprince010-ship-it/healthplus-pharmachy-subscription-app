@@ -235,7 +235,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         '@type': 'Product',
         name: item.name,
         url: `https://halalzi.com/${category.isMedicineCategory ? 'medicines' : 'products'}/${item.slug}`,
-        image: item.imageUrl || undefined,
+        image: item.imageUrl || 'https://halalzi.com/images/default-product.png',
         offers: {
           '@type': 'Offer',
           priceCurrency: 'BDT',
