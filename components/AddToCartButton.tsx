@@ -116,17 +116,17 @@ export function AddToCartButton({
   // ── Already in cart: show quantity stepper ──
   if (cartQty > 0) {
     return (
-      <div className={`flex items-center justify-between gap-1 rounded-lg border-2 border-teal-600 bg-teal-50 overflow-hidden ${className}`}>
+      <div className={`flex items-center justify-between gap-1 rounded-lg border-2 border-orange-400 bg-orange-50 overflow-hidden ${className}`}>
         <button
           type="button"
           onClick={handleDecrease}
-          className="flex h-9 w-9 flex-shrink-0 items-center justify-center text-teal-700 hover:bg-teal-100 transition-colors"
+          className="flex h-9 w-9 flex-shrink-0 items-center justify-center text-orange-600 hover:bg-orange-100 transition-colors"
           aria-label="Remove one"
         >
           <Minus className="h-3.5 w-3.5" />
         </button>
 
-        <span className="flex-1 text-center text-sm font-bold text-teal-700 tabular-nums">
+        <span className="flex-1 text-center text-sm font-bold text-orange-600 tabular-nums">
           {cartQty}
         </span>
 
@@ -134,7 +134,7 @@ export function AddToCartButton({
           type="button"
           onClick={handleIncrease}
           disabled={stockQuantity > 0 && cartQty >= stockQuantity}
-          className="flex h-9 w-9 flex-shrink-0 items-center justify-center text-teal-700 hover:bg-teal-100 transition-colors disabled:opacity-40"
+          className="flex h-9 w-9 flex-shrink-0 items-center justify-center text-orange-600 hover:bg-orange-100 transition-colors disabled:opacity-40"
           aria-label="Add one more"
         >
           <Plus className="h-3.5 w-3.5" />
@@ -149,7 +149,7 @@ export function AddToCartButton({
       type="button"
       onClick={handleAdd}
       disabled={isDisabled}
-      className={`flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200 ${
+      className={`flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold whitespace-nowrap transition-all duration-200 ${
         isDisabled
           ? 'cursor-not-allowed bg-gray-200 text-gray-400'
           : justAdded
@@ -159,13 +159,13 @@ export function AddToCartButton({
     >
       {justAdded ? (
         <>
-          <Check className="h-4 w-4" />
-          যোগ হয়েছে!
+          <Check className="h-4 w-4 flex-shrink-0" />
+          <span>যোগ হয়েছে!</span>
         </>
       ) : (
         <>
-          <ShoppingCart className="h-4 w-4" />
-          কার্টে যোগ করুন
+          <ShoppingCart className="h-4 w-4 flex-shrink-0" />
+          <span>কার্টে যোগ করুন</span>
         </>
       )}
     </button>
