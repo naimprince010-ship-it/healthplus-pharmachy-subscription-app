@@ -114,47 +114,50 @@ export function ProductCard({ product, variant = 'default', className = '' }: Pr
         )}
       </div>
 
-      <div className={`flex flex-1 flex-col ${isCompact ? 'mt-2' : 'mt-4'}`}>
-        <h3 className={`font-semibold text-gray-900 line-clamp-2 ${isCompact ? 'text-sm' : ''}`}>
+      {/* Fixed-height text area so price & button are always at same position */}
+      <div className={`flex flex-1 flex-col ${isCompact ? 'mt-2' : 'mt-3'}`}>
+        {/* Name: always exactly 2 lines tall */}
+        <h3 className={`font-semibold text-gray-900 line-clamp-2 leading-snug ${
+          isCompact ? 'text-sm' : 'text-[13.5px]'
+        }`} style={{ minHeight: isCompact ? '2.5rem' : '2.75rem' }}>
           {product.name}
         </h3>
+        {/* Brand: 1 line only */}
         {product.brandName && (
-          <p className={`text-gray-500 ${isCompact ? 'mt-0.5 text-xs' : 'mt-1 text-sm'}`}>
+          <p className={`line-clamp-1 text-gray-400 ${isCompact ? 'mt-0.5 text-[11px]' : 'mt-0.5 text-xs'}`}>
             {product.brandName}
           </p>
         )}
-        {/* Only show description in default variant */}
-        {!isCompact && product.description && (
-          <p className="mt-2 text-sm text-gray-600 line-clamp-2">
-            {product.description}
-          </p>
-        )}
-        <div className={`flex items-center ${isCompact ? 'mt-1' : 'mt-3'}`}>
-          <div className="flex flex-wrap items-baseline gap-1">
-            <span className={`font-bold text-teal-700 ${isCompact ? 'text-sm' : 'text-lg'}`}>
+
+        {/* Price — pushed to bottom via mt-auto */}
+        <div className="mt-auto">
+          <div className={`flex flex-wrap items-baseline gap-1 ${isCompact ? 'mt-2' : 'mt-2'}`}>
+            <span className={`font-bold text-teal-700 ${isCompact ? 'text-sm' : 'text-base'}`}>
               ৳{price.toFixed(2)}
             </span>
             {hasDiscount && (
-              <span className={`text-gray-500 line-through ${isCompact ? 'text-xs' : 'text-sm'}`}>
+              <span className={`text-gray-400 line-through ${isCompact ? 'text-[11px]' : 'text-xs'}`}>
                 ৳{mrp.toFixed(2)}
               </span>
             )}
           </div>
-        </div>
-        <div className={`mt-auto ${isCompact ? 'pt-2' : 'pt-4'}`} onClick={(e) => e.preventDefault()}>
-          <AddToCartButton
-            medicineId={medicineId}
-            productId={productId}
-            name={product.name}
-            price={price}
-            image={displayImageUrl || undefined}
-            stockQuantity={product.stockQuantity}
-            category={product.category.name}
-            mrp={mrp}
-            slug={product.slug}
-            type={product.type === 'MEDICINE' ? 'MEDICINE' : 'PRODUCT'}
-            className={`w-full ${isCompact ? 'py-1.5 text-sm' : ''}`}
-          />
+
+          {/* Button */}
+          <div className={`${isCompact ? 'pt-1.5' : 'pt-2'}`} onClick={(e) => e.preventDefault()}>
+            <AddToCartButton
+              medicineId={medicineId}
+              productId={productId}
+              name={product.name}
+              price={price}
+              image={displayImageUrl || undefined}
+              stockQuantity={product.stockQuantity}
+              category={product.category.name}
+              mrp={mrp}
+              slug={product.slug}
+              type={product.type === 'MEDICINE' ? 'MEDICINE' : 'PRODUCT'}
+              className={`w-full ${isCompact ? 'py-1.5 text-xs' : 'py-2'}`}
+            />
+          </div>
         </div>
       </div>
     </Link>
