@@ -21,13 +21,34 @@ export async function generateMetadata({ params }: BlogDetailPageProps): Promise
             return { title: 'Blog Not Found - Halalzi' }
         }
 
+        const seoTitle = blog.seoTitle || blog.title
+        const seoDesc = blog.seoDescription || blog.summary || `Read ${blog.title} on Halalzi Blog.`
+        const canonicalUrl = `https://halalzi.com/blog/${slug}`
+        const ogImage = blog.imageUrl || 'https://halalzi.com/images/default-product.png'
+
         return {
-            title: `${blog.seoTitle || blog.title} - Halalzi`,
-            description: blog.seoDescription || blog.summary || `Read ${blog.title} on Halalzi Blog.`,
+            title: `${seoTitle} | Halalzi Blog`,
+            description: seoDesc,
             keywords: blog.seoKeywords || undefined,
+            alternates: { canonical: canonicalUrl },
+            openGraph: {
+                title: seoTitle,
+                description: seoDesc,
+                url: canonicalUrl,
+                siteName: 'Halalzi',
+                type: 'article',
+                publishedTime: blog.publishedAt?.toISOString(),
+                modifiedTime: blog.updatedAt?.toISOString(),
+                images: [{ url: ogImage, width: 1200, height: 630, alt: seoTitle }],
+            },
+            twitter: {
+                card: 'summary_large_image',
+                title: seoTitle,
+                description: seoDesc,
+                images: [ogImage],
+            },
         }
     } catch (error) {
-        // In production, Next hides server error details; return a safe metadata fallback.
         console.error('Blog generateMetadata error:', error)
         return { title: 'Halalzi Blog' }
     }
@@ -109,9 +130,56 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
     const wordCount = blog.contentMd ? blog.contentMd.split(/\s+/).length : 0
     const readingTime = Math.max(1, Math.ceil(wordCount / 200))
     const displayDate = blog.publishedAt || blog.createdAt
+    const canonicalUrl = `https://halalzi.com/blog/${blog.slug}`
+    const ogImage = blog.imageUrl || 'https://halalzi.com/images/default-product.png'
+
+    // Article JSON-LD for Google rich results
+    const articleJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'Article',
+        headline: blog.title,
+        description: blog.summary || blog.seoDescription || blog.title,
+        image: ogImage,
+        url: canonicalUrl,
+        datePublished: displayDate.toISOString(),
+        dateModified: (blog.updatedAt || displayDate).toISOString(),
+        inLanguage: 'bn-BD',
+        author: {
+            '@type': 'Organization',
+            name: 'Halalzi',
+            url: 'https://halalzi.com',
+        },
+        publisher: {
+            '@type': 'Organization',
+            name: 'Halalzi',
+            url: 'https://halalzi.com',
+            logo: {
+                '@type': 'ImageObject',
+                url: 'https://halalzi.com/images/default-product.png',
+            },
+        },
+        mainEntityOfPage: {
+            '@type': 'WebPage',
+            '@id': canonicalUrl,
+        },
+        wordCount: wordCount,
+        timeRequired: `PT${readingTime}M`,
+    }
+
+    const breadcrumbJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://halalzi.com' },
+            { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://halalzi.com/blog' },
+            { '@type': 'ListItem', position: 3, name: blog.title, item: canonicalUrl },
+        ],
+    }
 
     return (
         <div className="bg-slate-50 min-h-screen pb-20">
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }} />
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
             {/* Blog Article */}
             <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 {/* Header Section */}

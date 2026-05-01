@@ -5,8 +5,25 @@ import { BlogCard } from '@/components/blog/BlogCard'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-    title: 'Blog - Halalzi',
-    description: 'Read the latest related to health, healthy living, and grocery tips.',
+    title: 'Health & Beauty Blog — Tips, Recipes & Wellness | Halalzi',
+    description: 'বাংলাদেশের সেরা হেলথ ব্লগ। স্বাস্থ্য, সৌন্দর্য, রেসিপি ও স্মার্ট শপিং টিপস পড়ুন বিশেষজ্ঞদের কাছ থেকে। Halalzi Blog — আপনার সুস্বাস্থ্যের গাইড।',
+    keywords: ['health blog bangladesh', 'beauty tips bangla', 'স্বাস্থ্য টিপস', 'সৌন্দর্য চর্চা', 'হালালজি ব্লগ', 'medicine tips bangladesh', 'grocery tips bangla'],
+    alternates: {
+        canonical: 'https://halalzi.com/blog',
+    },
+    openGraph: {
+        title: 'Halalzi Blog — স্বাস্থ্য, সৌন্দর্য ও রেসিপি',
+        description: 'বাংলাদেশের সেরা হেলথ ও বিউটি ব্লগ। বিশেষজ্ঞদের পরামর্শ, রেসিপি ও স্মার্ট শপিং টিপস পড়ুন।',
+        url: 'https://halalzi.com/blog',
+        siteName: 'Halalzi',
+        type: 'website',
+        images: [{ url: 'https://halalzi.com/images/default-product.png', width: 1200, height: 630 }],
+    },
+    twitter: {
+        card: 'summary_large_image',
+        title: 'Halalzi Blog — স্বাস্থ্য, সৌন্দর্য ও রেসিপি',
+        description: 'বাংলাদেশের সেরা হেলথ ব্লগ। স্বাস্থ্য, সৌন্দর্য, রেসিপি ও স্মার্ট শপিং টিপস।',
+    },
 }
 
 export const revalidate = 60 // Revalidate every minute
@@ -42,8 +59,30 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
         { value: 'MONEY_SAVING', label: 'Money Saving' },
     ]
 
+    const websiteJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'Blog',
+        name: 'Halalzi Blog',
+        description: 'বাংলাদেশের সেরা হেলথ ও বিউটি ব্লগ — স্বাস্থ্য, সৌন্দর্য, রেসিপি ও স্মার্ট শপিং টিপস',
+        url: 'https://halalzi.com/blog',
+        publisher: {
+            '@type': 'Organization',
+            name: 'Halalzi',
+            url: 'https://halalzi.com',
+            logo: {
+                '@type': 'ImageObject',
+                url: 'https://halalzi.com/images/default-product.png',
+            },
+        },
+        inLanguage: 'bn-BD',
+    }
+
     return (
         <div className="bg-slate-50 min-h-screen pb-20">
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+            />
             {/* Header Banner */}
             <div className="bg-emerald-800 text-white py-16 px-4">
                 <div className="max-w-7xl mx-auto text-center">
