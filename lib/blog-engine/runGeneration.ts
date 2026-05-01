@@ -339,11 +339,24 @@ export async function runBlogDraftGeneration(blogId: string): Promise<RunBlogDra
       blog.topic?.description,
       120
     )
-    if (retrievedProducts.length < minThreshold) {
+    const widenedRetrievedProducts = retrieveProductsForBlog(
+      blog.type,
+      allProducts,
+      blog.title,
+      blog.topic?.description,
+      260
+    )
+    const selectedProducts =
+      widenedRetrievedProducts.length > retrievedProducts.length
+        ? widenedRetrievedProducts
+        : retrievedProducts
+
+    // Hard-stop only when we truly have no product context.
+    if (selectedProducts.length === 0) {
       return {
         ok: false,
         httpStatus: 422,
-        error: `Not enough relevant products for this topic (${retrievedProducts.length}/${minThreshold}). Add/tag products, then retry.`,
+        error: `No relevant products found for this topic (0/${minThreshold}). Add/tag products, then retry.`,
       }
     }
 
@@ -363,7 +376,7 @@ export async function runBlogDraftGeneration(blogId: string): Promise<RunBlogDra
         type: blog.type,
         block: blog.block,
       },
-      availableProducts: retrievedProducts,
+      availableProducts: selectedProducts,
       existingBlogSlugs,
     }
 
@@ -387,18 +400,12 @@ export async function runBlogDraftGeneration(blogId: string): Promise<RunBlogDra
     }
 
     // Retry once with a wider product pool if AI returns too few usable links.
-    const firstPassValidIds = new Set(retrievedProducts.map((p) => p.id))
+    const firstPassValidIds = new Set(selectedProducts.map((p) => p.id))
     const firstPassValidCount = result.products.filter((p) => firstPassValidIds.has(p.productId)).length
     if (result.success && firstPassValidCount < 3) {
       const fallbackContext: WriterContext = {
         ...context,
-        availableProducts: retrieveProductsForBlog(
-          blog.type,
-          allProducts,
-          blog.title,
-          blog.topic?.description,
-          220
-        ),
+        availableProducts: retrieveProductsForBlog(blog.type, allProducts, blog.title, blog.topic?.description, 320),
       }
       switch (blog.type) {
         case BlogType.BEAUTY:
@@ -426,10 +433,10 @@ export async function runBlogDraftGeneration(blogId: string): Promise<RunBlogDra
       }
     }
 
-    const validProductIds = new Set(retrievedProducts.map((p) => p.id))
+    const validProductIds = new Set(selectedProducts.map((p) => p.id))
     const validProducts = result.products.filter((p) => validProductIds.has(p.productId))
     const dedupedValidProducts = Array.from(new Map(validProducts.map((p) => [p.productId, p])).values())
-    const productById = new Map(retrievedProducts.map((p) => [p.id, p]))
+    const productById = new Map(selectedProducts.map((p) => [p.id, p]))
     const uniqueInlineProducts = Array.from(
       new Map(
         dedupedValidProducts

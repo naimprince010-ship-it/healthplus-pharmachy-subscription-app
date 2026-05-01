@@ -91,12 +91,15 @@ export default async function MedicineDetailPage({
     '@type': 'Product',
     name: medicine.name,
     description: medicine.description || `${medicine.name} - Buy online at best price`,
-    image: imageUrl || undefined,
+    image: imageUrl || 'https://halalzi.com/images/default-product.png',
     sku: medicine.id,
     brand: medicine.manufacturer ? {
       '@type': 'Brand',
       name: medicine.manufacturer,
-    } : undefined,
+    } : {
+      '@type': 'Brand',
+      name: 'Halalzi',
+    },
     category: medicine.category?.name,
     additionalProperty: [
       medicine.genericName ? {

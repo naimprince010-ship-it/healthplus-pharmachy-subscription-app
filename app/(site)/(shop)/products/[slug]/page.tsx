@@ -130,12 +130,15 @@ export default async function ProductPage({ params }: ProductPageProps) {
     '@type': 'Product',
     name: product.name,
     description: product.description || `${product.name} - Buy online at best price`,
-    image: product.imageUrl || undefined,
+    image: product.imageUrl || 'https://halalzi.com/images/default-product.png',
     sku: product.id,
     brand: product.manufacturer?.name || product.brandName ? {
       '@type': 'Brand',
       name: product.manufacturer?.name || product.brandName,
-    } : undefined,
+    } : {
+      '@type': 'Brand',
+      name: 'Halalzi',
+    },
     category: product.category?.name,
     offers: {
       '@type': 'Offer',
