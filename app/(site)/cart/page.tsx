@@ -7,7 +7,7 @@ import { useWishlist } from '@/contexts/WishlistContext'
 import { useSession } from 'next-auth/react'
 import { ArrowLeft, X, Heart, Minus, Plus, Clock, Lock, ChevronRight, Truck } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-hot-toast'
 
 interface SuggestionProduct {
@@ -17,6 +17,34 @@ interface SuggestionProduct {
   mrp?: number
   imageUrl: string | null
   slug: string
+  /** Legacy medicine rows from /api/products use MEDICINE + /medicines/… */
+  catalogKind?: 'PRODUCT' | 'MEDICINE'
+  productHref?: string
+}
+
+function mapCatalogRowToSuggestion(p: {
+  id: string
+  name: string
+  slug: string
+  imageUrl?: string | null
+  sellingPrice?: number | null
+  price?: number
+  mrp?: number | null
+  type?: string
+  href?: string
+}): SuggestionProduct {
+  const isMedicine = p.type === 'MEDICINE'
+  const href = p.href ?? (isMedicine ? `/medicines/${p.slug}` : `/products/${p.slug}`)
+  return {
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    imageUrl: p.imageUrl ?? null,
+    price: Number(p.sellingPrice ?? p.price ?? 0),
+    mrp: p.mrp ?? undefined,
+    catalogKind: isMedicine ? 'MEDICINE' : 'PRODUCT',
+    productHref: href,
+  }
 }
 
 interface CartSettings {
@@ -55,12 +83,19 @@ const DEFAULT_SETTINGS: CartSettings = {
   cartTitleBn: 'আপনার কার্ট',
 }
 
+/** একই ব্র্যান্ড সবুজ — বাটন/CTA গুলোতে রঙ মিল রাখতে */
+const BTN_PRIMARY =
+  'bg-[#00A651] font-semibold text-white shadow-sm transition-colors hover:bg-[#008f45] active:bg-[#00733a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00A651] focus-visible:ring-offset-2'
+const BTN_PRIMARY_DISABLED =
+  'disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-[#00A651] disabled:active:bg-[#00A651]'
+
 export default function CartPage() {
   const { items, removeItem, updateQuantity, clearCart, total, itemCount, isInitialized, addItem } = useCart()
   const { isInWishlist, toggleWishlist } = useWishlist()
   const { data: session, status } = useSession()
   const router = useRouter()
   const [suggestions, setSuggestions] = useState<SuggestionProduct[]>([])
+  const [suggestionsReady, setSuggestionsReady] = useState(false)
   const [settings, setSettings] = useState<CartSettings>(DEFAULT_SETTINGS)
   const [promoCode, setPromoCode] = useState('')
   const [promoApplied, setPromoApplied] = useState(false)
@@ -91,25 +126,85 @@ export default function CartPage() {
           setSettings(data.settings)
         }
         if (data.suggestions && data.suggestions.length > 0) {
-          setSuggestions(data.suggestions)
+          const mapped: SuggestionProduct[] = data.suggestions.map(
+            (s: SuggestionProduct) => ({
+              ...s,
+              catalogKind: 'PRODUCT',
+              productHref: `/products/${s.slug}`,
+            })
+          )
+          setSuggestions(mapped)
         } else {
-          const fallbackRes = await fetch('/api/products?limit=10&sort=popular')
+          const fallbackRes = await fetch(
+            '/api/products?limit=16&sortBy=stockQuantity&sortOrder=desc'
+          )
           const fallbackData = await fallbackRes.json()
-          if (fallbackData.products) {
-            setSuggestions(fallbackData.products.slice(0, 10))
+          if (fallbackData.products?.length) {
+            setSuggestions(
+              fallbackData.products
+                .slice(0, 12)
+                .map((p: {
+                  id: string
+                  name: string
+                  slug: string
+                  imageUrl?: string | null
+                  sellingPrice?: number | null
+                  price?: number
+                  mrp?: number | null
+                  type?: string
+                  href?: string
+                }) => mapCatalogRowToSuggestion(p))
+            )
           }
         }
       } catch (error) {
         console.error('Failed to fetch cart config:', error)
-        const fallbackRes = await fetch('/api/products?limit=10&sort=popular')
-        const fallbackData = await fallbackRes.json()
-        if (fallbackData.products) {
-          setSuggestions(fallbackData.products.slice(0, 10))
+        try {
+          const fallbackRes = await fetch(
+            '/api/products?limit=16&sortBy=stockQuantity&sortOrder=desc'
+          )
+          const fallbackData = await fallbackRes.json()
+          if (fallbackData.products?.length) {
+            setSuggestions(
+              fallbackData.products
+                .slice(0, 12)
+                .map((p: {
+                  id: string
+                  name: string
+                  slug: string
+                  imageUrl?: string | null
+                  sellingPrice?: number | null
+                  price?: number
+                  mrp?: number | null
+                  type?: string
+                  href?: string
+                }) => mapCatalogRowToSuggestion(p))
+            )
+          }
+        } catch {
+          /* ignore */
         }
+      } finally {
+        setSuggestionsReady(true)
       }
     }
     fetchCartConfig()
   }, [])
+
+  const cartLineIds = useMemo(
+    () =>
+      new Set(
+        items.flatMap((i) =>
+          [i.productId, i.medicineId].filter(Boolean) as string[]
+        )
+      ),
+    [items]
+  )
+
+  const visibleSuggestions = useMemo(
+    () => suggestions.filter((s) => !cartLineIds.has(s.id)),
+    [suggestions, cartLineIds]
+  )
 
   // Gate content behind readiness check to avoid hydration mismatch
   const isReady = isInitialized && status !== 'loading'
@@ -204,6 +299,20 @@ export default function CartPage() {
 
   // Add suggestion to cart
   const handleAddSuggestion = (product: SuggestionProduct) => {
+    if (product.catalogKind === 'MEDICINE') {
+      addItem({
+        id: product.id,
+        medicineId: product.id,
+        name: product.name,
+        price: product.price,
+        mrp: product.mrp,
+        image: product.imageUrl || undefined,
+        type: 'MEDICINE',
+        slug: product.slug,
+        unitLabelBn: buildUnitLabelBn({}),
+      })
+      return
+    }
     addItem({
       id: product.id,
       productId: product.id,
@@ -213,8 +322,96 @@ export default function CartPage() {
       image: product.imageUrl || undefined,
       type: 'PRODUCT',
       slug: product.slug,
-      unitLabelBn: buildUnitLabelBn({}), // Default to piece for suggestions
+      unitLabelBn: buildUnitLabelBn({}),
     })
+  }
+
+  const suggestionHref = (p: SuggestionProduct) =>
+    p.productHref ?? `/products/${p.slug}`
+
+  const renderSuggestionsBlock = (opts: { compact?: boolean }) => {
+    const showSkeleton = !suggestionsReady && suggestions.length === 0
+    if (!showSkeleton && visibleSuggestions.length === 0) return null
+
+    return (
+      <div className={opts.compact ? 'mt-8 w-full self-stretch' : 'mt-6 lg:mt-10'}>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="flex items-center gap-2 text-base font-bold text-gray-900 lg:text-xl">
+            <span aria-hidden>💡</span> {settings.suggestionTitleBn}
+          </h2>
+          <Link
+            href="/products"
+            className="flex items-center gap-0.5 text-sm font-semibold text-[#00A651] transition-colors hover:text-[#008f45] active:text-[#00733a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00A651] focus-visible:ring-offset-2 rounded-md lg:text-base"
+            aria-label="সব পণ্য দেখুন"
+          >
+            <span className="hidden sm:inline">আরও</span>
+            <ChevronRight className="h-5 w-5" />
+          </Link>
+        </div>
+        <div className="overflow-x-auto pb-2 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex flex-nowrap gap-3 lg:gap-4">
+            {showSkeleton
+              ? [1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className="flex min-h-[220px] min-w-[140px] max-w-[160px] flex-shrink-0 flex-col rounded-xl bg-white p-3 shadow-sm lg:min-w-[180px] lg:max-w-[200px]"
+                  >
+                    <div className="mb-2 h-20 w-full animate-pulse rounded-lg bg-gray-200 lg:h-28" />
+                    <div className="mb-2 h-4 w-full animate-pulse rounded bg-gray-200" />
+                    <div className="mb-2 h-4 w-2/3 animate-pulse rounded bg-gray-200" />
+                    <div className="mb-2 h-5 w-16 animate-pulse rounded bg-gray-200" />
+                    <div className="mt-auto h-8 w-full animate-pulse rounded-full bg-gray-200" />
+                  </div>
+                ))
+              : visibleSuggestions.map((product) => (
+                  <div
+                    key={product.id}
+                    className="flex min-h-[220px] min-w-[140px] max-w-[160px] flex-shrink-0 flex-col rounded-xl bg-white p-3 shadow-sm lg:min-w-[180px] lg:max-w-[200px]"
+                  >
+                    <Link href={suggestionHref(product)} className="block min-w-0">
+                      <div className="relative mb-2 h-20 w-full overflow-hidden rounded-lg bg-gray-100 lg:h-28">
+                        {product.imageUrl ? (
+                          <Image
+                            src={product.imageUrl}
+                            alt={product.name}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 1024px) 160px, 200px"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-xs text-gray-400">
+                            No img
+                          </div>
+                        )}
+                      </div>
+                      <p className="mb-1 line-clamp-2 min-h-[2.5rem] text-sm font-medium leading-snug text-gray-900 lg:min-h-[3rem] lg:text-base">
+                        {product.name}
+                      </p>
+                    </Link>
+                    <div className="mb-2 flex flex-wrap items-baseline gap-2">
+                      <span className="text-sm font-bold text-gray-900 lg:text-base">
+                        ৳{product.price.toFixed(0)}
+                      </span>
+                      {product.mrp != null &&
+                        product.mrp > product.price && (
+                          <span className="text-xs text-gray-400 line-through lg:text-sm">
+                            ৳{product.mrp.toFixed(0)}
+                          </span>
+                        )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleAddSuggestion(product)}
+                      className={`mt-auto w-full rounded-full py-1.5 text-xs lg:py-2 lg:text-sm ${BTN_PRIMARY}`}
+                    >
+                      + Add
+                    </button>
+                  </div>
+                ))}
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (items.length === 0) {
@@ -242,10 +439,11 @@ export default function CartPage() {
           <p className="mt-1 text-sm text-gray-500">{settings.emptyCartSubtextBn}</p>
           <Link
             href="/"
-            className="mt-6 rounded-full bg-[#00A651] px-8 py-3 font-semibold text-white"
+            className={`mt-6 inline-flex items-center justify-center rounded-full px-8 py-3 ${BTN_PRIMARY}`}
           >
             {settings.startShoppingTextBn}
           </Link>
+          {renderSuggestionsBlock({ compact: true })}
         </div>
       </div>
     )
@@ -451,7 +649,8 @@ export default function CartPage() {
                     <button
                       onClick={handleApplyPromo}
                       disabled={isApplyingPromo}
-                      className="rounded-lg bg-[#00A651] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                      type="button"
+                      className={`rounded-lg px-4 py-2 text-sm ${BTN_PRIMARY} ${BTN_PRIMARY_DISABLED}`}
                     >
                       {isApplyingPromo ? '...' : settings.promoApplyTextBn.replace('[', '').replace(']', '')}
                     </button>
@@ -465,6 +664,7 @@ export default function CartPage() {
                       <span className="text-xs text-green-600">Applied</span>
                     </div>
                     <button
+                      type="button"
                       onClick={handleRemovePromo}
                       className="text-xs font-bold text-red-500 hover:text-red-700"
                     >
@@ -478,7 +678,7 @@ export default function CartPage() {
                 {!session ? (
                   <Link
                     href="/auth/signin?redirect=/cart"
-                    className="flex w-full items-center justify-center gap-2 rounded-full bg-[#00A651] py-3 font-semibold text-white hover:bg-[#008f45]"
+                    className={`flex w-full items-center justify-center gap-2 rounded-full py-3 ${BTN_PRIMARY}`}
                   >
                     <Lock className="h-4 w-4" />
                     {settings.checkoutButtonTextBn}
@@ -486,7 +686,7 @@ export default function CartPage() {
                 ) : (
                   <Link
                     href="/checkout"
-                    className="flex w-full items-center justify-center gap-2 rounded-full bg-[#00A651] py-3 font-semibold text-white hover:bg-[#008f45]"
+                    className={`flex w-full items-center justify-center gap-2 rounded-full py-3 ${BTN_PRIMARY}`}
                   >
                     <Lock className="h-4 w-4" />
                     {settings.checkoutButtonTextBn}
@@ -497,49 +697,7 @@ export default function CartPage() {
           </div>
         </div>
 
-        {/* Suggestions Section */}
-        {suggestions.length > 0 && (
-          <div className="mt-6 lg:mt-10">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="flex items-center gap-2 text-base lg:text-xl font-bold text-gray-900">
-                <span>💡</span> {settings.suggestionTitleBn}
-              </h2>
-              <ChevronRight className="h-5 w-5 text-gray-400" />
-            </div>
-            <div className="overflow-x-auto [-webkit-overflow-scrolling:touch] pb-2">
-              <div className="flex flex-nowrap gap-3 lg:gap-4">
-                {suggestions.map((product) => (
-                  <div key={product.id} className="min-w-[140px] max-w-[160px] lg:min-w-[180px] lg:max-w-[200px] flex-shrink-0 rounded-xl bg-white p-3 shadow-sm flex flex-col">
-                    <Link href={`/products/${product.slug}`} className="block">
-                      <div className="relative h-20 lg:h-28 w-full mb-2 rounded-lg bg-gray-100 overflow-hidden">
-                        {product.imageUrl ? (
-                          <Image
-                            src={product.imageUrl}
-                            alt={product.name}
-                            fill
-                            className="object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center text-gray-400 text-xs">
-                            No img
-                          </div>
-                        )}
-                      </div>
-                      <p className="text-sm lg:text-base font-medium text-gray-900 line-clamp-2 mb-1">{product.name}</p>
-                    </Link>
-                    <p className="text-sm lg:text-base font-bold text-gray-900 mb-2">৳{product.price}</p>
-                    <button
-                      onClick={() => handleAddSuggestion(product)}
-                      className="w-full rounded-full bg-[#00A651] py-1.5 lg:py-2 text-xs lg:text-sm font-semibold text-white mt-auto hover:bg-[#008f45] transition-colors"
-                    >
-                      + Add
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
+        {renderSuggestionsBlock({})}
 
         <div className="mt-6 rounded-xl bg-white p-4 shadow-sm lg:hidden">
           {/* Promo Code Row */}
@@ -561,7 +719,8 @@ export default function CartPage() {
                 <button
                   onClick={handleApplyPromo}
                   disabled={isApplyingPromo}
-                  className="rounded-lg bg-[#00A651] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                  type="button"
+                  className={`rounded-lg px-4 py-2 text-sm ${BTN_PRIMARY} ${BTN_PRIMARY_DISABLED}`}
                 >
                   {isApplyingPromo ? '...' : settings.promoApplyTextBn.replace('[', '').replace(']', '')}
                 </button>
@@ -575,8 +734,9 @@ export default function CartPage() {
                   <span className="text-xs text-green-600">Applied</span>
                 </div>
                 <button
+                  type="button"
                   onClick={handleRemovePromo}
-                  className="text-xs font-bold text-red-500"
+                  className="text-xs font-bold text-red-500 hover:text-red-700"
                 >
                   Remove
                 </button>
@@ -625,7 +785,7 @@ export default function CartPage() {
           {!session ? (
             <Link
               href="/auth/signin?redirect=/cart"
-              className="flex w-full items-center justify-center gap-2 rounded-full bg-[#00A651] py-3.5 font-semibold text-white text-base"
+              className={`flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-base ${BTN_PRIMARY}`}
             >
               <Lock className="h-5 w-5" />
               {settings.checkoutButtonTextBn}
@@ -633,7 +793,7 @@ export default function CartPage() {
           ) : (
             <Link
               href="/checkout"
-              className="flex w-full items-center justify-center gap-2 rounded-full bg-[#00A651] py-3.5 font-semibold text-white text-base"
+              className={`flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-base ${BTN_PRIMARY}`}
             >
               <Lock className="h-5 w-5" />
               {settings.checkoutButtonTextBn}
