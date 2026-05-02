@@ -31,13 +31,13 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
     }
   }
 
-  const title = `${category.name} - অনলাইনে কিনুন সেরা দামে | Halalzi`
-  const description = category.description || `${category.name} পণ্য অনলাইনে কিনুন। সেরা দাম, দ্রুত ডেলিভারি, এবং নিরাপদ পেমেন্ট। Halalzi - আপনার বিশ্বস্ত অনলাইন ফার্মেসি।`
+  const title = `${category.name} এর দাম এবং অফার - অনলাইনে কিনুন সেরা দামে | Halalzi`
+  const description = category.description || `অরিজিনাল ${category.name} পণ্য অনলাইনে কিনুন সেরা দামে। বিকাশ ডিসকাউন্ট অফার, ফ্রি ডেলিভারি প্রোডাক্ট এবং দ্রুততম ডেলিভারি। Halalzi - আপনার বিশ্বস্ত অনলাইন শপ।`
 
   return {
     title,
     description,
-    keywords: `${category.name}, ${category.name} অনলাইন, ${category.name} কিনুন, ${category.name} দাম, Halalzi`,
+    keywords: `${category.name}, অরিজিনাল ${category.name} এর দাম, ${category.name} এর অফার, সেরা ${category.name}, ${category.name} অনলাইন, ${category.name} কিনুন, ${category.name} দাম, বিকাশ ডিসকাউন্ট অফার, Halalzi`,
     openGraph: {
       title,
       description,
@@ -202,7 +202,14 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     }))
   }
 
-  // Generate JSON-LD structured data for SEO
+  // Find the lowest price and if there's any active offer
+  const lowestPrice = items.length > 0
+    ? Math.min(...items.map(i => i.sellingPrice))
+    : 0
+  const maxDiscount = items.length > 0
+    ? Math.max(...items.map(i => i.discountPercentage || 0))
+    : 0
+
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -250,6 +257,41 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     })),
   }
 
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: `${category.name} এর দাম কত?`,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: lowestPrice > 0 
+            ? `আমাদের ওয়েবসাইটে অরিজিনাল ${category.name} এর দাম শুরু মাত্র ৳${lowestPrice.toFixed(2)} টাকা থেকে।` 
+            : `আমাদের ওয়েবসাইটে অথেনটিক ${category.name} পণ্য অত্যন্ত সাশ্রয়ী মূল্যে পাওয়া যায়।`,
+        },
+      },
+      {
+        '@type': 'Question',
+        name: `${category.name} এ কি কোনো ডিসকাউন্ট বা অফার আছে?`,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: maxDiscount > 0
+            ? `হ্যাঁ! আমাদের এখানে ${category.name} পণ্যে সর্বোচ্চ ${maxDiscount}% পর্যন্ত ছাড়ের চমৎকার সব ডিসকাউন্ট অফার রয়েছে।`
+            : `হ্যাঁ! আমাদের এখানে ক্যাশ অন ডেলিভারি এবং বিকাশ পেমেন্ট ডিসকাউন্ট অফার সহ বিভিন্ন সাশ্রয়ী দামে ${category.name} কেনা যায়।`,
+        },
+      },
+      {
+        '@type': 'Question',
+        name: `${category.name} কীভাবে অর্ডার করব?`,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: `আপনি সরাসরি Halalzi সাইট থেকে আপনার পছন্দের পণ্যটি কার্টে যোগ করে ক্যাশ অন ডেলিভারি বা অনলাইনে পেমেন্টের মাধ্যমে অর্ডার করতে পারেন।`,
+        },
+      },
+    ],
+  }
+
   return (
     <>
       <script
@@ -259,6 +301,10 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
       <div className="bg-white py-8">
         <div className="w-full px-4 sm:px-6 lg:px-8">
@@ -281,9 +327,11 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                 </div>
               )}
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">{category.name}</h1>
-                {category.description && (
+                <h1 className="text-3xl font-bold text-gray-900">{category.name} এর দাম এবং অফার</h1>
+                {category.description ? (
                   <p className="mt-1 text-gray-600">{category.description}</p>
+                ) : (
+                  <p className="mt-1 text-gray-600">অরিজিনাল {category.name} পণ্য অনলাইনে কিনুন সেরা দামে। বিকাশ ডিসকাউন্ট অফার, ফ্রি ডেলিভারি প্রোডাক্ট এবং দ্রুততম ডেলিভারি।</p>
                 )}
               </div>
             </div>
@@ -386,7 +434,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                           medicineId={item.id}
                           name={item.name}
                           price={discountedPrice}
-                            image={displayImageUrl || undefined}
+                          image={displayImageUrl || undefined}
                           requiresPrescription={item.requiresPrescription}
                           stockQuantity={item.stockQuantity}
                           className="w-full"
@@ -396,7 +444,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                           productId={item.id}
                           name={item.name}
                           price={discountedPrice}
-                            image={displayImageUrl || undefined}
+                          image={displayImageUrl || undefined}
                           stockQuantity={item.stockQuantity}
                           className="w-full"
                         />
