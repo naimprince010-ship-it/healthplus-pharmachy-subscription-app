@@ -13,6 +13,8 @@ export type CartSuggestionProduct = {
 
 const DEFAULT_LIMIT = 12
 const CO_PURCHASE_SAMPLE = 40
+/** লগইন ইউজারের পুরনো কেনা পণ্য — co-purchase anchor হিসেবে */
+const MAX_HISTORY_ANCHORS = 24
 
 function buildCatalogWhere(extra: Record<string, unknown> = {}): Record<string, unknown> {
   const w: Record<string, unknown> = {
@@ -71,6 +73,38 @@ export async function resolveCartContextForSuggestions(rawIds: string[]): Promis
     productIdsInCart: [...productIdsInCart],
     categoryIdsFromLegacyMedicine: [...categoryIdsFromLegacyMedicine],
   }
+}
+
+/** ইউজারের সাম্প্রতিক অর্ডার থেকে Product আইডি (মেডিসিন-লিংকড অর্ডার সারি) */
+export async function getRecentPurchasedProductIds(
+  userId: string,
+  take: number
+): Promise<string[]> {
+  if (!userId || take <= 0) return []
+
+  const rows = await prisma.orderItem.findMany({
+    where: {
+      productId: { not: null },
+      order: { userId },
+    },
+    select: {
+      productId: true,
+      order: { select: { createdAt: true } },
+    },
+    orderBy: { order: { createdAt: 'desc' } },
+    take: Math.min(take * 4, 200),
+  })
+
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const r of rows) {
+    const pid = r.productId
+    if (!pid || seen.has(pid)) continue
+    seen.add(pid)
+    out.push(pid)
+    if (out.length >= take) break
+  }
+  return out
 }
 
 async function fetchProductsByIdsOrdered(ids: string[]): Promise<CartSuggestionProduct[]> {
@@ -220,14 +254,31 @@ async function popularityFallbackIds(exclude: Set<string>, take: number): Promis
 
 /**
  * ম্যানুয়াল সাজেশন না থাকলে: ম্যাটেরিয়ালাইজড co-purchase → লাইভ co-purchase → ক্যাটাগরি → পপুলারিটি।
+ * `userId` থাকলে সাম্প্রতিক কেনা পণ্যগুলোও co-purchase সিড (ব্যক্তিগতকরণ)।
  */
 export async function getEngineCartSuggestions(options: {
   cartLineIds: string[]
   limit?: number
+  userId?: string | null
 }): Promise<CartSuggestionProduct[]> {
   const limit = options.limit ?? DEFAULT_LIMIT
   const { productIdsInCart, categoryIdsFromLegacyMedicine } =
     await resolveCartContextForSuggestions(options.cartLineIds)
+
+  let historyAnchors: string[] = []
+  if (options.userId) {
+    historyAnchors = await getRecentPurchasedProductIds(
+      options.userId,
+      MAX_HISTORY_ANCHORS
+    )
+  }
+
+  const seedForCoPurchase = [
+    ...new Set([...productIdsInCart, ...historyAnchors]),
+  ]
+  const categorySeedProducts = [
+    ...new Set([...productIdsInCart, ...historyAnchors]),
+  ]
 
   const exclude = new Set(productIdsInCart)
   const orderedIds: string[] = []
@@ -242,26 +293,26 @@ export async function getEngineCartSuggestions(options: {
 
   // 1) ম্যাটেরিয়ালাইজড co-purchase (ক্রন: /api/cron/rebuild-product-cooccurrence)
   const coMat = await coPurchaseFromMaterialized(
-    productIdsInCart,
+    seedForCoPurchase,
     exclude,
     CO_PURCHASE_SAMPLE
   )
   pushUnique(coMat)
 
   // 2) লাইভ অর্ডার জয়েন (টেবিল খালি / নতুন পণ্য টপ-আপ)
-  if (orderedIds.length < limit && productIdsInCart.length > 0) {
+  if (orderedIds.length < limit && seedForCoPurchase.length > 0) {
     const coLive = await coPurchaseProductIds(
-      productIdsInCart,
+      seedForCoPurchase,
       new Set([...exclude, ...orderedIds])
     )
     pushUnique(coLive)
   }
 
   if (orderedIds.length < limit) {
-    // 3) কার্টের ক্যাটাগরি / লিগেসি মেডিসিন ক্যাটাগরি থেকে অন্য পণ্য
+    // 3) কার্ট + (লগইন হলে) ইতিহাসের ক্যাটাগরি / লিগেসি মেডিসিন ক্যাটাগরি
     const need = limit - orderedIds.length
     const neighbor = await categoryNeighborIds(
-      productIdsInCart,
+      categorySeedProducts,
       categoryIdsFromLegacyMedicine,
       new Set([...exclude, ...orderedIds]),
       need + 8

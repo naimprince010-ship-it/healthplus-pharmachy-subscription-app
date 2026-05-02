@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { auth } from '@/lib/auth'
 import { getEngineCartSuggestions } from '@/lib/cart-suggestions-engine'
 
 export const dynamic = 'force-dynamic'
@@ -63,9 +64,13 @@ export async function GET(request: NextRequest) {
       })
     }
 
+    const session = await auth()
+    const userId = session?.user?.id ?? null
+
     const engine = await getEngineCartSuggestions({
       cartLineIds,
       limit: 12,
+      userId,
     })
 
     return NextResponse.json({
