@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Shield, Package, Heart, Baby, Activity, Users, ChevronRight, FileText, Zap } from 'lucide-react'
 import { PrescriptionUploadModal } from '@/components/PrescriptionUploadModal'
-import { ProductCard } from '@/components/ProductCard'
+import { ProductCard, type ProductCardProps } from '@/components/ProductCard'
 import type { SubscriptionPlan } from '@prisma/client'
 import { isGroceryShopEnabled, isMedicineShopEnabled, isPrescriptionFlowEnabled } from '@/lib/site-features'
 
