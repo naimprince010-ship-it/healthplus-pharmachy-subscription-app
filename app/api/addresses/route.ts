@@ -24,7 +24,7 @@ export async function GET() {
     }
 
     const rows = await prisma.address.findMany({
-      where: { userId: session.user.id },
+      where: { userId: session.user.id, hiddenFromCheckout: false },
       include: { zone: { select: { id: true, name: true, deliveryCharge: true } } },
       orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
     })

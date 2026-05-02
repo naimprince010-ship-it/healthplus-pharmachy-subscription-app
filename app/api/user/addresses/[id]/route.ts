@@ -20,7 +20,7 @@ const patchBody = z
 
 async function ensureOwnAddress(userId: string, id: string) {
   const addr = await prisma.address.findFirst({
-    where: { id, userId },
+    where: { id, userId, hiddenFromCheckout: false },
     include: { zone: { select: { id: true, name: true } } },
   })
   return addr
@@ -98,18 +98,24 @@ export async function DELETE(
   if (!existing) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
+  if (existing.hiddenFromCheckout) {
+    return NextResponse.json({ ok: true })
+  }
 
   const usedInOrders = await prisma.order.count({ where: { addressId: id } })
   if (usedInOrders > 0) {
-    return NextResponse.json(
-      {
-        error:
-          'এই ঠিকানা ইতিমধ্যে কোনো অর্ডারে ব্যবহার হয়েছে। মুছে ফেলার বদলে সম্পাদনা করুন।',
-      },
-      { status: 409 }
-    )
+    await prisma.address.update({
+      where: { id },
+      data: { hiddenFromCheckout: true, isDefault: false },
+    })
+    return NextResponse.json({
+      ok: true,
+      softRemoved: true,
+      message:
+        'ঠিকানাটি তালিকা থেকে সরানো হয়েছে। পুরনো অর্ডারের জন্য এটি সিস্টেমে সংরক্ষিত আছে।',
+    })
   }
 
   await prisma.address.delete({ where: { id } })
-  return NextResponse.json({ ok: true })
+  return NextResponse.json({ ok: true, softRemoved: false })
 }

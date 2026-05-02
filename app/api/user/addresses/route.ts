@@ -23,7 +23,7 @@ export async function GET() {
   }
 
   const addresses = await prisma.address.findMany({
-    where: { userId: session.user.id },
+    where: { userId: session.user.id, hiddenFromCheckout: false },
     orderBy: [{ isDefault: 'desc' }, { updatedAt: 'desc' }],
     include: { zone: { select: { id: true, name: true } } },
   })

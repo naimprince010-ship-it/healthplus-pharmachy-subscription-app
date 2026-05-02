@@ -101,6 +101,7 @@ export default function CheckoutPage() {
   const [hasSubmittedOrder, setHasSubmittedOrder] = useState(false)
   const [freeDeliveryThreshold, setFreeDeliveryThreshold] =
     useState<number | null>(null)
+  const [addressNotice, setAddressNotice] = useState('')
 
   useEffect(() => {
     // Wait until session has finished loading before checking auth
@@ -327,20 +328,18 @@ export default function CheckoutPage() {
     e.stopPropagation()
     if (!window.confirm('এই ডেলিভারি ঠিকানাটি মুছে ফেলবেন?')) return
     setError('')
+    setAddressNotice('')
     try {
       const res = await fetch(`/api/user/addresses/${addrId}`, { method: 'DELETE' })
+      const d = await res.json().catch(() => ({}))
       if (!res.ok) {
-        const d = await res.json().catch(() => ({}))
-        if (res.status === 409) {
-          setError(
-            typeof d.error === 'string'
-              ? d.error
-              : 'পুরনো অর্ডারে এই ঠিকানা আছে—মুছে ফেলা যাবে না। সম্পাদনা করুন।'
-          )
-        } else {
-          setError('ঠিকানা মোছা যায়নি')
-        }
+        setError(
+          typeof d.error === 'string' ? d.error : 'ঠিকানা মোছা যায়নি'
+        )
         return
+      }
+      if (typeof d.message === 'string' && d.message) {
+        setAddressNotice(d.message)
       }
       await loadAddresses()
     } catch {
@@ -557,6 +556,11 @@ export default function CheckoutPage() {
           {error && (
             <div className="rounded-lg bg-red-50 p-4 border border-red-200">
               <p className="text-sm text-red-800">{error}</p>
+            </div>
+          )}
+          {addressNotice && (
+            <div className="rounded-lg bg-teal-50 p-4 border border-teal-200">
+              <p className="text-sm text-teal-900">{addressNotice}</p>
             </div>
           )}
 

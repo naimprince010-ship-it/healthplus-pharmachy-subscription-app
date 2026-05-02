@@ -184,6 +184,8 @@ model Address {
   zoneId       String
   zone         Zone     @relation(fields: [zoneId], references: [id])
   isDefault    Boolean  @default(false)
+  /// User "removed" this from checkout list; kept for historical orders.
+  hiddenFromCheckout Boolean @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   orders       Order[]
