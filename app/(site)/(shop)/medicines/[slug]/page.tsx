@@ -30,6 +30,12 @@ export async function generateMetadata({
     }
   }
 
+  const siteBase = (process.env.NEXT_PUBLIC_SITE_URL || 'https://halalzi.com').replace(/\/$/, '')
+  let ogImage = medicine.imageUrl || undefined
+  if (ogImage && ogImage.startsWith('/')) {
+    ogImage = `${siteBase}${ogImage}`
+  }
+
   return {
     title: medicine.seoTitle || `${medicine.name} - HealthPlus`,
     description: medicine.seoDescription || medicine.description || undefined,
@@ -40,7 +46,7 @@ export async function generateMetadata({
     openGraph: {
       title: medicine.seoTitle || medicine.name,
       description: medicine.seoDescription || medicine.description || undefined,
-      images: medicine.imageUrl ? [medicine.imageUrl] : undefined,
+      images: ogImage ? [ogImage] : undefined,
       type: 'website',
       siteName: 'Halalzi',
     },
@@ -85,13 +91,19 @@ export default async function MedicineDetailPage({
     ? medicine.sellingPrice * (1 - medicine.discountPercentage / 100)
     : medicine.sellingPrice
 
+  const siteBase = (process.env.NEXT_PUBLIC_SITE_URL || 'https://halalzi.com').replace(/\/$/, '')
+  let jsonLdImageUrl = imageUrl || 'https://halalzi.com/images/default-product.png'
+  if (jsonLdImageUrl.startsWith('/')) {
+    jsonLdImageUrl = `${siteBase}${jsonLdImageUrl}`
+  }
+
   // Generate JSON-LD structured data for SEO
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: medicine.name,
     description: medicine.description || `${medicine.name} - Buy online at best price`,
-    image: imageUrl || 'https://halalzi.com/images/default-product.png',
+    image: jsonLdImageUrl,
     sku: medicine.id,
     brand: medicine.manufacturer ? {
       '@type': 'Brand',
@@ -120,7 +132,7 @@ export default async function MedicineDetailPage({
     ].filter(Boolean),
     offers: {
       '@type': 'Offer',
-      url: `https://halalzi.com/medicines/${slug}`,
+      url: `${siteBase}/medicines/${slug}`,
       priceCurrency: 'BDT',
       price: effectivePrice,
       priceValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],

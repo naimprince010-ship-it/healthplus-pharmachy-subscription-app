@@ -34,6 +34,12 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     const seoTitle = product.seoTitle || `${product.name}${safeCategorySuffix} | Halalzi`
     const seoDescription = product.seoDescription || product.description || `Buy ${product.name} online at best price from Halalzi. Fast delivery across Bangladesh.`
 
+    const siteBase = (process.env.NEXT_PUBLIC_SITE_URL || 'https://halalzi.com').replace(/\/$/, '')
+    let ogImage = product.imageUrl ? getStorefrontImageUrl(product.imageUrl) : null
+    if (ogImage && ogImage.startsWith('/')) {
+      ogImage = `${siteBase}${ogImage}`
+    }
+
     return {
       title: seoTitle,
       description: seoDescription,
@@ -44,10 +50,10 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
       openGraph: {
         title: seoTitle,
         description: seoDescription,
-        url: `https://halalzi.com/products/${slug}`,
+        url: `${siteBase}/products/${slug}`,
         siteName: 'Halalzi',
         type: 'website',
-        images: product.imageUrl ? [product.imageUrl] : [],
+        images: ogImage ? [ogImage] : [],
       },
     }
   } catch (error) {
@@ -125,12 +131,17 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const showTopLine = !!topLineText && normalizedTop !== normalizedLeaf
 
   // Generate JSON-LD structured data for SEO
+  let jsonLdImageUrl = displayImageUrl || 'https://halalzi.com/images/default-product.png'
+  if (jsonLdImageUrl.startsWith('/')) {
+    jsonLdImageUrl = `${siteBase}${jsonLdImageUrl}`
+  }
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.name,
     description: product.description || `${product.name} - Buy online at best price`,
-    image: product.imageUrl || 'https://halalzi.com/images/default-product.png',
+    image: jsonLdImageUrl,
     sku: product.id,
     brand: product.manufacturer?.name || product.brandName ? {
       '@type': 'Brand',
@@ -142,7 +153,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
     category: product.category?.name,
     offers: {
       '@type': 'Offer',
-      url: `https://halalzi.com/products/${slug}`,
+      url: `${siteBase}/products/${slug}`,
       priceCurrency: 'BDT',
       price: sellingPrice,
       priceValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
