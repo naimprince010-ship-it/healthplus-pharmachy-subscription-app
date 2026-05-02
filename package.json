@@ -13,6 +13,7 @@
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
+    "db:migrate:resolve:address-checkout": "prisma migrate resolve --applied 20260504164500_address_hidden_from_checkout",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "db:generate": "prisma generate",
