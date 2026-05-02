@@ -1,19 +1,21 @@
 /**
  * Vercel/CI only: runs `prisma migrate deploy`.
  *
- * Supabase **transaction pooler** (:6543 on *.pooler.supabase.com) often stalls migrations.
- * Prefer DIRECT_* env; otherwise derive direct Postgres (:5432, db.[ref]) when DATABASE_URL uses
- * user `postgres.[project-ref]` (Supabase’s default pooled string).
+ * Supabase transaction pool (:6543) stalls migrations → use **session pool** on same
+ * *.pooler.supabase.com host, port **5432** (IPv4-friendly).
+ *
+ * Avoid `db.*.supabase.co:5432` for migrate on Vercel — often IPv6-only → P1001.
+ * @see https://supabase.com/docs/guides/troubleshooting/prisma-error-management
  */
 const { spawnSync } = require('node:child_process')
 
 /** @returns {string | null} */
-function deriveDirectFromSupabasePooler(cs) {
-  if (!cs || typeof cs !== 'string') return null
+function deriveSessionPoolerMigrateUrl(transactionPoolCs) {
+  if (!transactionPoolCs || typeof transactionPoolCs !== 'string') return null
 
   let u
   try {
-    u = new URL(cs.trim())
+    u = new URL(transactionPoolCs.trim())
   } catch {
     return null
   }
@@ -21,28 +23,33 @@ function deriveDirectFromSupabasePooler(cs) {
   if (!u.hostname.includes('.pooler.supabase.com') || u.port !== '6543') return null
 
   const userPart = decodeURIComponent(u.username || '')
-  const m = /^postgres\.([a-zA-Z0-9]+)$/.exec(userPart)
-  if (!m) return null
+  if (!/^postgres\.[a-zA-Z0-9]+$/.test(userPart)) return null
 
-  const ref = m[1]
-  const password = decodeURIComponent(u.password || '')
-  const pathname = u.pathname || '/postgres'
-
-  const out = new URL('postgresql://x')
-  out.protocol = 'postgresql:'
-  out.username = 'postgres'
-  out.password = password
-  out.hostname = `db.${ref}.supabase.co`
+  const out = new URL(u.toString())
   out.port = '5432'
-  out.pathname = pathname
+
   const sp = new URLSearchParams(u.searchParams)
+  sp.delete('pgbouncer')
+  sp.delete('connection_limit')
   if (!sp.has('sslmode')) sp.set('sslmode', 'require')
+  if (!sp.has('connect_timeout')) sp.set('connect_timeout', '30')
   out.search = sp.toString()
 
   try {
     return out.toString()
   } catch {
     return null
+  }
+}
+
+/** `db.PROJECT.supabase.co` is often unreachable from IPv4-only build runners */
+function isSupabaseDirectDbHost(urlStr) {
+  if (!urlStr || typeof urlStr !== 'string') return false
+  try {
+    const h = new URL(urlStr.trim()).hostname
+    return /^db\.[^.]+\.supabase\.co$/i.test(h)
+  } catch {
+    return false
   }
 }
 
@@ -53,20 +60,29 @@ const explicitDirect =
 
 const pooled = process.env.DATABASE_URL || ''
 
-let migrateUrl = explicitDirect
-if (!migrateUrl) {
-  migrateUrl = deriveDirectFromSupabasePooler(pooled)
-  if (migrateUrl) {
-    console.log('\nprisma-migrate-deploy: derived direct DB URL db.*:5432 for migrations.\n')
+const derivedSession = deriveSessionPoolerMigrateUrl(pooled)
+
+let migrateUrl = null
+if (derivedSession) {
+  migrateUrl = derivedSession
+  if (explicitDirect && isSupabaseDirectDbHost(explicitDirect)) {
+    console.log(
+      '\nprisma-migrate-deploy: using session pooler :5432 from DATABASE_URL (Vercel/IPv4). ' +
+        'Ignoring DIRECT_URL pointing at db.*.supabase.co.\n'
+    )
+  } else {
+    console.log('\nprisma-migrate-deploy: using Supabase session pooler :5432 for migrations.\n')
   }
+} else if (explicitDirect) {
+  migrateUrl = explicitDirect
+} else if (/pooler\.supabase\.com:6543/.test(pooled)) {
+  console.warn(
+    '\n⚠ prisma-migrate-deploy: pool :6543 but could not derive session URL — use user `postgres.[project-ref]` on DATABASE_URL.\n'
+  )
 }
 
 if (migrateUrl) {
   process.env.DATABASE_URL = migrateUrl
-} else if (/pooler\.supabase\.com:6543/.test(pooled)) {
-  console.warn(
-    '\n⚠ prisma-migrate-deploy: pool :6543 without DIRECT_URL — use DATABASE_URL user `postgres.[project-ref]` or set DIRECT_URL.\n'
-  )
 }
 
 const result = spawnSync('npx', ['prisma', 'migrate', 'deploy'], {
