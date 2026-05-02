@@ -149,6 +149,27 @@ model User {
   subscriptions Subscription[]
   wishlistItems WishlistItem[]
   reviews       Review[]
+  productInteractionLogs ProductInteractionLog[]
+}
+
+enum ProductInteractionKind {
+  VIEW_ITEM
+  ADD_TO_CART
+}
+
+// Implicit feedback for future recommendations (co-occurrence / ALS training signals)
+model ProductInteractionLog {
+  id        String                 @id @default(cuid())
+  userId    String?
+  user      User?                  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  productId String
+  product   Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
+  kind      ProductInteractionKind
+  createdAt DateTime               @default(now())
+
+  @@index([userId, createdAt])
+  @@index([productId, createdAt])
+  @@index([createdAt])
 }
 
 model Address {
@@ -317,6 +338,7 @@ model Product {
   blogProducts    BlogProduct[] // Products mentioned in blogs
   cooccurrenceAsAnchor  ProductCooccurrence[] @relation("CooccurrenceAnchor")
   cooccurrenceAsRelated ProductCooccurrence[] @relation("CooccurrenceRelated")
+  productInteractionLogs ProductInteractionLog[]
 }
 
 // Precomputed item–item co-purchase counts (same order) for cart suggestions; rebuilt by cron.
