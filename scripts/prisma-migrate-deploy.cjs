@@ -9,6 +9,9 @@
  */
 const { spawnSync } = require('node:child_process')
 
+/** Matches duplicate-column drift we hit in prod (_prisma_migrations failed → P3009 / P3018). */
+const STUCK_MIGRATION = '20260504164500_address_hidden_from_checkout'
+
 /** @returns {string | null} */
 function deriveSessionPoolerMigrateUrl(transactionPoolCs) {
   if (!transactionPoolCs || typeof transactionPoolCs !== 'string') return null
@@ -85,15 +88,47 @@ if (migrateUrl) {
   process.env.DATABASE_URL = migrateUrl
 }
 
-const result = spawnSync('npx', ['prisma', 'migrate', 'deploy'], {
-  stdio: 'inherit',
-  env: process.env,
-  shell: true,
-})
-
-if (result.error) {
-  console.error(result.error)
-  process.exit(1)
+function runMigrateDeployCaptured() {
+  return spawnSync('npx', ['prisma', 'migrate', 'deploy'], {
+    encoding: 'utf-8',
+    env: process.env,
+    shell: true,
+    stdio: ['inherit', 'pipe', 'pipe'],
+  })
 }
 
-process.exit(result.status === null ? 1 : result.status)
+/** @returns {number} exit code */
+function migrateWithStuckCheckoutRecovery() {
+  let r = runMigrateDeployCaptured()
+  if (r.stdout) process.stdout.write(r.stdout)
+  if (r.stderr) process.stderr.write(r.stderr)
+
+  const code = r.status === null ? 1 : r.status
+  if (code === 0) return 0
+
+  const combo = `${r.stderr || ''}\n${r.stdout || ''}`
+
+  if (
+    combo.includes(STUCK_MIGRATION) &&
+    (/P3009|P3018/.test(combo) || /migration failed/i.test(combo) || /duplicate column/i.test(combo))
+  ) {
+    console.error(`\nprisma-migrate-deploy: recovering ${STUCK_MIGRATION} (--applied) after failed state / duplicate column…\n`)
+    const abs = spawnSync('npx', ['prisma', 'migrate', 'resolve', '--applied', STUCK_MIGRATION], {
+      stdio: 'inherit',
+      env: process.env,
+      shell: true,
+    })
+    if (abs.status !== 0 && abs.status != null) {
+      return abs.status ?? 1
+    }
+    r = runMigrateDeployCaptured()
+    if (r.stdout) process.stdout.write(r.stdout)
+    if (r.stderr) process.stderr.write(r.stderr)
+    return r.status === null ? 1 : r.status
+  }
+
+  return code
+}
+
+const exitCode = migrateWithStuckCheckoutRecovery()
+process.exit(exitCode)
