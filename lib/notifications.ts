@@ -2,6 +2,7 @@ type NotificationTemplate =
   | 'OTP'
   | 'PRESCRIPTION_RECEIVED'
   | 'ORDER_CONFIRMED'
+  | 'ORDER_AWAITING_PAYMENT'
   | 'MEMBERSHIP_EXPIRING'
   | 'DELIVERY_REMINDER'
   | 'SUBSCRIPTION_STARTED'
@@ -16,6 +17,8 @@ const SMS_TEMPLATES: Record<NotificationTemplate, (data: NotificationData) => st
   OTP: (data) => `Your HealthPlus OTP is: ${data.otp}. Valid for 10 minutes.`,
   PRESCRIPTION_RECEIVED: (data) => `Dear ${data.name}, we received your prescription. Our team will contact you soon. - HealthPlus`,
   ORDER_CONFIRMED: (data) => `Order ${data.orderNumber} confirmed! Total: ৳${data.total}. Delivery in ${data.days} days. - HealthPlus`,
+  ORDER_AWAITING_PAYMENT: (data) =>
+    `Hi ${data.name}, order ${data.orderNumber} recorded. Complete online payment ৳${data.total}. We'll confirm after payment. - Halalzi`,
   MEMBERSHIP_EXPIRING: (data) => `Dear ${data.name}, your HealthPlus membership expires on ${data.expiryDate}. Renew now to keep your 10% discount!`,
   DELIVERY_REMINDER: (data) => `Your order ${data.orderNumber} will be delivered today. Please be available. - HealthPlus`,
   SUBSCRIPTION_STARTED: (data) => `Hello ${data.name}, your ${data.planName} subscription is active! Next delivery: ${data.nextDelivery} - HealthPlus`,
@@ -51,6 +54,16 @@ const EMAIL_TEMPLATES: Record<NotificationTemplate, (data: NotificationData) => 
       <p><strong>Total Amount:</strong> ৳${data.total}</p>
       <p><strong>Estimated Delivery:</strong> ${data.days} days</p>
       <p>Thank you for shopping with HealthPlus!</p>
+    `
+  }),
+  ORDER_AWAITING_PAYMENT: (data) => ({
+    subject: `Complete payment — ${data.orderNumber}`,
+    body: `
+      <h2>Payment pending</h2>
+      <p>Dear ${data.name},</p>
+      <p>We received order <strong>${data.orderNumber}</strong>. Please complete your online payment of <strong>৳${data.total}</strong>.</p>
+      <p>We will confirm processing after payment is verified.</p>
+      <p>Thank you — Halalzi</p>
     `
   }),
   MEMBERSHIP_EXPIRING: (data) => ({

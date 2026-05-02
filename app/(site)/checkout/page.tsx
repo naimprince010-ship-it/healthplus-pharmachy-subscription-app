@@ -20,11 +20,15 @@ interface LocationOption {
   name: string
 }
 
-interface Address {
+interface SavedAddress {
   id: string
-  label: string
-  fullAddress: string
+  fullName: string
   phone: string
+  fullAddress: string
+  zoneId: string
+  zoneName: string
+  deliveryCharge: number
+  isDefault: boolean
 }
 
 interface CheckoutSettings {
@@ -74,18 +78,24 @@ export default function CheckoutPage() {
   const [notes, setNotes] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
-  const [addresses, setAddresses] = useState<Address[]>([])
+  const [addressesLoading, setAddressesLoading] = useState(true)
+  const [addresses, setAddresses] = useState<SavedAddress[]>([])
   const [selectedAddress, setSelectedAddress] = useState<string | null>(null)
   const [showAddAddress, setShowAddAddress] = useState(false)
-  const [newAddress, setNewAddress] = useState({ label: '', fullAddress: '', phone: '' })
+  const [newAddress, setNewAddress] = useState({
+    label: '',
+    fullAddress: '',
+    phone: '',
+  })
   const [couponCode, setCouponCode] = useState('')
   const [couponApplied, setCouponApplied] = useState(false)
   const [couponDiscount, setCouponDiscount] = useState(0)
   const [paymentMethod, setPaymentMethod] = useState<'COD' | 'BKASH'>('COD')
   const [orderSummaryExpanded, setOrderSummaryExpanded] = useState(false)
-    const [settings, setSettings] = useState<CheckoutSettings>(DEFAULT_SETTINGS)
-    const [hasSubmittedOrder, setHasSubmittedOrder] = useState(false)
-    const [freeDeliveryThreshold, setFreeDeliveryThreshold] = useState<number | null>(null)
+  const [settings, setSettings] = useState<CheckoutSettings>(DEFAULT_SETTINGS)
+  const [hasSubmittedOrder, setHasSubmittedOrder] = useState(false)
+  const [freeDeliveryThreshold, setFreeDeliveryThreshold] =
+    useState<number | null>(null)
 
   useEffect(() => {
     // Wait until session has finished loading before checking auth
@@ -155,6 +165,44 @@ export default function CheckoutPage() {
       .catch((err) => console.error('Failed to fetch divisions:', err))
   }, [])
 
+  useEffect(() => {
+    if (!session?.user?.id) return
+    let cancelled = false
+    setAddressesLoading(true)
+    fetch('/api/addresses')
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return
+        const rows = (data.addresses ?? []) as Array<{
+          id: string
+          fullName: string
+          phone: string
+          fullAddress: string
+          zoneId: string
+          zoneName: string
+          deliveryCharge: number
+          isDefault: boolean
+        }>
+        setAddresses(rows)
+        const def = rows.find((a) => a.isDefault) || rows[0]
+        if (def) {
+          setSelectedAddress(def.id)
+          setSelectedZone(def.zoneId)
+          setShowAddAddress(false)
+        } else {
+          setSelectedAddress(null)
+          setShowAddAddress(true)
+        }
+      })
+      .catch((err) => console.error('Failed to fetch addresses:', err))
+      .finally(() => {
+        if (!cancelled) setAddressesLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [session?.user?.id])
+
   const handleDivisionChange = async (divisionId: string) => {
     setSelectedDivisionId(divisionId)
     setSelectedDistrictId('')
@@ -192,22 +240,99 @@ export default function CheckoutPage() {
     if (match) setSelectedZone(match.id)
   }, [selectedDistrictId, districts, zones])
 
-  const handleAddAddress = () => {
-    if (!newAddress.label || !newAddress.fullAddress || !newAddress.phone) return
-    const newAddr: Address = {
-      id: Date.now().toString(),
-      ...newAddress,
+  const mapCartItemsForApi = () =>
+    items.map((item) => ({
+      medicineId: item.medicineId,
+      productId: item.productId,
+      membershipPlanId: item.membershipPlanId,
+      quantity: item.quantity,
+      price: item.price,
+    }))
+
+  const refreshAddresses = async () => {
+    const res = await fetch('/api/addresses')
+    const data = await res.json()
+    const rows = (data.addresses ?? []) as SavedAddress[]
+    setAddresses(rows)
+    const def = rows.find((a) => a.isDefault) || rows[0]
+    if (def) {
+      setSelectedAddress(def.id)
+      setSelectedZone(def.zoneId)
     }
-    setAddresses([...addresses, newAddr])
-    setSelectedAddress(newAddr.id)
-    setShowAddAddress(false)
-    setNewAddress({ label: '', fullAddress: '', phone: '' })
   }
 
-  const handleApplyCoupon = () => {
+  const handleAddAddress = async () => {
+    if (!selectedZone) {
+      setError('অনুগ্রহ করে ডেলিভারি জোন নির্বাচন করুন')
+      return
+    }
+    if (!newAddress.label || !newAddress.fullAddress || !newAddress.phone)
+      return
+    const districtName =
+      districts.find((d) => d.id === selectedDistrictId)?.name || '—'
+    try {
+      const res = await fetch('/api/addresses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: newAddress.label.trim(),
+          phone: newAddress.phone.trim(),
+          addressLine1: newAddress.fullAddress.trim(),
+          city: districtName,
+          zoneId: selectedZone,
+          isDefault: addresses.length === 0,
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setError(
+          typeof data?.error === 'string'
+            ? data.error
+            : 'ঠিকানা সংরক্ষণ করা যায়নি'
+        )
+        return
+      }
+      setShowAddAddress(false)
+      setNewAddress({ label: '', fullAddress: '', phone: '' })
+      await refreshAddresses()
+    } catch {
+      setError('ঠিকানা সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।')
+    }
+  }
+
+  const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return
-    setCouponApplied(true)
+    setError('')
+    setCouponApplied(false)
     setCouponDiscount(0)
+    try {
+      const res = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: couponCode.trim(),
+          items: mapCartItemsForApi().map(({ medicineId, productId, membershipPlanId, quantity }) => ({
+            medicineId,
+            productId,
+            membershipPlanId,
+            quantity,
+          })),
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.valid) {
+        setCouponApplied(true)
+        setCouponDiscount(0)
+        setError(typeof data?.error === 'string' ? data.error : '')
+        return
+      }
+      setCouponDiscount(Number(data.discountAmount) || 0)
+      setCouponApplied(true)
+    } catch {
+      setCouponApplied(true)
+      setCouponDiscount(0)
+      setError('কুপন যাচাই ব্যর্থ হয়েছে।')
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -215,8 +340,24 @@ export default function CheckoutPage() {
     setError('')
     setIsLoading(true)
 
-    if (!selectedZone) {
-      setError('অনুগ্রহ করে ডেলিভারি জোন নির্বাচন করুন')
+    if (addressesLoading) {
+      setError('ঠিকানা লোড হচ্ছে...')
+      setIsLoading(false)
+      return
+    }
+
+    if (!selectedAddress) {
+      setError(
+        addresses.length === 0
+          ? 'একটি ডেলিভারি ঠিকানা যোগ করুন'
+          : 'একটি ঠিকানা নির্বাচন করুন'
+      )
+      setIsLoading(false)
+      return
+    }
+
+    if (!addresses.some((a) => a.id === selectedAddress)) {
+      setError('ঠিকানা আর বৈধ নয়। রিফ্রেশ করে চেষ্টা করুন।')
       setIsLoading(false)
       return
     }
@@ -227,19 +368,18 @@ export default function CheckoutPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-                body: JSON.stringify({
-                  zoneId: selectedZone,
-                  items: items.map((item) => ({
-                    medicineId: item.medicineId,
-                    productId: item.productId,
-                    membershipPlanId: item.membershipPlanId,
-                    quantity: item.quantity,
-                    price: item.price,
-                  })),
-                  paymentMethod:
-                    paymentMethod === 'BKASH' ? 'ONLINE' : 'COD',
-                  notes,
-                }),
+        body: JSON.stringify({
+          addressId: selectedAddress,
+          items: mapCartItemsForApi(),
+          paymentMethod:
+            paymentMethod === 'BKASH' ? 'ONLINE' : 'COD',
+          notes,
+          ...(couponApplied && couponDiscount > 0
+            ? {
+                couponCode: couponCode.trim().toUpperCase(),
+              }
+            : {}),
+        }),
       })
 
       const data = await response.json()
@@ -257,20 +397,22 @@ export default function CheckoutPage() {
         quantity: item.quantity,
       }))
 
+      const paidApprox = grandTotal
+
       trackPurchase({
         transaction_id: data.order.id,
-        value: grandTotal,
+        value: paidApprox,
         shipping: deliveryCharge,
         items: ga4Items,
       })
 
-      // Set flag BEFORE clearing cart to prevent the useEffect from redirecting to /cart
-      // when it sees items.length === 0 after clearCart() is called
       setHasSubmittedOrder(true)
       clearCart()
-      // Redirect to order success page with order details
-      // Use replace to prevent going back to checkout
-      router.replace(`/order-success?orderId=${data.order.id}&amount=${grandTotal}&paymentMethod=${paymentMethod}`)
+      const awaiting =
+        paymentMethod === 'BKASH' ? '&awaitingPayment=1' : ''
+      router.replace(
+        `/order-success?orderId=${data.order.id}&amount=${Math.round(data.order.total ?? paidApprox)}&paymentMethod=${paymentMethod}${awaiting}`
+      )
     } catch (err) {
       console.error('Checkout error:', err)
       setError('একটি ত্রুটি ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন।')
@@ -326,8 +468,6 @@ export default function CheckoutPage() {
       return null
     }
 
-    const selectedAddressData = addresses.find(a => a.id === selectedAddress)
-
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Mobile Header - Simple with back arrow */}
@@ -363,9 +503,73 @@ export default function CheckoutPage() {
           {/* Section 1: Delivery Address */}
           <div className="bg-white rounded-xl p-4">
             <h2 className="text-lg font-bold text-gray-900 mb-4">{settings.addressSectionTitleBn}</h2>
-            
-            {/* Zone Selection */}
+
+            {addressesLoading && (
+              <p className="text-sm text-gray-500 mb-3">ঠিকানা লোড হচ্ছে…</p>
+            )}
+
+            {!addressesLoading && addresses.length > 0 && (
+              <div className="space-y-3 mb-4">
+                {addresses.map((addr) => (
+                  <div
+                    key={addr.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => {
+                      setSelectedAddress(addr.id)
+                      setSelectedZone(addr.zoneId)
+                    }}
+                    onKeyDown={(ev) => {
+                      if (ev.key === 'Enter' || ev.key === ' ') {
+                        ev.preventDefault()
+                        setSelectedAddress(addr.id)
+                        setSelectedZone(addr.zoneId)
+                      }
+                    }}
+                    className={`flex items-start gap-3 rounded-lg border-2 p-4 cursor-pointer transition-colors ${
+                      selectedAddress === addr.id
+                        ? 'border-teal-500 bg-teal-50/30'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="mt-0.5">
+                      <div
+                        className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${
+                          selectedAddress === addr.id
+                            ? 'border-teal-500'
+                            : 'border-gray-300'
+                        }`}
+                      >
+                        {selectedAddress === addr.id && (
+                          <div className="h-2.5 w-2.5 rounded-full bg-teal-500" />
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-gray-900">{addr.fullName}</p>
+                      <p className="text-gray-900 text-sm mt-0.5">{addr.fullAddress}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {addr.phone} · {addr.zoneName}
+                      </p>
+                      {addr.isDefault && (
+                        <span className="inline-block mt-1 text-xs font-medium text-teal-700">
+                          ডিফল্ট ঠিকানা
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Location + zone — নতুন ঠিকানা বা খালি হলে */}
+            {(showAddAddress || addresses.length === 0) && (
             <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-2">
+                {addresses.length === 0
+                  ? 'একটি ঠিকানা সংরক্ষণ করতে লোকেশন ও জোন নির্বাচন করুন:'
+                  : 'নতুন ঠিকানা যোগ করতে:'}
+              </p>
               <div className="mb-3 grid grid-cols-1 gap-3 md:grid-cols-3">
                 <select
                   value={selectedDivisionId}
@@ -419,39 +623,7 @@ export default function CheckoutPage() {
                 ))}
               </select>
             </div>
-
-            {/* Selected Address Card with Radio */}
-            {addresses.length > 0 && selectedAddressData && (
-              <div className="mb-3">
-                <div className="flex items-start gap-3 rounded-lg border-2 border-teal-500 bg-teal-50/30 p-4 cursor-pointer">
-                  <div className="mt-0.5">
-                    <div className="h-5 w-5 rounded-full border-2 border-teal-500 flex items-center justify-center">
-                      <div className="h-2.5 w-2.5 rounded-full bg-teal-500" />
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-gray-900">{selectedAddressData.fullAddress}</p>
-                    <button type="button" className="text-teal-600 font-medium text-sm">[সম্পাদনা]</button>
-                  </div>
-                </div>
-              </div>
             )}
-
-            {/* Other addresses */}
-            {addresses.filter(a => a.id !== selectedAddress).map((addr) => (
-              <div
-                key={addr.id}
-                className="mb-3 flex items-start gap-3 rounded-lg border-2 border-gray-200 p-4 cursor-pointer hover:border-gray-300"
-                onClick={() => setSelectedAddress(addr.id)}
-              >
-                <div className="mt-0.5">
-                  <div className="h-5 w-5 rounded-full border-2 border-gray-300" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-gray-900">{addr.fullAddress}</p>
-                </div>
-              </div>
-            ))}
 
             {/* Add New Address Button */}
             {!showAddAddress ? (
@@ -546,14 +718,16 @@ export default function CheckoutPage() {
               />
               <button
                 type="button"
-                onClick={handleApplyCoupon}
+                onClick={() => void handleApplyCoupon()}
                 className="px-6 py-3 bg-white border-2 border-teal-500 text-teal-600 font-semibold rounded-lg hover:bg-teal-50 transition-colors"
               >
                 {settings.couponApplyBn}
               </button>
             </div>
-            {couponApplied && couponDiscount === 0 && (
-              <p className="mt-2 text-sm text-red-500">কুপন কোড সঠিক নয়</p>
+            {couponApplied && couponDiscount > 0 && (
+              <p className="mt-2 text-sm text-green-700 font-medium">
+                কুপন প্রযোজ্য: ছাড় ৳ {couponDiscount.toFixed(0)}
+              </p>
             )}
           </div>
 
@@ -650,6 +824,14 @@ export default function CheckoutPage() {
                     <span className="text-gray-600">ডেলিভারি ফি</span>
                     <span className="text-gray-900">৳ {deliveryCharge.toFixed(0)}</span>
                   </div>
+                  {couponDiscount > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-green-700">কুপন ছাড়</span>
+                      <span className="text-green-700">
+                        − ৳ {couponDiscount.toFixed(0)}
+                      </span>
+                    </div>
+                  )}
                   {savings > 0 && (
                     <div className="flex justify-between text-sm">
                       <span className="text-green-600">সেভিংস</span>

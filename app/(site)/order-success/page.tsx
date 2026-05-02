@@ -42,6 +42,7 @@ function OrderSuccessContent() {
   const orderId = searchParams.get('orderId') || ''
   const amount = searchParams.get('amount') || '0'
   const paymentMethod = searchParams.get('paymentMethod') || 'COD'
+  const awaitingPayment = searchParams.get('awaitingPayment') === '1'
 
   useEffect(() => {
     setMounted(true)
@@ -130,12 +131,25 @@ function OrderSuccessContent() {
 
         {/* Success Message */}
         <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold text-[#00A651] mb-2">
-            {settings.successLine1Bn}
-          </h2>
-          <h2 className="text-2xl font-bold text-[#00A651] mb-4">
-            {settings.successLine2Bn}
-          </h2>
+          {awaitingPayment && paymentMethod === 'BKASH' ? (
+            <>
+              <h2 className="text-2xl font-bold text-amber-700 mb-2">
+                অর্ডার গ্রহণ করা হয়েছে
+              </h2>
+              <h2 className="text-lg font-semibold text-gray-800 mb-4">
+                অনলাইন পেমেন্ট সম্পূর্ণ করুন (বিকাশ/নগদ নির্দেশনা শীঘ্রই SMS/হোয়াটস্যাপে)। পেমেন্ট নিশ্চিত হওয়ার পর অর্ডার প্রসেস করা হবে।
+              </h2>
+            </>
+          ) : (
+            <>
+              <h2 className="text-2xl font-bold text-[#00A651] mb-2">
+                {settings.successLine1Bn}
+              </h2>
+              <h2 className="text-2xl font-bold text-[#00A651] mb-4">
+                {settings.successLine2Bn}
+              </h2>
+            </>
+          )}
           <p className="text-gray-600 text-lg">
             {settings.orderIdLabelBn} <span className="font-semibold text-gray-900">#{displayOrderId}</span>
           </p>
@@ -161,7 +175,9 @@ function OrderSuccessContent() {
             <Info className="h-5 w-5 text-blue-500" />
           </div>
           <p className="text-gray-700 text-sm leading-relaxed">
-            {settings.infoNoteBn}
+            {awaitingPayment && paymentMethod === 'BKASH'
+              ? 'পেমেন্ট নিশ্চিত না হওয়া পর্যন্ত অর্ডার প্রসেস চালু নাও হতে পারে। সহায়তার জন্য ওয়েবসাইটের হেল্পলাইনে যোগাযোগ করুন।'
+              : settings.infoNoteBn}
           </p>
         </div>
 

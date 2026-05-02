@@ -520,9 +520,12 @@ model Order {
   discount                 Float         @default(0)
   membershipDiscountAmount Float? // Membership discount applied
   membershipPlanName       String? // Membership plan name at time of order
+  appliedCouponCode        String?
+  couponDiscountAmount     Float         @default(0)
   deliveryCharge           Float
   total                    Float
   paymentMethod            PaymentMethod @default(COD)
+  /// PAID | AWAITING_PAYMENT | PENDING_COD | PENDING (legacy)
   paymentStatus            String        @default("PENDING")
   notes                    String?
   // Reseller: Azan Wholesale order forward (POST /api/orders/store)
