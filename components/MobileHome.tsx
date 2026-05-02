@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Shield, Package, Heart, Baby, Activity, Users, ChevronRight, FileText, Plus, Zap } from 'lucide-react'
+import { Shield, Package, Heart, Baby, Activity, Users, ChevronRight, FileText, Zap } from 'lucide-react'
 import { PrescriptionUploadModal } from '@/components/PrescriptionUploadModal'
 import { ProductCard } from '@/components/ProductCard'
 import type { SubscriptionPlan } from '@prisma/client'
@@ -17,7 +17,7 @@ interface HomeSection {
     badgeText: string | null
     bgColor: string | null
   }
-  products: any[]
+  products: ProductCardProps[]
 }
 
 interface MobileHomeProps {
@@ -59,69 +59,72 @@ export function MobileHome({ subscriptionPlans, homeSections }: MobileHomeProps)
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
+      {/* Hero Section — min-height reserves space before the photo paints (CLS). */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0">
-          <Image
-            src="/images/hero-pharmacy.jpg"
-            alt="Pharmacy"
-            fill
-            className="object-cover"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-teal-900/85 to-teal-700/65" />
-        </div>
+        <div className="relative min-h-[260px] sm:min-h-[300px]">
+          <div className="absolute inset-0">
+            <Image
+              src="/images/hero-pharmacy.jpg"
+              alt="Halalzi অনলাইন ফার্মেসি ও হোম ডেলিভারি"
+              fill
+              sizes="100vw"
+              className="object-cover"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-teal-900/85 to-teal-700/65" />
+          </div>
 
-        <div className="relative px-4 py-8">
-          <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-teal-200">
-            হালাল শপিং · দ্রুত ডেলিভারি
-          </p>
-          <h1 className="text-[1.6rem] font-extrabold leading-tight text-white">
-            {isMedicineShopEnabled() && isGroceryShopEnabled() && (
-              <>
-                ঔষধ, গ্রোসারি ও
-                <br />
-                বেবি ফুড — একটি অ্যাপে।
-              </>
-            )}
-            {isMedicineShopEnabled() && !isGroceryShopEnabled() && (
-              <>
-                ঔষধ, কসমেটিক্স ও
-                <br />
-                বেবি কেয়ার — একটি অ্যাপে।
-              </>
-            )}
-            {!isMedicineShopEnabled() && isGroceryShopEnabled() && (
-              <>
-                গ্রোসারি, কসমেটিক্স ও
-                <br />
-                বেবি — একটি অ্যাপে।
-              </>
-            )}
-            {!isMedicineShopEnabled() && !isGroceryShopEnabled() && (
-              <>
-                কসমেটিক্স ও বেবি কেয়ার
-                <br />
-                — একটি অ্যাপে।
-              </>
-            )}
-          </h1>
-          <p className="mt-2 text-sm text-white/80">
-            অর্ডার করুন, আমরা পৌঁছে দেব।
-          </p>
-          <div className="mt-5 flex gap-3">
-            <Link
-              href="/products"
-              className="flex-1 rounded-xl bg-white px-4 py-2.5 text-center text-sm font-bold text-teal-700 shadow-lg"
-            >
-              এখনই কিনুন
-            </Link>
-            <Link
-              href="/subscriptions"
-              className="flex-1 rounded-xl border-2 border-white/70 bg-white/10 backdrop-blur-sm px-4 py-2.5 text-center text-sm font-semibold text-white"
-            >
-              প্ল্যান দেখুন
-            </Link>
+          <div className="relative px-4 py-8">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-teal-200">
+              হালাল শপিং · দ্রুত ডেলিভারি
+            </p>
+            <h1 className="text-[1.6rem] font-extrabold leading-tight text-white">
+              {isMedicineShopEnabled() && isGroceryShopEnabled() && (
+                <>
+                  ঔষধ, গ্রোসারি ও
+                  <br />
+                  বেবি ফুড — একটি অ্যাপে।
+                </>
+              )}
+              {isMedicineShopEnabled() && !isGroceryShopEnabled() && (
+                <>
+                  ঔষধ, কসমেটিক্স ও
+                  <br />
+                  বেবি কেয়ার — একটি অ্যাপে।
+                </>
+              )}
+              {!isMedicineShopEnabled() && isGroceryShopEnabled() && (
+                <>
+                  গ্রোসারি, কসমেটিক্স ও
+                  <br />
+                  বেবি — একটি অ্যাপে।
+                </>
+              )}
+              {!isMedicineShopEnabled() && !isGroceryShopEnabled() && (
+                <>
+                  কসমেটিক্স ও বেবি কেয়ার
+                  <br />
+                  — একটি অ্যাপে।
+                </>
+              )}
+            </h1>
+            <p className="mt-2 text-sm text-white/80">
+              অর্ডার করুন, আমরা পৌঁছে দেব।
+            </p>
+            <div className="mt-5 flex gap-3">
+              <Link
+                href="/products"
+                className="flex-1 rounded-xl bg-white px-4 py-2.5 text-center text-sm font-bold text-teal-700 shadow-lg"
+              >
+                এখনই কিনুন
+              </Link>
+              <Link
+                href="/subscriptions"
+                className="flex-1 rounded-xl border-2 border-white/70 bg-white/10 backdrop-blur-sm px-4 py-2.5 text-center text-sm font-semibold text-white"
+              >
+                প্ল্যান দেখুন
+              </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -157,7 +160,9 @@ export function MobileHome({ subscriptionPlans, homeSections }: MobileHomeProps)
         >
           {isPrescriptionFlowEnabled() && (
             <button
+              type="button"
               onClick={() => setIsPrescriptionOpen(true)}
+              aria-label="Upload prescription"
               className="flex flex-1 items-center gap-3 rounded-2xl border border-teal-100 bg-white px-4 py-3 shadow-sm text-left"
             >
               <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-teal-500 text-white">

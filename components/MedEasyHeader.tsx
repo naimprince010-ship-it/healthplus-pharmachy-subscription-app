@@ -149,7 +149,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
         <div className={MAIN_CONTAINER}>
           <div className="flex h-14 items-center justify-between gap-2 sm:h-16 sm:gap-4">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 flex-shrink-0 group">
+            <Link href="/" className="flex items-center gap-2 flex-shrink-0 group" aria-label="Halalzi — home">
               {/* Icon badge */}
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white transition-transform duration-200 group-hover:scale-105">
                 <span className="text-lg font-bold text-teal-600">H</span>
@@ -206,6 +206,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                 />
                 <button
                   type="submit"
+                  aria-label="Search"
                   className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full bg-teal-600 p-2 text-white hover:bg-teal-700 transition-colors"
                 >
                   <Search className="h-4 w-4" />
@@ -281,6 +282,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                 href="https://play.google.com/store"
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label="Get Halalzi on Google Play"
                 className="hidden lg:flex items-center gap-2 rounded-xl px-3 py-1.5 text-white transition-all duration-200 hover:scale-105 hover:shadow-lg"
                 style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%)', border: '1px solid rgba(255,255,255,0.15)' }}
               >
@@ -314,7 +316,10 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
               {/* User Menu - Desktop only */}
               <div className="relative hidden md:block" ref={userMenuRef}>
                 <button
+                  type="button"
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  aria-expanded={userMenuOpen}
+                  aria-haspopup="menu"
                   className="flex items-center gap-1 rounded-full px-2 py-1.5 text-white hover:bg-white/10 transition-colors"
                 >
                   <User className="h-5 w-5" />
@@ -383,13 +388,20 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
 
       {/* Mobile Search Modal */}
       {mobileSearchOpen && (
-        <div className="fixed inset-0 z-[60] bg-white md:hidden flex flex-col">
+        <div
+          className="fixed inset-0 z-[60] bg-white md:hidden flex flex-col"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Search products"
+        >
           <div className="flex h-14 items-center gap-2 border-b px-4 flex-shrink-0">
             <button
+              type="button"
               onClick={() => {
                 setMobileSearchOpen(false)
                 setShowSuggestions(false)
               }}
+              aria-label="Close search"
               className="rounded-full p-2 text-gray-600 hover:bg-gray-100"
             >
               <X className="h-5 w-5" />
@@ -408,6 +420,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
             <button
               type="submit"
               onClick={handleSearch}
+              aria-label="Submit search"
               className="rounded-full bg-teal-600 p-2 text-white"
             >
               <Search className="h-4 w-4" />

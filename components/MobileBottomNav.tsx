@@ -88,6 +88,7 @@ export function MobileBottomNav() {
               key={item.href}
               href={item.href}
               prefetch
+              aria-label={item.href === '/cart' && itemCount > 0 ? `${item.label}, ${itemCount} items` : item.label}
               className={`relative flex min-h-[48px] min-w-0 flex-1 touch-manipulation flex-col items-center justify-center py-2 text-xs transition-transform duration-75 will-change-transform active:scale-95 active:opacity-80 ${
                 isActive
                   ? 'text-teal-600'

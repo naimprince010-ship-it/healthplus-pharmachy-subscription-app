@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import Script from 'next/script'
 import type {
   FacebookPixelSettings,
@@ -35,11 +35,10 @@ export default function TrackingScripts({
   ga4,
   gdpr,
 }: TrackingScriptsProps) {
+  const mounted = useSyncExternalStore(subscribeNoop, snapshotClient, snapshotServer)
   const [hasConsent, setHasConsent] = useState(false)
-  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    setMounted(true)
     setHasConsent(getCookieConsent())
 
     // Listen for consent changes
@@ -75,7 +74,7 @@ export default function TrackingScripts({
         <>
           <Script
             id="gtm-script"
-            strategy="afterInteractive"
+            strategy="lazyOnload"
             dangerouslySetInnerHTML={{
               __html: `
                 (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -102,12 +101,12 @@ export default function TrackingScripts({
         <>
           <Script
             id="ga4-script"
-            strategy="afterInteractive"
+            strategy="lazyOnload"
             src={`https://www.googletagmanager.com/gtag/js?id=${ga4.measurementId}`}
           />
           <Script
             id="ga4-config"
-            strategy="afterInteractive"
+            strategy="lazyOnload"
             dangerouslySetInnerHTML={{
               __html: `
                 window.dataLayer = window.dataLayer || [];
@@ -124,7 +123,7 @@ export default function TrackingScripts({
       {shouldLoadTracking && fbPixel.enabled && fbPixel.pixelId && (
         <Script
           id="fb-pixel"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
           dangerouslySetInnerHTML={{
             __html: `
               !function(f,b,e,v,n,t,s)
@@ -146,7 +145,7 @@ export default function TrackingScripts({
       {shouldLoadTracking && tiktokPixel.enabled && tiktokPixel.pixelId && (
         <Script
           id="tiktok-pixel"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
           dangerouslySetInnerHTML={{
             __html: `
               !function (w, d, t) {
