@@ -315,6 +315,23 @@ model Product {
   wishlistItems   WishlistItem[]
   reviews         Review[]
   blogProducts    BlogProduct[] // Products mentioned in blogs
+  cooccurrenceAsAnchor  ProductCooccurrence[] @relation("CooccurrenceAnchor")
+  cooccurrenceAsRelated ProductCooccurrence[] @relation("CooccurrenceRelated")
+}
+
+// Precomputed item–item co-purchase counts (same order) for cart suggestions; rebuilt by cron.
+model ProductCooccurrence {
+  id               String   @id @default(cuid())
+  anchorProductId  String
+  relatedProductId String
+  coOrderCount     Int
+  updatedAt        DateTime @updatedAt
+
+  anchorProduct  Product @relation("CooccurrenceAnchor", fields: [anchorProductId], references: [id], onDelete: Cascade)
+  relatedProduct Product @relation("CooccurrenceRelated", fields: [relatedProductId], references: [id], onDelete: Cascade)
+
+  @@unique([anchorProductId, relatedProductId])
+  @@index([anchorProductId, coOrderCount(sort: Desc)])
 }
 
 model ProductVariant {

@@ -120,54 +120,49 @@ export default function CartPage() {
     }
   }, [])
 
-  // Fetch cart settings and suggestions from admin config
+  const cartLineQuery = useMemo(
+    () =>
+      items
+        .map((i) => i.medicineId || i.productId)
+        .filter(Boolean)
+        .join(','),
+    [items]
+  )
+
+  // Settings + suggestions: অ্যাডমিন ম্যানুয়াল, না হলে সার্ভার ইঞ্জিন (অর্ডার/ক্যাটাগরি)
   useEffect(() => {
+    let cancelled = false
     const fetchCartConfig = async () => {
       try {
-        const res = await fetch('/api/cart/settings')
+        const qs = cartLineQuery
+          ? `?cart=${encodeURIComponent(cartLineQuery)}`
+          : ''
+        const res = await fetch(`/api/cart/settings${qs}`)
         const data = await res.json()
+        if (cancelled) return
         if (data.settings) {
           setSettings(data.settings)
         }
-        if (data.suggestions && data.suggestions.length > 0) {
-          const mapped: SuggestionProduct[] = data.suggestions.map(
-            (s: SuggestionProduct) => ({
-              ...s,
-              catalogKind: 'PRODUCT',
-              productHref: `/products/${s.slug}`,
-            })
-          )
+        const list = data.suggestions as SuggestionProduct[] | undefined
+        if (list?.length) {
+          const mapped: SuggestionProduct[] = list.map((s) => ({
+            ...s,
+            catalogKind: 'PRODUCT',
+            productHref: `/products/${s.slug}`,
+          }))
           setSuggestions(mapped)
         } else {
-          const fallbackRes = await fetch(
-            '/api/products?limit=16&sortBy=stockQuantity&sortOrder=desc'
-          )
-          const fallbackData = await fallbackRes.json()
-          if (fallbackData.products?.length) {
-            setSuggestions(
-              fallbackData.products
-                .slice(0, 12)
-                .map((p: {
-                  id: string
-                  name: string
-                  slug: string
-                  imageUrl?: string | null
-                  sellingPrice?: number | null
-                  price?: number
-                  mrp?: number | null
-                  type?: string
-                  href?: string
-                }) => mapCatalogRowToSuggestion(p))
-            )
-          }
+          setSuggestions([])
         }
       } catch (error) {
         console.error('Failed to fetch cart config:', error)
+        if (cancelled) return
         try {
           const fallbackRes = await fetch(
             '/api/products?limit=16&sortBy=stockQuantity&sortOrder=desc'
           )
           const fallbackData = await fallbackRes.json()
+          if (cancelled) return
           if (fallbackData.products?.length) {
             setSuggestions(
               fallbackData.products
@@ -184,16 +179,21 @@ export default function CartPage() {
                   href?: string
                 }) => mapCatalogRowToSuggestion(p))
             )
+          } else {
+            setSuggestions([])
           }
         } catch {
-          /* ignore */
+          if (!cancelled) setSuggestions([])
         }
       } finally {
-        setSuggestionsReady(true)
+        if (!cancelled) setSuggestionsReady(true)
       }
     }
     fetchCartConfig()
-  }, [])
+    return () => {
+      cancelled = true
+    }
+  }, [cartLineQuery])
 
   const cartLineIds = useMemo(
     () =>
