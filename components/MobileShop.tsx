@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Zap, ChevronRight } from 'lucide-react'
 import { ProductCard } from '@/components/ProductCard'
+import { categoryPlaceholderLetter } from '@/lib/category-placeholder'
 import { getStorefrontImageUrl } from '@/lib/image-url'
 
 export interface MobileShopProduct {
@@ -85,7 +86,9 @@ export function MobileShop({ categoryGrid, flashSaleProducts, categorySections }
                   </div>
                 ) : (
                   <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-teal-100">
-                    <span className="text-lg font-bold text-teal-700">{category.name.charAt(0)}</span>
+                    <span className="text-lg font-bold text-teal-700" aria-hidden>
+                      {categoryPlaceholderLetter(category.name)}
+                    </span>
                   </div>
                 )}
                 <span className="line-clamp-2 min-h-8 text-xs font-medium leading-tight text-gray-800">
@@ -132,21 +135,24 @@ export function MobileShop({ categoryGrid, flashSaleProducts, categorySections }
         <section key={category.id} className="py-4">
           <div className="mb-3 flex items-center justify-between px-4">
             <div className="flex items-center gap-2">
-              {category.sidebarIconUrl ? (
-                <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-gray-100">
-                  <img
-                    src={category.sidebarIconUrl}
-                    alt={category.name}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-              ) : (
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-100">
-                  <span className="text-xs font-semibold text-teal-600">
-                    {category.name.charAt(0)}
-                  </span>
-                </div>
-              )}
+              {(() => {
+                const thumb = getStorefrontImageUrl(category.sidebarIconUrl || category.imageUrl || null)
+                return thumb ? (
+                  <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-gray-100">
+                    <img
+                      src={thumb}
+                      alt={category.name}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-100">
+                    <span className="text-xs font-semibold text-teal-600" aria-hidden>
+                      {categoryPlaceholderLetter(category.name)}
+                    </span>
+                  </div>
+                )
+              })()}
               <h2 className="text-lg font-bold text-gray-900">{category.name}</h2>
             </div>
             <Link

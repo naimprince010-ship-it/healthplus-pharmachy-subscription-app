@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ProductCard } from '@/components/ProductCard'
+import { categoryPlaceholderLetter } from '@/lib/category-placeholder'
 import { getStorefrontImageUrl } from '@/lib/image-url'
 import type { Metadata } from 'next'
 import { GROCERY_CATEGORY_SLUG, isGroceryShopEnabled, isMedicineShopEnabled } from '@/lib/site-features'
@@ -331,13 +332,22 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             </nav>
 
             <div className="flex items-center gap-4">
-              {categoryImageUrl && (
-                <div className="relative h-16 w-16 overflow-hidden rounded-lg">
+              {categoryImageUrl ? (
+                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg">
                   <img
                     src={categoryImageUrl}
                     alt={category.name}
                     className="h-full w-full object-cover"
                   />
+                </div>
+              ) : (
+                <div
+                  className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-teal-100 ring-2 ring-teal-200/80"
+                  aria-hidden
+                >
+                  <span className="text-2xl font-bold text-teal-700">
+                    {categoryPlaceholderLetter(category.name)}
+                  </span>
                 </div>
               )}
               <div>
