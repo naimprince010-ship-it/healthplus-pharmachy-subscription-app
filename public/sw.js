@@ -1,5 +1,5 @@
-const CACHE_NAME = 'halalzi-v2';
-const STATIC_CACHE_NAME = 'halalzi-static-v2';
+const CACHE_NAME = 'halalzi-v3';
+const STATIC_CACHE_NAME = 'halalzi-static-v3';
 
 const STATIC_ASSETS = [
   '/',
@@ -54,8 +54,9 @@ async function networkFirst(request) {
   try {
     const networkResponse = await fetch(request);
     if (networkResponse.ok) {
+      const forCache = networkResponse.clone();
       const cache = await caches.open(CACHE_NAME);
-      cache.put(request, networkResponse.clone());
+      await cache.put(request, forCache);
     }
     return networkResponse;
   } catch (error) {
@@ -75,8 +76,9 @@ async function cacheFirst(request) {
   try {
     const networkResponse = await fetch(request);
     if (networkResponse.ok) {
+      const forCache = networkResponse.clone();
       const cache = await caches.open(STATIC_CACHE_NAME);
-      cache.put(request, networkResponse.clone());
+      await cache.put(request, forCache);
     }
     return networkResponse;
   } catch (error) {
@@ -86,10 +88,11 @@ async function cacheFirst(request) {
 
 async function staleWhileRevalidate(request) {
   const cachedResponse = await caches.match(request);
-  const fetchPromise = fetch(request).then((networkResponse) => {
+  const fetchPromise = fetch(request).then(async (networkResponse) => {
     if (networkResponse.ok) {
-      const cache = caches.open(CACHE_NAME);
-      cache.then((c) => c.put(request, networkResponse.clone()));
+      const forCache = networkResponse.clone();
+      const cache = await caches.open(CACHE_NAME);
+      await cache.put(request, forCache);
     }
     return networkResponse;
   });
