@@ -149,7 +149,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
         <div className={MAIN_CONTAINER}>
           <div className="flex h-14 items-center justify-between gap-2 sm:h-16 sm:gap-4">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 flex-shrink-0 group" aria-label="Halalzi — home">
+            <Link prefetch href="/" className="flex items-center gap-2 flex-shrink-0 group" aria-label="Halalzi — home">
               {/* Icon badge */}
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white transition-transform duration-200 group-hover:scale-105">
                 <span className="text-lg font-bold text-teal-600">H</span>
@@ -174,15 +174,16 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
             <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
               {isMedicineShopEnabled() && (
                 <>
-                  <Link href="/medicines" className="px-3 py-1.5 text-[14px] text-white hover:underline transition-all">ঔষধ</Link>
+                  <Link prefetch href="/medicines" className="px-3 py-1.5 text-[14px] text-white hover:underline transition-all">ঔষধ</Link>
                   <span className="text-white/40 text-sm">|</span>
                 </>
               )}
-              <Link href="/products?category=cosmetics" className="px-3 py-1.5 text-[14px] text-white hover:underline transition-all">কসমেটিক্স</Link>
+              <Link prefetch href="/products?category=cosmetics" className="px-3 py-1.5 text-[14px] text-white hover:underline transition-all">কসমেটিক্স</Link>
               {isGroceryShopEnabled() && (
                 <>
                   <span className="text-white/40 text-sm">|</span>
                   <Link
+                    prefetch
                     href="/products?category=grocery"
                     className="px-3 py-1.5 text-[14px] text-white hover:underline transition-all"
                   >
@@ -334,6 +335,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                     {session ? (
                       <>
                         <Link
+                          prefetch
                           href={profileHref}
                           className="block px-4 py-2 text-sm font-medium text-teal-600 hover:bg-gray-100"
                           onClick={() => setUserMenuOpen(false)}
@@ -341,6 +343,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                           {session.user?.role === 'ADMIN' ? 'Admin Panel' : 'Dashboard'}
                         </Link>
                         <Link
+                          prefetch
                           href="/orders"
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           onClick={() => setUserMenuOpen(false)}
@@ -370,6 +373,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                           Sign In
                         </button>
                         <Link
+                          prefetch
                           href="/auth/signup"
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           onClick={() => setUserMenuOpen(false)}

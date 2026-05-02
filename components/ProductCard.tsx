@@ -49,9 +49,16 @@ interface ProductCardComponentProps {
   product: ProductCardProps
   variant?: 'default' | 'compact'
   className?: string
+  /** First above-the-fold cards only — boosts LCP via next/image preload (few per viewport). */
+  imagePriority?: boolean
 }
 
-export function ProductCard({ product, variant = 'default', className = '' }: ProductCardComponentProps) {
+export function ProductCard({
+  product,
+  variant = 'default',
+  className = '',
+  imagePriority = false,
+}: ProductCardComponentProps) {
   const href =
     product.href ||
     (product.type === 'MEDICINE' ? `/medicines/${product.slug}` : `/products/${product.slug}`)
@@ -129,6 +136,7 @@ export function ProductCard({ product, variant = 'default', className = '' }: Pr
             src={displayImageUrl}
             alt={product.name}
             fill
+            priority={imagePriority}
             sizes={
               isCompact
                 ? '(max-width: 768px) 50vw, 190px'

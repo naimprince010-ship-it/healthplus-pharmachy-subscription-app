@@ -195,7 +195,7 @@ export function MobileHome({ subscriptionPlans, homeSections }: MobileHomeProps)
       <PrescriptionUploadModal isOpen={isPrescriptionOpen} onClose={() => setIsPrescriptionOpen(false)} />
 
       {/* Home Sections - Horizontal Scrollable */}
-      {homeSections.map(({ section, products }) => (
+      {homeSections.map(({ section, products }, sectionIndex) => (
         <section key={section.id} className="py-4">
           <div className="mb-3 flex items-center justify-between px-4">
             <div>
@@ -206,14 +206,15 @@ export function MobileHome({ subscriptionPlans, homeSections }: MobileHomeProps)
                 </span>
               )}
             </div>
-            <Link href={`/products?section=${section.slug}`} className="text-sm font-medium text-teal-600">
+            <Link prefetch href={`/products?section=${section.slug}`} className="text-sm font-medium text-teal-600">
               View All
             </Link>
           </div>
           <div className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide">
-            {products.map((product) => (
+            {products.map((product, productIndex) => (
               <div key={product.id} className="flex-shrink-0 w-40">
                 <ProductCard
+                  imagePriority={sectionIndex === 0 && productIndex < 4}
                   product={{
                     id: product.id,
                     type: product.type || 'GENERAL',

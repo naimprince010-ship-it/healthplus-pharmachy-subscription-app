@@ -92,6 +92,7 @@ export default async function LeftCategorySidebar() {
       <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
         {/* FLASH SALE Row */}
         <Link
+          prefetch
           href="/flash-sale"
           className="flex items-center justify-between border-b border-orange-100 bg-gradient-to-r from-orange-500 to-red-500 px-4 py-3 transition-all hover:from-orange-600 hover:to-red-600"
         >
@@ -116,6 +117,7 @@ export default async function LeftCategorySidebar() {
             const Icon = getCategoryIcon(category.name)
             return (
               <Link
+                prefetch
                 key={category.id}
                 href={href}
                 className="group relative flex items-center justify-between px-3 py-2.5 transition-all duration-200 hover:bg-teal-50/60"
@@ -155,6 +157,7 @@ export default async function LeftCategorySidebar() {
               })
               return (
                 <Link
+                  prefetch
                   key={product.id}
                   href={`/${product.type === 'MEDICINE' ? 'medicines' : 'products'}/${product.slug}`}
                   className="group flex items-center gap-3 p-3 transition-all hover:bg-teal-50/50"
@@ -196,7 +199,7 @@ export default async function LeftCategorySidebar() {
             })}
           </div>
 
-          <Link href="/products" className="flex items-center justify-center gap-1 border-t border-gray-50 py-2.5 text-[12px] font-bold text-teal-600 transition-colors hover:bg-teal-50 hover:text-teal-700">
+          <Link prefetch href="/products" className="flex items-center justify-center gap-1 border-t border-gray-50 py-2.5 text-[12px] font-bold text-teal-600 transition-colors hover:bg-teal-50 hover:text-teal-700">
             সব দেখুন <ChevronRight className="h-3.5 w-3.5" />
           </Link>
         </div>
