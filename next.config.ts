@@ -4,6 +4,11 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['@prisma/client', 'bcryptjs'],
   turbopack: {},
   images: {
+    // next/image rejects same-origin URLs with ?query unless explicitly allowed (e.g. /api/image-proxy?url=...).
+    localPatterns: [
+      { pathname: "/api/image-proxy" },
+      { pathname: "/api/image-proxy/**" },
+    ],
     remotePatterns: [
       {
         protocol: 'https',

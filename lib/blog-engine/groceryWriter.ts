@@ -6,6 +6,7 @@ import {
   FAQSchema,
 } from './types'
 import { getOpenAIClient } from './openaiClient' // Bug #12 fix: shared client
+import { runAgenticChat } from './agent'
 
 const VALID_ROLES = new Set(['recommended', 'ingredient', 'alternative', 'combo', 'step'])
 
@@ -76,7 +77,7 @@ ${productsByBudget.unset.slice(0, 15).map(p => `- ${p.name} (ID: ${p.id}, ৳${p
 TOPIC: ${topic.title}
 ${topic.description ? `DESCRIPTION: ${topic.description}` : ''}
 
-AVAILABLE PRODUCTS:
+AVAILABLE PRODUCTS (Quick Reference):
 ${productContext}
 
 EXISTING BLOG SLUGS (for internal linking — ONLY use slugs from this list, do NOT invent slugs):
@@ -114,7 +115,8 @@ RESPOND IN THIS EXACT JSON FORMAT:
 }
 
 IMPORTANT:
-- Only use product IDs from the available products list above
+- If you need a specific product that is not in the Quick Reference list, USE the searchProducts tool to find it in the database.
+- Only use product IDs from the available products list above OR from the results of your searchProducts tool calls. NEVER invent IDs.
 - role must be one of: recommended, ingredient, alternative, combo, step
 - Include products from different budget levels for comparison
 - If important product categories are missing, add to missingProducts
@@ -123,19 +125,11 @@ IMPORTANT:
 - Write naturally in Bangla, not translated English
 - Focus on helping Bangladeshi families make smart grocery choices`
 
-    const openai = getOpenAIClient()
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: 'You are a grocery shopping expert content writer for a Bangladeshi e-commerce platform. Always respond with valid JSON.' },
-        { role: 'user', content: prompt },
-      ],
-      temperature: 0.7,
-      max_tokens: 4000,
-      response_format: { type: 'json_object' },
-    })
+    const content = await runAgenticChat(
+      'You are a grocery shopping expert content writer for a Bangladeshi e-commerce platform. Always respond with valid JSON.',
+      prompt
+    )
 
-    const content = response.choices[0]?.message?.content
     if (!content) {
       return { success: false, error: 'No content generated', products: [], missingProducts: [] }
     }

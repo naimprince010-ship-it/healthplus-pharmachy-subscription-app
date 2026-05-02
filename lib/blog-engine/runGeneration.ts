@@ -433,10 +433,37 @@ export async function runBlogDraftGeneration(blogId: string): Promise<RunBlogDra
       }
     }
 
-    const validProductIds = new Set(selectedProducts.map((p) => p.id))
+    // Collect any product IDs the AI referenced that weren't in our pre-fetched selectedProducts.
+    // This happens when the AI used the searchProducts tool to find products outside the Quick Reference.
+    const preSelectedIds = new Set(selectedProducts.map((p) => p.id))
+    const extraProductIds = result.products
+      .map((p) => p.productId)
+      .filter((id) => !preSelectedIds.has(id))
+
+    let extraProducts: typeof selectedProducts = []
+    if (extraProductIds.length > 0) {
+      extraProducts = await prisma.product.findMany({
+        where: { id: { in: extraProductIds }, isActive: true },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          sellingPrice: true,
+          aiTags: true,
+          isIngredient: true,
+          ingredientType: true,
+          budgetLevel: true,
+          category: { select: { name: true } },
+        },
+      })
+      console.log(`[BlogEngine] AI found ${extraProducts.length} extra products via tool calls`)
+    }
+
+    const allKnownProducts = [...selectedProducts, ...extraProducts]
+    const validProductIds = new Set(allKnownProducts.map((p) => p.id))
     const validProducts = result.products.filter((p) => validProductIds.has(p.productId))
     const dedupedValidProducts = Array.from(new Map(validProducts.map((p) => [p.productId, p])).values())
-    const productById = new Map(selectedProducts.map((p) => [p.id, p]))
+    const productById = new Map(allKnownProducts.map((p) => [p.id, p]))
     const uniqueInlineProducts = Array.from(
       new Map(
         dedupedValidProducts
@@ -446,7 +473,17 @@ export async function runBlogDraftGeneration(blogId: string): Promise<RunBlogDra
       ).values()
     )
 
-    const linkedContentMd = linkProductMentionsInMarkdown(result.content.contentMd, uniqueInlineProducts)
+    // Pass ALL known products for linking so any product name mentioned in blog text gets
+    // auto-linked, even if AI forgot to include it in recommendedProducts JSON.
+    const allProductsForLinking = Array.from(
+      new Map(
+        allKnownProducts
+          .filter((p) => !!p.name && !!p.slug)
+          .map((p) => [p.id, { name: p.name, slug: p.slug }])
+      ).values()
+    )
+
+    const linkedContentMd = linkProductMentionsInMarkdown(result.content.contentMd, allProductsForLinking)
     const aiCoverUrl = await generateBlogCoverImageUrl(
       blogId,
       blog.type,

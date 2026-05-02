@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { ShoppingCart, ChevronDown } from 'lucide-react'
 import { useCart, buildUnitLabelBn } from '@/contexts/CartContext'
 import { trackAddToCart } from '@/lib/trackEvent'
+import { logProductInteraction } from '@/lib/logProductInteraction'
 import { getEffectivePrices } from '@/lib/pricing'
 
 interface ProductVariant {
@@ -69,6 +70,11 @@ export function ProductDetailClient({
   tabletsPerStrip,
 }: ProductDetailClientProps) {
   const { addItem } = useCart()
+
+  useEffect(() => {
+    logProductInteraction({ kind: 'VIEW_ITEM', productId })
+  }, [productId])
+
   const [quantity, setQuantity] = useState(1)
   const [isAdding, setIsAdding] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -162,6 +168,8 @@ export function ProductDetailClient({
       price,
       quantity,
     })
+
+    logProductInteraction({ kind: 'ADD_TO_CART', productId })
 
     setTimeout(() => setIsAdding(false), 1000)
   }

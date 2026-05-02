@@ -1,0 +1,422 @@
+import { Prisma, ProductInteractionKind } from '@prisma/client'
+import { prisma } from '@/lib/prisma'
+import { GROCERY_CATEGORY_SLUG, isGroceryShopEnabled, isMedicineShopEnabled } from '@/lib/site-features'
+
+export type CartSuggestionProduct = {
+  id: string
+  name: string
+  slug: string
+  imageUrl: string | null
+  price: number
+  mrp: number | null
+}
+
+const DEFAULT_LIMIT = 12
+const CO_PURCHASE_SAMPLE = 40
+/** লগইন ইউজারের পুরনো কেনা পণ্য — co-purchase anchor হিসেবে */
+const MAX_HISTORY_ANCHORS = 24
+/** লগড ইন্টারঅ্যাকশন লগ থেকে ভিউ/কার্ট সিগন্যাল — সিড ও আগের সারিতে বুস্ট */
+const MAX_INTERACTION_ANCHORS = 24
+const INTERACTION_LOG_SCAN = 320
+
+function buildCatalogWhere(extra: Record<string, unknown> = {}): Record<string, unknown> {
+  const w: Record<string, unknown> = {
+    deletedAt: null,
+    isActive: true,
+    stockQuantity: { gt: 0 },
+    ...extra,
+  }
+  if (!isMedicineShopEnabled()) {
+    w.type = 'GENERAL'
+  }
+  if (!isGroceryShopEnabled()) {
+    w.NOT = { category: { slug: GROCERY_CATEGORY_SLUG } }
+  }
+  return w
+}
+
+/**
+ * Cart লাইন আইডি (productId বা medicineId) থেকে কনটেক্সট — ইঞ্জিন সিড ও এক্সক্লুড।
+ */
+export async function resolveCartContextForSuggestions(rawIds: string[]): Promise<{
+  productIdsInCart: string[]
+  categoryIdsFromLegacyMedicine: string[]
+}> {
+  const ids = [...new Set(rawIds.filter(Boolean))]
+  if (ids.length === 0) {
+    return { productIdsInCart: [], categoryIdsFromLegacyMedicine: [] }
+  }
+
+  const [products, medicines] = await Promise.all([
+    prisma.product.findMany({
+      where: { id: { in: ids }, deletedAt: null },
+      select: { id: true },
+    }),
+    prisma.medicine.findMany({
+      where: { id: { in: ids } },
+      select: { productId: true, categoryId: true },
+    }),
+  ])
+
+  const productIdsInCart = new Set<string>()
+  const categoryIdsFromLegacyMedicine = new Set<string>()
+
+  for (const p of products) {
+    productIdsInCart.add(p.id)
+  }
+  for (const m of medicines) {
+    if (m.productId) {
+      productIdsInCart.add(m.productId)
+    } else {
+      categoryIdsFromLegacyMedicine.add(m.categoryId)
+    }
+  }
+
+  return {
+    productIdsInCart: [...productIdsInCart],
+    categoryIdsFromLegacyMedicine: [...categoryIdsFromLegacyMedicine],
+  }
+}
+
+/** ইউজারের সাম্প্রতিক অর্ডার থেকে Product আইডি — সরাসরি `productId` বা লিগেসি `medicineId` → `Medicine.productId` */
+export async function getRecentPurchasedProductIds(
+  userId: string,
+  take: number
+): Promise<string[]> {
+  if (!userId || take <= 0) return []
+
+  const rows = await prisma.orderItem.findMany({
+    where: {
+      order: { userId },
+      OR: [{ productId: { not: null } }, { medicineId: { not: null } }],
+    },
+    select: {
+      productId: true,
+      medicineId: true,
+      order: { select: { createdAt: true } },
+    },
+    orderBy: { order: { createdAt: 'desc' } },
+    take: 400,
+  })
+
+  const medicineIdsNeedingResolve = new Set<string>()
+  for (const r of rows) {
+    if (!r.productId && r.medicineId) {
+      medicineIdsNeedingResolve.add(r.medicineId)
+    }
+  }
+
+  let medicineToProduct = new Map<string, string>()
+  if (medicineIdsNeedingResolve.size > 0) {
+    const meds = await prisma.medicine.findMany({
+      where: {
+        id: { in: [...medicineIdsNeedingResolve] },
+        productId: { not: null },
+      },
+      select: { id: true, productId: true },
+    })
+    medicineToProduct = new Map(
+      meds.map((m) => [m.id, m.productId!])
+    )
+  }
+
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const r of rows) {
+    const pid =
+      r.productId ?? (r.medicineId ? medicineToProduct.get(r.medicineId) : undefined)
+    if (!pid || seen.has(pid)) continue
+    seen.add(pid)
+    out.push(pid)
+    if (out.length >= take) break
+  }
+  return out
+}
+
+/**
+ * সাম্প্রতিক `ProductInteractionLog` — ADD_TO_CART কে ভিউ এর চেয়ে বেশি ওজন, একই ওজনে নতুন ইভেন্ট আগে।
+ */
+export async function getRecentInteractionProductIds(
+  userId: string,
+  take: number
+): Promise<string[]> {
+  if (!userId || take <= 0) return []
+
+  const rows = await prisma.productInteractionLog.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'desc' },
+    take: INTERACTION_LOG_SCAN,
+    select: { productId: true, kind: true },
+  })
+
+  const weight = new Map<string, number>()
+  const firstIdx = new Map<string, number>()
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i]
+    if (!firstIdx.has(r.productId)) firstIdx.set(r.productId, i)
+    const delta =
+      r.kind === ProductInteractionKind.ADD_TO_CART ? 4 : 1
+    weight.set(r.productId, (weight.get(r.productId) || 0) + delta)
+  }
+
+  const unique = [...new Set(rows.map((r) => r.productId))]
+  unique.sort((a, b) => {
+    const diff = (weight.get(b) || 0) - (weight.get(a) || 0)
+    if (diff !== 0) return diff
+    return (firstIdx.get(a) ?? 0) - (firstIdx.get(b) ?? 0)
+  })
+
+  return unique.slice(0, take)
+}
+
+async function fetchProductsByIdsOrdered(ids: string[]): Promise<CartSuggestionProduct[]> {
+  if (ids.length === 0) return []
+  const rows = await prisma.product.findMany({
+    where: {
+      ...buildCatalogWhere(),
+      id: { in: ids },
+    },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      imageUrl: true,
+      sellingPrice: true,
+      mrp: true,
+    },
+  })
+  const map = new Map(rows.map((r) => [r.id, r]))
+  const out: CartSuggestionProduct[] = []
+  for (const id of ids) {
+    const r = map.get(id)
+    if (!r) continue
+    out.push({
+      id: r.id,
+      name: r.name,
+      slug: r.slug,
+      imageUrl: r.imageUrl,
+      price: r.sellingPrice,
+      mrp: r.mrp,
+    })
+  }
+  return out
+}
+
+/**
+ * ক্রনে বিল্ড করা ProductCooccurrence টেবিল থেকে item–item র্যাঙ্ক
+ * (একাধিক anchor থেকে related স্কোর যোগ)।
+ */
+async function coPurchaseFromMaterialized(
+  seedProductIds: string[],
+  exclude: Set<string>,
+  take: number
+): Promise<string[]> {
+  if (seedProductIds.length === 0 || take <= 0) return []
+
+  const rows = await prisma.productCooccurrence.findMany({
+    where: {
+      anchorProductId: { in: seedProductIds },
+      ...(exclude.size > 0
+        ? { relatedProductId: { notIn: [...exclude] } }
+        : {}),
+    },
+    select: { relatedProductId: true, coOrderCount: true },
+  })
+
+  const score = new Map<string, number>()
+  for (const r of rows) {
+    if (exclude.has(r.relatedProductId)) continue
+    score.set(
+      r.relatedProductId,
+      (score.get(r.relatedProductId) || 0) + r.coOrderCount
+    )
+  }
+
+  return [...score.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([id]) => id)
+    .slice(0, take)
+}
+
+/** একই অর্ডারে একসাথে কেনা পণ্য — লাইভ SQL (টপ-আপ / টেবিল খালি হলে) */
+async function coPurchaseProductIds(
+  seedProductIds: string[],
+  exclude: Set<string>
+): Promise<string[]> {
+  if (seedProductIds.length === 0) return []
+
+  const rows = await prisma.$queryRaw<Array<{ productId: string; cnt: bigint }>>`
+    SELECT oi2."productId", COUNT(*)::bigint AS cnt
+    FROM "OrderItem" oi1
+    INNER JOIN "OrderItem" oi2
+      ON oi1."orderId" = oi2."orderId"
+      AND oi2."productId" IS NOT NULL
+    WHERE oi1."productId" IN (${Prisma.join(seedProductIds)})
+      AND oi2."productId" IS NOT NULL
+      AND oi2."productId" <> oi1."productId"
+    GROUP BY oi2."productId"
+    ORDER BY cnt DESC
+    LIMIT ${CO_PURCHASE_SAMPLE}
+  `
+
+  const ordered: string[] = []
+  for (const r of rows) {
+    if (exclude.has(r.productId)) continue
+    ordered.push(r.productId)
+  }
+  return ordered
+}
+
+async function categoryNeighborIds(
+  productIdsInCart: string[],
+  extraCategoryIds: string[],
+  exclude: Set<string>,
+  take: number
+): Promise<string[]> {
+  const seeds = await prisma.product.findMany({
+    where: { id: { in: productIdsInCart } },
+    select: { categoryId: true },
+  })
+  const catIds = new Set<string>()
+  for (const s of seeds) {
+    catIds.add(s.categoryId)
+  }
+  for (const c of extraCategoryIds) {
+    catIds.add(c)
+  }
+  if (catIds.size === 0) return []
+
+  const excludeList = [...exclude]
+  const rows = await prisma.product.findMany({
+    where: {
+      ...buildCatalogWhere(),
+      categoryId: { in: [...catIds] },
+      ...(excludeList.length > 0 ? { id: { notIn: excludeList } } : {}),
+    },
+    select: { id: true },
+    orderBy: [{ popularityScore: 'desc' }, { stockQuantity: 'desc' }],
+    take,
+  })
+  return rows.map((r) => r.id)
+}
+
+async function popularityFallbackIds(exclude: Set<string>, take: number): Promise<string[]> {
+  const excludeList = [...exclude]
+  const rows = await prisma.product.findMany({
+    where: {
+      ...buildCatalogWhere(),
+      ...(excludeList.length > 0 ? { id: { notIn: excludeList } } : {}),
+    },
+    select: { id: true },
+    orderBy: [{ popularityScore: 'desc' }, { stockQuantity: 'desc' }],
+    take,
+  })
+  return rows.map((r) => r.id)
+}
+
+/**
+ * ম্যানুয়াল সাজেশন না থাকলে: (লগইন হলে) ইন্টারঅ্যাকশন-অ্যাঙ্কর co-purchase বুস্ট → ম্যাটেরিয়ালাইজড co-purchase → লাইভ → ক্যাটাগরি → পপুলারিটি।
+ * `userId` থাকলে কেনা ইতিহাস + ভিউ/কার্ট লগ দুটোই সিড।
+ */
+export async function getEngineCartSuggestions(options: {
+  cartLineIds: string[]
+  limit?: number
+  userId?: string | null
+}): Promise<CartSuggestionProduct[]> {
+  const limit = options.limit ?? DEFAULT_LIMIT
+  const { productIdsInCart, categoryIdsFromLegacyMedicine } =
+    await resolveCartContextForSuggestions(options.cartLineIds)
+
+  let historyAnchors: string[] = []
+  let interactionAnchors: string[] = []
+  if (options.userId) {
+    ;[historyAnchors, interactionAnchors] = await Promise.all([
+      getRecentPurchasedProductIds(options.userId, MAX_HISTORY_ANCHORS),
+      getRecentInteractionProductIds(options.userId, MAX_INTERACTION_ANCHORS),
+    ])
+  }
+
+  const seedForCoPurchase = [
+    ...new Set([
+      ...productIdsInCart,
+      ...historyAnchors,
+      ...interactionAnchors,
+    ]),
+  ]
+  const categorySeedProducts = [
+    ...new Set([
+      ...productIdsInCart,
+      ...historyAnchors,
+      ...interactionAnchors,
+    ]),
+  ]
+
+  const exclude = new Set(productIdsInCart)
+  const orderedIds: string[] = []
+
+  const pushUnique = (ids: string[]) => {
+    for (const id of ids) {
+      if (exclude.has(id) || orderedIds.includes(id)) continue
+      orderedIds.push(id)
+      if (orderedIds.length >= limit) return
+    }
+  }
+
+  // 0) ইন্টারঅ্যাকশন অ্যাঙ্কার থেকে co-purchase আগে (ব্রাউজ/অ্যাড সিগন্যাল বুস্ট)
+  if (orderedIds.length < limit && interactionAnchors.length > 0) {
+    const coInt = await coPurchaseFromMaterialized(
+      interactionAnchors,
+      exclude,
+      CO_PURCHASE_SAMPLE
+    )
+    pushUnique(coInt)
+  }
+
+  // 1) ম্যাটেরিয়ালাইজড co-purchase — কার্ট + ইতিহাস + ইন্টারঅ্যাকশন সিড
+  const coMat = await coPurchaseFromMaterialized(
+    seedForCoPurchase,
+    exclude,
+    CO_PURCHASE_SAMPLE
+  )
+  pushUnique(coMat)
+
+  // 2) লাইভ অর্ডার জয়েন (টেবিল খালি / নতুন পণ্য টপ-আপ)
+  if (orderedIds.length < limit && seedForCoPurchase.length > 0) {
+    const coLive = await coPurchaseProductIds(
+      seedForCoPurchase,
+      new Set([...exclude, ...orderedIds])
+    )
+    pushUnique(coLive)
+  }
+
+  if (orderedIds.length < limit) {
+    // 3) কার্ট + (লগইন হলে) ইতিহাসের ক্যাটাগরি / লিগেসি মেডিসিন ক্যাটাগরি
+    const need = limit - orderedIds.length
+    const neighbor = await categoryNeighborIds(
+      categorySeedProducts,
+      categoryIdsFromLegacyMedicine,
+      new Set([...exclude, ...orderedIds]),
+      need + 8
+    )
+    pushUnique(neighbor)
+  }
+
+  if (orderedIds.length < limit) {
+    const need = limit - orderedIds.length
+    const pop = await popularityFallbackIds(
+      new Set([...exclude, ...orderedIds]),
+      need + 8
+    )
+    pushUnique(pop)
+  }
+
+  const slice = orderedIds.slice(0, limit)
+  const products = await fetchProductsByIdsOrdered(slice)
+  const byId = new Map(products.map((p) => [p.id, p]))
+  const result: CartSuggestionProduct[] = []
+  for (const id of slice) {
+    const p = byId.get(id)
+    if (p) result.push(p)
+  }
+  return result
+}

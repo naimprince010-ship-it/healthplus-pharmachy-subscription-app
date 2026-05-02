@@ -6,6 +6,7 @@ import {
   FAQSchema,
 } from './types'
 import { getOpenAIClient } from './openaiClient' // Bug #12 fix: shared client
+import { runAgenticChat } from './agent'
 
 const VALID_ROLES = new Set(['recommended', 'ingredient', 'alternative', 'combo', 'step'])
 
@@ -38,7 +39,7 @@ export async function generateRecipeBlog(context: WriterContext): Promise<BlogGe
 TOPIC: ${topic.title}
 ${topic.description ? `DESCRIPTION: ${topic.description}` : ''}
 
-AVAILABLE INGREDIENTS BY TYPE:
+AVAILABLE INGREDIENTS BY TYPE (Quick Reference):
 ${productContext}
 
 EXISTING BLOG SLUGS (for internal linking — ONLY use slugs from this list, do NOT invent slugs):
@@ -85,7 +86,8 @@ RESPOND IN THIS EXACT JSON FORMAT:
 }
 
 IMPORTANT:
-- Only use product IDs from the available ingredients list above
+- If you need a specific product that is not in the Quick Reference list, USE the searchProducts tool to find it in the database.
+- Only use product IDs from the available ingredients list above OR from the results of your searchProducts tool calls. NEVER invent IDs.
 - role must be one of: recommended, ingredient, alternative, combo, step
 - Map EVERY ingredient in the recipe to a product if available
 - If an ingredient is not available, add to missingProducts
@@ -95,19 +97,11 @@ IMPORTANT:
 - Write naturally in Bangla, not translated English
 - Focus on traditional Bangladeshi recipes and cooking methods`
 
-    const openai = getOpenAIClient()
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: 'You are a Bangladeshi recipe expert content writer. Always respond with valid JSON.' },
-        { role: 'user', content: prompt },
-      ],
-      temperature: 0.7,
-      max_tokens: 4000,
-      response_format: { type: 'json_object' },
-    })
+    const content = await runAgenticChat(
+      'You are a Bangladeshi recipe expert content writer. Always respond with valid JSON.',
+      prompt
+    )
 
-    const content = response.choices[0]?.message?.content
     if (!content) {
       return { success: false, error: 'No content generated', products: [], missingProducts: [] }
     }

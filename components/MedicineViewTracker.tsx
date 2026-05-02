@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { trackProductView } from '@/lib/trackEvent'
+import { logProductInteraction } from '@/lib/logProductInteraction'
 
 interface MedicineViewTrackerProps {
   medicineId: string
@@ -23,6 +24,7 @@ export function MedicineViewTracker({
       item_category: category,
       price,
     })
+    logProductInteraction({ kind: 'VIEW_ITEM', medicineId })
   }, [medicineId, name, price, category])
 
   return null

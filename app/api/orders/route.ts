@@ -6,7 +6,15 @@ import { prisma } from '@/lib/prisma'
 import { sendSMS, sendEmail } from '@/lib/notifications'
 import { processOrderOtp } from '@/lib/settings/server'
 import { resolveDeliveryChargeByZoneName } from '@/lib/delivery-charge'
-import { GROCERY_CATEGORY_SLUG, isGroceryShopEnabled, isMedicineShopEnabled } from '@/lib/site-features'
+import { getCheckoutPricingQuote } from '@/lib/order-pricing-quote'
+import {
+  deductionFromCouponRule,
+  validateCouponApplicability,
+} from '@/lib/coupon-checkout'
+import {
+  initialPaymentStatus,
+  orderReadyForFulfillment,
+} from '@/lib/order-payment-status'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -27,6 +35,7 @@ const createOrderSchema = z.object({
   ).min(1),
   paymentMethod: z.enum(['COD', 'ONLINE']),
   notes: z.string().optional(),
+  couponCode: z.string().optional(),
 }).refine((data) => data.addressId || data.zoneId, {
   message: 'Either addressId or zoneId must be provided',
 })
@@ -51,7 +60,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { addressId, zoneId, items, paymentMethod, notes } = validationResult.data
+    const { addressId, zoneId, items, paymentMethod, notes, couponCode } =
+      validationResult.data
 
     let address
     let finalAddressId: string
@@ -107,65 +117,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Address or zone required' }, { status: 400 })
     }
 
-    // Separate membership items from regular items
-    const membershipItems = items.filter(item => item.membershipPlanId)
-    const regularItems = items.filter(item => !item.membershipPlanId)
-
-    const medicineIds = regularItems.filter(item => item.medicineId).map(item => item.medicineId!)
-    const productIds = regularItems.filter(item => item.productId).map(item => item.productId!)
-    const membershipPlanIds = membershipItems.map(item => item.membershipPlanId!)
-    
-    const [medicines, products, membershipPlans] = await Promise.all([
-      medicineIds.length > 0 ? prisma.medicine.findMany({
-        where: { id: { in: medicineIds } },
-      }) : Promise.resolve([]),
-      productIds.length > 0
-        ? prisma.product.findMany({
-            where: { id: { in: productIds } },
-            include: { category: { select: { slug: true } } },
-          })
-        : Promise.resolve([]),
-      membershipPlanIds.length > 0 ? prisma.membershipPlan.findMany({
-        where: { id: { in: membershipPlanIds }, isActive: true },
-      }) : Promise.resolve([]),
-    ])
-
-    if (medicines.length !== medicineIds.length || products.length !== productIds.length) {
-      return NextResponse.json({ error: 'Some items not found' }, { status: 400 })
+    const quote = await getCheckoutPricingQuote({
+      userId: session.user.id,
+      items,
+    })
+    if (!quote.ok) {
+      return NextResponse.json(
+        { error: quote.error },
+        { status: quote.status ?? 400 }
+      )
     }
 
-    if (!isMedicineShopEnabled()) {
-      if (medicineIds.length > 0) {
-        return NextResponse.json(
-          { error: 'Medicine orders are temporarily unavailable' },
-          { status: 403 },
-        )
-      }
-      const blockedMedProduct = products.find((p) => p.type === 'MEDICINE')
-      if (blockedMedProduct) {
-        return NextResponse.json(
-          { error: 'Medicine products are temporarily unavailable' },
-          { status: 403 },
-        )
-      }
-    }
+    const {
+      membershipItems,
+      regularItems,
+      medicines,
+      products,
+      membershipPlans,
+      subtotal,
+      membershipDiscount,
+      eligibleForCoupon,
+      activeMembership,
+    } = quote
 
-    if (!isGroceryShopEnabled()) {
-      const hasGrocery = products.some((p) => p.category?.slug === GROCERY_CATEGORY_SLUG)
-      if (hasGrocery) {
-        return NextResponse.json(
-          { error: 'Grocery is temporarily unavailable' },
-          { status: 403 },
-        )
-      }
-    }
-
-    if (membershipPlans.length !== membershipPlanIds.length) {
-      return NextResponse.json({ error: 'Invalid membership plan' }, { status: 400 })
-    }
-
-    // Check if user has an active membership (for renew/upgrade/downgrade)
-    let existingActiveMembership: { id: string; planId: string; endDate: Date } | null = null
+    let existingActiveMembership: {
+      id: string
+      planId: string
+      endDate: Date
+    } | null = null
     if (membershipItems.length > 0) {
       existingActiveMembership = await prisma.userMembership.findFirst({
         where: {
@@ -181,110 +160,205 @@ export async function POST(request: NextRequest) {
       })
     }
 
-        const membership = await prisma.userMembership.findFirst({
-          where: {
+    const cartSettings = await prisma.cartPageSettings.findFirst()
+    const freeDeliveryThreshold =
+      cartSettings?.freeDeliveryThreshold ?? 499
+    const qualifiesForFreeDelivery = subtotal >= freeDeliveryThreshold
+    const deliveryCharge = qualifiesForFreeDelivery
+      ? 0
+      : resolveDeliveryChargeByZoneName(address.zone.name)
+
+    const normalizedCoupon = couponCode?.trim().toUpperCase() || ''
+    let couponPreviewDiscount = 0
+
+    if (normalizedCoupon) {
+      const cPreview = await prisma.coupon.findUnique({
+        where: { code: normalizedCoupon },
+      })
+      if (!cPreview) {
+        return NextResponse.json(
+          { error: 'কুপন কোড সঠিক নয়' },
+          { status: 400 }
+        )
+      }
+      const userUses = await prisma.couponUsage.count({
+        where: {
+          couponId: cPreview.id,
+          userId: session.user.id,
+        },
+      })
+      const chk = validateCouponApplicability({
+        coupon: cPreview,
+        eligibleSubtotal: eligibleForCoupon,
+        userUsageCount: userUses,
+      })
+      if (!chk.ok) {
+        return NextResponse.json({ error: chk.message }, { status: 400 })
+      }
+      couponPreviewDiscount = deductionFromCouponRule(
+        cPreview,
+        eligibleForCoupon
+      )
+    }
+
+    const total =
+      subtotal - membershipDiscount - couponPreviewDiscount + deliveryCharge
+
+    const orderNumber = `ORD-${Date.now()}`
+    const payStatus = initialPaymentStatus(paymentMethod)
+    const membershipPlanName = activeMembership?.plan.name ?? null
+
+    let order
+
+    try {
+      order = await prisma.$transaction(async (tx) => {
+        let appliedCouponCode: string | null = null
+        let couponDiscountAmount = 0
+        let couponIdForUsage: string | null = null
+
+        if (normalizedCoupon) {
+          const c = await tx.coupon.findUnique({
+            where: { code: normalizedCoupon },
+          })
+          if (!c || !c.isActive) {
+            throw new Error('COUPON_INVALID')
+          }
+          const userUses = await tx.couponUsage.count({
+            where: { couponId: c.id, userId: session.user.id },
+          })
+          const chk = validateCouponApplicability({
+            coupon: c,
+            eligibleSubtotal: eligibleForCoupon,
+            userUsageCount: userUses,
+          })
+          if (!chk.ok) {
+            throw new Error('COUPON_INVALID')
+          }
+          const cd = deductionFromCouponRule(c, eligibleForCoupon)
+          if (Math.abs(cd - couponPreviewDiscount) > 0.02) {
+            throw new Error('COUPON_CHANGED')
+          }
+          if (c.usageLimit != null && c.usageCount >= c.usageLimit) {
+            throw new Error('COUPON_EXHAUSTED')
+          }
+          await tx.coupon.update({
+            where: { id: c.id },
+            data: { usageCount: { increment: 1 } },
+          })
+          appliedCouponCode = c.code
+          couponDiscountAmount = cd
+          couponIdForUsage = c.id
+        }
+
+        const expectedTotal =
+          subtotal - membershipDiscount - couponDiscountAmount + deliveryCharge
+        if (Math.abs(expectedTotal - total) > 0.02) {
+          throw Object.assign(new Error('TOTAL_MISMATCH'), { code: '409' })
+        }
+
+        const created = await tx.order.create({
+          data: {
+            orderNumber,
             userId: session.user.id,
-            isActive: true,
-            endDate: { gte: new Date() },
+            addressId: finalAddressId,
+            zoneId: finalZoneId,
+            subtotal,
+            discount: membershipDiscount,
+            membershipDiscountAmount:
+              membershipDiscount > 0 ? membershipDiscount : null,
+            membershipPlanName,
+            appliedCouponCode,
+            couponDiscountAmount,
+            deliveryCharge,
+            total: expectedTotal,
+            paymentMethod,
+            paymentStatus: payStatus,
+            status: 'PENDING',
+            notes,
+            items: {
+              create: regularItems.map((item) => {
+                if (item.medicineId) {
+                  const medicine = medicines.find(
+                    (m) => m.id === item.medicineId
+                  )!
+                  const price = medicine.discountPrice || medicine.price
+                  return {
+                    medicineId: item.medicineId,
+                    quantity: item.quantity,
+                    price,
+                    discount: 0,
+                    total: price * item.quantity,
+                  }
+                }
+                const product = products.find((p) => p.id === item.productId)!
+                const price = product.sellingPrice
+                return {
+                  productId: item.productId,
+                  quantity: item.quantity,
+                  price,
+                  discount: 0,
+                  total: price * item.quantity,
+                }
+              }),
+            },
           },
           include: {
-            plan: true,
+            items: {
+              include: {
+                medicine: true,
+                product: true,
+              },
+            },
+            user: {
+              select: {
+                name: true,
+                phone: true,
+              },
+            },
           },
         })
 
-        // Fetch cart settings to get free delivery threshold
-        const cartSettings = await prisma.cartPageSettings.findFirst()
-        const freeDeliveryThreshold = cartSettings?.freeDeliveryThreshold ?? 499
+        if (couponIdForUsage) {
+          await tx.couponUsage.create({
+            data: {
+              couponId: couponIdForUsage,
+              userId: session.user.id,
+              orderId: created.id,
+              discount: couponDiscountAmount,
+            },
+          })
+        }
 
-        // Calculate subtotal for regular items only (membership items are handled separately)
-        const regularSubtotal = regularItems.reduce((sum, item) => {
-      if (item.medicineId) {
-        const medicine = medicines.find(m => m.id === item.medicineId)
-        if (!medicine) return sum
-        const price = medicine.discountPrice || medicine.price
-        return sum + price * item.quantity
-      } else if (item.productId) {
-        const product = products.find(p => p.id === item.productId)
-        if (!product) return sum
-        const price = product.sellingPrice
-        return sum + price * item.quantity
+        return created
+      })
+    } catch (e) {
+      const err = e as Error & { message: string }
+      if (err.message === 'COUPON_INVALID' || err.message === 'COUPON_CHANGED') {
+        return NextResponse.json(
+          {
+            error:
+              'কুপন প্রযোজ্য নয়। কোড আবার লাগিয়ে চেষ্টা করুন।',
+          },
+          { status: 400 }
+        )
       }
-      return sum
-    }, 0)
-
-        // Calculate membership total
-        const membershipTotal = membershipItems.reduce((sum, item) => {
-          const plan = membershipPlans.find(p => p.id === item.membershipPlanId)
-          if (!plan) return sum
-          return sum + plan.price * item.quantity
-        }, 0)
-
-        const subtotal = regularSubtotal + membershipTotal
-    
-        const discount = membership ? subtotal * (membership.plan.discountPercent / 100) : 0
-        // Apply free delivery if subtotal meets the threshold
-        const qualifiesForFreeDelivery = subtotal >= freeDeliveryThreshold
-        const deliveryCharge = qualifiesForFreeDelivery ? 0 : resolveDeliveryChargeByZoneName(address.zone.name)
-        const total = subtotal - discount + deliveryCharge
-
-    const orderNumber = `ORD-${Date.now()}`
-
-    const order = await prisma.order.create({
-      data: {
-        orderNumber,
-        userId: session.user.id,
-        addressId: finalAddressId,
-        zoneId: finalZoneId,
-        subtotal,
-        discount,
-        membershipDiscountAmount: discount > 0 ? discount : null,
-        membershipPlanName: membership ? membership.plan.name : null,
-        deliveryCharge,
-        total,
-        paymentMethod,
-        status: 'PENDING',
-        notes,
-        items: {
-          create: regularItems.map((item) => {
-            if (item.medicineId) {
-              const medicine = medicines.find(m => m.id === item.medicineId)!
-              const price = medicine.discountPrice || medicine.price
-              return {
-                medicineId: item.medicineId,
-                quantity: item.quantity,
-                price,
-                discount: 0,
-                total: price * item.quantity,
-              }
-            } else {
-              const product = products.find(p => p.id === item.productId)!
-              const price = product.sellingPrice
-              return {
-                productId: item.productId,
-                quantity: item.quantity,
-                price,
-                discount: 0,
-                total: price * item.quantity,
-              }
-            }
-          }),
-        },
-      },
-      include: {
-        items: {
-          include: {
-            medicine: true,
-            product: true,
+      if (err.message === 'COUPON_EXHAUSTED') {
+        return NextResponse.json(
+          { error: 'এই কুপন এর ব্যবহার শেষ।' },
+          { status: 400 }
+        )
+      }
+      if (err.message === 'TOTAL_MISMATCH') {
+        return NextResponse.json(
+          {
+            error:
+              'হিসাব মিলছে না। কার্ট রিফ্রেশ করে আবার চেষ্টা করুন।',
           },
-        },
-        user: {
-          select: {
-            name: true,
-            phone: true,
-          },
-        },
-      },
-    })
+          { status: 409 }
+        )
+      }
+      throw e
+    }
 
     // Create/update membership records for any membership items in the order
     for (const membershipItem of membershipItems) {
@@ -363,20 +437,44 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    await Promise.all([
-      sendSMS(order.user.phone, 'ORDER_CONFIRMED', {
-        name: order.user.name,
-        orderNumber: order.orderNumber,
-        total: order.total,
-      }),
-      sendEmail(`${order.user.phone}@example.com`, 'ORDER_CONFIRMED', {
-        name: order.user.name,
-        orderNumber: order.orderNumber,
-        total: order.total,
-      }),
-    ])
+    const deliveryDaysHint =
+      address.zone.deliveryDays || '৩–৫ দিনের মধ্যে'
 
-    // Process Order OTP based on admin settings (logs action for now, SMS integration in future)
+    const canFulfill = orderReadyForFulfillment({
+      paymentMethod,
+      paymentStatus: order.paymentStatus,
+    })
+
+    if (canFulfill) {
+      await Promise.all([
+        sendSMS(order.user.phone, 'ORDER_CONFIRMED', {
+          name: order.user.name,
+          orderNumber: order.orderNumber,
+          total: order.total,
+          days: deliveryDaysHint,
+        }),
+        sendEmail(`${order.user.phone}@example.com`, 'ORDER_CONFIRMED', {
+          name: order.user.name,
+          orderNumber: order.orderNumber,
+          total: order.total,
+          days: deliveryDaysHint,
+        }),
+      ])
+    } else {
+      await Promise.all([
+        sendSMS(order.user.phone, 'ORDER_AWAITING_PAYMENT', {
+          name: order.user.name,
+          orderNumber: order.orderNumber,
+          total: order.total,
+        }),
+        sendEmail(`${order.user.phone}@example.com`, 'ORDER_AWAITING_PAYMENT', {
+          name: order.user.name,
+          orderNumber: order.orderNumber,
+          total: order.total,
+        }),
+      ])
+    }
+
     await processOrderOtp('order_created', {
       orderId: order.orderNumber,
       amount: order.total,
@@ -386,16 +484,28 @@ export async function POST(request: NextRequest) {
     })
 
     try {
-      const { forwardOrderToAzanById } = await import('@/lib/integrations/forward-order-to-azan')
-      const r = await forwardOrderToAzanById(order.id)
-      if (r.error) {
-        console.error(`[Azan order forward] ${order.orderNumber} failed:`, r.error)
-      } else if (r.skipped) {
-        const detail = r.lineCount != null ? ` (${r.lineCount} Azan line(s) in cart)` : ''
-        console.warn(`[Azan order forward] ${order.orderNumber} skipped: ${r.skipped}${detail}`)
-      } else {
-        const lines = r.lineCount != null ? `${r.lineCount} line(s) to Azan` : 'ok'
-        console.log(`[Azan order forward] ${order.orderNumber} → ${lines}`)
+      if (canFulfill) {
+        const { forwardOrderToAzanById } =
+          await import('@/lib/integrations/forward-order-to-azan')
+        const r = await forwardOrderToAzanById(order.id)
+        if (r.error) {
+          console.error(
+            `[Azan order forward] ${order.orderNumber} failed:`,
+            r.error
+          )
+        } else if (r.skipped) {
+          const detail =
+            r.lineCount != null
+              ? ` (${r.lineCount} Azan line(s) in cart)`
+              : ''
+          console.warn(
+            `[Azan order forward] ${order.orderNumber} skipped: ${r.skipped}${detail}`
+          )
+        } else {
+          const lines =
+            r.lineCount != null ? `${r.lineCount} line(s) to Azan` : 'ok'
+          console.log(`[Azan order forward] ${order.orderNumber} → ${lines}`)
+        }
       }
     } catch (forwardErr) {
       console.error('[Azan order forward] unhandled error:', forwardErr)

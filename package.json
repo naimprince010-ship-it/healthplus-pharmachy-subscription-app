@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "eslint",
     "check:nextjs16": "node scripts/check-nextjs16-params.js",
+    "check:products": "npx tsx scripts/check-products.ts",
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",

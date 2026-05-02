@@ -79,8 +79,11 @@ export default function CheckoutPage() {
   const [notes, setNotes] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [addressesLoading, setAddressesLoading] = useState(true)
   const [addresses, setAddresses] = useState<SavedAddress[]>([])
-  const [selectedSavedAddressId, setSelectedSavedAddressId] = useState<string | null>(null)
+  const [selectedSavedAddressId, setSelectedSavedAddressId] = useState<
+    string | null
+  >(null)
   const [showAddAddress, setShowAddAddress] = useState(false)
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null)
   const [addressForm, setAddressForm] = useState({
@@ -94,9 +97,10 @@ export default function CheckoutPage() {
   const [couponDiscount, setCouponDiscount] = useState(0)
   const [paymentMethod, setPaymentMethod] = useState<'COD' | 'BKASH'>('COD')
   const [orderSummaryExpanded, setOrderSummaryExpanded] = useState(false)
-    const [settings, setSettings] = useState<CheckoutSettings>(DEFAULT_SETTINGS)
-    const [hasSubmittedOrder, setHasSubmittedOrder] = useState(false)
-    const [freeDeliveryThreshold, setFreeDeliveryThreshold] = useState<number | null>(null)
+  const [settings, setSettings] = useState<CheckoutSettings>(DEFAULT_SETTINGS)
+  const [hasSubmittedOrder, setHasSubmittedOrder] = useState(false)
+  const [freeDeliveryThreshold, setFreeDeliveryThreshold] =
+    useState<number | null>(null)
 
   useEffect(() => {
     // Wait until session has finished loading before checking auth
@@ -167,6 +171,7 @@ export default function CheckoutPage() {
   }, [])
 
   const loadAddresses = useCallback(async () => {
+    setAddressesLoading(true)
     try {
       const res = await fetch('/api/user/addresses')
       if (!res.ok) return
@@ -179,8 +184,15 @@ export default function CheckoutPage() {
         const def = list.find((a) => a.isDefault) || list[0]
         return def.id
       })
+      if (list.length === 0) {
+        setShowAddAddress(true)
+      } else {
+        setShowAddAddress(false)
+      }
     } catch (e) {
       console.error('Failed to load addresses:', e)
+    } finally {
+      setAddressesLoading(false)
     }
   }, [])
 
@@ -229,8 +241,19 @@ export default function CheckoutPage() {
     const match =
       zones.find((z) => z.name.trim().toLowerCase() === normalizedDistrict) ||
       zones.find((z) => z.name.trim().toLowerCase().includes(normalizedDistrict))
-    if (match) setSelectedZone(match.id)
+    if (match) {
+      queueMicrotask(() => setSelectedZone(match.id))
+    }
   }, [selectedDistrictId, districts, zones])
+
+  const mapCartItemsForApi = () =>
+    items.map((item) => ({
+      medicineId: item.medicineId,
+      productId: item.productId,
+      membershipPlanId: item.membershipPlanId,
+      quantity: item.quantity,
+      price: item.price,
+    }))
 
   const resetAddressForm = () => {
     setAddressForm({ fullName: '', phone: '', addressLine1: '', city: '' })
@@ -338,10 +361,39 @@ export default function CheckoutPage() {
     setShowAddAddress(true)
   }
 
-  const handleApplyCoupon = () => {
+  const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return
-    setCouponApplied(true)
+    setError('')
+    setCouponApplied(false)
     setCouponDiscount(0)
+    try {
+      const res = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: couponCode.trim(),
+          items: mapCartItemsForApi().map(({ medicineId, productId, membershipPlanId, quantity }) => ({
+            medicineId,
+            productId,
+            membershipPlanId,
+            quantity,
+          })),
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.valid) {
+        setCouponApplied(true)
+        setCouponDiscount(0)
+        setError(typeof data?.error === 'string' ? data.error : '')
+        return
+      }
+      setCouponDiscount(Number(data.discountAmount) || 0)
+      setCouponApplied(true)
+    } catch {
+      setCouponApplied(true)
+      setCouponDiscount(0)
+      setError('কুপন যাচাই ব্যর্থ হয়েছে।')
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -349,8 +401,23 @@ export default function CheckoutPage() {
     setError('')
     setIsLoading(true)
 
-    if (!selectedSavedAddressId && !selectedZone) {
-      setError('অনুগ্রহ করে ডেলিভারি জোন নির্বাচন করুন অথবা সংরক্ষিত ঠিকানা বেছে নিন')
+    if (addressesLoading) {
+      setError('ঠিকানা লোড হচ্ছে...')
+      setIsLoading(false)
+      return
+    }
+
+    if (addresses.length > 0) {
+      if (
+        !selectedSavedAddressId ||
+        !addresses.some((a) => a.id === selectedSavedAddressId)
+      ) {
+        setError('একটি ডেলিভারি ঠিকানা নির্বাচন করুন')
+        setIsLoading(false)
+        return
+      }
+    } else if (!selectedZone) {
+      setError('অনুগ্রহ করে ডেলিভারি জোন নির্বাচন করুন')
       setIsLoading(false)
       return
     }
@@ -362,20 +429,17 @@ export default function CheckoutPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-                body: JSON.stringify({
-                  ...(selectedSavedAddressId
-                    ? { addressId: selectedSavedAddressId }
-                    : { zoneId: selectedZone }),
-                  items: items.map((item) => ({
-                    medicineId: item.medicineId,
-                    productId: item.productId,
-                    membershipPlanId: item.membershipPlanId,
-                    quantity: item.quantity,
-                    price: item.price,
-                  })),
-                  paymentMethod: paymentApi,
-                  notes,
-                }),
+        body: JSON.stringify({
+          ...(addresses.length > 0 && selectedSavedAddressId
+            ? { addressId: selectedSavedAddressId }
+            : { zoneId: selectedZone }),
+          items: mapCartItemsForApi(),
+          paymentMethod: paymentApi,
+          notes,
+          ...(couponApplied && couponDiscount > 0
+            ? { couponCode: couponCode.trim().toUpperCase() }
+            : {}),
+        }),
       })
 
       const data = await response.json()
@@ -393,20 +457,22 @@ export default function CheckoutPage() {
         quantity: item.quantity,
       }))
 
+      const paidApprox = grandTotal
+
       trackPurchase({
         transaction_id: data.order.id,
-        value: grandTotal,
+        value: paidApprox,
         shipping: deliveryCharge,
         items: ga4Items,
       })
 
-      // Set flag BEFORE clearing cart to prevent the useEffect from redirecting to /cart
-      // when it sees items.length === 0 after clearCart() is called
       setHasSubmittedOrder(true)
       clearCart()
-      // Redirect to order success page with order details
-      // Use replace to prevent going back to checkout
-      router.replace(`/order-success?orderId=${data.order.id}&amount=${grandTotal}&paymentMethod=${paymentMethod}`)
+      const awaiting =
+        paymentMethod === 'BKASH' ? '&awaitingPayment=1' : ''
+      router.replace(
+        `/order-success?orderId=${data.order.id}&amount=${Math.round(data.order.total ?? paidApprox)}&paymentMethod=${paymentMethod}${awaiting}`
+      )
     } catch (err) {
       console.error('Checkout error:', err)
       setError('একটি ত্রুটি ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন।')
@@ -497,9 +563,73 @@ export default function CheckoutPage() {
           {/* Section 1: Delivery Address */}
           <div className="bg-white rounded-xl p-4">
             <h2 className="text-lg font-bold text-gray-900 mb-4">{settings.addressSectionTitleBn}</h2>
-            
-            {/* Zone Selection */}
+
+            {addressesLoading && (
+              <p className="text-sm text-gray-500 mb-3">ঠিকানা লোড হচ্ছে…</p>
+            )}
+
+            {!addressesLoading && addresses.length > 0 && (
+              <div className="space-y-3 mb-4">
+                {addresses.map((addr) => (
+                  <div
+                    key={addr.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => {
+                      setSelectedAddress(addr.id)
+                      setSelectedZone(addr.zoneId)
+                    }}
+                    onKeyDown={(ev) => {
+                      if (ev.key === 'Enter' || ev.key === ' ') {
+                        ev.preventDefault()
+                        setSelectedAddress(addr.id)
+                        setSelectedZone(addr.zoneId)
+                      }
+                    }}
+                    className={`flex items-start gap-3 rounded-lg border-2 p-4 cursor-pointer transition-colors ${
+                      selectedAddress === addr.id
+                        ? 'border-teal-500 bg-teal-50/30'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="mt-0.5">
+                      <div
+                        className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${
+                          selectedAddress === addr.id
+                            ? 'border-teal-500'
+                            : 'border-gray-300'
+                        }`}
+                      >
+                        {selectedAddress === addr.id && (
+                          <div className="h-2.5 w-2.5 rounded-full bg-teal-500" />
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-gray-900">{addr.fullName}</p>
+                      <p className="text-gray-900 text-sm mt-0.5">{addr.fullAddress}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {addr.phone} · {addr.zoneName}
+                      </p>
+                      {addr.isDefault && (
+                        <span className="inline-block mt-1 text-xs font-medium text-teal-700">
+                          ডিফল্ট ঠিকানা
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Location + zone — নতুন ঠিকানা বা খালি হলে */}
+            {(showAddAddress || addresses.length === 0) && (
             <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-2">
+                {addresses.length === 0
+                  ? 'একটি ঠিকানা সংরক্ষণ করতে লোকেশন ও জোন নির্বাচন করুন:'
+                  : 'নতুন ঠিকানা যোগ করতে:'}
+              </p>
               <div className="mb-3 grid grid-cols-1 gap-3 md:grid-cols-3">
                 <select
                   value={selectedDivisionId}
@@ -553,7 +683,6 @@ export default function CheckoutPage() {
                 ))}
               </select>
             </div>
-
             {/* Saved addresses — রেডিও নির্বাচন + সম্পাদনা / মুছুন */}
             {addresses.map((addr) => (
               <div
@@ -714,6 +843,23 @@ export default function CheckoutPage() {
             </div>
           </div>
 
+          <div className="bg-white rounded-xl p-4">
+            <label
+              htmlFor="checkout-notes"
+              className="text-lg font-bold text-gray-900 mb-3 block"
+            >
+              ডেলিভারি নোট (ঐচ্ছিক)
+            </label>
+            <textarea
+              id="checkout-notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="যেমন: গেট বক্স থেকে ফোন করবেন..."
+              rows={2}
+              className="block w-full rounded-lg border-2 border-gray-200 px-4 py-3 text-base text-gray-900 focus:border-teal-500 focus:outline-none resize-none"
+            />
+          </div>
+
           {/* Section 3: Coupon Code */}
           <div className="bg-white rounded-xl p-4">
             <h2 className="text-lg font-bold text-gray-900 mb-4">{settings.couponSectionTitleBn}</h2>
@@ -728,14 +874,16 @@ export default function CheckoutPage() {
               />
               <button
                 type="button"
-                onClick={handleApplyCoupon}
+                onClick={() => void handleApplyCoupon()}
                 className="px-6 py-3 bg-white border-2 border-teal-500 text-teal-600 font-semibold rounded-lg hover:bg-teal-50 transition-colors"
               >
                 {settings.couponApplyBn}
               </button>
             </div>
-            {couponApplied && couponDiscount === 0 && (
-              <p className="mt-2 text-sm text-red-500">কুপন কোড সঠিক নয়</p>
+            {couponApplied && couponDiscount > 0 && (
+              <p className="mt-2 text-sm text-green-700 font-medium">
+                কুপন প্রযোজ্য: ছাড় ৳ {couponDiscount.toFixed(0)}
+              </p>
             )}
           </div>
 
@@ -832,6 +980,14 @@ export default function CheckoutPage() {
                     <span className="text-gray-600">ডেলিভারি ফি</span>
                     <span className="text-gray-900">৳ {deliveryCharge.toFixed(0)}</span>
                   </div>
+                  {couponDiscount > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-green-700">কুপন ছাড়</span>
+                      <span className="text-green-700">
+                        − ৳ {couponDiscount.toFixed(0)}
+                      </span>
+                    </div>
+                  )}
                   {savings > 0 && (
                     <div className="flex justify-between text-sm">
                       <span className="text-green-600">সেভিংস</span>

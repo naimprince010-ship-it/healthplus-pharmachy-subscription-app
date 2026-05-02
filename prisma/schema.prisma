@@ -149,6 +149,27 @@ model User {
   subscriptions Subscription[]
   wishlistItems WishlistItem[]
   reviews       Review[]
+  productInteractionLogs ProductInteractionLog[]
+}
+
+enum ProductInteractionKind {
+  VIEW_ITEM
+  ADD_TO_CART
+}
+
+// Implicit feedback for future recommendations (co-occurrence / ALS training signals)
+model ProductInteractionLog {
+  id        String                 @id @default(cuid())
+  userId    String?
+  user      User?                  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  productId String
+  product   Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
+  kind      ProductInteractionKind
+  createdAt DateTime               @default(now())
+
+  @@index([userId, createdAt])
+  @@index([productId, createdAt])
+  @@index([createdAt])
 }
 
 model Address {
@@ -315,6 +336,24 @@ model Product {
   wishlistItems   WishlistItem[]
   reviews         Review[]
   blogProducts    BlogProduct[] // Products mentioned in blogs
+  cooccurrenceAsAnchor  ProductCooccurrence[] @relation("CooccurrenceAnchor")
+  cooccurrenceAsRelated ProductCooccurrence[] @relation("CooccurrenceRelated")
+  productInteractionLogs ProductInteractionLog[]
+}
+
+// Precomputed item–item co-purchase counts (same order) for cart suggestions; rebuilt by cron.
+model ProductCooccurrence {
+  id               String   @id @default(cuid())
+  anchorProductId  String
+  relatedProductId String
+  coOrderCount     Int
+  updatedAt        DateTime @updatedAt
+
+  anchorProduct  Product @relation("CooccurrenceAnchor", fields: [anchorProductId], references: [id], onDelete: Cascade)
+  relatedProduct Product @relation("CooccurrenceRelated", fields: [relatedProductId], references: [id], onDelete: Cascade)
+
+  @@unique([anchorProductId, relatedProductId])
+  @@index([anchorProductId, coOrderCount(sort: Desc)])
 }
 
 model ProductVariant {
@@ -481,9 +520,12 @@ model Order {
   discount                 Float         @default(0)
   membershipDiscountAmount Float? // Membership discount applied
   membershipPlanName       String? // Membership plan name at time of order
+  appliedCouponCode        String?
+  couponDiscountAmount     Float         @default(0)
   deliveryCharge           Float
   total                    Float
   paymentMethod            PaymentMethod @default(COD)
+  /// PAID | AWAITING_PAYMENT | PENDING_COD | PENDING (legacy)
   paymentStatus            String        @default("PENDING")
   notes                    String?
   // Reseller: Azan Wholesale order forward (POST /api/orders/store)

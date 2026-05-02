@@ -2,7 +2,13 @@ import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+const rawSupabaseServiceRole = process.env.SUPABASE_SERVICE_ROLE_KEY
+const hasServiceRole =
+  typeof rawSupabaseServiceRole === 'string' && rawSupabaseServiceRole.trim() !== ''
+// createClient rejects an empty key at import time ("supabaseKey is required"); use a dummy key when unset so `next build` can prune routes without env.
+const supabaseServiceRoleKey = hasServiceRole
+  ? rawSupabaseServiceRole
+  : 'placeholder-supabase-service-role-key'
 
 const isConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
@@ -165,12 +171,12 @@ export async function uploadMedicineImage(
     throw new Error('NEXT_PUBLIC_SUPABASE_URL is not configured in production environment')
   }
   
-  if (!supabaseServiceRoleKey) {
+  if (!hasServiceRole) {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured in production environment')
   }
 
   const bucket = process.env.SUPABASE_MEDICINE_BUCKET || 'medicine-images'
-  
+
   await ensureBucketConfigured(
     bucket,
     ['image/jpeg', 'image/png', 'image/webp'],
@@ -213,7 +219,7 @@ export async function uploadMedicineImage(
  * Delete medicine image from Supabase Storage
  */
 export async function deleteMedicineImage(path: string): Promise<void> {
-  if (!supabaseServiceRoleKey) {
+  if (!hasServiceRole) {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured')
   }
 
@@ -237,7 +243,7 @@ export async function uploadPrescriptionFile(
     throw new Error('NEXT_PUBLIC_SUPABASE_URL is not configured in production environment')
   }
   
-  if (!supabaseServiceRoleKey) {
+  if (!hasServiceRole) {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured in production environment')
   }
 
@@ -291,7 +297,7 @@ export async function uploadPrescriptionFile(
  * Delete prescription file from Supabase Storage using admin client
  */
 export async function deletePrescriptionFile(path: string): Promise<void> {
-  if (!supabaseServiceRoleKey) {
+  if (!hasServiceRole) {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured')
   }
 
@@ -336,12 +342,12 @@ export async function uploadToSupabase(
     throw new Error('NEXT_PUBLIC_SUPABASE_URL is not configured in production environment')
   }
   
-  if (!supabaseServiceRoleKey) {
+  if (!hasServiceRole) {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured in production environment')
   }
 
   const bucket = process.env.SUPABASE_MEDICINE_BUCKET || 'medicine-images'
-  
+
     await ensureBucketConfigured(
       bucket,
       ['image/jpeg', 'image/png', 'image/webp'],
@@ -384,7 +390,7 @@ export async function uploadToSupabase(
  * Generic delete function from Supabase Storage
  */
 export async function deleteFromSupabase(path: string): Promise<void> {
-  if (!supabaseServiceRoleKey) {
+  if (!hasServiceRole) {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured')
   }
 

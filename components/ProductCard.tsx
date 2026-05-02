@@ -1,11 +1,12 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { AddToCartButton } from '@/components/AddToCartButton'
 import { getEffectivePrices } from '@/lib/pricing'
 import { getStorefrontImageUrl } from '@/lib/image-url'
 
-interface ProductCardProps {
+export interface ProductCardProps {
   id: string
   type: 'MEDICINE' | 'GENERAL'
   name: string
@@ -100,12 +101,20 @@ export function ProductCard({ product, variant = 'default', className = '' }: Pr
         </div>
       )}
 
-      <div className={`overflow-hidden rounded-lg bg-gray-100 ${isCompact ? 'aspect-[4/3]' : 'aspect-square'}`}>
+      <div
+        className={`relative overflow-hidden rounded-lg bg-gray-100 ${isCompact ? 'aspect-[4/3]' : 'aspect-square'}`}
+      >
         {displayImageUrl ? (
-          <img
+          <Image
             src={displayImageUrl}
             alt={product.name}
-            className="h-full w-full object-cover transition-transform group-hover:scale-105"
+            fill
+            sizes={
+              isCompact
+                ? '(max-width: 768px) 50vw, 190px'
+                : '(max-width: 768px) 50vw, (max-width: 1280px) 25vw, 320px'
+            }
+            className="object-cover transition-transform group-hover:scale-105"
           />
         ) : (
           <div className="flex h-full items-center justify-center text-gray-400">

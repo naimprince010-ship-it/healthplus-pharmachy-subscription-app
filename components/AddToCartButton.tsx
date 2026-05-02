@@ -5,6 +5,7 @@ import { ShoppingCart, Plus, Minus, Check } from 'lucide-react'
 import { useCart, buildUnitLabelBn, SellingUnitType } from '@/contexts/CartContext'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { trackAddToCart } from '@/lib/trackEvent'
+import { logProductInteraction } from '@/lib/logProductInteraction'
 
 interface AddToCartButtonProps {
   medicineId?: string
@@ -86,6 +87,12 @@ export function AddToCartButton({
     })
 
     trackAddToCart({ item_id: itemId, item_name: name, item_category: category, price, quantity: 1 })
+
+    logProductInteraction({
+      kind: 'ADD_TO_CART',
+      productId: productId ?? undefined,
+      medicineId: medicineId ?? undefined,
+    })
 
     setJustAdded(true)
     setTimeout(() => setJustAdded(false), 1500)
