@@ -126,6 +126,49 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
         notFound()
     }
 
+    // Fetch related blogs for internal linking
+    let relatedBlogs: any[] = []
+    try {
+        if (blog.internalLinkSlugs && blog.internalLinkSlugs.length > 0) {
+            relatedBlogs = await prisma.blog.findMany({
+                where: {
+                    slug: { in: blog.internalLinkSlugs },
+                    status: BlogStatus.PUBLISHED,
+                },
+                select: {
+                    id: true,
+                    title: true,
+                    slug: true,
+                    imageUrl: true,
+                    createdAt: true,
+                    publishedAt: true,
+                },
+                take: 3,
+            })
+        }
+        if (relatedBlogs.length < 3) {
+            const fallbackRelated = await prisma.blog.findMany({
+                where: {
+                    type: blog.type,
+                    status: BlogStatus.PUBLISHED,
+                    NOT: { id: blog.id },
+                },
+                select: {
+                    id: true,
+                    title: true,
+                    slug: true,
+                    imageUrl: true,
+                    createdAt: true,
+                    publishedAt: true,
+                },
+                take: 3 - relatedBlogs.length,
+            })
+            relatedBlogs = [...relatedBlogs, ...fallbackRelated]
+        }
+    } catch (err) {
+        console.error('Failed to fetch related blogs:', err)
+    }
+
     // Calculate estimated reading time (approx 200 words per minute)
     const wordCount = blog.contentMd ? blog.contentMd.split(/\s+/).length : 0
     const readingTime = Math.max(1, Math.ceil(wordCount / 200))
@@ -146,7 +189,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
         inLanguage: 'bn-BD',
         author: {
             '@type': 'Organization',
-            name: 'Halalzi',
+            name: 'Halalzi Expert Team',
             url: 'https://halalzi.com',
         },
         publisher: {
@@ -180,6 +223,15 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
         <div className="bg-slate-50 min-h-screen pb-20">
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }} />
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+            {blog.faqJsonLd && (
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{
+                        __html: typeof blog.faqJsonLd === 'string' ? blog.faqJsonLd : JSON.stringify(blog.faqJsonLd)
+                    }}
+                />
+            )}
+            
             {/* Blog Article */}
             <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 {/* Header Section */}
@@ -204,7 +256,13 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                         {blog.title}
                     </h1>
 
-                    <div className="flex items-center justify-center text-sm text-slate-500 space-x-4">
+                    <div className="flex items-center justify-center text-sm text-slate-500 space-x-4 mb-2 flex-wrap gap-2">
+                        <div className="flex items-center">
+                            <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            <span>By Halalzi Expert Team</span>
+                        </div>
                         <div className="flex items-center">
                             <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -241,7 +299,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                 )}
 
                 {/* Main Content Area */}
-                <div className="flex flex-col lg:flex-row gap-12">
+                <div className="flex flex-col lg:flex-row gap-12 mb-16">
 
                     {/* Markdown Content — typography from BlogMarkdown (headings, lists, spacing) */}
                     <div className="flex-1 min-w-0 rounded-2xl border border-slate-200/80 bg-white px-5 py-10 shadow-sm sm:px-10 sm:py-12">
@@ -309,7 +367,54 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                         </aside>
                     )}
                 </div>
+
+                {/* Related Blogs / Internal Linking Section */}
+                {relatedBlogs.length > 0 && (
+                    <div className="border-t border-slate-200/80 pt-12">
+                        <h3 className="text-2xl font-bold text-slate-900 mb-8 flex items-center">
+                            <svg className="w-6 h-6 mr-2 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.246.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5s3.246.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            </svg>
+                            Related Articles
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {relatedBlogs.map((rBlog) => (
+                                <Link
+                                    key={rBlog.id}
+                                    href={`/blog/${rBlog.slug}`}
+                                    className="group bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col h-full"
+                                >
+                                    <div className="relative aspect-[16/9] bg-slate-100 overflow-hidden">
+                                        {rBlog.imageUrl ? (
+                                            <img
+                                                src={rBlog.imageUrl}
+                                                alt={rBlog.title}
+                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-slate-400">
+                                                <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="p-5 flex-1 flex flex-col justify-between">
+                                        <h4 className="text-base font-bold text-slate-900 group-hover:text-emerald-600 transition-colors line-clamp-2 mb-3">
+                                            {rBlog.title}
+                                        </h4>
+                                        <time className="text-xs text-slate-500 block">
+                                            {format(rBlog.publishedAt || rBlog.createdAt, 'MMMM d, yyyy')}
+                                        </time>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </article>
         </div>
     )
+}
+
 }
