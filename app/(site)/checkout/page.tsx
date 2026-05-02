@@ -568,123 +568,10 @@ export default function CheckoutPage() {
               <p className="text-sm text-gray-500 mb-3">ঠিকানা লোড হচ্ছে…</p>
             )}
 
-            {!addressesLoading && addresses.length > 0 && (
-              <div className="space-y-3 mb-4">
-                {addresses.map((addr) => (
-                  <div
-                    key={addr.id}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => {
-                      setSelectedAddress(addr.id)
-                      setSelectedZone(addr.zoneId)
-                    }}
-                    onKeyDown={(ev) => {
-                      if (ev.key === 'Enter' || ev.key === ' ') {
-                        ev.preventDefault()
-                        setSelectedAddress(addr.id)
-                        setSelectedZone(addr.zoneId)
-                      }
-                    }}
-                    className={`flex items-start gap-3 rounded-lg border-2 p-4 cursor-pointer transition-colors ${
-                      selectedAddress === addr.id
-                        ? 'border-teal-500 bg-teal-50/30'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="mt-0.5">
-                      <div
-                        className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${
-                          selectedAddress === addr.id
-                            ? 'border-teal-500'
-                            : 'border-gray-300'
-                        }`}
-                      >
-                        {selectedAddress === addr.id && (
-                          <div className="h-2.5 w-2.5 rounded-full bg-teal-500" />
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-semibold text-gray-900">{addr.fullName}</p>
-                      <p className="text-gray-900 text-sm mt-0.5">{addr.fullAddress}</p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {addr.phone} · {addr.zoneName}
-                      </p>
-                      {addr.isDefault && (
-                        <span className="inline-block mt-1 text-xs font-medium text-teal-700">
-                          ডিফল্ট ঠিকানা
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Location + zone — নতুন ঠিকানা বা খালি হলে */}
-            {(showAddAddress || addresses.length === 0) && (
-            <div className="mb-4">
-              <p className="text-sm text-gray-600 mb-2">
-                {addresses.length === 0
-                  ? 'একটি ঠিকানা সংরক্ষণ করতে লোকেশন ও জোন নির্বাচন করুন:'
-                  : 'নতুন ঠিকানা যোগ করতে:'}
-              </p>
-              <div className="mb-3 grid grid-cols-1 gap-3 md:grid-cols-3">
-                <select
-                  value={selectedDivisionId}
-                  onChange={(e) => void handleDivisionChange(e.target.value)}
-                  className="block w-full rounded-lg border-2 border-gray-200 px-4 py-3 text-base text-gray-900 focus:border-teal-500 focus:outline-none"
-                >
-                  <option value="">বিভাগ নির্বাচন করুন</option>
-                  {divisions.map((division) => (
-                    <option key={division.id} value={division.id}>
-                      {division.name}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={selectedDistrictId}
-                  onChange={(e) => void handleDistrictChange(e.target.value)}
-                  className="block w-full rounded-lg border-2 border-gray-200 px-4 py-3 text-base text-gray-900 focus:border-teal-500 focus:outline-none"
-                >
-                  <option value="">জেলা নির্বাচন করুন</option>
-                  {districts.map((district) => (
-                    <option key={district.id} value={district.id}>
-                      {district.name}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={selectedUpazilaId}
-                  onChange={(e) => setSelectedUpazilaId(e.target.value)}
-                  className="block w-full rounded-lg border-2 border-gray-200 px-4 py-3 text-base text-gray-900 focus:border-teal-500 focus:outline-none"
-                >
-                  <option value="">উপজেলা/থানা নির্বাচন করুন</option>
-                  {upazilas.map((upazila) => (
-                    <option key={upazila.id} value={upazila.id}>
-                      {upazila.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <select
-                id="zone"
-                value={selectedZone}
-                onChange={(e) => setSelectedZone(e.target.value)}
-                required
-                className="block w-full rounded-lg border-2 border-gray-200 px-4 py-3 text-base text-gray-900 focus:border-teal-500 focus:outline-none"
-              >
-                <option value="">জোন নির্বাচন করুন</option>
-                {filteredZones.map((zone) => (
-                  <option key={zone.id} value={zone.id}>
-                    {zone.name} - ৳{zone.deliveryCharge} ডেলিভারি
-                  </option>
-                ))}
-              </select>
-            </div>
             {/* Saved addresses — রেডিও নির্বাচন + সম্পাদনা / মুছুন */}
-            {addresses.map((addr) => (
+            {!addressesLoading &&
+              addresses.length > 0 &&
+              addresses.map((addr) => (
               <div
                 key={addr.id}
                 role="button"
@@ -722,6 +609,11 @@ export default function CheckoutPage() {
                   <p className="text-sm text-gray-500 mt-1">
                     {addr.phone} · {addr.zone.name}
                   </p>
+                  {addr.isDefault && (
+                    <span className="inline-block mt-1 text-xs font-medium text-teal-700">
+                      ডিফল্ট ঠিকানা
+                    </span>
+                  )}
                 </div>
                 <div className="flex shrink-0 gap-1" onClick={(e) => e.stopPropagation()}>
                   <button
@@ -744,7 +636,70 @@ export default function CheckoutPage() {
                   </button>
                 </div>
               </div>
-            ))}
+              ))}
+
+            {/* Location + zone — নতুন ঠিকানা বা কোনো ঠিকানা নেই এমন সময় */}
+            {(showAddAddress || addresses.length === 0) && (
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 mb-2">
+                  {addresses.length === 0
+                    ? 'একটি ঠিকানা সংরক্ষণ করতে লোকেশন ও জোন নির্বাচন করুন:'
+                    : 'নতুন ঠিকানা যোগ করতে:'}
+                </p>
+                <div className="mb-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+                  <select
+                    value={selectedDivisionId}
+                    onChange={(e) => void handleDivisionChange(e.target.value)}
+                    className="block w-full rounded-lg border-2 border-gray-200 px-4 py-3 text-base text-gray-900 focus:border-teal-500 focus:outline-none"
+                  >
+                    <option value="">বিভাগ নির্বাচন করুন</option>
+                    {divisions.map((division) => (
+                      <option key={division.id} value={division.id}>
+                        {division.name}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={selectedDistrictId}
+                    onChange={(e) => void handleDistrictChange(e.target.value)}
+                    className="block w-full rounded-lg border-2 border-gray-200 px-4 py-3 text-base text-gray-900 focus:border-teal-500 focus:outline-none"
+                  >
+                    <option value="">জেলা নির্বাচন করুন</option>
+                    {districts.map((district) => (
+                      <option key={district.id} value={district.id}>
+                        {district.name}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={selectedUpazilaId}
+                    onChange={(e) => setSelectedUpazilaId(e.target.value)}
+                    className="block w-full rounded-lg border-2 border-gray-200 px-4 py-3 text-base text-gray-900 focus:border-teal-500 focus:outline-none"
+                  >
+                    <option value="">উপজেলা/থানা নির্বাচন করুন</option>
+                    {upazilas.map((upazila) => (
+                      <option key={upazila.id} value={upazila.id}>
+                        {upazila.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <select
+                  id="zone"
+                  value={selectedZone}
+                  onChange={(e) => setSelectedZone(e.target.value)}
+                  required
+                  className="block w-full rounded-lg border-2 border-gray-200 px-4 py-3 text-base text-gray-900 focus:border-teal-500 focus:outline-none"
+                >
+                  <option value="">জোন নির্বাচন করুন</option>
+                  {filteredZones.map((zone) => (
+                    <option key={zone.id} value={zone.id}>
+                      {zone.name} - ৳{zone.deliveryCharge} ডেলিভারি
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Add New Address Button */}
             {!showAddAddress ? (
