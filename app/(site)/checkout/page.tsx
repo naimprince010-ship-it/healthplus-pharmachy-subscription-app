@@ -168,7 +168,9 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (!session?.user?.id) return
     let cancelled = false
-    setAddressesLoading(true)
+    queueMicrotask(() => {
+      if (!cancelled) setAddressesLoading(true)
+    })
     fetch('/api/addresses')
       .then((res) => res.json())
       .then((data) => {
@@ -237,7 +239,9 @@ export default function CheckoutPage() {
     const match =
       zones.find((z) => z.name.trim().toLowerCase() === normalizedDistrict) ||
       zones.find((z) => z.name.trim().toLowerCase().includes(normalizedDistrict))
-    if (match) setSelectedZone(match.id)
+    if (match) {
+      queueMicrotask(() => setSelectedZone(match.id))
+    }
   }, [selectedDistrictId, districts, zones])
 
   const mapCartItemsForApi = () =>
@@ -702,6 +706,23 @@ export default function CheckoutPage() {
                 <span className="text-gray-900">{settings.bkashLabelBn}</span>
               </label>
             </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-4">
+            <label
+              htmlFor="checkout-notes"
+              className="text-lg font-bold text-gray-900 mb-3 block"
+            >
+              ডেলিভারি নোট (ঐচ্ছিক)
+            </label>
+            <textarea
+              id="checkout-notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="যেমন: গেট বক্স থেকে ফোন করবেন..."
+              rows={2}
+              className="block w-full rounded-lg border-2 border-gray-200 px-4 py-3 text-base text-gray-900 focus:border-teal-500 focus:outline-none resize-none"
+            />
           </div>
 
           {/* Section 3: Coupon Code */}
