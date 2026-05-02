@@ -33,6 +33,9 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
 
   const title = `${category.name} এর দাম এবং অফার - অনলাইনে কিনুন সেরা দামে | Halalzi`
   const description = category.description || `অরিজিনাল ${category.name} পণ্য অনলাইনে কিনুন সেরা দামে। বিকাশ ডিসকাউন্ট অফার, ফ্রি ডেলিভারি প্রোডাক্ট এবং দ্রুততম ডেলিভারি। Halalzi - আপনার বিশ্বস্ত অনলাইন শপ।`
+  const ogImage = category.imageUrl
+    ? getStorefrontImageUrl(category.imageUrl)
+    : 'https://halalzi.com/images/default-product.png'
 
   return {
     title,
@@ -43,13 +46,14 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
       description,
       type: 'website',
       url: `https://halalzi.com/category/${slug}`,
-      images: category.imageUrl ? [category.imageUrl] : undefined,
+      images: [{ url: ogImage }],
       siteName: 'Halalzi',
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description,
+      images: [ogImage],
     },
     alternates: {
       canonical: `https://halalzi.com/category/${slug}`,
