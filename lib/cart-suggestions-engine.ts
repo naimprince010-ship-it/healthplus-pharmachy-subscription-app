@@ -75,7 +75,7 @@ export async function resolveCartContextForSuggestions(rawIds: string[]): Promis
   }
 }
 
-/** ইউজারের সাম্প্রতিক অর্ডার থেকে Product আইডি (মেডিসিন-লিংকড অর্ডার সারি) */
+/** ইউজারের সাম্প্রতিক অর্ডার থেকে Product আইডি — সরাসরি `productId` বা লিগেসি `medicineId` → `Medicine.productId` */
 export async function getRecentPurchasedProductIds(
   userId: string,
   take: number
@@ -84,21 +84,44 @@ export async function getRecentPurchasedProductIds(
 
   const rows = await prisma.orderItem.findMany({
     where: {
-      productId: { not: null },
       order: { userId },
+      OR: [{ productId: { not: null } }, { medicineId: { not: null } }],
     },
     select: {
       productId: true,
+      medicineId: true,
       order: { select: { createdAt: true } },
     },
     orderBy: { order: { createdAt: 'desc' } },
-    take: Math.min(take * 4, 200),
+    take: 400,
   })
+
+  const medicineIdsNeedingResolve = new Set<string>()
+  for (const r of rows) {
+    if (!r.productId && r.medicineId) {
+      medicineIdsNeedingResolve.add(r.medicineId)
+    }
+  }
+
+  let medicineToProduct = new Map<string, string>()
+  if (medicineIdsNeedingResolve.size > 0) {
+    const meds = await prisma.medicine.findMany({
+      where: {
+        id: { in: [...medicineIdsNeedingResolve] },
+        productId: { not: null },
+      },
+      select: { id: true, productId: true },
+    })
+    medicineToProduct = new Map(
+      meds.map((m) => [m.id, m.productId!])
+    )
+  }
 
   const seen = new Set<string>()
   const out: string[] = []
   for (const r of rows) {
-    const pid = r.productId
+    const pid =
+      r.productId ?? (r.medicineId ? medicineToProduct.get(r.medicineId) : undefined)
     if (!pid || seen.has(pid)) continue
     seen.add(pid)
     out.push(pid)
