@@ -66,6 +66,9 @@ export async function POST(request: NextRequest) {
       if (!address) {
         return NextResponse.json({ error: 'Invalid address' }, { status: 400 })
       }
+      if (address.userId !== session.user.id) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
       finalAddressId = addressId
       finalZoneId = address.zoneId
     } else if (zoneId) {

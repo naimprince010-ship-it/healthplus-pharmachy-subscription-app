@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Image from 'next/image'
-import { ArrowLeft, ChevronDown, ChevronUp, Plus } from 'lucide-react'
+import { ArrowLeft, ChevronDown, ChevronUp, Plus, Pencil, Trash2 } from 'lucide-react'
 import { useCart } from '@/contexts/CartContext'
 import { trackBeginCheckout, trackPurchase, type GA4Item } from '@/lib/trackEvent'
 import { MAIN_CONTAINER } from '@/lib/layout'
@@ -20,11 +20,16 @@ interface LocationOption {
   name: string
 }
 
-interface Address {
+interface SavedAddress {
   id: string
-  label: string
-  fullAddress: string
+  fullName: string
   phone: string
+  addressLine1: string
+  addressLine2: string | null
+  city: string
+  zoneId: string
+  isDefault: boolean
+  zone: { id: string; name: string }
 }
 
 interface CheckoutSettings {
@@ -74,10 +79,16 @@ export default function CheckoutPage() {
   const [notes, setNotes] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
-  const [addresses, setAddresses] = useState<Address[]>([])
-  const [selectedAddress, setSelectedAddress] = useState<string | null>(null)
+  const [addresses, setAddresses] = useState<SavedAddress[]>([])
+  const [selectedSavedAddressId, setSelectedSavedAddressId] = useState<string | null>(null)
   const [showAddAddress, setShowAddAddress] = useState(false)
-  const [newAddress, setNewAddress] = useState({ label: '', fullAddress: '', phone: '' })
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null)
+  const [addressForm, setAddressForm] = useState({
+    fullName: '',
+    phone: '',
+    addressLine1: '',
+    city: '',
+  })
   const [couponCode, setCouponCode] = useState('')
   const [couponApplied, setCouponApplied] = useState(false)
   const [couponDiscount, setCouponDiscount] = useState(0)
@@ -155,6 +166,35 @@ export default function CheckoutPage() {
       .catch((err) => console.error('Failed to fetch divisions:', err))
   }, [])
 
+  const loadAddresses = useCallback(async () => {
+    try {
+      const res = await fetch('/api/user/addresses')
+      if (!res.ok) return
+      const data = await res.json()
+      const list: SavedAddress[] = data.addresses || []
+      setAddresses(list)
+      setSelectedSavedAddressId((prev) => {
+        if (list.length === 0) return null
+        if (prev && list.some((a) => a.id === prev)) return prev
+        const def = list.find((a) => a.isDefault) || list[0]
+        return def.id
+      })
+    } catch (e) {
+      console.error('Failed to load addresses:', e)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (status !== 'authenticated' || !session) return
+    void loadAddresses()
+  }, [status, session, loadAddresses])
+
+  useEffect(() => {
+    if (!selectedSavedAddressId) return
+    const a = addresses.find((x) => x.id === selectedSavedAddressId)
+    if (a) setSelectedZone(a.zoneId)
+  }, [selectedSavedAddressId, addresses])
+
   const handleDivisionChange = async (divisionId: string) => {
     setSelectedDivisionId(divisionId)
     setSelectedDistrictId('')
@@ -192,16 +232,110 @@ export default function CheckoutPage() {
     if (match) setSelectedZone(match.id)
   }, [selectedDistrictId, districts, zones])
 
-  const handleAddAddress = () => {
-    if (!newAddress.label || !newAddress.fullAddress || !newAddress.phone) return
-    const newAddr: Address = {
-      id: Date.now().toString(),
-      ...newAddress,
+  const resetAddressForm = () => {
+    setAddressForm({ fullName: '', phone: '', addressLine1: '', city: '' })
+    setEditingAddressId(null)
+  }
+
+  const handleSaveAddress = async () => {
+    if (
+      !addressForm.fullName.trim() ||
+      !addressForm.addressLine1.trim() ||
+      !addressForm.phone.trim() ||
+      !addressForm.city.trim()
+    ) {
+      setError('ঠিকানা সেভ করতে নাম, ঠিকানা, শহর ও ফোন পূরণ করুন')
+      return
     }
-    setAddresses([...addresses, newAddr])
-    setSelectedAddress(newAddr.id)
-    setShowAddAddress(false)
-    setNewAddress({ label: '', fullAddress: '', phone: '' })
+    if (!selectedZone) {
+      setError('অনুগ্রহ করে ডেলিভারি জোন নির্বাচন করুন')
+      return
+    }
+    setError('')
+    try {
+      if (editingAddressId) {
+        const res = await fetch(`/api/user/addresses/${editingAddressId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fullName: addressForm.fullName.trim(),
+            phone: addressForm.phone.trim(),
+            addressLine1: addressForm.addressLine1.trim(),
+            city: addressForm.city.trim(),
+            zoneId: selectedZone,
+          }),
+        })
+        if (!res.ok) {
+          const d = await res.json().catch(() => ({}))
+          setError(typeof d.error === 'string' ? d.error : 'ঠিকানা আপডেট ব্যর্থ')
+          return
+        }
+      } else {
+        const res = await fetch('/api/user/addresses', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fullName: addressForm.fullName.trim(),
+            phone: addressForm.phone.trim(),
+            addressLine1: addressForm.addressLine1.trim(),
+            city: addressForm.city.trim(),
+            zoneId: selectedZone,
+          }),
+        })
+        if (!res.ok) {
+          const d = await res.json().catch(() => ({}))
+          setError(typeof d.error === 'string' ? d.error : 'ঠিকানা সংরক্ষণ ব্যর্থ')
+          return
+        }
+        const data = await res.json()
+        if (data.address?.id) {
+          setSelectedSavedAddressId(data.address.id)
+        }
+      }
+      setShowAddAddress(false)
+      resetAddressForm()
+      await loadAddresses()
+    } catch {
+      setError('নেটওয়ার্ক ত্রুটি। আবার চেষ্টা করুন।')
+    }
+  }
+
+  const handleDeleteAddress = async (addrId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!window.confirm('এই ডেলিভারি ঠিকানাটি মুছে ফেলবেন?')) return
+    setError('')
+    try {
+      const res = await fetch(`/api/user/addresses/${addrId}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        if (res.status === 409) {
+          setError(
+            typeof d.error === 'string'
+              ? d.error
+              : 'পুরনো অর্ডারে এই ঠিকানা আছে—মুছে ফেলা যাবে না। সম্পাদনা করুন।'
+          )
+        } else {
+          setError('ঠিকানা মোছা যায়নি')
+        }
+        return
+      }
+      await loadAddresses()
+    } catch {
+      setError('নেটওয়ার্ক ত্রুটি। আবার চেষ্টা করুন।')
+    }
+  }
+
+  const openEditAddress = (addr: SavedAddress, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setEditingAddressId(addr.id)
+    setAddressForm({
+      fullName: addr.fullName,
+      phone: addr.phone,
+      addressLine1: addr.addressLine1,
+      city: addr.city,
+    })
+    setSelectedZone(addr.zoneId)
+    setShowAddAddress(true)
   }
 
   const handleApplyCoupon = () => {
@@ -215,20 +349,23 @@ export default function CheckoutPage() {
     setError('')
     setIsLoading(true)
 
-    if (!selectedZone) {
-      setError('অনুগ্রহ করে ডেলিভারি জোন নির্বাচন করুন')
+    if (!selectedSavedAddressId && !selectedZone) {
+      setError('অনুগ্রহ করে ডেলিভারি জোন নির্বাচন করুন অথবা সংরক্ষিত ঠিকানা বেছে নিন')
       setIsLoading(false)
       return
     }
 
     try {
+      const paymentApi = paymentMethod === 'BKASH' ? 'ONLINE' : paymentMethod
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
                 body: JSON.stringify({
-                  zoneId: selectedZone,
+                  ...(selectedSavedAddressId
+                    ? { addressId: selectedSavedAddressId }
+                    : { zoneId: selectedZone }),
                   items: items.map((item) => ({
                     medicineId: item.medicineId,
                     productId: item.productId,
@@ -236,7 +373,7 @@ export default function CheckoutPage() {
                     quantity: item.quantity,
                     price: item.price,
                   })),
-                  paymentMethod,
+                  paymentMethod: paymentApi,
                   notes,
                 }),
       })
@@ -324,8 +461,6 @@ export default function CheckoutPage() {
     if (!session || items.length === 0) {
       return null
     }
-
-    const selectedAddressData = addresses.find(a => a.id === selectedAddress)
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -419,35 +554,65 @@ export default function CheckoutPage() {
               </select>
             </div>
 
-            {/* Selected Address Card with Radio */}
-            {addresses.length > 0 && selectedAddressData && (
-              <div className="mb-3">
-                <div className="flex items-start gap-3 rounded-lg border-2 border-teal-500 bg-teal-50/30 p-4 cursor-pointer">
-                  <div className="mt-0.5">
-                    <div className="h-5 w-5 rounded-full border-2 border-teal-500 flex items-center justify-center">
-                      <div className="h-2.5 w-2.5 rounded-full bg-teal-500" />
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-gray-900">{selectedAddressData.fullAddress}</p>
-                    <button type="button" className="text-teal-600 font-medium text-sm">[সম্পাদনা]</button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Other addresses */}
-            {addresses.filter(a => a.id !== selectedAddress).map((addr) => (
+            {/* Saved addresses — রেডিও নির্বাচন + সম্পাদনা / মুছুন */}
+            {addresses.map((addr) => (
               <div
                 key={addr.id}
-                className="mb-3 flex items-start gap-3 rounded-lg border-2 border-gray-200 p-4 cursor-pointer hover:border-gray-300"
-                onClick={() => setSelectedAddress(addr.id)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    setSelectedSavedAddressId(addr.id)
+                  }
+                }}
+                className={`mb-3 flex items-start gap-3 rounded-lg border-2 p-4 cursor-pointer transition-colors ${
+                  selectedSavedAddressId === addr.id
+                    ? 'border-teal-500 bg-teal-50/30'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+                onClick={() => setSelectedSavedAddressId(addr.id)}
               >
-                <div className="mt-0.5">
-                  <div className="h-5 w-5 rounded-full border-2 border-gray-300" />
+                <div className="mt-0.5 shrink-0">
+                  <div
+                    className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${
+                      selectedSavedAddressId === addr.id ? 'border-teal-500' : 'border-gray-300'
+                    }`}
+                  >
+                    {selectedSavedAddressId === addr.id && (
+                      <div className="h-2.5 w-2.5 rounded-full bg-teal-500" />
+                    )}
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <p className="text-gray-900">{addr.fullAddress}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-gray-900">{addr.fullName}</p>
+                  <p className="text-gray-800 text-sm mt-0.5">
+                    {addr.addressLine1}
+                    {addr.addressLine2 ? `, ${addr.addressLine2}` : ''}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {addr.phone} · {addr.zone.name}
+                  </p>
+                </div>
+                <div className="flex shrink-0 gap-1" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    type="button"
+                    onClick={(e) => openEditAddress(addr, e)}
+                    className="rounded-lg p-2 text-teal-600 hover:bg-teal-50"
+                    title="সম্পাদনা"
+                    aria-label="ঠিকানা সম্পাদনা"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => void handleDeleteAddress(addr.id, e)}
+                    className="rounded-lg p-2 text-red-600 hover:bg-red-50"
+                    title="মুছুন"
+                    aria-label="ঠিকানা মুছুন"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
             ))}
@@ -456,7 +621,10 @@ export default function CheckoutPage() {
             {!showAddAddress ? (
               <button
                 type="button"
-                onClick={() => setShowAddAddress(true)}
+                onClick={() => {
+                  resetAddressForm()
+                  setShowAddAddress(true)
+                }}
                 className="w-full flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-teal-400 py-3 text-teal-600 font-medium hover:bg-teal-50 transition-colors"
               >
                 <Plus className="h-5 w-5" />
@@ -464,40 +632,55 @@ export default function CheckoutPage() {
               </button>
             ) : (
               <div className="rounded-lg border-2 border-gray-200 p-4 bg-gray-50">
-                <h3 className="font-semibold text-gray-900 mb-3">নতুন ঠিকানা যোগ করুন</h3>
+                <h3 className="font-semibold text-gray-900 mb-3">
+                  {editingAddressId ? 'ঠিকানা সম্পাদনা করুন' : 'নতুন ঠিকানা যোগ করুন'}
+                </h3>
+                <p className="text-xs text-gray-600 mb-3">
+                  উপরে বিভাগ/জেলা/জোন সিলেক্ট করুন। অর্ডারের ডেলিভারি চার্জ সেই জোন অনুযায়ী যাবে।
+                </p>
                 <div className="space-y-3">
                   <input
                     type="text"
-                    placeholder="ঠিকানার নাম (যেমন: বাসা, অফিস)"
-                    value={newAddress.label}
-                    onChange={(e) => setNewAddress({ ...newAddress, label: e.target.value })}
+                    placeholder="পূর্ণ নাম"
+                    value={addressForm.fullName}
+                    onChange={(e) => setAddressForm({ ...addressForm, fullName: e.target.value })}
                     className="block w-full rounded-lg border-2 border-gray-200 px-4 py-3 text-base text-gray-900 focus:border-teal-500 focus:outline-none"
                   />
                   <textarea
-                    placeholder="সম্পূর্ণ ঠিকানা"
-                    value={newAddress.fullAddress}
-                    onChange={(e) => setNewAddress({ ...newAddress, fullAddress: e.target.value })}
+                    placeholder="বিস্তারিত ঠিকানা (রোড, বাড়া/ফ্লাট)"
+                    value={addressForm.addressLine1}
+                    onChange={(e) => setAddressForm({ ...addressForm, addressLine1: e.target.value })}
                     rows={2}
+                    className="block w-full rounded-lg border-2 border-gray-200 px-4 py-3 text-base text-gray-900 focus:border-teal-500 focus:outline-none"
+                  />
+                  <input
+                    type="text"
+                    placeholder="শহর / এলাকা"
+                    value={addressForm.city}
+                    onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })}
                     className="block w-full rounded-lg border-2 border-gray-200 px-4 py-3 text-base text-gray-900 focus:border-teal-500 focus:outline-none"
                   />
                   <input
                     type="tel"
                     placeholder="ফোন নম্বর"
-                    value={newAddress.phone}
-                    onChange={(e) => setNewAddress({ ...newAddress, phone: e.target.value })}
+                    value={addressForm.phone}
+                    onChange={(e) => setAddressForm({ ...addressForm, phone: e.target.value })}
                     className="block w-full rounded-lg border-2 border-gray-200 px-4 py-3 text-base text-gray-900 focus:border-teal-500 focus:outline-none"
                   />
                   <div className="flex gap-2">
                     <button
                       type="button"
-                      onClick={handleAddAddress}
+                      onClick={() => void handleSaveAddress()}
                       className="flex-1 px-4 py-2.5 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors"
                     >
                       সংরক্ষণ করুন
                     </button>
                     <button
                       type="button"
-                      onClick={() => setShowAddAddress(false)}
+                      onClick={() => {
+                        setShowAddAddress(false)
+                        resetAddressForm()
+                      }}
                       className="px-4 py-2.5 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors"
                     >
                       বাতিল
