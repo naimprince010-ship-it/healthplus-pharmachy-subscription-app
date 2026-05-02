@@ -28,6 +28,19 @@ function getCookieConsent(): boolean {
   return consent?.split('=')[1] === 'accepted'
 }
 
+/** SSR: false. Client: true. No subscribe — avoids setState-in-effect only for a mount gate. */
+function subscribeNoop(): () => void {
+  return () => {}
+}
+
+function snapshotClient(): boolean {
+  return true
+}
+
+function snapshotServer(): boolean {
+  return false
+}
+
 export default function TrackingScripts({
   fbPixel,
   tiktokPixel,
