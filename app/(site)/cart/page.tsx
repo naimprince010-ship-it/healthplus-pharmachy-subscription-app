@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { useCart, buildUnitLabelBn } from '@/contexts/CartContext'
 import { useWishlist } from '@/contexts/WishlistContext'
 import { useSession } from 'next-auth/react'
-import { ArrowLeft, X, Heart, Minus, Plus, Clock, Lock, ChevronRight, Truck } from 'lucide-react'
+import { ArrowLeft, X, Heart, Minus, Plus, Clock, Lock, ChevronRight, Truck, ShoppingCart } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-hot-toast'
@@ -83,11 +83,15 @@ const DEFAULT_SETTINGS: CartSettings = {
   cartTitleBn: 'আপনার কার্ট',
 }
 
-/** একই ব্র্যান্ড সবুজ — বাটন/CTA গুলোতে রঙ মিল রাখতে */
-const BTN_PRIMARY =
-  'bg-[#00A651] font-semibold text-white shadow-sm transition-colors hover:bg-[#008f45] active:bg-[#00733a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00A651] focus-visible:ring-offset-2'
-const BTN_PRIMARY_DISABLED =
-  'disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-[#00A651] disabled:active:bg-[#00A651]'
+/** পণ্য লিস্টের `AddToCartButton` / চেকআউট / প্রোমো — একই কমলা */
+const BTN_ORANGE_CTA =
+  'bg-orange-500 font-semibold text-white shadow-sm transition-all duration-200 hover:bg-orange-600 hover:shadow-md active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2'
+const BTN_ORANGE_CTA_DISABLED =
+  'disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-orange-500 disabled:active:bg-orange-500'
+
+/** সাজেশন কার্ড — গ্রিডের কার্ট বাটনের মতো */
+const BTN_ADD_TO_CART_ORANGE =
+  'flex w-full items-center justify-center gap-1 rounded-lg bg-orange-500 px-1.5 py-2 text-[10px] font-semibold text-white transition-all duration-200 hover:bg-orange-600 hover:shadow-md active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-1 sm:gap-1.5 sm:px-2 sm:text-xs lg:text-sm'
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, clearCart, total, itemCount, isInitialized, addItem } = useCart()
@@ -341,7 +345,7 @@ export default function CartPage() {
           </h2>
           <Link
             href="/products"
-            className="flex items-center gap-0.5 text-sm font-semibold text-[#00A651] transition-colors hover:text-[#008f45] active:text-[#00733a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00A651] focus-visible:ring-offset-2 rounded-md lg:text-base"
+            className="flex items-center gap-0.5 rounded-md text-sm font-semibold text-orange-600 transition-colors hover:text-orange-700 active:text-orange-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 lg:text-base"
             aria-label="সব পণ্য দেখুন"
           >
             <span className="hidden sm:inline">আরও</span>
@@ -360,7 +364,7 @@ export default function CartPage() {
                     <div className="mb-2 h-4 w-full animate-pulse rounded bg-gray-200" />
                     <div className="mb-2 h-4 w-2/3 animate-pulse rounded bg-gray-200" />
                     <div className="mb-2 h-5 w-16 animate-pulse rounded bg-gray-200" />
-                    <div className="mt-auto h-8 w-full animate-pulse rounded-full bg-gray-200" />
+                    <div className="mt-auto h-9 w-full animate-pulse rounded-lg bg-gray-200" />
                   </div>
                 ))
               : visibleSuggestions.map((product) => (
@@ -402,9 +406,10 @@ export default function CartPage() {
                     <button
                       type="button"
                       onClick={() => handleAddSuggestion(product)}
-                      className={`mt-auto w-full rounded-full py-1.5 text-xs lg:py-2 lg:text-sm ${BTN_PRIMARY}`}
+                      className={`mt-auto ${BTN_ADD_TO_CART_ORANGE}`}
                     >
-                      + Add
+                      <ShoppingCart className="h-3 w-3 flex-shrink-0 sm:h-4 sm:w-4" aria-hidden />
+                      <span className="text-center leading-tight">কার্টে যোগ করুন</span>
                     </button>
                   </div>
                 ))}
@@ -439,7 +444,7 @@ export default function CartPage() {
           <p className="mt-1 text-sm text-gray-500">{settings.emptyCartSubtextBn}</p>
           <Link
             href="/"
-            className={`mt-6 inline-flex items-center justify-center rounded-full px-8 py-3 ${BTN_PRIMARY}`}
+            className={`mt-6 inline-flex items-center justify-center rounded-full px-8 py-3 ${BTN_ORANGE_CTA}`}
           >
             {settings.startShoppingTextBn}
           </Link>
@@ -644,13 +649,13 @@ export default function CartPage() {
                       value={promoCode}
                       onChange={(e) => setPromoCode(e.target.value)}
                       placeholder="কোডটি লিখুন"
-                      className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#00A651] focus:outline-none"
+                      className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500/30"
                     />
                     <button
                       onClick={handleApplyPromo}
                       disabled={isApplyingPromo}
                       type="button"
-                      className={`rounded-lg px-4 py-2 text-sm ${BTN_PRIMARY} ${BTN_PRIMARY_DISABLED}`}
+                      className={`rounded-lg px-4 py-2 text-sm ${BTN_ORANGE_CTA} ${BTN_ORANGE_CTA_DISABLED}`}
                     >
                       {isApplyingPromo ? '...' : settings.promoApplyTextBn.replace('[', '').replace(']', '')}
                     </button>
@@ -678,7 +683,7 @@ export default function CartPage() {
                 {!session ? (
                   <Link
                     href="/auth/signin?redirect=/cart"
-                    className={`flex w-full items-center justify-center gap-2 rounded-full py-3 ${BTN_PRIMARY}`}
+                    className={`flex w-full items-center justify-center gap-2 rounded-full py-3 ${BTN_ORANGE_CTA}`}
                   >
                     <Lock className="h-4 w-4" />
                     {settings.checkoutButtonTextBn}
@@ -686,7 +691,7 @@ export default function CartPage() {
                 ) : (
                   <Link
                     href="/checkout"
-                    className={`flex w-full items-center justify-center gap-2 rounded-full py-3 ${BTN_PRIMARY}`}
+                    className={`flex w-full items-center justify-center gap-2 rounded-full py-3 ${BTN_ORANGE_CTA}`}
                   >
                     <Lock className="h-4 w-4" />
                     {settings.checkoutButtonTextBn}
@@ -714,13 +719,13 @@ export default function CartPage() {
                   value={promoCode}
                   onChange={(e) => setPromoCode(e.target.value)}
                   placeholder="কোডটি লিখুন"
-                  className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#00A651] focus:outline-none"
+                  className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500/30"
                 />
                 <button
                   onClick={handleApplyPromo}
                   disabled={isApplyingPromo}
                   type="button"
-                  className={`rounded-lg px-4 py-2 text-sm ${BTN_PRIMARY} ${BTN_PRIMARY_DISABLED}`}
+                  className={`rounded-lg px-4 py-2 text-sm ${BTN_ORANGE_CTA} ${BTN_ORANGE_CTA_DISABLED}`}
                 >
                   {isApplyingPromo ? '...' : settings.promoApplyTextBn.replace('[', '').replace(']', '')}
                 </button>
@@ -785,7 +790,7 @@ export default function CartPage() {
           {!session ? (
             <Link
               href="/auth/signin?redirect=/cart"
-              className={`flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-base ${BTN_PRIMARY}`}
+              className={`flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-base ${BTN_ORANGE_CTA}`}
             >
               <Lock className="h-5 w-5" />
               {settings.checkoutButtonTextBn}
@@ -793,7 +798,7 @@ export default function CartPage() {
           ) : (
             <Link
               href="/checkout"
-              className={`flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-base ${BTN_PRIMARY}`}
+              className={`flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-base ${BTN_ORANGE_CTA}`}
             >
               <Lock className="h-5 w-5" />
               {settings.checkoutButtonTextBn}
