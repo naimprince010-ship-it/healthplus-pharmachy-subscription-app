@@ -1,4 +1,5 @@
 {
+  "buildCommand": "prisma migrate deploy && next build",
   "crons": [
     {
       "path": "/api/cron/discount-engine",
