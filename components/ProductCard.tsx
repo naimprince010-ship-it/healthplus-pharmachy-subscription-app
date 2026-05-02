@@ -22,6 +22,11 @@ export interface ProductCardProps {
   flashSaleStart?: Date | string | null
   flashSaleEnd?: Date | string | null
   isFlashSale?: boolean | null
+  campaignPrice?: number | null
+  campaignStart?: Date | string | null
+  campaignEnd?: Date | string | null
+  requiresPrescription?: boolean
+  genericName?: string | null
   // Pre-computed values from server to avoid hydration mismatch
   effectivePrice?: number
   effectiveMrp?: number
@@ -47,9 +52,21 @@ interface ProductCardComponentProps {
 }
 
 export function ProductCard({ product, variant = 'default', className = '' }: ProductCardComponentProps) {
-  const href = product.href || `/products/${product.slug}`
-  const medicineId = product.cartInfo?.kind === 'medicine' ? product.cartInfo.medicineId : undefined
-  const productId = product.cartInfo?.kind === 'product' ? product.cartInfo.productId : product.id
+  const href =
+    product.href ||
+    (product.type === 'MEDICINE' ? `/medicines/${product.slug}` : `/products/${product.slug}`)
+
+  let medicineId: string | undefined
+  let productId: string | undefined
+  if (product.cartInfo?.kind === 'medicine') {
+    medicineId = product.cartInfo.medicineId
+  } else if (product.cartInfo?.kind === 'product') {
+    productId = product.cartInfo.productId
+  } else if (product.type === 'MEDICINE') {
+    medicineId = product.id
+  } else {
+    productId = product.id
+  }
 
   const isCompact = variant === 'compact'
   const displayImageUrl = getStorefrontImageUrl(product.imageUrl)
@@ -59,14 +76,14 @@ export function ProductCard({ product, variant = 'default', className = '' }: Pr
   let price: number
   let mrp: number
   let discountPercent: number
-  let isFlashSale: boolean
-  
+  let showOrangeOffBadge: boolean
+
   if (product.effectivePrice !== undefined) {
     // Use pre-computed values from server
     price = product.effectivePrice
     mrp = product.effectiveMrp ?? product.mrp ?? product.sellingPrice
     discountPercent = product.effectiveDiscountPercent ?? 0
-    isFlashSale = product.isFlashSaleActive ?? false
+    showOrangeOffBadge = product.isFlashSaleActive ?? false
   } else {
     // Fall back to computing on client (for pages that don't pre-compute)
     const computed = getEffectivePrices({
@@ -77,13 +94,16 @@ export function ProductCard({ product, variant = 'default', className = '' }: Pr
       flashSaleStart: product.flashSaleStart,
       flashSaleEnd: product.flashSaleEnd,
       isFlashSale: product.isFlashSale,
+      campaignPrice: product.campaignPrice,
+      campaignStart: product.campaignStart,
+      campaignEnd: product.campaignEnd,
     })
     price = computed.price
     mrp = computed.mrp
     discountPercent = computed.discountPercent
-    isFlashSale = computed.isFlashSale
+    showOrangeOffBadge = computed.isFlashSale || computed.isCampaign
   }
-  
+
   const hasDiscount = discountPercent > 0
 
   return (
@@ -96,8 +116,8 @@ export function ProductCard({ product, variant = 'default', className = '' }: Pr
     >
       {/* Discount badge */}
       {hasDiscount && (
-        <div className={`absolute left-2 top-2 z-10 rounded px-2 py-0.5 text-xs font-semibold text-white ${isFlashSale ? 'bg-orange-500' : 'bg-red-500'}`}>
-          {discountPercent}% {isFlashSale ? 'OFF' : 'ডিস্কাউন্ট'}
+        <div className={`absolute left-2 top-2 z-10 rounded px-2 py-0.5 text-xs font-semibold text-white ${showOrangeOffBadge ? 'bg-orange-500' : 'bg-red-500'}`}>
+          {discountPercent}% {showOrangeOffBadge ? 'OFF' : 'ডিস্কাউন্ট'}
         </div>
       )}
 
@@ -120,6 +140,11 @@ export function ProductCard({ product, variant = 'default', className = '' }: Pr
           <div className="flex h-full items-center justify-center text-gray-400">
             No image
           </div>
+        )}
+        {product.requiresPrescription && (
+          <span className="absolute right-2 top-2 z-10 rounded-full bg-red-500 px-2 py-0.5 text-xs font-semibold text-white">
+            Rx
+          </span>
         )}
       </div>
 
@@ -159,8 +184,10 @@ export function ProductCard({ product, variant = 'default', className = '' }: Pr
               name={product.name}
               price={price}
               image={displayImageUrl || undefined}
+              requiresPrescription={product.requiresPrescription}
               stockQuantity={product.stockQuantity}
               category={product.category.name}
+              genericName={product.genericName ?? undefined}
               mrp={mrp}
               slug={product.slug}
               type={product.type === 'MEDICINE' ? 'MEDICINE' : 'PRODUCT'}

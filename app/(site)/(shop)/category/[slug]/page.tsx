@@ -1,8 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { AddToCartButton } from '@/components/AddToCartButton'
-import { getEffectivePrices } from '@/lib/pricing'
+import { ProductCard } from '@/components/ProductCard'
 import { getStorefrontImageUrl } from '@/lib/image-url'
 import type { Metadata } from 'next'
 import { GROCERY_CATEGORY_SLUG, isGroceryShopEnabled, isMedicineShopEnabled } from '@/lib/site-features'
@@ -126,6 +125,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     sellingPrice: number
     stockQuantity: number
     isFeatured: boolean
+    brandName?: string | null
     requiresPrescription?: boolean
     genericName?: string | null
     strength?: string | null
@@ -133,6 +133,10 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     campaignPrice?: number | null
     campaignStart?: Date | null
     campaignEnd?: Date | null
+    isFlashSale?: boolean
+    flashSalePrice?: number | null
+    flashSaleStart?: Date | null
+    flashSaleEnd?: Date | null
   }> = []
 
   if (category.isMedicineCategory) {
@@ -157,6 +161,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         genericName: true,
         strength: true,
         discountPercentage: true,
+        brandName: true,
       },
       orderBy: [
         { isFeatured: 'desc' },
@@ -192,6 +197,11 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         campaignPrice: true,
         campaignStart: true,
         campaignEnd: true,
+        isFlashSale: true,
+        flashSalePrice: true,
+        flashSaleStart: true,
+        flashSaleEnd: true,
+        brandName: true,
       },
       orderBy: [
         { isFeatured: 'desc' },
@@ -353,108 +363,43 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
           ) : (
             <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {items.map((item) => {
-                const detailPath = category.isMedicineCategory
-                  ? `/medicines/${item.slug}`
-                  : `/products/${item.slug}`
-
-                const pricing = getEffectivePrices({
-                  sellingPrice: item.sellingPrice,
-                  mrp: item.mrp,
-                  discountPercentage: item.discountPercentage,
-                  campaignPrice: item.campaignPrice,
-                  campaignStart: item.campaignStart,
-                  campaignEnd: item.campaignEnd,
-                })
-
-                const hasDiscount = pricing.discountPercent > 0
-                const discountedPrice = pricing.price
-                const isCampaign = pricing.isCampaign
-
-                const displayImageUrl = getStorefrontImageUrl(item.imageUrl)
+                const isMedicine = category.isMedicineCategory
                 return (
-                  <div
+                  <ProductCard
                     key={item.id}
-                    className="group relative flex flex-col rounded-lg border border-gray-200 p-4 shadow-sm transition-shadow hover:shadow-md"
-                  >
-                    <Link href={detailPath} className="flex-1">
-                      <div className="relative mb-4 h-48 overflow-hidden rounded-lg bg-gray-100">
-                        {displayImageUrl ? (
-                          <img
-                            src={displayImageUrl}
-                            alt={item.name}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-full items-center justify-center text-gray-400">
-                            No image
-                          </div>
-                        )}
-                        {hasDiscount && (
-                          <span className={`absolute left-2 top-2 z-10 rounded px-2 py-1 text-xs font-semibold text-white ${isCampaign ? 'bg-orange-500' : 'bg-red-500'}`}>
-                            {pricing.discountPercent}% {isCampaign ? 'OFF' : 'ডিস্কাউন্ট'}
-                          </span>
-                        )}
-                        {item.isFeatured && !hasDiscount && (
-                          <span className="absolute left-2 top-2 rounded-full bg-yellow-400 px-2 py-1 text-xs font-semibold text-gray-900">
-                            Featured
-                          </span>
-                        )}
-                        {item.requiresPrescription && (
-                          <span className="absolute right-2 top-2 rounded-full bg-red-500 px-2 py-1 text-xs font-semibold text-white">
-                            Rx
-                          </span>
-                        )}
-                      </div>
-                      <h3 className="font-semibold text-gray-900 group-hover:text-teal-600">
-                        {item.name}
-                      </h3>
-                      {item.genericName && (
-                        <p className="mt-1 text-sm text-gray-600">
-                          {item.genericName}
-                        </p>
-                      )}
-                      {item.strength && (
-                        <p className="mt-1 text-xs text-gray-500">{item.strength}</p>
-                      )}
-                      <div className="mt-4 flex items-center justify-between">
-                        <div className="flex flex-wrap items-baseline gap-2">
-                          <span className="text-xl font-bold text-gray-900">
-                            ৳{discountedPrice.toFixed(2)}
-                          </span>
-                          {hasDiscount && (
-                            <span className="text-sm text-gray-500 line-through">
-                              ৳{pricing.mrp.toFixed(2)}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      {item.stockQuantity === 0 && (
-                        <p className="mt-2 text-xs text-red-600">Out of stock</p>
-                      )}
-                    </Link>
-                    <div className="mt-4">
-                      {category.isMedicineCategory ? (
-                        <AddToCartButton
-                          medicineId={item.id}
-                          name={item.name}
-                          price={discountedPrice}
-                          image={displayImageUrl || undefined}
-                          requiresPrescription={item.requiresPrescription}
-                          stockQuantity={item.stockQuantity}
-                          className="w-full"
-                        />
-                      ) : (
-                        <AddToCartButton
-                          productId={item.id}
-                          name={item.name}
-                          price={discountedPrice}
-                          image={displayImageUrl || undefined}
-                          stockQuantity={item.stockQuantity}
-                          className="w-full"
-                        />
-                      )}
-                    </div>
-                  </div>
+                    product={{
+                      id: item.id,
+                      type: isMedicine ? 'MEDICINE' : 'GENERAL',
+                      name: item.name,
+                      slug: item.slug,
+                      brandName: isMedicine
+                        ? (item.brandName || item.genericName || null)
+                        : (item.brandName ?? null),
+                      description: item.description,
+                      sellingPrice: item.sellingPrice,
+                      mrp: item.mrp,
+                      stockQuantity: item.stockQuantity,
+                      imageUrl: item.imageUrl,
+                      discountPercentage: item.discountPercentage,
+                      campaignPrice: item.campaignPrice,
+                      campaignStart: item.campaignStart,
+                      campaignEnd: item.campaignEnd,
+                      isFlashSale: !isMedicine ? item.isFlashSale : undefined,
+                      flashSalePrice: !isMedicine ? item.flashSalePrice : undefined,
+                      flashSaleStart: !isMedicine ? item.flashSaleStart : undefined,
+                      flashSaleEnd: !isMedicine ? item.flashSaleEnd : undefined,
+                      requiresPrescription: item.requiresPrescription,
+                      genericName: item.genericName,
+                      category: {
+                        id: category.id,
+                        name: category.name,
+                        slug: category.slug,
+                      },
+                      cartInfo: isMedicine
+                        ? { kind: 'medicine' as const, medicineId: item.id }
+                        : { kind: 'product' as const, productId: item.id },
+                    }}
+                  />
                 )
               })}
             </div>
