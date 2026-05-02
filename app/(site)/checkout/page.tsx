@@ -236,7 +236,8 @@ export default function CheckoutPage() {
                     quantity: item.quantity,
                     price: item.price,
                   })),
-                  paymentMethod,
+                  paymentMethod:
+                    paymentMethod === 'BKASH' ? 'ONLINE' : 'COD',
                   notes,
                 }),
       })
