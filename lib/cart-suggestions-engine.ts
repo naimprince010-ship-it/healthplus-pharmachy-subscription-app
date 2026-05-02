@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client'
+import { Prisma, ProductInteractionKind } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { GROCERY_CATEGORY_SLUG, isGroceryShopEnabled, isMedicineShopEnabled } from '@/lib/site-features'
 
@@ -15,6 +15,9 @@ const DEFAULT_LIMIT = 12
 const CO_PURCHASE_SAMPLE = 40
 /** লগইন ইউজারের পুরনো কেনা পণ্য — co-purchase anchor হিসেবে */
 const MAX_HISTORY_ANCHORS = 24
+/** লগড ইন্টারঅ্যাকশন লগ থেকে ভিউ/কার্ট সিগন্যাল — সিড ও আগের সারিতে বুস্ট */
+const MAX_INTERACTION_ANCHORS = 24
+const INTERACTION_LOG_SCAN = 320
 
 function buildCatalogWhere(extra: Record<string, unknown> = {}): Record<string, unknown> {
   const w: Record<string, unknown> = {
@@ -128,6 +131,42 @@ export async function getRecentPurchasedProductIds(
     if (out.length >= take) break
   }
   return out
+}
+
+/**
+ * সাম্প্রতিক `ProductInteractionLog` — ADD_TO_CART কে ভিউ এর চেয়ে বেশি ওজন, একই ওজনে নতুন ইভেন্ট আগে।
+ */
+export async function getRecentInteractionProductIds(
+  userId: string,
+  take: number
+): Promise<string[]> {
+  if (!userId || take <= 0) return []
+
+  const rows = await prisma.productInteractionLog.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'desc' },
+    take: INTERACTION_LOG_SCAN,
+    select: { productId: true, kind: true },
+  })
+
+  const weight = new Map<string, number>()
+  const firstIdx = new Map<string, number>()
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i]
+    if (!firstIdx.has(r.productId)) firstIdx.set(r.productId, i)
+    const delta =
+      r.kind === ProductInteractionKind.ADD_TO_CART ? 4 : 1
+    weight.set(r.productId, (weight.get(r.productId) || 0) + delta)
+  }
+
+  const unique = [...new Set(rows.map((r) => r.productId))]
+  unique.sort((a, b) => {
+    const diff = (weight.get(b) || 0) - (weight.get(a) || 0)
+    if (diff !== 0) return diff
+    return (firstIdx.get(a) ?? 0) - (firstIdx.get(b) ?? 0)
+  })
+
+  return unique.slice(0, take)
 }
 
 async function fetchProductsByIdsOrdered(ids: string[]): Promise<CartSuggestionProduct[]> {
@@ -276,8 +315,8 @@ async function popularityFallbackIds(exclude: Set<string>, take: number): Promis
 }
 
 /**
- * ম্যানুয়াল সাজেশন না থাকলে: ম্যাটেরিয়ালাইজড co-purchase → লাইভ co-purchase → ক্যাটাগরি → পপুলারিটি।
- * `userId` থাকলে সাম্প্রতিক কেনা পণ্যগুলোও co-purchase সিড (ব্যক্তিগতকরণ)।
+ * ম্যানুয়াল সাজেশন না থাকলে: (লগইন হলে) ইন্টারঅ্যাকশন-অ্যাঙ্কর co-purchase বুস্ট → ম্যাটেরিয়ালাইজড co-purchase → লাইভ → ক্যাটাগরি → পপুলারিটি।
+ * `userId` থাকলে কেনা ইতিহাস + ভিউ/কার্ট লগ দুটোই সিড।
  */
 export async function getEngineCartSuggestions(options: {
   cartLineIds: string[]
@@ -289,18 +328,27 @@ export async function getEngineCartSuggestions(options: {
     await resolveCartContextForSuggestions(options.cartLineIds)
 
   let historyAnchors: string[] = []
+  let interactionAnchors: string[] = []
   if (options.userId) {
-    historyAnchors = await getRecentPurchasedProductIds(
-      options.userId,
-      MAX_HISTORY_ANCHORS
-    )
+    ;[historyAnchors, interactionAnchors] = await Promise.all([
+      getRecentPurchasedProductIds(options.userId, MAX_HISTORY_ANCHORS),
+      getRecentInteractionProductIds(options.userId, MAX_INTERACTION_ANCHORS),
+    ])
   }
 
   const seedForCoPurchase = [
-    ...new Set([...productIdsInCart, ...historyAnchors]),
+    ...new Set([
+      ...productIdsInCart,
+      ...historyAnchors,
+      ...interactionAnchors,
+    ]),
   ]
   const categorySeedProducts = [
-    ...new Set([...productIdsInCart, ...historyAnchors]),
+    ...new Set([
+      ...productIdsInCart,
+      ...historyAnchors,
+      ...interactionAnchors,
+    ]),
   ]
 
   const exclude = new Set(productIdsInCart)
@@ -314,7 +362,17 @@ export async function getEngineCartSuggestions(options: {
     }
   }
 
-  // 1) ম্যাটেরিয়ালাইজড co-purchase (ক্রন: /api/cron/rebuild-product-cooccurrence)
+  // 0) ইন্টারঅ্যাকশন অ্যাঙ্কার থেকে co-purchase আগে (ব্রাউজ/অ্যাড সিগন্যাল বুস্ট)
+  if (orderedIds.length < limit && interactionAnchors.length > 0) {
+    const coInt = await coPurchaseFromMaterialized(
+      interactionAnchors,
+      exclude,
+      CO_PURCHASE_SAMPLE
+    )
+    pushUnique(coInt)
+  }
+
+  // 1) ম্যাটেরিয়ালাইজড co-purchase — কার্ট + ইতিহাস + ইন্টারঅ্যাকশন সিড
   const coMat = await coPurchaseFromMaterialized(
     seedForCoPurchase,
     exclude,
