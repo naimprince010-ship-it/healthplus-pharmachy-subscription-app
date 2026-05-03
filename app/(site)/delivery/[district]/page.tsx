@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { Metadata } from 'next'
 import { MapPin, Truck, ShieldCheck, Clock } from 'lucide-react'
 import { MAIN_CONTAINER } from '@/lib/layout'
+import { serializeJsonLd } from '@/lib/serialize-json-ld'
 import { districts, getDistrictBySlug } from '@/lib/districts'
 
 export const revalidate = 86400 // Revalidate once a day
@@ -76,7 +77,7 @@ export default async function DistrictDeliveryPage({ params }: DistrictPageProps
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
       <div className="bg-gray-50">
         {/* Hero Section */}

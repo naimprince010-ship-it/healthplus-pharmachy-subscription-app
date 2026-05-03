@@ -7,6 +7,7 @@ import { AddToCartButton } from '@/components/AddToCartButton'
 import type { Metadata } from 'next'
 import { GenericAlternatives } from '@/components/GenericAlternatives'
 import { isMedicineShopEnabled } from '@/lib/site-features'
+import { serializeJsonLd } from '@/lib/serialize-json-ld'
 
 export const revalidate = 60 // Revalidate page every 60 seconds (ISR)
 
@@ -181,11 +182,11 @@ export default async function MedicineDetailPage({
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }}
       />
       <div className="bg-white py-8">
         <div className="w-full px-4 sm:px-6 lg:px-8">

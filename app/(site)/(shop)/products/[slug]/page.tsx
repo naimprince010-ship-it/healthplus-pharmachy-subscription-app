@@ -8,6 +8,7 @@ import { ArrowLeft } from 'lucide-react'
 import { Metadata } from 'next'
 import { isProductLinkedToAzanCatalog } from '@/lib/integrations/azan-catalog'
 import { getStorefrontImageUrl } from '@/lib/image-url'
+import { serializeJsonLd } from '@/lib/serialize-json-ld'
 import { getCachedProductBySlug } from './get-product-by-slug'
 import { GROCERY_CATEGORY_SLUG, isGroceryShopEnabled, isMedicineShopEnabled } from '@/lib/site-features'
 import { SimilarProductsSection } from './SimilarProductsSection'
@@ -196,11 +197,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }}
       />
       <div className="bg-gray-50 py-8">
         {/* MedEasy-style layout: centered container matching home page */}

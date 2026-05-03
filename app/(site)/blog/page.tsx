@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { BlogStatus, BlogType } from '@prisma/client'
 import { BlogCard } from '@/components/blog/BlogCard'
 import Link from 'next/link'
+import { serializeJsonLd } from '@/lib/serialize-json-ld'
 
 export const metadata: Metadata = {
     title: 'Health & Beauty Blog — Tips, Recipes & Wellness | Halalzi',
@@ -81,7 +82,7 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
         <div className="bg-slate-50 min-h-screen pb-20">
             <script
                 type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+                dangerouslySetInnerHTML={{ __html: serializeJsonLd(websiteJsonLd) }}
             />
             {/* Header Banner */}
             <div className="bg-emerald-800 text-white py-16 px-4">

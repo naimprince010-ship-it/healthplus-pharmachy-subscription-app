@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { format } from 'date-fns'
 import { BlogStatus, BlogType } from '@prisma/client'
 import { BlogMarkdown } from '@/components/blog/BlogMarkdown'
+import { serializeJsonLd } from '@/lib/serialize-json-ld'
 
 interface BlogDetailPageProps {
     params: Promise<{ slug: string }>
@@ -221,13 +222,16 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
 
     return (
         <div className="bg-slate-50 min-h-screen pb-20">
-            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }} />
-            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(articleJsonLd) }} />
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }} />
             {blog.faqJsonLd && (
                 <script
                     type="application/ld+json"
                     dangerouslySetInnerHTML={{
-                        __html: typeof blog.faqJsonLd === 'string' ? blog.faqJsonLd : JSON.stringify(blog.faqJsonLd)
+                        __html:
+                            typeof blog.faqJsonLd === 'string'
+                                ? blog.faqJsonLd.replace(/</g, '\\u003c')
+                                : serializeJsonLd(blog.faqJsonLd)
                     }}
                 />
             )}

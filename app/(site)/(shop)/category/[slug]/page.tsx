@@ -6,6 +6,7 @@ import { categoryPlaceholderLetter } from '@/lib/category-placeholder'
 import { getStorefrontImageUrl } from '@/lib/image-url'
 import type { Metadata } from 'next'
 import { GROCERY_CATEGORY_SLUG, isGroceryShopEnabled, isMedicineShopEnabled } from '@/lib/site-features'
+import { serializeJsonLd } from '@/lib/serialize-json-ld'
 
 export const revalidate = 60 // Revalidate page every 60 seconds (ISR)
 
@@ -314,15 +315,15 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(itemListJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd) }}
       />
       <div className="bg-white py-8">
         <div className="w-full px-4 sm:px-6 lg:px-8">
