@@ -230,10 +230,9 @@ IMPORTANT:
 
     const validProductIds = new Set(availableProducts.map((p) => p.id))
     const byId = new Map(availableProducts.map((p) => [p.id, p]))
-    const aiProductsValidated = productsFromAi.filter((p) => validProductIds.has(p.productId))
 
     // Repair low-confidence AI step mappings (wrong step/wrong product) using deterministic ranking.
-    const aiProducts = aiProductsValidated.map((p) => {
+    const aiProducts = productsFromAi.map((p) => {
       if (p.role !== 'step' || !p.stepOrder || !rankedByStep[p.stepOrder]?.length) return p
       const aiProduct = byId.get(p.productId)
       if (!aiProduct) return p
