@@ -462,7 +462,7 @@ export default function DashboardPageClient() {
                                       <p className="font-semibold text-[#0A9F6E]">৳{product.sellingPrice}</p>
                                       <button
                                         onClick={() => handleAddToCart(product)}
-                                        className="rounded-full bg-[#0A9F6E] px-3 py-1 text-xs font-medium text-white hover:bg-[#088a5b] transition-colors"
+                                        className="rounded-full bg-orange-500 px-3 py-1 text-xs font-medium text-white shadow-sm hover:bg-orange-600 transition-colors"
                                       >
                                         Add
                                       </button>
@@ -506,7 +506,7 @@ export default function DashboardPageClient() {
                                       <p className="font-semibold text-[#0A9F6E]">৳{product.sellingPrice}</p>
                                       <button
                                         onClick={() => handleAddToCart(product)}
-                                        className="rounded-full bg-[#0A9F6E] px-3 py-1 text-xs font-medium text-white hover:bg-[#088a5b] transition-colors"
+                                        className="rounded-full bg-orange-500 px-3 py-1 text-xs font-medium text-white shadow-sm hover:bg-orange-600 transition-colors"
                                       >
                                         Add
                                       </button>
@@ -548,7 +548,7 @@ export default function DashboardPageClient() {
                                       <p className="font-semibold text-[#0A9F6E]">৳{product.sellingPrice}</p>
                                       <button
                                         onClick={() => handleAddToCart(product)}
-                                        className="rounded-full bg-[#0A9F6E] px-3 py-1 text-xs font-medium text-white hover:bg-[#088a5b] transition-colors"
+                                        className="rounded-full bg-orange-500 px-3 py-1 text-xs font-medium text-white shadow-sm hover:bg-orange-600 transition-colors"
                                       >
                                         Add
                                       </button>
@@ -719,7 +719,7 @@ export default function DashboardPageClient() {
                                       <p className="text-sm font-semibold text-[#0A9F6E]">৳{product.sellingPrice}</p>
                                       <button
                                         onClick={() => handleAddToCart(product)}
-                                        className="rounded-full bg-[#0A9F6E] px-2 py-1 text-xs text-white"
+                                        className="rounded-full bg-orange-500 px-2 py-1 text-xs font-medium text-white shadow-sm hover:bg-orange-600 transition-colors"
                                       >
                                         +
                                       </button>
@@ -756,7 +756,7 @@ export default function DashboardPageClient() {
                                       <p className="text-sm font-semibold text-[#0A9F6E]">৳{product.sellingPrice}</p>
                                       <button
                                         onClick={() => handleAddToCart(product)}
-                                        className="rounded-full bg-[#0A9F6E] px-2 py-1 text-xs text-white"
+                                        className="rounded-full bg-orange-500 px-2 py-1 text-xs font-medium text-white shadow-sm hover:bg-orange-600 transition-colors"
                                       >
                                         +
                                       </button>
@@ -791,7 +791,7 @@ export default function DashboardPageClient() {
                                       <p className="text-sm font-semibold text-[#0A9F6E]">৳{product.sellingPrice}</p>
                                       <button
                                         onClick={() => handleAddToCart(product)}
-                                        className="rounded-full bg-[#0A9F6E] px-2 py-1 text-xs text-white"
+                                        className="rounded-full bg-orange-500 px-2 py-1 text-xs font-medium text-white shadow-sm hover:bg-orange-600 transition-colors"
                                       >
                                         +
                                       </button>
