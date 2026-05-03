@@ -169,23 +169,23 @@ export function LoginModal() {
                     <div className="relative z-10 text-center space-y-6">
                         <h2 className="text-3xl font-bold text-teal-900 leading-tight">
                             Welcome to <br />
-                            <span className="text-teal-600">HealthPlus</span> Pharmacy
+                            <span className="text-cta">Halalzi</span>
                         </h2>
-                        <p className="text-teal-700 italic font-medium">
-                            "Your Trusted Partner in Health"
-                        </p>
+                        <h3 className="text-teal-700 italic font-medium">
+                            "Bangladesh's Premium E-commerce & Pharmacy"
+                        </h3>
                         <div className="bg-white/60 p-6 rounded-xl backdrop-blur-sm shadow-sm space-y-4">
                             <div className="flex items-center space-x-3 text-sm text-teal-800 font-medium">
-                                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-100 text-teal-600">✓</span>
-                                <span>10% Discount on Medicines</span>
+                                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-100 text-cta">✓</span>
+                                <span>Genuine Medicines & Products</span>
                             </div>
                             <div className="flex items-center space-x-3 text-sm text-teal-800 font-medium">
-                                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-100 text-teal-600">✓</span>
-                                <span>Free Home Delivery</span>
+                                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-100 text-cta">✓</span>
+                                <span>Fast Home Delivery</span>
                             </div>
                             <div className="flex items-center space-x-3 text-sm text-teal-800 font-medium">
-                                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-100 text-teal-600">✓</span>
-                                <span>Monthly Subscriptions</span>
+                                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-100 text-cta">✓</span>
+                                <span>Easy Monthly Subscriptions</span>
                             </div>
                         </div>
                     </div>
@@ -202,8 +202,8 @@ export function LoginModal() {
 
                     <div className="mx-auto w-full max-w-sm">
                         <div className="mb-8 text-center">
-                            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-teal-600 sm:hidden">
-                                <span className="text-xl font-bold text-white">H+</span>
+                            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-cta sm:hidden">
+                                <span className="text-xl font-bold text-white">H</span>
                             </div>
                             <h2 className="text-2xl font-bold tracking-tight text-gray-900">
                                 Sign in to your account
@@ -261,7 +261,7 @@ export function LoginModal() {
                                             <button
                                                 type="button"
                                                 onClick={() => setStep(1)}
-                                                className="text-teal-600 hover:text-teal-700 hover:underline transition-all"
+                                                className="text-cta hover:text-cta-dark hover:underline transition-all"
                                             >
                                                 Change {isEmailAdmin ? 'Email' : 'Number'}
                                             </button>
@@ -297,7 +297,7 @@ export function LoginModal() {
                                 <button
                                     type="submit"
                                     disabled={isLoading}
-                                    className="group relative flex w-full justify-center rounded-lg bg-teal-600 px-4 py-3 text-sm font-semibold text-white transition-all hover:bg-teal-500 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600 disabled:bg-teal-300 disabled:cursor-not-allowed"
+                                    className="group relative flex w-full justify-center rounded-lg bg-cta px-4 py-3 text-sm font-semibold text-white transition-all hover:bg-cta-dark hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cta disabled:bg-gray-300 disabled:cursor-not-allowed"
                                 >
                                     {isLoading ? (
                                         <span className="flex items-center">
@@ -315,7 +315,7 @@ export function LoginModal() {
                             {step === 1 && (
                                 <p className="text-center text-xs text-gray-500 mt-6 leading-relaxed">
                                     By continuing, you agree to our <br />
-                                    <a href="#" className="font-medium text-teal-600 hover:underline">Terms & Conditions</a>, <a href="#" className="font-medium text-teal-600 hover:underline">Privacy Policy</a> & <a href="#" className="font-medium text-teal-600 hover:underline">Refund-Return Policy</a>
+                                    <a href="#" className="font-medium text-cta hover:underline">Terms & Conditions</a>, <a href="#" className="font-medium text-cta hover:underline">Privacy Policy</a> & <a href="#" className="font-medium text-cta hover:underline">Refund-Return Policy</a>
                                 </p>
                             )}
                         </form>

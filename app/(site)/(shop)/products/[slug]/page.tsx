@@ -213,10 +213,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
             {customerFacingLeafLabel ? `Back to ${customerFacingLeafLabel}` : 'Back to Products'}
           </Link>
 
-          {/* lg:flex avoids CSS grid row stretching (no huge blank under image beside long details). Mobile: column stack unchanged. */}
-          <div className="mt-8 flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
+          {/* Mobile: stacked. Desktop: float + flow-root so copy wraps beside the image then uses full width below—no dead grey strip under the image. */}
+          <div className="mt-8 flex flex-col gap-6 lg:block lg:flow-root">
             {/* Image container - max 600px width, 360px height like MedEasy (~573x343px) */}
-            <div className="h-[360px] w-full max-w-[600px] shrink-0 mx-auto bg-white rounded-xl flex items-center justify-center overflow-hidden lg:mx-0">
+            <div className="mx-auto h-[360px] w-full max-w-[600px] rounded-xl bg-white flex items-center justify-center overflow-hidden lg:float-left lg:mb-6 lg:mr-8 lg:ml-0 lg:w-[min(100%,600px)]">
               {displayImageUrl ? (
                 <img
                   src={displayImageUrl}
@@ -230,8 +230,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
               )}
             </div>
 
-            {/* Details container - MedEasy style with white background card */}
-            <div className="min-w-0 w-full flex-1 bg-white rounded-xl p-6 shadow-sm">
+            {/* BFC + overflow-hidden on lg: sits beside float then expands full width under image */}
+            <div className="min-w-0 w-full bg-white rounded-xl p-6 shadow-sm lg:overflow-hidden">
               {/* Product Name */}
               <div className="mb-2">
                 <h1 className="text-2xl font-bold text-gray-900 lg:text-3xl">
@@ -390,13 +390,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </Suspense>
           )}
 
-          <Suspense fallback={<div className="mt-10 h-40 animate-pulse rounded-lg bg-gray-100" aria-hidden />}>
-            <SimilarProductsSection
-              productId={product.id}
-              categoryId={product.category?.id ?? null}
-              brandName={product.brandName}
-            />
-          </Suspense>
+          {/* No Suspense here: streaming used to paint Reviews above Similar on slow DB — wrong section order on prod */}
+          <SimilarProductsSection
+            productId={product.id}
+            categoryId={product.category?.id ?? null}
+            brandName={product.brandName}
+          />
 
           {/* Reviews Section */}
           <section className="mt-10 bg-white rounded-xl p-6 shadow-sm">
