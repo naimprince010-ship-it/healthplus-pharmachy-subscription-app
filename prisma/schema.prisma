@@ -113,6 +113,12 @@ enum TopicBlock {
   MONEY_SAVING
 }
 
+/// Paid / partner placements on public blog (label as sponsored in UI)
+enum BlogSponsorPlacement {
+  BLOG_LIST_TOP
+  BLOG_ARTICLE_SIDEBAR_TOP
+}
+
 enum IngredientType {
   RICE
   OIL
@@ -1243,6 +1249,25 @@ model Blog {
   @@index([block])
   @@index([publishedAt])
   @@index([slug])
+}
+
+model BlogSponsorAd {
+  id            String                 @id @default(cuid())
+  sponsorLabel  String
+  imageUrl      String?
+  headline      String?
+  targetUrl     String
+  placement     BlogSponsorPlacement
+  priority      Int                    @default(0)
+  isActive      Boolean                @default(true)
+  startAt       DateTime?
+  endAt         DateTime?
+  internalNotes String?                @db.Text
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+
+  @@index([placement, isActive])
+  @@index([startAt, endAt])
 }
 
 model BlogProduct {

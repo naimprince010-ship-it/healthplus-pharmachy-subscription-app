@@ -1,7 +1,9 @@
 import { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
-import { BlogStatus, BlogType } from '@prisma/client'
+import { BlogSponsorPlacement, BlogStatus, BlogType } from '@prisma/client'
 import { BlogCard } from '@/components/blog/BlogCard'
+import { BlogSponsorBlock } from '@/components/blog/BlogSponsorBlock'
+import { getActiveBlogSponsorAd } from '@/lib/blog-sponsor-ads'
 import Link from 'next/link'
 import { serializeJsonLd } from '@/lib/serialize-json-ld'
 
@@ -36,21 +38,23 @@ interface BlogPageProps {
 export default async function BlogPage({ searchParams }: BlogPageProps) {
     const typeFilter = typeof searchParams.type === 'string' ? searchParams.type as BlogType : undefined
 
-    // Fetch blogs
-    const blogs = await prisma.blog.findMany({
-        where: {
-            status: BlogStatus.PUBLISHED, // Only show published blogs
-            ...(typeFilter ? { type: typeFilter } : {}),
-        },
-        include: {
-            topic: {
-                select: { title: true }
-            }
-        },
-        orderBy: {
-            publishedAt: 'desc',
-        },
-    })
+    const [blogs, listSponsor] = await Promise.all([
+        prisma.blog.findMany({
+            where: {
+                status: BlogStatus.PUBLISHED, // Only show published blogs
+                ...(typeFilter ? { type: typeFilter } : {}),
+            },
+            include: {
+                topic: {
+                    select: { title: true }
+                }
+            },
+            orderBy: {
+                publishedAt: 'desc',
+            },
+        }),
+        getActiveBlogSponsorAd(BlogSponsorPlacement.BLOG_LIST_TOP),
+    ])
 
     const types: { value: BlogType | 'ALL'; label: string }[] = [
         { value: 'ALL', label: 'All Articles' },
@@ -116,6 +120,16 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
                         )
                     })}
                 </div>
+
+                {listSponsor && (
+                    <BlogSponsorBlock
+                        variant="list"
+                        sponsorLabel={listSponsor.sponsorLabel}
+                        headline={listSponsor.headline}
+                        imageUrl={listSponsor.imageUrl}
+                        targetUrl={listSponsor.targetUrl}
+                    />
+                )}
 
                 {/* Blog Grid */}
                 {blogs.length > 0 ? (

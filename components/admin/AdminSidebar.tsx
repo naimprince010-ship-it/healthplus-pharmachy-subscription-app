@@ -34,6 +34,7 @@ import {
   TrendingUp,
   Megaphone,
   Store,
+  DollarSign,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -48,6 +49,7 @@ const navItems: NavItem[] = [
   { label: 'AI Assistant', href: '/admin/ai-assistant', icon: Sparkles },
   { label: 'Blog Topics', href: '/admin/blog-topics', icon: BookOpen },
   { label: 'Blog Queue', href: '/admin/blog-queue', icon: List },
+  { label: 'Blog sponsors', href: '/admin/blog-sponsors', icon: DollarSign },
   { label: 'Missing Products', href: '/admin/missing-products', icon: AlertCircle },
   { label: 'Product Tagging', href: '/admin/product-tagging', icon: Tag },
   { label: 'AI Import', href: '/admin/ai-import', icon: Upload },

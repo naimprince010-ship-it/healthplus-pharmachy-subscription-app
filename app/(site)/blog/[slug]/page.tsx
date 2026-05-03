@@ -3,7 +3,9 @@ import { prisma } from '@/lib/prisma'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { format } from 'date-fns'
-import { BlogStatus, BlogType } from '@prisma/client'
+import { BlogSponsorPlacement, BlogStatus, BlogType } from '@prisma/client'
+import { BlogSponsorBlock } from '@/components/blog/BlogSponsorBlock'
+import { getActiveBlogSponsorAd } from '@/lib/blog-sponsor-ads'
 import { BlogMarkdown } from '@/components/blog/BlogMarkdown'
 import { serializeJsonLd } from '@/lib/serialize-json-ld'
 
@@ -126,6 +128,13 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
     if (!blog) {
         notFound()
     }
+
+    const sidebarSponsor =
+        await getActiveBlogSponsorAd(BlogSponsorPlacement.BLOG_ARTICLE_SIDEBAR_TOP).catch(() => null)
+    const featuredGeneralProducts = blog.blogProducts.filter(
+        (bp) => bp.product && bp.product.type === 'GENERAL'
+    )
+    const showBlogSidebar = sidebarSponsor != null || featuredGeneralProducts.length > 0
 
     // Fetch related blogs for internal linking
     let relatedBlogs: any[] = []
@@ -314,59 +323,72 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                         )}
                     </div>
 
-                    {/* Sidebar: Related Products */}
-                    {blog.blogProducts.length > 0 && (
-                        <aside className="lg:w-80 flex-shrink-0">
-                            <div className="sticky top-24 bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                                <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center">
-                                    <svg className="w-5 h-5 mr-2 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                                    </svg>
-                                    Featured in this Article
-                                </h3>
+                    {/* Sidebar: sponsored placement + featured products */}
+                    {showBlogSidebar && (
+                        <aside className="lg:w-80 shrink-0">
+                            <div className="sticky top-24 space-y-6">
+                                {sidebarSponsor && (
+                                    <BlogSponsorBlock
+                                        variant="sidebar"
+                                        sponsorLabel={sidebarSponsor.sponsorLabel}
+                                        headline={sidebarSponsor.headline}
+                                        imageUrl={sidebarSponsor.imageUrl}
+                                        targetUrl={sidebarSponsor.targetUrl}
+                                    />
+                                )}
+                                {featuredGeneralProducts.length > 0 ? (
+                                    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                                        <h3 className="mb-6 flex items-center text-lg font-bold text-slate-900">
+                                            <svg className="mr-2 h-5 w-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                            </svg>
+                                            Featured in this Article
+                                        </h3>
 
-                                <div className="space-y-4">
-                                    {blog.blogProducts.filter(bp => bp.product && bp.product.type === 'GENERAL').map((bp) => (
-                                        <Link
-                                            key={bp.id}
-                                            href={`/products/${bp.product.slug}`}
-                                            className="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100 group"
-                                        >
-                                            <div className="relative w-16 h-16 rounded-lg bg-white border border-gray-100 overflow-hidden flex-shrink-0">
-                                                {bp.product.imageUrl ? (
-                                                    <img
-                                                        src={bp.product.imageUrl}
-                                                        alt={bp.product.name}
-                                                        className="w-full h-full object-contain p-1"
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full bg-gray-50 flex items-center justify-center text-gray-400">
-                                                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                        </svg>
+                                        <div className="space-y-4">
+                                            {featuredGeneralProducts.map((bp) => (
+                                                <Link
+                                                    key={bp.id}
+                                                    href={`/products/${bp.product.slug}`}
+                                                    className="group flex items-center gap-4 rounded-xl border border-transparent p-3 transition-colors hover:border-slate-100 hover:bg-slate-50"
+                                                >
+                                                    <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border border-gray-100 bg-white">
+                                                        {bp.product.imageUrl ? (
+                                                            <img
+                                                                src={bp.product.imageUrl}
+                                                                alt={bp.product.name}
+                                                                className="h-full w-full object-contain p-1"
+                                                            />
+                                                        ) : (
+                                                            <div className="flex h-full w-full items-center justify-center bg-gray-50 text-gray-400">
+                                                                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                                </svg>
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                )}
-                                            </div>
 
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-semibold text-slate-900 group-hover:text-emerald-600 transition-colors line-clamp-2 mb-1">
-                                                    {bp.product.name}
-                                                </p>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-sm font-bold text-teal-600">৳{bp.product.sellingPrice}</span>
-                                                    {bp.product.mrp && bp.product.mrp > bp.product.sellingPrice && (
-                                                        <span className="text-xs text-gray-400 line-through">৳{bp.product.mrp}</span>
-                                                    )}
-                                                </div>
-                                                {bp.role && (
-                                                    <span className="inline-block mt-1 text-[10px] uppercase font-bold tracking-wider text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
-                                                        {bp.role} {bp.stepOrder ? `(Step ${bp.stepOrder})` : ''}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </Link>
-                                    ))}
-                                </div>
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="mb-1 line-clamp-2 text-sm font-semibold text-slate-900 transition-colors group-hover:text-emerald-600">
+                                                            {bp.product.name}
+                                                        </p>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-sm font-bold text-teal-600">৳{bp.product.sellingPrice}</span>
+                                                            {bp.product.mrp && bp.product.mrp > bp.product.sellingPrice && (
+                                                                <span className="text-xs text-gray-400 line-through">৳{bp.product.mrp}</span>
+                                                            )}
+                                                        </div>
+                                                        {bp.role && (
+                                                            <span className="mt-1 inline-block rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                                                {bp.role} {bp.stepOrder ? `(Step ${bp.stepOrder})` : ''}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : null}
                             </div>
                         </aside>
                     )}
