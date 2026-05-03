@@ -9,6 +9,13 @@ interface SubscriptionPlanFormProps {
   plan?: SubscriptionPlan
 }
 
+function medicinesTextFromPlan(plan?: SubscriptionPlan): string {
+  if (!plan?.itemsJson || typeof plan.itemsJson !== 'object' || Array.isArray(plan.itemsJson)) return ''
+  const m = (plan.itemsJson as { medicines?: unknown }).medicines
+  if (!Array.isArray(m)) return ''
+  return m.filter((x): x is string => typeof x === 'string').join('\n')
+}
+
 export function SubscriptionPlanForm({ plan }: SubscriptionPlanFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -19,6 +26,8 @@ export function SubscriptionPlanForm({ plan }: SubscriptionPlanFormProps) {
     slug: plan?.slug || '',
     shortDescription: plan?.shortDescription || '',
     itemsSummary: plan?.itemsSummary || '',
+    medicinesDetailed: medicinesTextFromPlan(plan),
+    packageDetailLink: plan?.packageDetailLink ?? '',
     priceMonthly: plan?.priceMonthly?.toString() || '',
     bannerImageUrl: plan?.bannerImageUrl || '',
     sortOrder: plan?.sortOrder?.toString() || '',
@@ -53,14 +62,28 @@ export function SubscriptionPlanForm({ plan }: SubscriptionPlanFormProps) {
       
       const method = plan ? 'PUT' : 'POST'
 
+      const medLines = formData.medicinesDetailed
+        .split('\n')
+        .map((s) => s.trim())
+        .filter(Boolean)
+      const payload = {
+        name: formData.name,
+        slug: formData.slug,
+        shortDescription: formData.shortDescription || null,
+        itemsSummary: formData.itemsSummary || null,
+        itemsJson: medLines.length > 0 ? { medicines: medLines } : null,
+        packageDetailLink: formData.packageDetailLink.trim() ? formData.packageDetailLink.trim() : null,
+        priceMonthly: parseInt(formData.priceMonthly, 10),
+        bannerImageUrl: formData.bannerImageUrl || null,
+        sortOrder: formData.sortOrder ? parseInt(formData.sortOrder, 10) : null,
+        isFeatured: formData.isFeatured,
+        isActive: formData.isActive,
+      }
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          priceMonthly: parseInt(formData.priceMonthly),
-          sortOrder: formData.sortOrder ? parseInt(formData.sortOrder) : null,
-        }),
+        body: JSON.stringify(payload),
       })
 
       const data = await response.json()
@@ -161,8 +184,40 @@ export function SubscriptionPlanForm({ plan }: SubscriptionPlanFormProps) {
           placeholder="Enter each item on a new line"
         />
         <p className="mt-1 text-xs text-gray-500">
-          List of medicines/items included (one per line)
+          Short bullet ideas (one per line) — also shown on the listing page cards
         </p>
+      </div>
+
+      <div>
+        <label htmlFor="medicinesDetailed" className="block text-sm font-medium text-gray-700">
+          Detailed medicine / brand lines
+        </label>
+        <textarea
+          id="medicinesDetailed"
+          rows={8}
+          value={formData.medicinesDetailed}
+          onChange={(e) => setFormData({ ...formData, medicinesDetailed: e.target.value })}
+          className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:ring-teal-500"
+          placeholder={"e.g. Amlodipine 5mg (Square)\nMetformin 500mg XR"}
+        />
+        <p className="mt-1 text-xs text-gray-500">
+          Shown on the plan detail page as “specific examples”. Leave empty and only short bullets appear.
+        </p>
+      </div>
+
+      <div>
+        <label htmlFor="packageDetailLink" className="block text-sm font-medium text-gray-700">
+          Full package list link (PDF or page URL)
+        </label>
+        <input
+          type="url"
+          id="packageDetailLink"
+          value={formData.packageDetailLink}
+          onChange={(e) => setFormData({ ...formData, packageDetailLink: e.target.value })}
+          className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:ring-teal-500"
+          placeholder="https://..."
+        />
+        <p className="mt-1 text-xs text-gray-500">Optional “সম্পূর্ণ তালিকা দেখুন ↗” on the storefront</p>
       </div>
 
       <div>

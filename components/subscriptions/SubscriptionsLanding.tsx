@@ -12,6 +12,7 @@ import {
 import type { SubscriptionPlan } from '@prisma/client'
 import type { SubscriptionsPageSettings } from '@/lib/subscriptions-page-settings'
 import { getSubscriptionPlanBullets } from '@/lib/subscription-plan-bullets'
+import { SubscriptionPolicyNotes } from '@/components/subscriptions/SubscriptionPolicyNotes'
 
 interface SubscriptionsLandingProps {
   plans: SubscriptionPlan[]
@@ -142,16 +143,16 @@ export function SubscriptionsLanding({ plans, pageCopy }: SubscriptionsLandingPr
 
         {/* Trust signals */}
         <div className="mt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 border-y border-gray-200 bg-white/80 py-6 text-sm text-gray-700">
-          {[
-            '১০০% অথেনটিক ওষুধ',
-            'যেকোনো সময় বাতিল করুন',
-            'দ্রুত ডেলিভারি',
-          ].map((label) => (
+          {[pageCopy.trust1Bn, pageCopy.trust2Bn, pageCopy.trust3Bn].map((label) => (
             <div key={label} className="flex items-center gap-2">
               <span className="h-2 w-2 shrink-0 rounded-full bg-teal-500" aria-hidden />
               <span>{label}</span>
             </div>
           ))}
+        </div>
+
+        <div className="mt-8">
+          <SubscriptionPolicyNotes variant="landing" />
         </div>
 
         {/* Why subscribe */}

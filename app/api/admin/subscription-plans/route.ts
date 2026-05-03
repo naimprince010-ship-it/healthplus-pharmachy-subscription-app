@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 
 export async function POST(request: Request) {
@@ -15,6 +16,8 @@ export async function POST(request: Request) {
       slug,
       shortDescription,
       itemsSummary,
+      itemsJson,
+      packageDetailLink,
       priceMonthly,
       bannerImageUrl,
       sortOrder,
@@ -40,17 +43,33 @@ export async function POST(request: Request) {
       )
     }
 
+    let resolvedItemsJson: Prisma.InputJsonValue | typeof Prisma.DbNull | undefined
+    if (Object.prototype.hasOwnProperty.call(body, 'itemsJson')) {
+      resolvedItemsJson =
+        itemsJson === null ? Prisma.DbNull : (itemsJson as Prisma.InputJsonValue)
+    }
+
     const featured = Boolean(isFeatured)
     const plan = await prisma.$transaction(async (tx) => {
       if (featured) {
         await tx.subscriptionPlan.updateMany({ data: { isFeatured: false } })
       }
+
       return tx.subscriptionPlan.create({
         data: {
           name,
           slug,
           shortDescription,
           itemsSummary,
+          ...(resolvedItemsJson !== undefined ? { itemsJson: resolvedItemsJson } : {}),
+          ...(Object.prototype.hasOwnProperty.call(body, 'packageDetailLink')
+            ? {
+                packageDetailLink:
+                  typeof packageDetailLink === 'string' && packageDetailLink.trim()
+                    ? packageDetailLink.trim().slice(0, 2000)
+                    : null,
+              }
+            : {}),
           priceMonthly: parseInt(priceMonthly),
           bannerImageUrl,
           sortOrder: sortOrder ? parseInt(sortOrder) : null,

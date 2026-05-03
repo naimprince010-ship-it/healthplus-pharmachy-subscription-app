@@ -152,13 +152,35 @@ async function main() {
   console.log(`✅ Created membership plan: ${membershipPlan.name}`)
 
   console.log('📋 Creating subscription plans...')
-  
+  const bpMedicinesExamples = [
+    'Amlodipine 5mg — ব্র্যান্ড স্টক ও ডাক্তারের পরামর্শ অনুযায়ী',
+    'Telmisartan অথবা অনুরূপ রক্তচাপের ওষুধ (চিকিৎসকের নির্দেশ অনুযায়ী)',
+    'মাসিক রিফিল রিমাইন্ডার ও ডোজ নির্দেশিকা',
+  ]
+  const diabetesMedicinesExamples = [
+    'মেটফরমিন ৫০০ XR — ডোজ চিকিৎসক নির্ধারণ',
+    'গ্লিমেপিরাইড / অন্যান্য ডায়াবেটিস ট্যাবলেট (যোগ্য হলে)',
+    'গ্লুকোজ মিটার স্ট্রিপ ও প্রয়োজনীয় উপকরণ সাপোর্ট',
+  ]
+  const babyMedicinesExamples = [
+    'প্যারাসিটামোল সিরাপ (প্যাডিয়াট্রিক ডোজ)',
+    'ভিটামিন ডি ড্রপস / মাল্টিভিটামিন — বয়স অনুযায়ী',
+    'Gripe water / ORS ও স্কিনকেয়ার — প্রয়োজন ও স্টক অনুযায়ী',
+  ]
+  const familyMedicinesExamples = [
+    'হ্যান্ড ও ফার্স্ট এইড ও বেসিক পেইন রিলিফ',
+    'কমন অ্যান্টিবয়োটিক/অ্যান্টিভাইরাল চাহিদা — প্রেসক্রিপশন ছাড়া বিক্রি যাচ্ছে নয়',
+    'ভিটামিন ও খনিজের মৌলিক সাপ্লিমেন্ট (স্টক/বয়স অনুযায়ী)',
+    'পুরো ফ্যামিলির জন্য কাস্টম মিক্স — চূড়ান্ত তালিকা সাপোর্ট টিম ও ডাক্তারের উপর ভিত্তি করে',
+  ]
+
   const bpCarePlan = await prisma.subscriptionPlan.upsert({
     where: { slug: 'bp-care-package' },
     update: {
       shortDescription: 'রক্তচাপ নিয়ন্ত্রণ প্যাকেজ — প্রয়োজনীয় ওষুধ ও ফলোআপ।',
       itemsSummary:
         'রক্তচাপ নিয়ন্ত্রণে প্রয়োজনীয় ওষুধ\nনিয়মিত ফলোআপ ও রিফিল সুবিধা\nহৃদস্বাস্থ্য সংক্রান্ত নির্দেশনা',
+      itemsJson: { medicines: bpMedicinesExamples },
       sortOrder: 3,
     },
     create: {
@@ -167,6 +189,7 @@ async function main() {
       shortDescription: 'রক্তচাপ নিয়ন্ত্রণ প্যাকেজ — প্রয়োজনীয় ওষুধ ও ফলোআপ।',
       itemsSummary:
         'রক্তচাপ নিয়ন্ত্রণে প্রয়োজনীয় ওষুধ\nনিয়মিত ফলোআপ ও রিফিল সুবিধা\nহৃদস্বাস্থ্য সংক্রান্ত নির্দেশনা',
+      itemsJson: { medicines: bpMedicinesExamples },
       priceMonthly: 1500,
       sortOrder: 3,
       isActive: true,
@@ -179,6 +202,7 @@ async function main() {
       shortDescription: 'ডায়াবেটিস ম্যানেজমেন্ট — ওষুধ ও নিয়মিত সাপোর্ট।',
       itemsSummary:
         'ডায়াবেটিস পরিচালনার মূল ওষুধসমূহ\nসাপ্লিমেন্ট ও ব্লাড সুগার সাপোর্ট\nনিয়মিত সরবরাহ নিশ্চিত',
+      itemsJson: { medicines: diabetesMedicinesExamples },
       sortOrder: 4,
     },
     create: {
@@ -187,6 +211,7 @@ async function main() {
       shortDescription: 'ডায়াবেটিস ম্যানেজমেন্ট — ওষুধ ও নিয়মিত সাপোর্ট।',
       itemsSummary:
         'ডায়াবেটিস পরিচালনার মূল ওষুধসমূহ\nসাপ্লিমেন্ট ও ব্লাড সুগার সাপোর্ট\nনিয়মিত সরবরাহ নিশ্চিত',
+      itemsJson: { medicines: diabetesMedicinesExamples },
       priceMonthly: 2000,
       sortOrder: 4,
       isActive: true,
@@ -199,6 +224,7 @@ async function main() {
       shortDescription: 'শিশুর জন্য প্রয়োজনীয় ওষুধ ও ভিটামিন।',
       itemsSummary:
         'শিশুর জন্য নিরাপদ ওষুধ ও ভিটামিন\nপেডিয়াট্রিক ডোজ ও ব্যবহার নির্দেশিকা\nবৃদ্ধি ও রোগ প্রতিরোধ ক্ষমতায় সহায়তা',
+      itemsJson: { medicines: babyMedicinesExamples },
       sortOrder: 2,
       isFeatured: true,
     },
@@ -208,6 +234,7 @@ async function main() {
       shortDescription: 'শিশুর জন্য প্রয়োজনীয় ওষুধ ও ভিটামিন।',
       itemsSummary:
         'শিশুর জন্য নিরাপদ ওষুধ ও ভিটামিন\nপেডিয়াট্রিক ডোজ ও ব্যবহার নির্দেশিকা\nবৃদ্ধি ও রোগ প্রতিরোধ ক্ষমতায় সহায়তা',
+      itemsJson: { medicines: babyMedicinesExamples },
       priceMonthly: 1200,
       sortOrder: 2,
       isFeatured: true,
@@ -221,6 +248,7 @@ async function main() {
       shortDescription: 'পারিবারিক স্বাস্থ্য প্যাকেজ — সব বয়সের জন্য।',
       itemsSummary:
         'সব বয়সের জন্য প্রয়োজনীয় ওষুধ ও সাপ্লিমেন্ট\nমাসিক রিফিল ও ডেলিভারি রিমাইন্ডার\nপরিবারের জন্য বিশেষ মূল্য ও ছাড়',
+      itemsJson: { medicines: familyMedicinesExamples },
       sortOrder: 1,
     },
     create: {
@@ -229,6 +257,7 @@ async function main() {
       shortDescription: 'পারিবারিক স্বাস্থ্য প্যাকেজ — সব বয়সের জন্য।',
       itemsSummary:
         'সব বয়সের জন্য প্রয়োজনীয় ওষুধ ও সাপ্লিমেন্ট\nমাসিক রিফিল ও ডেলিভারি রিমাইন্ডার\nপরিবারের জন্য বিশেষ মূল্য ও ছাড়',
+      itemsJson: { medicines: familyMedicinesExamples },
       priceMonthly: 3500,
       sortOrder: 1,
       isActive: true,

@@ -638,7 +638,8 @@ model SubscriptionPlan {
   slug             String         @unique
   shortDescription String? // Small text shown on cards
   itemsSummary     String? // Human-readable text list of items included
-  itemsJson        Json? // Optional structured list for future use
+  itemsJson        Json? // Optional structured list — e.g. { "medicines": ["Drug A"] }
+  packageDetailLink String? @db.Text // PDF or page URL: "সম্পূর্ণ তালিকা দেখুন"
   priceMonthly     Int // Price per month in BDT
   bannerImageUrl   String? // Banner/card image
   isFeatured       Boolean        @default(false)
@@ -664,6 +665,7 @@ model Subscription {
   address        String
   zoneId         String?
   zone           Zone?            @relation(fields: [zoneId], references: [id])
+  subscriberNotes String? @db.Text
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 }

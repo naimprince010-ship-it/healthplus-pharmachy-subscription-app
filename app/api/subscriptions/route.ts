@@ -9,11 +9,12 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 const createSubscriptionSchema = z.object({
-  planId: z.number(),
-  fullName: z.string(),
-  phone: z.string(),
-  address: z.string(),
-  zoneId: z.string(),
+  planId: z.coerce.number(),
+  fullName: z.string().min(1),
+  phone: z.string().min(8),
+  address: z.string().min(5),
+  zoneId: z.string().min(1),
+  subscriberNotes: z.string().max(4000).optional(),
 })
 
 export async function POST(request: NextRequest) {
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { planId, fullName, phone, address, zoneId } = validationResult.data
+    const { planId, fullName, phone, address, zoneId, subscriberNotes } = validationResult.data
 
     const plan = await prisma.subscriptionPlan.findUnique({
       where: { id: planId },
@@ -76,6 +77,7 @@ export async function POST(request: NextRequest) {
         nextDelivery,
         address,
         zoneId,
+        subscriberNotes: subscriberNotes?.trim() || null,
       },
       include: {
         plan: true,
