@@ -154,18 +154,18 @@ async function generateBlogCoverImageUrl(
     const openai = new OpenAI({ apiKey })
     const styleHint =
       type === BlogType.BEAUTY
-        ? 'clean skincare flat-lay, soft pastel colors, product silhouettes, no readable text'
+        ? 'clean skincare flat-lay, soft pastel colors, product silhouettes, minimal elegant aesthetic'
         : type === BlogType.RECIPE
-          ? 'bangladeshi cooking ingredients and plated food, warm tones, no readable text'
+          ? 'bangladeshi cooking ingredients and plated food, warm appetizing tones, rustic authentic vibe'
           : type === BlogType.MONEY_SAVING
-            ? 'smart shopping cart, grocery and beauty icons, budget vibe, no readable text'
-            : 'fresh grocery and wellness lifestyle composition, no readable text'
+            ? 'smart shopping cart, grocery and beauty icons, budget-friendly lifestyle, bright and clean'
+            : 'fresh grocery and wellness lifestyle composition, vibrant organic colors'
 
     const prompt = `Create a premium ecommerce blog cover image for Halalzi (Bangladesh).
-Title context: ${title}
-Summary context: ${summary || 'Helpful consumer guide.'}
-Visual style: ${styleHint}
-Requirements: high-quality, editorial hero, no logos, no watermark, no readable text, no faces, safe general audience.`
+Topic: ${title}
+Context: ${summary || 'Helpful consumer guide.'}
+Visual style: ${styleHint}. Professional 8k resolution editorial photography, ultra-realistic, shallow depth of field, studio lighting, hyper-detailed, premium lifestyle aesthetics.
+STRICT REQUIREMENTS: No logos, no watermarks, no readable text, no words, no faces, safe for general audience.`
 
     const imageRes = await openai.images.generate({
       model: 'gpt-image-1',
