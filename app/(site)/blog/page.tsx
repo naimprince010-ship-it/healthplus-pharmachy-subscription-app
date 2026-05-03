@@ -31,12 +31,20 @@ export const metadata: Metadata = {
 
 export const revalidate = 60 // Revalidate every minute
 
+const BLOG_TYPES: BlogType[] = ['BEAUTY', 'GROCERY', 'RECIPE', 'MONEY_SAVING']
+
+function parseBlogTypeParam(raw: string | string[] | undefined): BlogType | undefined {
+    const v = Array.isArray(raw) ? raw[0] : raw
+    return typeof v === 'string' && BLOG_TYPES.includes(v as BlogType) ? (v as BlogType) : undefined
+}
+
 interface BlogPageProps {
-    searchParams: { [key: string]: string | string[] | undefined }
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
 export default async function BlogPage({ searchParams }: BlogPageProps) {
-    const typeFilter = typeof searchParams.type === 'string' ? searchParams.type as BlogType : undefined
+    const sp = await searchParams
+    const typeFilter = parseBlogTypeParam(sp.type)
 
     const [blogs, listSponsor] = await Promise.all([
         prisma.blog.findMany({
