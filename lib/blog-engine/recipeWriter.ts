@@ -105,7 +105,7 @@ IMPORTANT:
 - Focus on traditional Bangladeshi recipes and cooking methods`
 
     const content = await runAgenticChat(
-      'You are a Bangladeshi recipe expert content writer. Always respond with valid JSON.',
+      'You are a Bangladeshi recipe expert content writer. Follow FIELD ACCURACY rules in the user message exactly. Output ONLY one JSON object, no markdown.',
       prompt
     )
 
@@ -113,24 +113,38 @@ IMPORTANT:
       return { success: false, error: 'No content generated', products: [], missingProducts: [] }
     }
 
-    const parsed = JSON.parse(content)
+    const parsed = parseBlogEngineJson(content)
 
+    const faqsRaw = Array.isArray(parsed.faqs) ? parsed.faqs : []
     const faqJsonLd: FAQSchema = {
       '@context': 'https://schema.org',
       '@type': 'FAQPage',
-      mainEntity: (parsed.faqs || []).map((faq: { question: string; answer: string }) => ({
-        '@type': 'Question',
-        name: faq.question,
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: faq.answer,
-        },
-      })),
+      mainEntity: faqsRaw.map((faq: unknown) => {
+        const { question, answer } = normalizeFaqPair(faq as { question?: unknown; answer?: unknown })
+        return {
+          '@type': 'Question' as const,
+          name: question,
+          acceptedAnswer: {
+            '@type': 'Answer' as const,
+            text: answer,
+          },
+        }
+      }),
     }
+
+    const textFields = sanitizeBlogAiTextFields({
+      title: parsed.title,
+      summary: parsed.summary,
+      seoTitle: parsed.seoTitle,
+      seoDescription: parsed.seoDescription,
+      seoKeywords: parsed.seoKeywords,
+    })
 
     // Bug #5 fix: role validate করা হচ্ছে
     const existingSlugSet = new Set(existingBlogSlugs)
-    const products: ProductRecommendation[] = (parsed.recommendedProducts || [])
+    const products: ProductRecommendation[] = (
+      Array.isArray(parsed.recommendedProducts) ? parsed.recommendedProducts : []
+    )
       .filter((p: { role: string }) => VALID_ROLES.has(p.role))
       .map((p: { productId: string; role: string; stepOrder?: number; notes?: string }) => ({
         productId: p.productId,
@@ -139,9 +153,8 @@ IMPORTANT:
         notes: p.notes,
       }))
 
-    const missingProducts: MissingProductInfo[] = (
-      Array.isArray(parsed.missingProducts) ? parsed.missingProducts : []
-    ).map((m: {
+    const missingProductsRaw = Array.isArray(parsed.missingProducts) ? parsed.missingProducts : []
+    const missingProducts: MissingProductInfo[] = missingProductsRaw.map((m: {
       name: string
       categorySuggestion?: string
       reason: string

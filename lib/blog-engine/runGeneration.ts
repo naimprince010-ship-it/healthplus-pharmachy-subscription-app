@@ -7,6 +7,7 @@ import { generateGroceryBlog } from './groceryWriter'
 import { generateRecipeBlog } from './recipeWriter'
 import { generateMoneySavingBlog } from './moneySavingWriter'
 import { sanitizeBlogAiTextFields } from './blog-output-sanitize'
+import { linkProductMentionsInMarkdown } from './linkProductMentionsInMarkdown'
 import type { WriterContext, BlogGenerationResult, AvailableProduct, MissingProductInfo } from './types'
 
 export type RunBlogDraftGenerationResult =
@@ -19,80 +20,6 @@ export type RunBlogDraftGenerationResult =
       missingProductsReported: number
     }
   | { ok: false; httpStatus: number; error: string; details?: string }
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-}
-
-function replaceFirstPlainMentionInLine(line: string, name: string, slug: string): string {
-  const lowerLine = line.toLowerCase()
-  const lowerName = name.toLowerCase()
-  let fromIdx = 0
-
-  while (true) {
-    const idx = lowerLine.indexOf(lowerName, fromIdx)
-    if (idx === -1) return line
-
-    // Skip if mention is already inside markdown link syntax: [..](..)
-    const linkMatches = [...line.matchAll(/\[[^\]]+\]\([^)]+\)/g)]
-    const insideLink = linkMatches.some((m) => {
-      const start = m.index ?? -1
-      const end = start + m[0].length
-      return idx >= start && idx < end
-    })
-    if (insideLink) {
-      fromIdx = idx + lowerName.length
-      continue
-    }
-
-    const raw = line.slice(idx, idx + name.length)
-    const linked = `[${raw}](/products/${slug})`
-    return `${line.slice(0, idx)}${linked}${line.slice(idx + name.length)}`
-  }
-}
-
-function linkProductMentionsInMarkdown(
-  contentMd: string,
-  products: Array<{ name: string; slug: string }>
-): string {
-  if (!contentMd || products.length === 0) return contentMd
-
-  // Longer names first so specific matches win.
-  const sortedProducts = [...products]
-    .filter((p) => !!p.name && !!p.slug)
-    .sort((a, b) => b.name.length - a.name.length)
-
-  const lines = contentMd.split('\n')
-  const linkedNames = new Set<string>()
-  let insideCodeFence = false
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]
-    if (line.trimStart().startsWith('```')) {
-      insideCodeFence = !insideCodeFence
-      continue
-    }
-    if (insideCodeFence || !line.trim()) continue
-
-    let nextLine = line
-    for (const p of sortedProducts) {
-      if (linkedNames.has(p.name)) continue
-
-      // Fast pre-check to avoid unnecessary work
-      const escaped = escapeRegExp(p.name)
-      if (!new RegExp(escaped, 'i').test(nextLine)) continue
-
-      const replaced = replaceFirstPlainMentionInLine(nextLine, p.name, p.slug)
-      if (replaced !== nextLine) {
-        nextLine = replaced
-        linkedNames.add(p.name)
-      }
-    }
-    lines[i] = nextLine
-  }
-
-  return lines.join('\n')
-}
 
 function uniqById(products: AvailableProduct[]): AvailableProduct[] {
   return Array.from(new Map(products.map((p) => [p.id, p])).values())

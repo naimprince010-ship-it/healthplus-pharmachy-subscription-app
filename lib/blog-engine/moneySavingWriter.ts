@@ -164,7 +164,8 @@ IMPORTANT:
         notes: p.notes,
       }))
 
-    const missingProducts: MissingProductInfo[] = (parsed.missingProducts || []).map((m: {
+    const missingProductsRaw = Array.isArray(parsed.missingProducts) ? parsed.missingProducts : []
+    const missingProducts: MissingProductInfo[] = missingProductsRaw.map((m: {
       name: string
       categorySuggestion?: string
       reason: string

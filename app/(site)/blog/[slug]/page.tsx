@@ -7,6 +7,7 @@ import { BlogSponsorPlacement, BlogStatus, BlogType } from '@prisma/client'
 import { BlogSponsorBlock } from '@/components/blog/BlogSponsorBlock'
 import { getActiveBlogSponsorAd } from '@/lib/blog-sponsor-ads'
 import { BlogMarkdown } from '@/components/blog/BlogMarkdown'
+import { linkProductMentionsInMarkdown } from '@/lib/blog-engine/linkProductMentionsInMarkdown'
 import { serializeJsonLd } from '@/lib/serialize-json-ld'
 
 interface BlogDetailPageProps {
@@ -180,6 +181,18 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
     }
 
     // Calculate estimated reading time (approx 200 words per minute)
+    const productsForInlineLinks = blog.blogProducts.flatMap((bp) => {
+      const p = bp.product
+      if (!p?.name?.trim() || !p.slug?.trim()) return []
+      return [{ name: p.name, slug: p.slug }]
+    })
+
+    let blogMarkdownBody = ''
+    if (blog.contentMd) {
+      const trimmed = removeLeadingMarkdownTitle(blog.contentMd)
+      blogMarkdownBody = linkProductMentionsInMarkdown(trimmed, productsForInlineLinks)
+    }
+
     const wordCount = blog.contentMd ? blog.contentMd.split(/\s+/).length : 0
     const readingTime = Math.max(1, Math.ceil(wordCount / 200))
     const displayDate = blog.publishedAt || blog.createdAt
@@ -317,7 +330,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                     {/* Markdown Content — typography from BlogMarkdown (headings, lists, spacing) */}
                     <div className="flex-1 min-w-0 rounded-2xl border border-slate-200/80 bg-white px-5 py-10 shadow-sm sm:px-10 sm:py-12">
                         {blog.contentMd ? (
-                            <BlogMarkdown content={removeLeadingMarkdownTitle(blog.contentMd)} />
+                            <BlogMarkdown content={blogMarkdownBody} />
                         ) : (
                             <p className="text-slate-600 text-lg">Content is currently being written.</p>
                         )}
