@@ -10,10 +10,12 @@ import {
   PackageCheck,
 } from 'lucide-react'
 import type { SubscriptionPlan } from '@prisma/client'
+import type { SubscriptionsPageSettings } from '@/lib/subscriptions-page-settings'
 import { getSubscriptionPlanBullets } from '@/lib/subscription-plan-bullets'
 
 interface SubscriptionsLandingProps {
   plans: SubscriptionPlan[]
+  pageCopy: SubscriptionsPageSettings
 }
 
 type PlanVisual = {
@@ -38,10 +40,10 @@ function planVisual(slug: string): PlanVisual {
 }
 
 function isFeaturedPlan(plan: SubscriptionPlan): boolean {
-  return plan.isFeatured || plan.slug === 'baby-care-package'
+  return plan.isFeatured
 }
 
-export function SubscriptionsLanding({ plans }: SubscriptionsLandingProps) {
+export function SubscriptionsLanding({ plans, pageCopy }: SubscriptionsLandingProps) {
   return (
     <div className="bg-gradient-to-b from-slate-50 to-white pb-16 lg:pb-20">
       {/* Hero */}
@@ -55,13 +57,13 @@ export function SubscriptionsLanding({ plans }: SubscriptionsLandingProps) {
         />
         <div className="relative mx-auto max-w-3xl">
           <p className="mb-4 inline-flex rounded-full bg-teal-500/25 px-4 py-1.5 text-sm font-semibold text-teal-200 ring-1 ring-teal-400/40">
-            মাসিক সাবস্ক্রিপশন
+            {pageCopy.heroBadgeBn}
           </p>
           <h1 className="text-2xl font-bold tracking-tight text-white sm:text-4xl sm:leading-tight">
-            আপনার পরিবারের জন্য সঠিক প্ল্যান বেছে নিন
+            {pageCopy.heroTitleBn}
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base text-slate-300 sm:text-lg">
-            প্রতি মাসে অটোমেটিক ডেলিভারি, গ্যারান্টিড স্টক এবং বিশেষ ছাড় উপভোগ করুন।
+            {pageCopy.heroSubtitleBn}
           </p>
         </div>
       </section>
@@ -154,38 +156,30 @@ export function SubscriptionsLanding({ plans }: SubscriptionsLandingProps) {
 
         {/* Why subscribe */}
         <section className="mt-14">
-          <h2 className="text-center text-2xl font-bold text-gray-900 sm:text-3xl">কেন সাবস্ক্রাইব করবেন?</h2>
-          <p className="mx-auto mt-2 max-w-2xl text-center text-gray-600">
-            স্বাস্থ্যসেবা যেন আরও সহজ ও নির্ভরযোগ্য হয় — সেটাই আমাদের লক্ষ্য।
-          </p>
+          <h2 className="text-center text-2xl font-bold text-gray-900 sm:text-3xl">{pageCopy.whySectionTitleBn}</h2>
+          <p className="mx-auto mt-2 max-w-2xl text-center text-gray-600">{pageCopy.whySectionSubtitleBn}</p>
 
           <div className="mt-10 grid gap-8 md:grid-cols-3">
             <div className="flex flex-col items-center rounded-2xl border border-teal-100 bg-white p-8 text-center shadow-sm">
               <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-blue-50">
                 <RefreshCw className="h-7 w-7 text-blue-600" aria-hidden />
               </div>
-              <h3 className="text-lg font-bold text-gray-900">অটোমেটিক ডেলিভারি</h3>
-              <p className="mt-3 text-sm leading-relaxed text-gray-600">
-                প্রতি মাসে নিজে থেকেই ওষুধ পৌঁছে যাবে — আবার আবার অর্ডার করার ঝামেলা নেই।
-              </p>
+              <h3 className="text-lg font-bold text-gray-900">{pageCopy.why1TitleBn}</h3>
+              <p className="mt-3 text-sm leading-relaxed text-gray-600">{pageCopy.why1BodyBn}</p>
             </div>
             <div className="flex flex-col items-center rounded-2xl border border-teal-100 bg-white p-8 text-center shadow-sm">
               <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-50">
                 <Wallet className="h-7 w-7 text-amber-600" aria-hidden />
               </div>
-              <h3 className="text-lg font-bold text-gray-900">বিশেষ সাশ্রয়</h3>
-              <p className="mt-3 text-sm leading-relaxed text-gray-600">
-                সাবস্ক্রাইব করলে এক্সক্লুসিভ ছাড় ও মাসিক প্ল্যানে আরও সাশ্রয়।
-              </p>
+              <h3 className="text-lg font-bold text-gray-900">{pageCopy.why2TitleBn}</h3>
+              <p className="mt-3 text-sm leading-relaxed text-gray-600">{pageCopy.why2BodyBn}</p>
             </div>
             <div className="flex flex-col items-center rounded-2xl border border-teal-100 bg-white p-8 text-center shadow-sm">
               <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-teal-50">
                 <PackageCheck className="h-7 w-7 text-teal-600" aria-hidden />
               </div>
-              <h3 className="text-lg font-bold text-gray-900">স্টক নিশ্চিত</h3>
-              <p className="mt-3 text-sm leading-relaxed text-gray-600">
-                সাবস্ক্রাইবাররা জনপ্রিয় ওষুধে অগ্রাধিকার পান — স্টক শেষ হওয়ার আগেই সরবরাহ।
-              </p>
+              <h3 className="text-lg font-bold text-gray-900">{pageCopy.why3TitleBn}</h3>
+              <p className="mt-3 text-sm leading-relaxed text-gray-600">{pageCopy.why3BodyBn}</p>
             </div>
           </div>
         </section>

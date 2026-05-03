@@ -40,18 +40,24 @@ export async function POST(request: Request) {
       )
     }
 
-    const plan = await prisma.subscriptionPlan.create({
-      data: {
-        name,
-        slug,
-        shortDescription,
-        itemsSummary,
-        priceMonthly: parseInt(priceMonthly),
-        bannerImageUrl,
-        sortOrder: sortOrder ? parseInt(sortOrder) : null,
-        isFeatured: Boolean(isFeatured),
-        isActive: Boolean(isActive),
-      },
+    const featured = Boolean(isFeatured)
+    const plan = await prisma.$transaction(async (tx) => {
+      if (featured) {
+        await tx.subscriptionPlan.updateMany({ data: { isFeatured: false } })
+      }
+      return tx.subscriptionPlan.create({
+        data: {
+          name,
+          slug,
+          shortDescription,
+          itemsSummary,
+          priceMonthly: parseInt(priceMonthly),
+          bannerImageUrl,
+          sortOrder: sortOrder ? parseInt(sortOrder) : null,
+          isFeatured: featured,
+          isActive: Boolean(isActive),
+        },
+      })
     })
 
     return NextResponse.json(plan, { status: 201 })

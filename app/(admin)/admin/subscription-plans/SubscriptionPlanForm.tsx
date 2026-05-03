@@ -199,7 +199,9 @@ export function SubscriptionPlanForm({ plan }: SubscriptionPlanFormProps) {
             onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
             className="h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
           />
-          <span className="text-sm text-gray-700">Featured</span>
+          <span className="text-sm text-gray-700">
+            Featured <span className="text-xs text-gray-500">— একসাথে শুধু একটি প্ল্যান; বাকিগুলো স্বয়ংক্রিয় আনফিচার্ড হবে</span>
+          </span>
         </label>
 
         <label className="flex items-center space-x-2">

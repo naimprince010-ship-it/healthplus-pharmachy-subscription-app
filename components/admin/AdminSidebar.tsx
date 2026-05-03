@@ -60,6 +60,7 @@ const navItems: NavItem[] = [
   { label: 'Orders', href: '/admin/orders', icon: ShoppingBag },
   { label: 'Subscriptions', href: '/admin/subscriptions', icon: Calendar },
   { label: 'Subscription Plans', href: '/admin/subscription-plans', icon: PackageCheck },
+  { label: 'Subscriptions page texts', href: '/admin/subscription-plans/site-copy', icon: FileText },
   { label: 'Memberships', href: '/admin/memberships', icon: Shield },
   { label: 'Prescriptions', href: '/admin/prescriptions', icon: FileText },
   { label: 'Delivery Zones', href: '/admin/delivery-zones', icon: MapPin },

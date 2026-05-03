@@ -48,19 +48,30 @@ export async function PUT(request: Request, context: RouteContext) {
       )
     }
 
-    const plan = await prisma.subscriptionPlan.update({
-      where: { id: parseInt(id) },
-      data: {
-        name,
-        slug,
-        shortDescription,
-        itemsSummary,
-        priceMonthly: parseInt(priceMonthly),
-        bannerImageUrl,
-        sortOrder: sortOrder ? parseInt(sortOrder) : null,
-        isFeatured: Boolean(isFeatured),
-        isActive: Boolean(isActive),
-      },
+    const idInt = parseInt(id, 10)
+    const featured = Boolean(isFeatured)
+
+    const plan = await prisma.$transaction(async (tx) => {
+      if (featured) {
+        await tx.subscriptionPlan.updateMany({
+          where: { id: { not: idInt } },
+          data: { isFeatured: false },
+        })
+      }
+      return tx.subscriptionPlan.update({
+        where: { id: idInt },
+        data: {
+          name,
+          slug,
+          shortDescription,
+          itemsSummary,
+          priceMonthly: parseInt(priceMonthly),
+          bannerImageUrl,
+          sortOrder: sortOrder ? parseInt(sortOrder) : null,
+          isFeatured: featured,
+          isActive: Boolean(isActive),
+        },
+      })
     })
 
     return NextResponse.json(plan)

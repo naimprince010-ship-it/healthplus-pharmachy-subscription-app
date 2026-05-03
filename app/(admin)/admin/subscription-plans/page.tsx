@@ -27,13 +27,21 @@ export default async function SubscriptionPlansPage() {
       <div className="mx-auto max-w-7xl">
         <div className="mb-8 flex items-center justify-between">
           <h1 className="text-3xl font-bold text-gray-900">Subscription Plans</h1>
-          <Link
-            href="/admin/subscription-plans/new"
-            className="flex items-center space-x-2 rounded-lg bg-teal-600 px-4 py-2 text-white hover:bg-teal-700"
-          >
-            <Plus className="h-5 w-5" />
-            <span>Add Plan</span>
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/admin/subscription-plans/site-copy"
+              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50"
+            >
+              ল্যান্ডিং টেকস্ট
+            </Link>
+            <Link
+              href="/admin/subscription-plans/new"
+              className="flex items-center space-x-2 rounded-lg bg-teal-600 px-4 py-2 text-white hover:bg-teal-700"
+            >
+              <Plus className="h-5 w-5" />
+              <span>Add Plan</span>
+            </Link>
+          </div>
         </div>
 
         <div className="overflow-hidden rounded-lg bg-white shadow">
