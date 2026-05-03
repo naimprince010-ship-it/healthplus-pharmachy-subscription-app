@@ -155,48 +155,82 @@ async function main() {
   
   const bpCarePlan = await prisma.subscriptionPlan.upsert({
     where: { slug: 'bp-care-package' },
-    update: {},
+    update: {
+      shortDescription: 'রক্তচাপ নিয়ন্ত্রণ প্যাকেজ — প্রয়োজনীয় ওষুধ ও ফলোআপ।',
+      itemsSummary:
+        'রক্তচাপ নিয়ন্ত্রণে প্রয়োজনীয় ওষুধ\nনিয়মিত ফলোআপ ও রিফিল সুবিধা\nহৃদস্বাস্থ্য সংক্রান্ত নির্দেশনা',
+      sortOrder: 3,
+    },
     create: {
       name: 'BP Care Package',
       slug: 'bp-care-package',
-      shortDescription: 'Monthly blood pressure management package with essential medicines',
+      shortDescription: 'রক্তচাপ নিয়ন্ত্রণ প্যাকেজ — প্রয়োজনীয় ওষুধ ও ফলোআপ।',
+      itemsSummary:
+        'রক্তচাপ নিয়ন্ত্রণে প্রয়োজনীয় ওষুধ\nনিয়মিত ফলোআপ ও রিফিল সুবিধা\nহৃদস্বাস্থ্য সংক্রান্ত নির্দেশনা',
       priceMonthly: 1500,
+      sortOrder: 3,
       isActive: true,
     },
   })
 
   const diabetesPlan = await prisma.subscriptionPlan.upsert({
     where: { slug: 'diabetes-care-package' },
-    update: {},
+    update: {
+      shortDescription: 'ডায়াবেটিস ম্যানেজমেন্ট — ওষুধ ও নিয়মিত সাপোর্ট।',
+      itemsSummary:
+        'ডায়াবেটিস পরিচালনার মূল ওষুধসমূহ\nসাপ্লিমেন্ট ও ব্লাড সুগার সাপোর্ট\nনিয়মিত সরবরাহ নিশ্চিত',
+      sortOrder: 4,
+    },
     create: {
       name: 'Diabetes Care Package',
       slug: 'diabetes-care-package',
-      shortDescription: 'Complete diabetes management package with medications and supplements',
+      shortDescription: 'ডায়াবেটিস ম্যানেজমেন্ট — ওষুধ ও নিয়মিত সাপোর্ট।',
+      itemsSummary:
+        'ডায়াবেটিস পরিচালনার মূল ওষুধসমূহ\nসাপ্লিমেন্ট ও ব্লাড সুগার সাপোর্ট\nনিয়মিত সরবরাহ নিশ্চিত',
       priceMonthly: 2000,
+      sortOrder: 4,
       isActive: true,
     },
   })
 
   const babyCarePlan = await prisma.subscriptionPlan.upsert({
     where: { slug: 'baby-care-package' },
-    update: {},
+    update: {
+      shortDescription: 'শিশুর জন্য প্রয়োজনীয় ওষুধ ও ভিটামিন।',
+      itemsSummary:
+        'শিশুর জন্য নিরাপদ ওষুধ ও ভিটামিন\nপেডিয়াট্রিক ডোজ ও ব্যবহার নির্দেশিকা\nবৃদ্ধি ও রোগ প্রতিরোধ ক্ষমতায় সহায়তা',
+      sortOrder: 2,
+      isFeatured: true,
+    },
     create: {
       name: 'Baby Care Package',
       slug: 'baby-care-package',
-      shortDescription: 'Essential baby care medicines and supplements for healthy growth',
+      shortDescription: 'শিশুর জন্য প্রয়োজনীয় ওষুধ ও ভিটামিন।',
+      itemsSummary:
+        'শিশুর জন্য নিরাপদ ওষুধ ও ভিটামিন\nপেডিয়াট্রিক ডোজ ও ব্যবহার নির্দেশিকা\nবৃদ্ধি ও রোগ প্রতিরোধ ক্ষমতায় সহায়তা',
       priceMonthly: 1200,
+      sortOrder: 2,
+      isFeatured: true,
       isActive: true,
     },
   })
 
   const familyPlan = await prisma.subscriptionPlan.upsert({
     where: { slug: 'family-pack' },
-    update: {},
+    update: {
+      shortDescription: 'পারিবারিক স্বাস্থ্য প্যাকেজ — সব বয়সের জন্য।',
+      itemsSummary:
+        'সব বয়সের জন্য প্রয়োজনীয় ওষুধ ও সাপ্লিমেন্ট\nমাসিক রিফিল ও ডেলিভারি রিমাইন্ডার\nপরিবারের জন্য বিশেষ মূল্য ও ছাড়',
+      sortOrder: 1,
+    },
     create: {
       name: 'Family Pack',
       slug: 'family-pack',
-      shortDescription: 'Comprehensive family health package with essential medicines for all ages',
+      shortDescription: 'পারিবারিক স্বাস্থ্য প্যাকেজ — সব বয়সের জন্য।',
+      itemsSummary:
+        'সব বয়সের জন্য প্রয়োজনীয় ওষুধ ও সাপ্লিমেন্ট\nমাসিক রিফিল ও ডেলিভারি রিমাইন্ডার\nপরিবারের জন্য বিশেষ মূল্য ও ছাড়',
       priceMonthly: 3500,
+      sortOrder: 1,
       isActive: true,
     },
   })
