@@ -180,7 +180,17 @@ Requirements: high-quality, editorial hero, no logos, no watermark, no readable 
     const buffer = Buffer.from(b64, 'base64')
 
     const bucket = process.env.SUPABASE_BLOG_BUCKET || process.env.SUPABASE_MEDICINE_BUCKET || 'medicine-images'
-    const filePath = `blogs/${blogId}/cover-${Date.now()}.png`
+    
+    const seoFilename = title
+      .toLowerCase()
+      .replace(/[\s_]+/g, '-')
+      .replace(/[^\p{L}\p{M}\p{N}\-]/gu, '')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
+      .substring(0, 50)
+      
+    const prefix = seoFilename ? `${seoFilename}-` : ''
+    const filePath = `blogs/${blogId}/${prefix}cover-${Date.now()}.png`
 
     const { data, error } = await supabaseAdmin.storage.from(bucket).upload(filePath, buffer, {
       cacheControl: '3600',
