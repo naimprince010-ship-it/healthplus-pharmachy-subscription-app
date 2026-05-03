@@ -120,20 +120,19 @@ export function AddToCartButton({
     ? 'Out of stock'
     : ''
 
-  // ── Already in cart: show quantity stepper ──
   if (cartQty > 0) {
     return (
-      <div className={`flex items-center justify-between gap-1 rounded-lg border-2 border-orange-400 bg-orange-50 overflow-hidden ${className}`}>
+      <div className={`flex items-center justify-between gap-1 rounded-lg border-2 border-cta-light bg-orange-50 overflow-hidden ${className}`}>
         <button
           type="button"
           onClick={handleDecrease}
-          className="flex h-9 w-9 flex-shrink-0 items-center justify-center text-orange-600 hover:bg-orange-100 transition-colors"
+          className="flex h-9 w-9 flex-shrink-0 items-center justify-center text-cta-dark hover:bg-orange-100 transition-colors"
           aria-label="Remove one"
         >
           <Minus className="h-3.5 w-3.5" />
         </button>
 
-        <span className="flex-1 text-center text-sm font-bold text-orange-600 tabular-nums">
+        <span className="flex-1 text-center text-sm font-bold text-cta-dark tabular-nums">
           {cartQty}
         </span>
 
@@ -141,7 +140,7 @@ export function AddToCartButton({
           type="button"
           onClick={handleIncrease}
           disabled={stockQuantity > 0 && cartQty >= stockQuantity}
-          className="flex h-9 w-9 flex-shrink-0 items-center justify-center text-orange-600 hover:bg-orange-100 transition-colors disabled:opacity-40"
+          className="flex h-9 w-9 flex-shrink-0 items-center justify-center text-cta-dark hover:bg-orange-100 transition-colors disabled:opacity-40"
           aria-label="Add one more"
         >
           <Plus className="h-3.5 w-3.5" />
@@ -156,12 +155,12 @@ export function AddToCartButton({
       type="button"
       onClick={handleAdd}
       disabled={isDisabled}
-      className={`flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold whitespace-nowrap transition-all duration-200 ${
+      className={`flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold whitespace-nowrap transition-all duration-300 ${
         isDisabled
           ? 'cursor-not-allowed bg-gray-200 text-gray-400'
           : justAdded
           ? 'bg-green-500 text-white scale-95'
-          : 'bg-orange-500 text-white hover:bg-orange-600 hover:shadow-md active:scale-95'
+          : 'bg-cta text-white hover:bg-cta-dark hover:shadow-[0_4px_12px_rgba(249,115,22,0.25)] hover:-translate-y-0.5 active:translate-y-0 active:scale-95'
       } ${className}`}
     >
       {justAdded ? (

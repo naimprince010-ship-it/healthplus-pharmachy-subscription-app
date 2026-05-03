@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Image from 'next/image'
-import { ArrowLeft, ChevronDown, ChevronUp, Plus, Pencil, Trash2 } from 'lucide-react'
+import { ArrowLeft, ChevronDown, ChevronUp, Plus, Pencil, Trash2, Shield, Truck, Award } from 'lucide-react'
 import { useCart } from '@/contexts/CartContext'
 import { trackBeginCheckout, trackPurchase, type GA4Item } from '@/lib/trackEvent'
 import { MAIN_CONTAINER } from '@/lib/layout'
@@ -586,21 +586,21 @@ export default function CheckoutPage() {
                     setSelectedSavedAddressId(addr.id)
                   }
                 }}
-                className={`mb-3 flex items-start gap-3 rounded-lg border-2 p-4 cursor-pointer transition-colors ${
+                className={`mb-3 flex items-start gap-3 rounded-xl border-2 p-4 cursor-pointer transition-all duration-200 ${
                   selectedSavedAddressId === addr.id
-                    ? 'border-teal-500 bg-teal-50/30'
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-primary bg-primary/5 shadow-sm'
+                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                 }`}
                 onClick={() => setSelectedSavedAddressId(addr.id)}
               >
                 <div className="mt-0.5 shrink-0">
                   <div
-                    className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${
-                      selectedSavedAddressId === addr.id ? 'border-teal-500' : 'border-gray-300'
+                    className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                      selectedSavedAddressId === addr.id ? 'border-primary' : 'border-gray-300'
                     }`}
                   >
                     {selectedSavedAddressId === addr.id && (
-                      <div className="h-2.5 w-2.5 rounded-full bg-teal-500" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-primary" />
                     )}
                   </div>
                 </div>
@@ -713,7 +713,7 @@ export default function CheckoutPage() {
                   resetAddressForm()
                   setShowAddAddress(true)
                 }}
-                className="w-full flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-teal-400 py-3 text-teal-600 font-medium hover:bg-teal-50 transition-colors"
+                className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/50 py-3.5 text-primary font-bold bg-primary/5 hover:bg-primary/10 transition-colors"
               >
                 <Plus className="h-5 w-5" />
                 <span>{settings.addAddressButtonBn}</span>
@@ -759,7 +759,7 @@ export default function CheckoutPage() {
                     <button
                       type="button"
                       onClick={() => void handleSaveAddress()}
-                      className="flex-1 px-4 py-2.5 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors"
+                      className="flex-1 px-4 py-2.5 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark transition-all duration-200 hover:-translate-y-0.5"
                     >
                       সংরক্ষণ করুন
                     </button>
@@ -834,7 +834,7 @@ export default function CheckoutPage() {
               <button
                 type="button"
                 onClick={() => void handleApplyCoupon()}
-                className="px-6 py-3 bg-white border-2 border-teal-500 text-teal-600 font-semibold rounded-lg hover:bg-teal-50 transition-colors"
+                className="px-6 py-3 bg-white border-2 border-primary text-primary font-bold rounded-lg hover:bg-primary/5 hover:shadow-sm transition-all"
               >
                 {settings.couponApplyBn}
               </button>
@@ -930,43 +930,65 @@ export default function CheckoutPage() {
                 </div>
 
                 {/* Price Breakdown */}
-                <div className="p-4 border-t border-gray-200 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">সাবটোটাল</span>
-                    <span className="text-gray-900">৳ {total.toFixed(0)}</span>
+                <div className="p-4 border-t border-gray-200 space-y-2.5">
+                  <div className="flex justify-between text-[15px]">
+                    <span className="text-gray-600 font-medium">সাবটোটাল</span>
+                    <span className="text-gray-900 font-bold">৳ {total.toFixed(0)}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">ডেলিভারি ফি</span>
-                    <span className="text-gray-900">৳ {deliveryCharge.toFixed(0)}</span>
+                  <div className="flex justify-between text-[15px]">
+                    <span className="text-gray-600 font-medium">ডেলিভারি ফি</span>
+                    <span className="text-gray-900 font-bold">৳ {deliveryCharge.toFixed(0)}</span>
                   </div>
                   {couponDiscount > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-green-700">কুপন ছাড়</span>
-                      <span className="text-green-700">
+                    <div className="flex justify-between text-[15px]">
+                      <span className="text-green-700 font-medium">কুপন ছাড়</span>
+                      <span className="text-green-700 font-bold">
                         − ৳ {couponDiscount.toFixed(0)}
                       </span>
                     </div>
                   )}
                   {savings > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-green-600">সেভিংস</span>
-                      <span className="text-green-600">- ৳ {savings.toFixed(0)}</span>
+                    <div className="flex justify-between text-[15px]">
+                      <span className="text-green-600 font-medium">সেভিংস</span>
+                      <span className="text-green-600 font-bold">- ৳ {savings.toFixed(0)}</span>
                     </div>
                   )}
+                  
+                  {/* Grand Total Row */}
+                  <div className="flex justify-between items-center pt-3 mt-3 border-t border-dashed border-gray-300">
+                    <span className="text-lg font-bold text-gray-900">সর্বমোট:</span>
+                    <span className="text-xl font-extrabold text-primary">৳ {grandTotal.toFixed(0)}</span>
+                  </div>
                 </div>
               </div>
             )}
           </div>
 
           {/* Desktop Order Button */}
-          <div className="hidden lg:block">
+          <div className="hidden lg:block mt-6">
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full rounded-full bg-[#00A651] py-4 font-semibold text-white text-lg hover:bg-[#008f45] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              className="w-full flex justify-center items-center gap-2 rounded-xl bg-cta py-4 font-bold tracking-wide text-white text-[19px] hover:bg-cta-dark disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-300 hover:shadow-[0_4px_20px_rgba(249,115,22,0.3)] hover:-translate-y-1 active:translate-y-0"
             >
-              {isLoading ? 'অর্ডার করা হচ্ছে...' : settings.confirmButtonBn}
+              {isLoading ? 'অপেক্ষা করুন...' : settings.confirmButtonBn}
             </button>
+
+            {/* Trust Indicators */}
+            <div className="mt-5 flex items-center justify-center gap-6 text-gray-500 text-sm font-medium">
+              <div className="flex items-center gap-1.5">
+                <Shield className="w-4 h-4 text-green-600"/> 
+                <span>নিরাপদ চেকআউট</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Truck className="w-4 h-4 text-primary"/> 
+                <span>দ্রুত ডেলিভারি</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Award className="w-4 h-4 text-orange-500"/> 
+                <span>১০০% আসল পণ্য</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -980,7 +1002,7 @@ export default function CheckoutPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="px-8 py-3 bg-[#00A651] text-white font-semibold rounded-full hover:bg-[#008f45] disabled:bg-gray-500 disabled:cursor-not-allowed transition-colors"
+              className="px-8 py-3 bg-cta text-white font-bold rounded-xl hover:bg-cta-dark disabled:bg-gray-500 disabled:cursor-not-allowed transition-all duration-300 hover:shadow-[0_4px_12px_rgba(249,115,22,0.3)] active:scale-95"
             >
               {isLoading ? 'অপেক্ষা করুন...' : settings.confirmButtonBn}
             </button>

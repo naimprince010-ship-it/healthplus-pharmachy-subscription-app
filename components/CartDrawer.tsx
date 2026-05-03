@@ -99,7 +99,7 @@ export function CartDrawer() {
               <p className="text-sm mt-1">পণ্য যোগ করুন</p>
               <button
                 onClick={closeDrawer}
-                className="mt-4 px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+                className="mt-4 px-6 py-2 bg-primary text-white font-medium rounded-lg hover:bg-primary-dark transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0"
               >
                 কেনাকাটা করুন
               </button>
@@ -251,14 +251,14 @@ export function CartDrawer() {
             <Link
               href="/checkout"
               onClick={closeDrawer}
-              className="block w-full py-3 bg-teal-600 text-white text-center font-medium rounded-lg hover:bg-teal-700 transition-colors"
+              className="block w-full py-3 bg-cta text-white text-center font-bold rounded-lg hover:bg-cta-dark transition-all duration-300 hover:shadow-[0_4px_12px_rgba(249,115,22,0.25)] hover:-translate-y-0.5 active:translate-y-0"
             >
               চেকআউট
             </Link>
             <Link
               href="/cart"
               onClick={closeDrawer}
-              className="block w-full py-2 mt-2 text-center text-sm text-teal-600 hover:underline"
+              className="block w-full py-2 mt-2 text-center text-sm font-medium text-primary hover:text-primary-dark hover:underline transition-colors"
             >
               পুরো কার্ট দেখুন
             </Link>

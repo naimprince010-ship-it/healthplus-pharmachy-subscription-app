@@ -117,13 +117,13 @@ export function ProductCard({
     <Link
       href={href}
       prefetch
-      className={`group relative flex flex-col rounded-lg border border-gray-200 bg-white transition-shadow hover:shadow-lg ${
+      className={`group relative flex flex-col rounded-xl border border-gray-100 bg-white transition-[transform,box-shadow] duration-300 ease-out hover:border-gray-200 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 ${
         isCompact ? 'p-3 lg:p-4' : 'p-4'
       } ${className}`}
     >
       {/* Discount badge */}
       {hasDiscount && (
-        <div className={`absolute left-2 top-2 z-10 rounded px-2 py-0.5 text-xs font-semibold text-white ${showOrangeOffBadge ? 'bg-orange-500' : 'bg-red-500'}`}>
+        <div className={`absolute left-3 top-3 z-10 rounded bg-cta px-2 py-0.5 text-[11px] font-bold tracking-wide text-white shadow-sm`}>
           {discountPercent}% {showOrangeOffBadge ? 'OFF' : 'ডিস্কাউন্ট'}
         </div>
       )}
@@ -173,12 +173,12 @@ export function ProductCard({
 
         {/* Price — pushed to bottom via mt-auto */}
         <div className="mt-auto">
-          <div className={`flex flex-wrap items-baseline gap-1 ${isCompact ? 'mt-2' : 'mt-2'}`}>
-            <span className={`font-bold text-teal-700 ${isCompact ? 'text-sm' : 'text-base'}`}>
+          <div className={`flex flex-wrap items-baseline gap-1.5 ${isCompact ? 'mt-2' : 'mt-2'}`}>
+            <span className={`font-bold text-primary ${isCompact ? 'text-[15px]' : 'text-[17px]'}`}>
               ৳{price.toFixed(2)}
             </span>
             {hasDiscount && (
-              <span className={`text-gray-400 line-through ${isCompact ? 'text-[11px]' : 'text-xs'}`}>
+              <span className={`font-medium text-gray-400 line-through ${isCompact ? 'text-[11px]' : 'text-xs'}`}>
                 ৳{mrp.toFixed(2)}
               </span>
             )}

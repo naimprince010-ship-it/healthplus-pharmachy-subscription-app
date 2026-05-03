@@ -11,6 +11,15 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  
+  /* Halalzi Brand Colors */
+  --color-primary: #0d9488; /* Teal 600 */
+  --color-primary-light: #14b8a6; /* Teal 500 */
+  --color-primary-dark: #0f766e; /* Teal 700 */
+  
+  --color-cta: #f97316; /* Orange 500 */
+  --color-cta-light: #fb923c; /* Orange 400 */
+  --color-cta-dark: #ea580c; /* Orange 600 */
 }
 
 @media (prefers-color-scheme: dark) {

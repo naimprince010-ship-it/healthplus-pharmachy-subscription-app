@@ -94,15 +94,15 @@ export default async function LeftCategorySidebar() {
         <Link
           prefetch
           href="/flash-sale"
-          className="flex items-center justify-between border-b border-orange-100 bg-gradient-to-r from-orange-500 to-red-500 px-4 py-3 transition-all hover:from-orange-600 hover:to-red-600"
+          className="flex items-center justify-between border-b border-orange-100 bg-gradient-to-r from-cta to-red-500 px-4 py-3 transition-all duration-300 hover:from-cta-dark hover:to-red-600 hover:shadow-inner"
         >
           <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/25 shadow-sm">
               <Zap className="h-4 w-4 text-white" fill="white" />
             </div>
             <span className="font-extrabold text-[14px] text-white tracking-widest uppercase">Flash Sale</span>
           </div>
-          <ChevronRight className="h-4 w-4 text-white/70" />
+          <ChevronRight className="h-4 w-4 text-white/90 transition-transform group-hover:translate-x-1" />
         </Link>
 
         {/* Category header */}
@@ -120,19 +120,19 @@ export default async function LeftCategorySidebar() {
                 prefetch
                 key={category.id}
                 href={href}
-                className="group relative flex items-center justify-between px-3 py-2.5 transition-all duration-200 hover:bg-teal-50/60"
+                className="group relative flex items-center justify-between px-3 py-2.5 transition-colors duration-300 hover:bg-primary/5"
               >
-                {/* teal left accent on hover */}
-                <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-teal-500 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                {/* primary left accent on hover */}
+                <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:h-7" />
                 <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600 transition-all duration-200 group-hover:bg-teal-100">
+                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-all duration-300 group-hover:bg-primary/20 group-hover:scale-110">
                     <Icon className="h-4 w-4" />
                   </div>
-                  <span className="text-[13.5px] font-medium text-gray-700 transition-colors duration-200 group-hover:text-teal-700">
+                  <span className="text-[13.5px] font-medium text-gray-700 transition-colors duration-300 group-hover:text-primary-dark">
                     {category.name}
                   </span>
                 </div>
-                <ChevronRight className="h-3.5 w-3.5 text-gray-300 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-teal-400" />
+                <ChevronRight className="h-3.5 w-3.5 text-gray-300 transition-all duration-300 group-hover:translate-x-1 group-hover:text-primary-light" />
               </Link>
             )
           })}
@@ -144,7 +144,7 @@ export default async function LeftCategorySidebar() {
         <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
           {/* Header */}
           <div className="flex items-center gap-2 border-b border-gray-50 bg-gray-50/60 px-4 py-2.5">
-            <TrendingUp className="h-3.5 w-3.5 text-teal-600" />
+            <TrendingUp className="h-3.5 w-3.5 text-primary" />
             <h3 className="text-[11px] font-bold uppercase tracking-widest text-gray-400">সেরা ডিল</h3>
           </div>
 
@@ -160,32 +160,32 @@ export default async function LeftCategorySidebar() {
                   prefetch
                   key={product.id}
                   href={`/${product.type === 'MEDICINE' ? 'medicines' : 'products'}/${product.slug}`}
-                  className="group flex items-center gap-3 p-3 transition-all hover:bg-teal-50/50"
+                  className="group flex items-center gap-3 p-3 transition-colors duration-300 hover:bg-primary/5"
                 >
                   {/* Image */}
                   <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-gray-50 border border-gray-100">
                     {product.imageUrl ? (
-                      <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                      <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-gray-300">
                         <Star className="h-5 w-5" />
                       </div>
                     )}
                     {pricing.discountPercent > 0 && (
-                      <span className="absolute left-0 top-0 rounded-br-lg bg-red-500 px-1 py-0.5 text-[8px] font-bold text-white leading-tight">
+                      <span className="absolute left-0 top-0 rounded-br-lg bg-cta px-1.5 py-0.5 text-[9px] font-bold text-white shadow-sm">
                         -{pricing.discountPercent.toFixed(0)}%
                       </span>
                     )}
                   </div>
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-[12px] font-semibold leading-snug text-gray-800 group-hover:text-teal-700">
+                    <p className="text-[12px] font-semibold leading-snug text-gray-800 transition-colors duration-300 group-hover:text-primary-dark line-clamp-2">
                       {product.name}
                     </p>
-                    <div className="mt-1 flex items-center gap-1.5">
-                      <span className="text-sm font-bold text-teal-600">৳{pricing.price.toFixed(0)}</span>
+                    <div className="mt-1 flex items-baseline gap-1.5">
+                      <span className="text-[13px] font-bold text-primary">৳{pricing.price.toFixed(0)}</span>
                       {pricing.discountPercent > 0 && (
-                        <span className="text-[10px] text-gray-400 line-through">৳{pricing.mrp.toFixed(0)}</span>
+                        <span className="text-[10px] font-medium text-gray-400 line-through">৳{pricing.mrp.toFixed(0)}</span>
                       )}
                     </div>
                     {product.stockQuantity !== null && product.stockQuantity !== undefined && (
@@ -199,7 +199,7 @@ export default async function LeftCategorySidebar() {
             })}
           </div>
 
-          <Link prefetch href="/products" className="flex items-center justify-center gap-1 border-t border-gray-50 py-2.5 text-[12px] font-bold text-teal-600 transition-colors hover:bg-teal-50 hover:text-teal-700">
+          <Link prefetch href="/products" className="flex items-center justify-center gap-1 border-t border-gray-50 py-3 text-[12px] font-bold text-primary transition-colors duration-300 hover:bg-primary/5 hover:text-primary-dark">
             সব দেখুন <ChevronRight className="h-3.5 w-3.5" />
           </Link>
         </div>
