@@ -299,6 +299,8 @@ model Product {
   variantLabel String? // e.g., "Aloe Vera", "Lemon", "Red", "XL"
   keyFeatures  String? // Short text / bullet style features
   specSummary  String? // For devices – simple text field for main specs
+  /// Newline-separated ingredient names — shown as pills under "উপাদানসমূহ"
+  ingredients  String? @db.Text
 
   // SEO Fields
   seoTitle       String?

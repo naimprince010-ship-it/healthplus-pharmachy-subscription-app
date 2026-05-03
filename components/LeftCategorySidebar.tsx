@@ -1,19 +1,13 @@
 import Link from 'next/link'
 import {
-  Baby,
   ChevronRight,
-  Cross,
-  Droplets,
-  Flame,
-  Heart,
-  Shield,
-  Sparkles,
   Star,
   TrendingUp,
   Zap,
 } from 'lucide-react'
 import { prisma } from '@/lib/prisma'
 import PrescriptionSidebarButton from './PrescriptionSidebarButton'
+import CategorySidebarList from './CategorySidebarList'
 import { getEffectivePrices } from '@/lib/pricing'
 import {
   GROCERY_CATEGORY_SLUG,
@@ -21,18 +15,6 @@ import {
   isMedicineShopEnabled,
   isPrescriptionFlowEnabled,
 } from '@/lib/site-features'
-
-function getCategoryIcon(name: string) {
-  const n = name.toLowerCase()
-  if (n.includes('face') || n.includes('skin') || n.includes('beauty')) return Sparkles
-  if (n.includes('hair')) return Droplets
-  if (n.includes('baby') || n.includes('kid') || n.includes('mom')) return Baby
-  if (n.includes('fragrance') || n.includes('perfume')) return Flame
-  if (n.includes('lip')) return Heart
-  if (n.includes('oral')) return Cross
-  if (n.includes('wellness') || n.includes('health')) return Shield
-  return Star
-}
 
 // Server component - fetches data on the server for instant loading
 export default async function LeftCategorySidebar() {
@@ -94,15 +76,18 @@ export default async function LeftCategorySidebar() {
         <Link
           prefetch
           href="/flash-sale"
-          className="flex items-center justify-between border-b border-orange-100 bg-gradient-to-r from-cta to-red-500 px-4 py-3 transition-all duration-300 hover:from-cta-dark hover:to-red-600 hover:shadow-inner"
+          className="group relative overflow-hidden flex items-center justify-between border-b border-orange-100 bg-gradient-to-r from-cta to-red-500 px-4 py-3 transition-all duration-300 hover:shadow-inner"
         >
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/25 shadow-sm">
+          {/* Animated shine effect */}
+          <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+          
+          <div className="flex items-center gap-2.5 relative z-10">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/25 shadow-sm animate-pulse">
               <Zap className="h-4 w-4 text-white" fill="white" />
             </div>
             <span className="font-extrabold text-[14px] text-white tracking-widest uppercase">Flash Sale</span>
           </div>
-          <ChevronRight className="h-4 w-4 text-white/90 transition-transform group-hover:translate-x-1" />
+          <ChevronRight className="h-4 w-4 text-white/90 transition-transform group-hover:translate-x-1 relative z-10" />
         </Link>
 
         {/* Category header */}
@@ -111,32 +96,7 @@ export default async function LeftCategorySidebar() {
         </div>
 
         {/* Category List */}
-        <div className="divide-y divide-gray-50/80">
-          {navCategories.map((category) => {
-            const href = category.sidebarLinkUrl || `/category/${category.slug}`
-            const Icon = getCategoryIcon(category.name)
-            return (
-              <Link
-                prefetch
-                key={category.id}
-                href={href}
-                className="group relative flex items-center justify-between px-3 py-2.5 transition-colors duration-300 hover:bg-primary/5"
-              >
-                {/* primary left accent on hover */}
-                <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:h-7" />
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-all duration-300 group-hover:bg-primary/20 group-hover:scale-110">
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <span className="text-[13.5px] font-medium text-gray-700 transition-colors duration-300 group-hover:text-primary-dark">
-                    {category.name}
-                  </span>
-                </div>
-                <ChevronRight className="h-3.5 w-3.5 text-gray-300 transition-all duration-300 group-hover:translate-x-1 group-hover:text-primary-light" />
-              </Link>
-            )
-          })}
-        </div>
+        <CategorySidebarList categories={navCategories} />
       </div>
 
       {/* সেরা ডিল */}

@@ -35,6 +35,7 @@ const updateProductSchema = z.object({
   variantLabel: z.string().optional(),
   keyFeatures: z.string().optional(),
   specSummary: z.string().optional(),
+  ingredients: z.string().optional(),
   isFlashSale: z.boolean().optional(),
   flashSalePrice: z.number().positive().optional(),
   flashSaleStart: z.string().datetime().optional(),

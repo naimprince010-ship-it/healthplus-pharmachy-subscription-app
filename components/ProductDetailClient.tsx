@@ -188,14 +188,14 @@ export function ProductDetailClient({
         {hasDiscount ? (
           <>
             <div className="flex items-center gap-2">
-              <span className="text-gray-500 line-through">MRP ৳{effectiveMrp.toFixed(2)}</span>
+              <span className="text-gray-500 line-through">এমআরপি ৳{effectiveMrp.toFixed(2)}</span>
               <span className={`text-sm font-semibold ${isFlashActive ? 'text-orange-500' : isCampaignActive ? 'text-orange-500' : 'text-red-500'}`}>
-                {Math.round(discountPercent)}% {isFlashActive || isCampaignActive ? 'OFF' : 'ডিস্কাউন্ট'}
+                {Math.round(discountPercent)}% {isFlashActive || isCampaignActive ? 'ছাড়' : 'ডিস্কাউন্ট'}
               </span>
             </div>
             <div className="flex items-baseline gap-1">
-              <span className="text-gray-600">Best Price</span>
-              <span className="text-2xl font-bold text-teal-700">Tk {price.toFixed(2)}</span>
+              <span className="text-gray-600">সেরা মূল্য</span>
+              <span className="text-2xl font-bold text-teal-700">৳{price.toFixed(2)}</span>
               {unitLabel && <span className="text-gray-500">{unitLabel}</span>}
             </div>
             {(unitPrice || stripPrice || tabletsPerStrip) && (
@@ -241,7 +241,7 @@ export function ProductDetailClient({
       {variants.length > 0 && (
         <div className="relative">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Pack Size
+            আয়তন / প্যাক
           </label>
           <button
             type="button"
@@ -255,7 +255,7 @@ export function ProductDetailClient({
               }`}
           >
             <span className="font-medium text-gray-900">
-              {currentVariant?.variantName || 'Select variant'}
+              {currentVariant?.variantName || 'ভেরিয়েন্ট বেছে নিন'}
             </span>
             {variants.length > 1 && (
               <ChevronDown className={`h-5 w-5 text-gray-500 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
@@ -283,7 +283,7 @@ export function ProductDetailClient({
                     <div className="flex items-center gap-2">
                       {variant.mrp && variant.discountPercentage && variant.discountPercentage > 0 && (
                         <span className="text-xs text-red-500 font-medium">
-                          {Math.round(variant.discountPercentage)}% OFF
+                          {Math.round(variant.discountPercentage)}% ছাড়
                         </span>
                       )}
                       {variant.stockQuantity === 0 && (
@@ -303,7 +303,7 @@ export function ProductDetailClient({
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Quantity
+              পরিমাণ
             </label>
             <div className="flex items-center border-2 border-gray-200 rounded-xl overflow-hidden w-fit">
               <button
@@ -338,14 +338,14 @@ export function ProductDetailClient({
               }`}
           >
             <ShoppingCart className="h-5 w-5" />
-            {isAdding ? 'Added!' : 'কার্টে যোগ করুন'}
+            {isAdding ? 'যোগ হয়েছে!' : 'কার্টে যোগ করুন'}
           </button>
         </div>
       )}
 
       {isOutOfStock && (
         <div className="rounded-lg bg-red-50 px-4 py-3 text-center">
-          <span className="font-medium text-red-600">Out of Stock</span>
+          <span className="font-medium text-red-600">স্টক নেই</span>
         </div>
       )}
 
@@ -369,7 +369,7 @@ export function ProductDetailClient({
 
       {currentStock > 0 && currentStock < 10 && (
         <p className="text-sm text-orange-600">
-          Only {currentStock} left in stock - order soon!
+          মাত্র {currentStock}টি বাকি — দ্রুত অর্ডার করুন।
         </p>
       )}
     </div>

@@ -122,6 +122,11 @@ a,
   animation-delay: 4s;
 }
 
+/* Shimmer Animation for Flash Sale */
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+
 /* PWA Standalone Mode Adjustments */
 @media all and (display-mode: standalone) {
   body {

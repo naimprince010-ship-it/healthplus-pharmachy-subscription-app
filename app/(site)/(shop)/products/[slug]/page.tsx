@@ -12,6 +12,10 @@ import { serializeJsonLd } from '@/lib/serialize-json-ld'
 import { getCachedProductBySlug } from './get-product-by-slug'
 import { GROCERY_CATEGORY_SLUG, isGroceryShopEnabled, isMedicineShopEnabled } from '@/lib/site-features'
 import { SimilarProductsSection } from './SimilarProductsSection'
+import { ProductSpecsTable } from '@/components/product-detail/ProductSpecsTable'
+import { ProductKeyFeaturesGrid } from '@/components/product-detail/ProductKeyFeaturesGrid'
+import { ProductIngredientsSection } from '@/components/product-detail/ProductIngredientsSection'
+import { getVolumeSizeDisplay, productTypeLabelBn } from '@/lib/product-detail-display'
 
 export const runtime = 'nodejs'
 export const revalidate = 60 // Revalidate page every 60 seconds (ISR)
@@ -106,6 +110,25 @@ export default async function ProductPage({ params }: ProductPageProps) {
   // Use Manufacturer relation first, then fall back to medicine.manufacturer or brandName
   const manufacturerName = product.manufacturer?.name || product.medicine?.manufacturer || product.brandName || null
   const manufacturerSlug = product.manufacturer?.slug || null
+
+  const volumeDisplay = getVolumeSizeDisplay({
+    name: product.name,
+    sizeLabel: product.sizeLabel,
+    variantLabel: product.variantLabel,
+    unit: product.unit,
+    variants: (product.variants || []).map((v: { isDefault: boolean; sizeLabel: string | null; variantName: string }) => ({
+      isDefault: v.isDefault,
+      sizeLabel: v.sizeLabel,
+      variantName: v.variantName,
+    })),
+  })
+  const strengthNorm = strength?.trim().toLowerCase() ?? ''
+  const volumeNorm = volumeDisplay?.trim().toLowerCase() ?? ''
+  const volumeSameAsStrength = Boolean(strengthNorm && volumeNorm && strengthNorm === volumeNorm)
+  const showStrengthBesideTitle =
+    !!strength &&
+    !product.name.toLowerCase().includes(strength.toLowerCase()) &&
+    !volumeSameAsStrength
 
   // Parent/Leaf category for MedEasy-style display
   // Line 1 (grey): Parent category/department (e.g., "Women's Choice") OR dosage form for medicines
@@ -211,7 +234,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
           >
             <ArrowLeft className="h-4 w-4" />
-            {customerFacingLeafLabel ? `Back to ${customerFacingLeafLabel}` : 'Back to Products'}
+            {customerFacingLeafLabel ? `${customerFacingLeafLabel} — ফিরে যান` : 'পণ্যসমূহে ফিরে যান'}
           </Link>
 
           {/* lg:flex + items-start: two columns without stretching image column height to match long details */}
@@ -226,7 +249,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 />
               ) : (
                 <div className="flex h-full items-center justify-center text-gray-400">
-                  No image available
+                  ছবি নেই
                 </div>
               )}
             </div>
@@ -237,12 +260,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
               <div className="mb-2">
                 <h1 className="text-2xl font-bold text-gray-900 lg:text-3xl">
                   {product.name}
-                  {/* Only show strength if it's NOT already part of the product name */}
-                  {strength && !product.name.toLowerCase().includes(strength.toLowerCase()) && (
-                    <span className="ml-2 text-lg font-normal text-gray-500">
-                      {strength}
+                  {showStrengthBesideTitle ? (
+                    <span className="ml-2 text-lg font-normal text-gray-500">{strength}</span>
+                  ) : null}
+                  {volumeDisplay ? (
+                    <span className="ml-2 inline-flex items-center align-middle rounded-full bg-teal-100 px-3 py-1 text-base font-semibold text-teal-800 lg:text-lg">
+                      {volumeDisplay}
                     </span>
-                  )}
+                  ) : null}
                 </h1>
               </div>
 
@@ -281,7 +306,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               {/* Manufacturer (MedEasy style: "Manufacturer: Square Pharmaceuticals PLC.") */}
               {manufacturerName && (
                 <div className="mb-4">
-                  <span className="text-gray-500 text-sm">Manufacturer:</span>
+                  <span className="text-gray-500 text-sm">প্রস্তুতকারক:</span>
                   {manufacturerSlug ? (
                     <Link
                       href={`/manufacturer/${manufacturerSlug}`}
@@ -324,63 +349,54 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
               {product.description && (
                 <div className="mt-8">
-                  <h2 className="text-xl font-bold text-gray-900">Description</h2>
+                  <h2 className="text-xl font-bold text-gray-900">বিবরণ</h2>
+                  <p className="mt-1 text-xs text-gray-500">
+                    বিষয়বস্তু বাংলায় দেখাতে অ্যাডমিনে বিবরণ বাংলায় সংরক্ষণ করুন।
+                  </p>
                   <p className="mt-4 text-gray-600 whitespace-pre-line">
                     {product.description}
                   </p>
                 </div>
               )}
 
-              {product.keyFeatures && (
-                <div className="mt-8">
-                  <h2 className="text-xl font-bold text-gray-900">Key Features</h2>
-                  <div className="mt-4 space-y-2">
-                    {(product.keyFeatures?.split('\n') ?? []).filter(f => f.trim()).map((feature, index) => (
-                      <div key={index} className="flex items-start gap-2">
-                        <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-teal-600" />
-                        <span className="text-gray-600">{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <ProductIngredientsSection ingredientsRaw={product.ingredients} />
+
+              <ProductKeyFeaturesGrid keyFeaturesRaw={product.keyFeatures} />
+
+              <div className="mt-8">
+                <h2 className="text-xl font-bold text-gray-900">বিস্তারিত স্পেসিফিকেশন</h2>
+                <ProductSpecsTable
+                  category={customerFacingLeafLabel ?? 'শ্রেণীবিহীন'}
+                  brand={product.brandName}
+                  volumeSize={volumeDisplay}
+                  productTypeLabel={productTypeLabelBn(product.type)}
+                  manufacturer={
+                    manufacturerName ? (
+                      manufacturerSlug ? (
+                        <Link
+                          href={`/manufacturer/${manufacturerSlug}`}
+                          className="font-medium text-teal-600 hover:text-teal-700"
+                        >
+                          {manufacturerName}
+                        </Link>
+                      ) : (
+                        <span className="font-medium">{manufacturerName}</span>
+                      )
+                    ) : (
+                      '—'
+                    )
+                  }
+                  stockLabel={stockQuantity > 0 ? 'স্টকে আছে' : 'স্টক নেই'}
+                  stockClassName={stockQuantity > 0 ? 'font-medium text-green-600' : 'font-medium text-red-600'}
+                />
+              </div>
 
               {product.specSummary && (
-                <div className="mt-8">
-                  <h2 className="text-xl font-bold text-gray-900">Specifications</h2>
-                  <p className="mt-4 text-gray-600 whitespace-pre-line">
-                    {product.specSummary}
-                  </p>
+                <div className="mt-6 rounded-xl border border-gray-200 bg-gray-50/80 p-5">
+                  <h3 className="font-semibold text-gray-900">অতিরিক্ত তথ্য</h3>
+                  <p className="mt-3 text-sm text-gray-600 whitespace-pre-line">{product.specSummary}</p>
                 </div>
               )}
-
-              <div className="mt-8 rounded-lg border border-gray-200 bg-white p-6">
-                <h3 className="font-semibold text-gray-900">Product Information</h3>
-                <dl className="mt-4 space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <dt className="text-gray-600">Category</dt>
-                    <dd className="font-medium text-gray-900">{customerFacingLeafLabel ?? 'Uncategorized'}</dd>
-                  </div>
-                  {product.brandName && (
-                    <div className="flex justify-between">
-                      <dt className="text-gray-600">Brand</dt>
-                      <dd className="font-medium text-gray-900">{product.brandName}</dd>
-                    </div>
-                  )}
-                  {product.unit && (
-                    <div className="flex justify-between">
-                      <dt className="text-gray-600">Unit</dt>
-                      <dd className="font-medium text-gray-900">{product.unit}</dd>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <dt className="text-gray-600">Availability</dt>
-                    <dd className={`font-medium ${stockQuantity > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {stockQuantity > 0 ? 'In Stock' : 'Out of Stock'}
-                    </dd>
-                  </div>
-                </dl>
-              </div>
             </div>
           </div>
 

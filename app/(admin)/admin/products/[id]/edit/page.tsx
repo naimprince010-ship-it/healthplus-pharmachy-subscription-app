@@ -46,6 +46,7 @@ interface Product {
   sizeLabel: string | null
   keyFeatures: string | null
   specSummary: string | null
+  ingredients: string | null
   isFlashSale: boolean
   flashSalePrice: number | null
   flashSaleStart: Date | null
@@ -110,6 +111,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     sizeLabel: '',
     keyFeatures: '',
     specSummary: '',
+    ingredients: '',
     isFlashSale: false,
     flashSalePrice: '',
     flashSaleStart: '',
@@ -249,6 +251,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           sizeLabel: product.sizeLabel || '',
           keyFeatures: product.keyFeatures || '',
           specSummary: product.specSummary || '',
+          ingredients: product.ingredients || '',
           isFlashSale: product.isFlashSale,
           flashSalePrice: product.flashSalePrice?.toString() || '',
           flashSaleStart: product.flashSaleStart ? new Date(product.flashSaleStart).toISOString().slice(0, 16) : '',
@@ -407,6 +410,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         sizeLabel: formData.sizeLabel || undefined,
         keyFeatures: formData.keyFeatures || undefined,
         specSummary: formData.specSummary || undefined,
+        ingredients: formData.ingredients || undefined,
         isFlashSale: formData.isFlashSale,
         flashSalePrice: formData.flashSalePrice ? parseFloat(formData.flashSalePrice) : undefined,
         flashSaleStart: formData.flashSaleStart ? new Date(formData.flashSaleStart).toISOString() : undefined,
@@ -822,7 +826,20 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 onChange={(e) => setFormData({ ...formData, keyFeatures: e.target.value })}
                 rows={3}
                 className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                placeholder="Enter key features, one per line"
+                placeholder="প্রতিটি লাইনে একটি বৈশিষ্ট্য। শিরোনাম ও বিবরণের জন্য: শিরোনাম — বিবরণ বা শিরোনাম | বিবরণ"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Ingredients (উপাদান) — এক লাইনে একটি, বা কমা দিয়ে
+              </label>
+              <textarea
+                value={formData.ingredients}
+                onChange={(e) => setFormData({ ...formData, ingredients: e.target.value })}
+                rows={3}
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                placeholder={'যেমন: নিম পাতা\nটুলসি\nঅ্যালোভেরা'}
               />
             </div>
 
