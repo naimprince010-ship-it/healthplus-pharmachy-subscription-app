@@ -1,5 +1,5 @@
-const CACHE_NAME = 'halalzi-v3';
-const STATIC_CACHE_NAME = 'halalzi-static-v3';
+const CACHE_NAME = 'halalzi-v4';
+const STATIC_CACHE_NAME = 'halalzi-static-v4';
 
 const STATIC_ASSETS = [
   '/',
@@ -88,15 +88,26 @@ async function cacheFirst(request) {
 
 async function staleWhileRevalidate(request) {
   const cachedResponse = await caches.match(request);
-  const fetchPromise = fetch(request).then(async (networkResponse) => {
-    if (networkResponse.ok) {
-      const forCache = networkResponse.clone();
-      const cache = await caches.open(CACHE_NAME);
-      await cache.put(request, forCache);
-    }
-    return networkResponse;
-  });
-  return cachedResponse || fetchPromise;
+  const fetchPromise = fetch(request)
+    .then(async (networkResponse) => {
+      if (networkResponse.ok) {
+        const forCache = networkResponse.clone();
+        const cache = await caches.open(CACHE_NAME);
+        await cache.put(request, forCache);
+      }
+      return networkResponse;
+    })
+    .catch(() => null);
+
+  if (cachedResponse) {
+    // Revalidate quietly; failures must not surface as Uncaught (in promise)
+    fetchPromise.catch(() => {});
+    return cachedResponse;
+  }
+
+  const networkResponse = await fetchPromise;
+  if (networkResponse) return networkResponse;
+  return new Response('', { status: 503, statusText: 'Service Unavailable' });
 }
 
 self.addEventListener('fetch', (event) => {
