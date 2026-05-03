@@ -5,8 +5,13 @@ import {
   MissingProductInfo,
   FAQSchema,
 } from './types'
-import { getOpenAIClient } from './openaiClient' // Bug #12 fix: shared client
 import { runAgenticChat } from './agent'
+import {
+  BLOG_FIELD_ACCURACY_RULES,
+  normalizeFaqPair,
+  parseBlogEngineJson,
+  sanitizeBlogAiTextFields,
+} from './blog-output-sanitize'
 
 const VALID_ROLES = new Set(['recommended', 'ingredient', 'alternative', 'combo', 'step'])
 
@@ -44,6 +49,8 @@ ${productContext}
 
 EXISTING BLOG SLUGS (for internal linking — ONLY use slugs from this list, do NOT invent slugs):
 ${existingBlogSlugs.length > 0 ? existingBlogSlugs.slice(0, 10).join(', ') : 'None available — leave internalLinkSlugs as empty array []'}
+
+${BLOG_FIELD_ACCURACY_RULES}
 
 Write a comprehensive recipe blog in Bangla (Bengali) with some English terms where appropriate for SEO. The blog should:
 
@@ -132,7 +139,9 @@ IMPORTANT:
         notes: p.notes,
       }))
 
-    const missingProducts: MissingProductInfo[] = (parsed.missingProducts || []).map((m: {
+    const missingProducts: MissingProductInfo[] = (
+      Array.isArray(parsed.missingProducts) ? parsed.missingProducts : []
+    ).map((m: {
       name: string
       categorySuggestion?: string
       reason: string
@@ -143,29 +152,27 @@ IMPORTANT:
     }))
 
     // Bug #4 fix: internal link slugs validate করা হচ্ছে
-    const validatedInternalLinks = (parsed.internalLinkSlugs || []).filter(
+    const validatedInternalLinks = (Array.isArray(parsed.internalLinkSlugs) ? parsed.internalLinkSlugs : []).filter(
       (slug: string) => existingSlugSet.has(slug)
     )
 
     const recipeMetadata = `
 ---
-Estimated Cost: ৳${parsed.estimatedCost || 'N/A'}
-Servings: ${parsed.servings || 'N/A'}
-Cooking Time: ${parsed.cookingTime || 'N/A'}
-Difficulty: ${parsed.difficulty || 'N/A'}
+Estimated Cost: ৳${parsed.estimatedCost ?? 'N/A'}
+Servings: ${parsed.servings ?? 'N/A'}
+Cooking Time: ${parsed.cookingTime ?? 'N/A'}
+Difficulty: ${parsed.difficulty ?? 'N/A'}
 ---
 
 `
 
+    const contentMd = typeof parsed.contentMd === 'string' ? parsed.contentMd : ''
+
     return {
       success: true,
       content: {
-        title: parsed.title,
-        summary: parsed.summary,
-        contentMd: recipeMetadata + parsed.contentMd,
-        seoTitle: parsed.seoTitle,
-        seoDescription: parsed.seoDescription,
-        seoKeywords: parsed.seoKeywords,
+        ...textFields,
+        contentMd: recipeMetadata + contentMd,
         faqJsonLd,
         internalLinkSlugs: validatedInternalLinks,
       },

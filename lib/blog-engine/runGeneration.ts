@@ -6,6 +6,7 @@ import { generateBeautyBlog } from './beautyWriter'
 import { generateGroceryBlog } from './groceryWriter'
 import { generateRecipeBlog } from './recipeWriter'
 import { generateMoneySavingBlog } from './moneySavingWriter'
+import { sanitizeBlogAiTextFields } from './blog-output-sanitize'
 import type { WriterContext, BlogGenerationResult, AvailableProduct, MissingProductInfo } from './types'
 
 export type RunBlogDraftGenerationResult =
@@ -432,6 +433,9 @@ export async function runBlogDraftGeneration(blogId: string): Promise<RunBlogDra
         error: result.error || 'Content generation failed',
       }
     }
+
+    const metaClean = sanitizeBlogAiTextFields(result.content)
+    result.content = { ...result.content, ...metaClean }
 
     // Collect any product IDs the AI referenced that weren't in our pre-fetched selectedProducts.
     // This happens when the AI used the searchProducts tool to find products outside the Quick Reference.

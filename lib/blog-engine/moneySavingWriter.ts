@@ -5,8 +5,13 @@ import {
   MissingProductInfo,
   FAQSchema,
 } from './types'
-import { getOpenAIClient } from './openaiClient' // Bug #12 fix: shared client
 import { runAgenticChat } from './agent'
+import {
+  BLOG_FIELD_ACCURACY_RULES,
+  normalizeFaqPair,
+  parseBlogEngineJson,
+  sanitizeBlogAiTextFields,
+} from './blog-output-sanitize'
 
 const VALID_ROLES = new Set(['recommended', 'ingredient', 'alternative', 'combo', 'step'])
 
@@ -57,6 +62,8 @@ ${productContext}
 
 EXISTING BLOG SLUGS (for internal linking — ONLY use slugs from this list, do NOT invent slugs):
 ${existingBlogSlugs.length > 0 ? existingBlogSlugs.slice(0, 10).join(', ') : 'None available — leave internalLinkSlugs as empty array []'}
+
+${BLOG_FIELD_ACCURACY_RULES}
 
 Write a comprehensive money-saving guide in Bangla (Bengali) with some English terms where appropriate for SEO. The blog should:
 
@@ -111,7 +118,7 @@ IMPORTANT:
 - Be practical and relatable to middle-class Bangladeshi families`
 
     const content = await runAgenticChat(
-      'You are a money-saving expert content writer for a Bangladeshi e-commerce platform. Always respond with valid JSON.',
+      'You are a money-saving expert content writer for a Bangladeshi e-commerce platform. Follow FIELD ACCURACY rules in the user message exactly. Output ONLY one JSON object, no markdown.',
       prompt
     )
 
@@ -119,24 +126,36 @@ IMPORTANT:
       return { success: false, error: 'No content generated', products: [], missingProducts: [] }
     }
 
-    const parsed = JSON.parse(content)
+    const parsed = parseBlogEngineJson(content)
 
+    const faqsRaw = Array.isArray(parsed.faqs) ? parsed.faqs : []
     const faqJsonLd: FAQSchema = {
       '@context': 'https://schema.org',
       '@type': 'FAQPage',
-      mainEntity: (parsed.faqs || []).map((faq: { question: string; answer: string }) => ({
-        '@type': 'Question',
-        name: faq.question,
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: faq.answer,
-        },
-      })),
+      mainEntity: faqsRaw.map((faq: unknown) => {
+        const { question, answer } = normalizeFaqPair(faq as { question?: unknown; answer?: unknown })
+        return {
+          '@type': 'Question' as const,
+          name: question,
+          acceptedAnswer: {
+            '@type': 'Answer' as const,
+            text: answer,
+          },
+        }
+      }),
     }
+
+    const textFields = sanitizeBlogAiTextFields({
+      title: parsed.title,
+      summary: parsed.summary,
+      seoTitle: parsed.seoTitle,
+      seoDescription: parsed.seoDescription,
+      seoKeywords: parsed.seoKeywords,
+    })
 
     // Bug #5 fix: role validate করা হচ্ছে
     const existingSlugSet = new Set(existingBlogSlugs)
-    const products: ProductRecommendation[] = (parsed.recommendedProducts || [])
+    const products: ProductRecommendation[] = (Array.isArray(parsed.recommendedProducts) ? parsed.recommendedProducts : [])
       .filter((p: { role: string }) => VALID_ROLES.has(p.role))
       .map((p: { productId: string; role: string; stepOrder?: number; notes?: string }) => ({
         productId: p.productId,
@@ -156,26 +175,24 @@ IMPORTANT:
     }))
 
     // Bug #4 fix: internal link slugs validate করা হচ্ছে
-    const validatedInternalLinks = (parsed.internalLinkSlugs || []).filter(
+    const validatedInternalLinks = (Array.isArray(parsed.internalLinkSlugs) ? parsed.internalLinkSlugs : []).filter(
       (slug: string) => existingSlugSet.has(slug)
     )
 
     const savingsMetadata = `
 ---
-Potential Monthly Savings: ৳${parsed.potentialMonthlySavings || 'Varies'}
+Potential Monthly Savings: ৳${parsed.potentialMonthlySavings ?? 'Varies'}
 ---
 
 `
 
+    const contentMd = typeof parsed.contentMd === 'string' ? parsed.contentMd : ''
+
     return {
       success: true,
       content: {
-        title: parsed.title,
-        summary: parsed.summary,
-        contentMd: savingsMetadata + parsed.contentMd,
-        seoTitle: parsed.seoTitle,
-        seoDescription: parsed.seoDescription,
-        seoKeywords: parsed.seoKeywords,
+        ...textFields,
+        contentMd: savingsMetadata + contentMd,
         faqJsonLd,
         internalLinkSlugs: validatedInternalLinks,
       },

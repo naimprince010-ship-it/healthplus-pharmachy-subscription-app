@@ -36,10 +36,14 @@ export async function runAgenticChat(systemPrompt: string, userPrompt: string): 
   const maxIterations = 10
 
   while (iterations < maxIterations) {
+    const temperature = Number(process.env.BLOG_ENGINE_TEMPERATURE)
+    const temp =
+      Number.isFinite(temperature) && temperature >= 0 && temperature <= 1 ? temperature : 0.42
+
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages,
-      temperature: 0.7,
+      temperature: temp,
       max_tokens: 4000,
       response_format: { type: 'json_object' },
       tools,
