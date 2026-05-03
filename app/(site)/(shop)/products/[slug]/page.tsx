@@ -4,7 +4,7 @@ import { ProductDetailClient } from '@/components/ProductDetailClient'
 import { ProductReviews } from '@/components/ProductReviews'
 import { GenericAlternatives } from '@/components/GenericAlternatives'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, ShieldCheck } from 'lucide-react'
 import { Metadata } from 'next'
 import { isProductLinkedToAzanCatalog } from '@/lib/integrations/azan-catalog'
 import { getStorefrontImageUrl } from '@/lib/image-url'
@@ -239,13 +239,29 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
           {/* lg:flex + items-start: two columns without stretching image column height to match long details */}
           <div className="mt-8 flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
-            {/* Image container - max 600px width, 360px height like MedEasy (~573x343px) */}
-            <div className="h-[360px] w-full max-w-[600px] shrink-0 mx-auto bg-white rounded-xl flex items-center justify-center overflow-hidden lg:mx-0">
+            {/* Premium Image container */}
+            <div className="group relative h-[360px] lg:h-[500px] w-full max-w-[500px] shrink-0 mx-auto bg-gradient-to-br from-white to-gray-50/50 rounded-xl flex items-center justify-center overflow-hidden border border-gray-100 shadow-md lg:mx-0">
+              {/* Badges Overlay */}
+              <div className="absolute top-4 left-4 z-10">
+                <span className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-700 border border-teal-100 backdrop-blur-sm">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  100% Authentic
+                </span>
+              </div>
+              
+              {discountPercentage ? (
+                <div className="absolute top-4 right-4 z-10">
+                  <span className="inline-flex items-center rounded-full bg-red-500 px-2.5 py-1 text-xs font-bold text-white shadow-sm">
+                    {Math.round(discountPercentage)}% OFF
+                  </span>
+                </div>
+              ) : null}
+
               {displayImageUrl ? (
                 <img
                   src={displayImageUrl}
                   alt={product.name}
-                  className="h-full w-full object-contain"
+                  className="h-full w-full object-contain p-4 transition-transform duration-500 group-hover:scale-110"
                 />
               ) : (
                 <div className="flex h-full items-center justify-center text-gray-400">
