@@ -240,7 +240,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           {/* lg:flex + items-start: two columns without stretching image column height to match long details */}
           <div className="mt-8 flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
             {/* Premium Image container */}
-            <div className="group relative h-[360px] lg:h-[500px] w-full max-w-[500px] shrink-0 mx-auto bg-gradient-to-br from-white to-gray-50/50 rounded-xl flex items-center justify-center overflow-hidden border border-gray-100 shadow-md lg:mx-0">
+            <div className="group relative h-[320px] lg:h-[420px] w-full lg:max-w-[420px] shrink-0 mx-auto bg-gradient-to-br from-white to-gray-50/50 rounded-xl flex items-center justify-center overflow-hidden border border-gray-100 shadow-md lg:mx-0">
               {/* Badges Overlay */}
               <div className="absolute top-4 left-4 z-10">
                 <span className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-700 border border-teal-100 backdrop-blur-sm">
