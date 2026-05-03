@@ -30,6 +30,8 @@ interface SearchProduct {
     medicineId?: string
   }
   isMedicine: boolean
+  sizeLabel?: string | null
+  packSize?: string | null
 }
 
 function SearchContent() {

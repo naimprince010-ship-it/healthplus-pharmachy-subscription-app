@@ -37,6 +37,7 @@ export async function getHomeSections() {
             mrp: true,
             stockQuantity: true,
             brandName: true,
+            sizeLabel: true,
             description: true,
             type: true,
             discountPercentage: true,
@@ -83,6 +84,7 @@ export async function getHomeSections() {
           return {
             ...product,
             discountPercentage,
+            packSize: product.medicine?.packSize ?? null,
             effectivePrice: effectivePrices.price,
             effectiveMrp: effectivePrices.mrp,
             effectiveDiscountPercent: effectivePrices.discountPercent,

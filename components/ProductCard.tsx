@@ -37,6 +37,10 @@ export interface ProductCardProps {
     name: string
     slug: string
   }
+  /** e.g. "100ml", "539g" — shown on its own line so the title can stay short. */
+  sizeLabel?: string | null
+  /** Medicine pack line when linked to Medicine row */
+  packSize?: string | null
   href?: string
   cartInfo?: {
     kind: 'medicine' | 'product'
@@ -77,6 +81,7 @@ export function ProductCard({
 
   const isCompact = variant === 'compact'
   const displayImageUrl = getStorefrontImageUrl(product.imageUrl)
+  const sizeDisplay = product.sizeLabel?.trim() || product.packSize?.trim() || null
 
   // Use pre-computed values from server if available (avoids hydration mismatch)
   // Fall back to computing on client for pages that don't pre-compute
@@ -156,17 +161,28 @@ export function ProductCard({
         )}
       </div>
 
-      {/* Fixed-height text area so price & button are always at same position */}
+      {/* Title: truncated; size on its own line (sizeLabel / packSize) */}
       <div className={`flex flex-1 flex-col ${isCompact ? 'mt-2' : 'mt-3'}`}>
-        {/* Name: always exactly 2 lines tall */}
-        <h3 className={`font-semibold text-gray-900 line-clamp-2 leading-snug ${
-          isCompact ? 'text-sm' : 'text-[13.5px]'
-        }`} style={{ minHeight: isCompact ? '2.5rem' : '2.75rem' }}>
+        <h3
+          className={`font-semibold text-gray-900 leading-snug shrink-0 ${
+            isCompact ? 'line-clamp-2 text-sm' : 'line-clamp-2 text-[13.5px]'
+          } ${isCompact ? 'min-h-[2.5rem]' : 'min-h-[2.75rem]'}`}
+        >
           {product.name}
         </h3>
+        {sizeDisplay && (
+          <p
+            className={`shrink-0 font-medium text-gray-600 line-clamp-1 ${
+              isCompact ? 'mt-0.5 text-[11px]' : 'mt-0.5 text-xs'
+            }`}
+            title={sizeDisplay}
+          >
+            {sizeDisplay}
+          </p>
+        )}
         {/* Brand: 1 line only */}
         {product.brandName && (
-          <p className={`line-clamp-1 text-gray-400 ${isCompact ? 'mt-0.5 text-[11px]' : 'mt-0.5 text-xs'}`}>
+          <p className={`line-clamp-1 text-gray-400 shrink-0 ${isCompact ? 'mt-0.5 text-[11px]' : 'mt-0.5 text-xs'}`}>
             {product.brandName}
           </p>
         )}

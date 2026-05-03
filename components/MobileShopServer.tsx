@@ -23,7 +23,9 @@ const productForMobileShop = {
   flashSaleStart: true,
   flashSaleEnd: true,
   isFlashSale: true,
+  sizeLabel: true,
   category: { select: { id: true, name: true, slug: true } },
+  medicine: { select: { packSize: true } },
 } as const
 
 async function getAllDescendantCategoryIds(parentId: string): Promise<string[]> {
@@ -106,6 +108,8 @@ export async function MobileShopServer() {
     flashSaleStart: p.flashSaleStart,
     flashSaleEnd: p.flashSaleEnd,
     isFlashSale: p.isFlashSale,
+    sizeLabel: p.sizeLabel ?? null,
+    packSize: p.medicine?.packSize ?? null,
     category: p.category,
   }))
 
@@ -149,6 +153,8 @@ export async function MobileShopServer() {
           flashSaleStart: p.flashSaleStart,
           flashSaleEnd: p.flashSaleEnd,
           isFlashSale: p.isFlashSale,
+          sizeLabel: p.sizeLabel ?? null,
+          packSize: p.medicine?.packSize ?? null,
           category: p.category,
         })),
       }

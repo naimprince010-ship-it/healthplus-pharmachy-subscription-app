@@ -130,6 +130,8 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     requiresPrescription?: boolean
     genericName?: string | null
     strength?: string | null
+    sizeLabel?: string | null
+    packSize?: string | null
     discountPercentage?: number | null
     campaignPrice?: number | null
     campaignStart?: Date | null
@@ -203,6 +205,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         flashSaleStart: true,
         flashSaleEnd: true,
         brandName: true,
+        sizeLabel: true,
       },
       orderBy: [
         { isFeatured: 'desc' },
@@ -400,6 +403,8 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                       flashSaleEnd: !isMedicine ? item.flashSaleEnd : undefined,
                       requiresPrescription: item.requiresPrescription,
                       genericName: item.genericName,
+                      sizeLabel: item.sizeLabel ?? null,
+                      packSize: item.packSize ?? null,
                       category: {
                         id: category.id,
                         name: category.name,

@@ -29,6 +29,7 @@ export interface SearchableProduct {
   medicineId: string | null
   href: string
   sizeLabel: string | null
+  packSize: string | null
 }
 
 export interface SearchResult {
@@ -63,6 +64,7 @@ function mapToSearchableProduct(p: any): SearchableProduct {
     medicineId: p.medicine?.id || null,
     href: `/products/${p.slug}`,
     sizeLabel: p.sizeLabel || null,
+    packSize: p.medicine?.packSize ?? null,
   }
 }
 

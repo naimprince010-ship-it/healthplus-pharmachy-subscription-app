@@ -56,6 +56,8 @@ export async function GenericAlternatives({ genericName, currentProductId }: Gen
                             stockQuantity: product.stockQuantity,
                             imageUrl: product.imageUrl,
                             discountPercentage: product.discountPercentage,
+                            sizeLabel: product.sizeLabel ?? null,
+                            packSize: product.medicine?.packSize ?? null,
                             category: {
                                 id: product.category.id,
                                 name: product.category.name,

@@ -195,6 +195,7 @@ export async function GET(request: NextRequest) {
           name: true,
           slug: true,
           brandName: true,
+          sizeLabel: true,
           description: true,
           sellingPrice: true,
           mrp: true,
@@ -212,6 +213,9 @@ export async function GET(request: NextRequest) {
               name: true,
               slug: true,
             },
+          },
+          medicine: {
+            select: { packSize: true },
           },
         },
         orderBy: { [query.sortBy]: query.sortOrder },
@@ -276,6 +280,7 @@ export async function GET(request: NextRequest) {
             stockQuantity: true,
             imageUrl: true,
             discountPercentage: true,
+            packSize: true,
             createdAt: true,
             category: {
               select: {
@@ -303,6 +308,8 @@ export async function GET(request: NextRequest) {
         stockQuantity: m.stockQuantity,
         imageUrl: m.imageUrl,
         discountPercentage: m.discountPercentage,
+        sizeLabel: null,
+        packSize: m.packSize,
         createdAt: m.createdAt,
         category: m.category,
         _source: 'medicine' as const, // Internal flag to help with routing
@@ -325,8 +332,9 @@ export async function GET(request: NextRequest) {
     const paginatedItems = allItems.slice(skip, skip + query.limit)
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const products = paginatedItems.map(({ _source, ...item }: any) => ({
+    const products = paginatedItems.map(({ _source, medicine, ...item }: any) => ({
       ...item,
+      packSize: item.packSize ?? medicine?.packSize ?? null,
       href: _source === 'medicine' ? `/medicines/${item.slug}` : `/products/${item.slug}`,
       cartInfo: _source === 'medicine' 
         ? { kind: 'medicine' as const, medicineId: item.id }

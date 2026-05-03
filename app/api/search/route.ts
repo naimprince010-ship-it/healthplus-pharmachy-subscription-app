@@ -101,6 +101,7 @@ interface SearchableItem {
   medicineId: string | null
   href: string
   sizeLabel: string | null
+  packSize: string | null
 }
 
 function formatProduct(p: SearchableItem) {
@@ -116,6 +117,8 @@ function formatProduct(p: SearchableItem) {
     stockQuantity: p.stockQuantity,
     imageUrl: p.imageUrl,
     discountPercentage: p.discountPercentage,
+    sizeLabel: p.sizeLabel ?? null,
+    packSize: p.packSize ?? null,
     category: {
       name: p.categoryName,
       slug: p.categorySlug,

@@ -51,6 +51,7 @@ function mapEngineHitToSearchable(source: Partial<SearchableProduct> & Record<st
     medicineId: typeof source.medicineId === 'string' ? source.medicineId : null,
     href,
     sizeLabel: typeof source.sizeLabel === 'string' ? source.sizeLabel : null,
+    packSize: typeof source.packSize === 'string' ? source.packSize : null,
   }
 }
 

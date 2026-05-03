@@ -17,7 +17,14 @@ type ProductRow = {
   isFeatured: boolean
   sizeLabel: string | null
   category: { name: string; slug: string }
-  medicine: { id: string; genericName: string | null; manufacturer: string | null; brandName: string | null; discountPercentage: number | null } | null
+  medicine: {
+    id: string
+    genericName: string | null
+    manufacturer: string | null
+    brandName: string | null
+    discountPercentage: number | null
+    packSize: string | null
+  } | null
 }
 
 export type ReindexSummary = {
@@ -64,6 +71,7 @@ function mapToSearchDoc(p: ProductRow): SearchableProduct {
     medicineId: p.medicine?.id || null,
     href: `/products/${p.slug}`,
     sizeLabel: p.sizeLabel || null,
+    packSize: p.medicine?.packSize ?? null,
   }
 }
 

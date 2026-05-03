@@ -231,6 +231,8 @@ export function MobileHome({ subscriptionPlans, homeSections }: MobileHomeProps)
                     flashSaleStart: product.flashSaleStart || null,
                     flashSaleEnd: product.flashSaleEnd || null,
                     isFlashSale: product.isFlashSale || null,
+                    sizeLabel: product.sizeLabel ?? null,
+                    packSize: product.packSize ?? null,
                     category: product.category || { id: '', name: '', slug: '' },
                   }}
                   variant="compact"

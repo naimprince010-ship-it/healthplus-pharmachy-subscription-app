@@ -29,6 +29,8 @@ interface Product {
     name: string
     slug: string
   }
+  sizeLabel?: string | null
+  packSize?: string | null
 }
 
 interface SectionSliderProps {

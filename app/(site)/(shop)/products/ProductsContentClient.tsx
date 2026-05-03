@@ -18,6 +18,8 @@ interface Product {
   stockQuantity: number
   imageUrl: string | null
   discountPercentage?: number | null
+  sizeLabel?: string | null
+  packSize?: string | null
   category: {
     id: string
     name: string

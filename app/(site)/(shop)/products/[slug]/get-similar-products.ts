@@ -25,6 +25,8 @@ export interface SimilarProduct {
   effectiveMrp: number
   effectiveDiscountPercent: number
   isFlashSaleActive: boolean
+  sizeLabel: string | null
+  packSize: string | null
   cartInfo: { kind: 'product'; productId: string }
 }
 
@@ -72,6 +74,10 @@ export async function getSimilarProducts(
           name: true,
           slug: true,
         },
+      },
+      sizeLabel: true,
+      medicine: {
+        select: { packSize: true },
       },
     }
 
@@ -155,6 +161,8 @@ export async function getSimilarProducts(
           effectiveMrp: prices.mrp,
           effectiveDiscountPercent: prices.discountPercent,
           isFlashSaleActive: prices.isFlashSale,
+          sizeLabel: p.sizeLabel ?? null,
+          packSize: p.medicine?.packSize ?? null,
           cartInfo: { kind: 'product' as const, productId: p.id },
         } as SimilarProduct
       } catch (err) {

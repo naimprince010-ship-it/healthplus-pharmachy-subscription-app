@@ -1,11 +1,21 @@
 'use client'
 
 import Link from 'next/link'
-import { Zap, ChevronRight } from 'lucide-react'
+import { Zap, ChevronRight, Baby, Cross, Droplets, Flame, Heart, Shield, Sparkles, Star } from 'lucide-react'
 import { ProductCard } from '@/components/ProductCard'
-import { categoryPlaceholderLetter } from '@/lib/category-placeholder'
 import { getStorefrontImageUrl } from '@/lib/image-url'
 
+function getCategoryIcon(name: string) {
+  const n = name.toLowerCase()
+  if (n.includes('face') || n.includes('skin') || n.includes('beauty')) return Sparkles
+  if (n.includes('hair')) return Droplets
+  if (n.includes('baby') || n.includes('kid') || n.includes('mom')) return Baby
+  if (n.includes('fragrance') || n.includes('perfume')) return Flame
+  if (n.includes('lip')) return Heart
+  if (n.includes('oral')) return Cross
+  if (n.includes('wellness') || n.includes('health')) return Shield
+  return Star
+}
 export interface MobileShopProduct {
   id: string
   type: 'MEDICINE' | 'GENERAL'
@@ -27,6 +37,8 @@ export interface MobileShopProduct {
     name: string
     slug: string
   }
+  sizeLabel?: string | null
+  packSize?: string | null
 }
 
 export interface MobileShopCategory {
@@ -74,21 +86,22 @@ export function MobileShop({ categoryGrid, flashSaleProducts, categorySections }
               <Link
                 key={category.id}
                 href={categoryHref(category)}
-                className="flex flex-col items-center gap-2 rounded-xl bg-white p-3 text-center shadow-sm ring-1 ring-gray-100 active:scale-[0.98] active:opacity-90"
+                className="group flex flex-col items-center gap-2 rounded-xl bg-white p-3 text-center shadow-sm ring-1 ring-gray-100 transition-all duration-300 hover:shadow-md hover:ring-primary/20 active:scale-[0.98]"
               >
                 {gridImg ? (
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gray-100">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gray-50">
                     <img
                       src={gridImg}
                       alt={category.name}
-                      className="h-full w-full object-cover"
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
                     />
                   </div>
                 ) : (
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-teal-100">
-                    <span className="text-lg font-bold text-teal-700" aria-hidden>
-                      {categoryPlaceholderLetter(category.name)}
-                    </span>
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 transition-colors duration-300 group-hover:bg-primary/20">
+                    {(() => {
+                      const Icon = getCategoryIcon(category.name)
+                      return <Icon className="h-6 w-6 text-primary transition-transform duration-300 group-hover:scale-110" />
+                    })()}
                   </div>
                 )}
                 <span className="line-clamp-2 min-h-8 text-xs font-medium leading-tight text-gray-800">
@@ -146,10 +159,11 @@ export function MobileShop({ categoryGrid, flashSaleProducts, categorySections }
                     />
                   </div>
                 ) : (
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-100">
-                    <span className="text-xs font-semibold text-teal-600" aria-hidden>
-                      {categoryPlaceholderLetter(category.name)}
-                    </span>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                    {(() => {
+                      const Icon = getCategoryIcon(category.name)
+                      return <Icon className="h-4 w-4 text-primary" />
+                    })()}
                   </div>
                 )
               })()}
@@ -157,7 +171,7 @@ export function MobileShop({ categoryGrid, flashSaleProducts, categorySections }
             </div>
             <Link
               href={category.sidebarLinkUrl || `/category/${category.slug}`}
-              className="flex items-center gap-1 text-sm font-medium text-teal-600"
+              className="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary-dark transition-colors"
             >
               View All
               <ChevronRight className="h-4 w-4" />
