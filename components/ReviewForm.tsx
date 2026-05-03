@@ -33,7 +33,11 @@ export function ReviewForm({ productId, onReviewSubmitted }: ReviewFormProps) {
         <p className="text-gray-600 mb-4">রিভিউ দিতে লগইন করুন</p>
         <button
           type="button"
-          onClick={() => window.location.href = '/login?callbackUrl=' + encodeURIComponent(window.location.pathname)}
+          onClick={() =>
+            (window.location.href =
+              '/auth/signin?callbackUrl=' +
+              encodeURIComponent(window.location.pathname + window.location.search))
+          }
           className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
         >
           লগইন করুন
