@@ -10,6 +10,33 @@ export function escapeRegExp(value: string): string {
 
 const MIN_NEEDLE_LEN = 6
 
+/** Drop common trailing pack-size tokens so prose can match shorter titles. */
+function stripTrailingPackSize(name: string): string {
+  let s = name.trim()
+  for (let i = 0; i < 3; i++) {
+    const next = s
+      .replace(/\s+\d+(?:\.\d+)?\s*(?:ml|mL|ML|l|L|ltr|Lt|gm|g|kg|pcs?|tabs?)\b\s*$/iu, '')
+      .replace(/\s+\d+(?:\s*×\s*|x\s*)\s*\d+\s*(?:ml|gm|g)\b\s*$/iu, '')
+      .trim()
+    if (next === s || next.length < MIN_NEEDLE_LEN) break
+    s = next
+  }
+  return s
+}
+
+/**
+ * Progressive word-prefixes (long first) — when the catalog name is longer than the blog line
+ * (extra pack/size words), prose still matches a shared prefix like "Neutrogena Deep Clean Facial Cleanser".
+ */
+function addWordPrefixes(fullName: string, add: (s: string) => void): void {
+  const words = fullName.normalize('NFKC').trim().split(/\s+/).filter(Boolean)
+  const minWords = words.length >= 4 ? 3 : 2
+  for (let len = words.length; len >= minWords; len--) {
+    const prefix = words.slice(0, len).join(' ')
+    add(prefix)
+  }
+}
+
 /** Variant strings to match AI prose vs DB catalog naming (parentheses, colons). */
 export function collectNeedlesForProduct(name: string): string[] {
   const n = name.normalize('NFKC').trim().replace(/\s+/g, ' ')
@@ -23,6 +50,13 @@ export function collectNeedlesForProduct(name: string): string[] {
   }
 
   add(n)
+  addWordPrefixes(n, add)
+
+  const withoutPack = stripTrailingPackSize(n)
+  if (withoutPack !== n) {
+    add(withoutPack)
+    addWordPrefixes(withoutPack, add)
+  }
 
   // Strip trailing " (anything)" segments (pack size variants) repeatedly
   let stripped = n
@@ -31,6 +65,7 @@ export function collectNeedlesForProduct(name: string): string[] {
     if (next === stripped || next.length < MIN_NEEDLE_LEN) break
     stripped = next
     add(stripped)
+    addWordPrefixes(stripped, add)
   }
 
   // "Brand Product : Variant : SKU ..." → also try text before first colon (long titles)
@@ -38,6 +73,7 @@ export function collectNeedlesForProduct(name: string): string[] {
   if (colonSplit?.[1]) {
     const head = colonSplit[1].trim()
     add(head)
+    addWordPrefixes(head, add)
   }
 
   out.sort((a, b) => b.length - a.length)
