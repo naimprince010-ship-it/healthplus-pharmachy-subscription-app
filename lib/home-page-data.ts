@@ -58,6 +58,7 @@ export async function getHomeSections() {
             medicine: {
               select: {
                 discountPercentage: true,
+                packSize: true,
               },
             },
           },
