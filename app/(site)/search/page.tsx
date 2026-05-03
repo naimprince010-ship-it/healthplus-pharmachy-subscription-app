@@ -84,11 +84,11 @@ function SearchContent() {
   return (
     <div className={`${MAIN_CONTAINER} py-6`}>
       {/* Search Header */}
-      <div className="mb-6">
+      <div className="mb-8 border-b border-slate-200/90 pb-6">
         {query ? (
           <>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Results for &quot;{query}&quot;
+            <h1 className="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl sm:font-bold">
+              &ldquo;{query}&rdquo; — অনুসন্ধানের ফলাফল
             </h1>
             {!loading && isFuzzy && correctedQuery && (
               <div className="mt-2 text-lg text-teal-600">
@@ -96,8 +96,8 @@ function SearchContent() {
               </div>
             )}
             {!loading && searched && (
-              <p className="mt-1 text-sm text-gray-600">
-                {products.length} {products.length === 1 ? 'product' : 'products'} found
+              <p className="mt-2 text-sm text-slate-600">
+                {products.length} টি পণ্য পাওয়া গেছে
               </p>
             )}
           </>
@@ -131,13 +131,17 @@ function SearchContent() {
 
       {/* Results Grid */}
       {!loading && products.length > 0 && (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-          {products.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              variant="compact"
-            />
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 xl:gap-6 [&>*]:min-w-0">
+          {products.map((product, idx) => (
+            <div key={product.id} className="flex h-full min-h-[18rem] sm:min-h-[19rem]">
+              <ProductCard
+                product={product}
+                variant="compact"
+                cartButtonVariant="outline"
+                className="flex-1"
+                imagePriority={idx < 6}
+              />
+            </div>
           ))}
         </div>
       )}

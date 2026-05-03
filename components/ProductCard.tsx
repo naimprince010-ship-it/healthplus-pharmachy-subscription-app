@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import { ImageOff } from 'lucide-react'
 import { AddToCartButton } from '@/components/AddToCartButton'
 import { getEffectivePrices } from '@/lib/pricing'
 import { getStorefrontImageUrl } from '@/lib/image-url'
@@ -55,6 +56,8 @@ interface ProductCardComponentProps {
   className?: string
   /** First above-the-fold cards only — boosts LCP via next/image preload (few per viewport). */
   imagePriority?: boolean
+  /** Use outline cart CTA — better visual balance on dense grids (e.g. search). */
+  cartButtonVariant?: 'solid' | 'outline'
 }
 
 export function ProductCard({
@@ -122,8 +125,8 @@ export function ProductCard({
     <Link
       href={href}
       prefetch
-      className={`group relative flex flex-col rounded-xl border border-gray-100 bg-white transition-[transform,box-shadow] duration-300 ease-out hover:border-gray-200 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 ${
-        isCompact ? 'p-3 lg:p-4' : 'p-4'
+      className={`group relative flex min-h-0 h-full w-full min-w-0 flex-col rounded-xl border border-gray-100 bg-white transition-[transform,box-shadow] duration-300 ease-out hover:border-emerald-200/80 hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-0.5 ${
+        isCompact ? 'p-3 lg:p-[14px]' : 'p-4'
       } ${className}`}
     >
       {/* Discount badge */}
@@ -134,7 +137,7 @@ export function ProductCard({
       )}
 
       <div
-        className={`relative overflow-hidden rounded-lg bg-gray-100 ${isCompact ? 'aspect-[4/3]' : 'aspect-square'}`}
+        className="relative aspect-square shrink-0 overflow-hidden rounded-lg bg-gradient-to-b from-slate-100 to-slate-50 ring-1 ring-inset ring-slate-200/80"
       >
         {displayImageUrl ? (
           <Image
@@ -147,11 +150,14 @@ export function ProductCard({
                 ? '(max-width: 768px) 50vw, 190px'
                 : '(max-width: 768px) 50vw, (max-width: 1280px) 25vw, 320px'
             }
-            className="object-cover transition-transform group-hover:scale-105"
+            className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-gray-400">
-            No image
+          <div className="flex h-full flex-col items-center justify-center gap-1 p-3 text-slate-400" aria-hidden>
+            <ImageOff className="h-8 w-8 opacity-50" strokeWidth={1.25} />
+            <span className="text-center text-[10px] font-medium uppercase tracking-wide text-slate-500">
+              ছবি নেই
+            </span>
           </div>
         )}
         {product.requiresPrescription && (
@@ -162,11 +168,11 @@ export function ProductCard({
       </div>
 
       {/* Title: truncated; size on its own line (sizeLabel / packSize) */}
-      <div className={`flex flex-1 flex-col ${isCompact ? 'mt-2' : 'mt-3'}`}>
+      <div className={`flex min-h-0 flex-1 flex-col ${isCompact ? 'mt-2.5' : 'mt-3'}`}>
         <h3
-          className={`font-semibold text-gray-900 leading-snug shrink-0 ${
-            isCompact ? 'line-clamp-2 text-sm' : 'line-clamp-2 text-[13.5px]'
-          } ${isCompact ? 'min-h-[2.5rem]' : 'min-h-[2.75rem]'}`}
+          className={`shrink-0 font-semibold leading-snug text-slate-900 ${
+            isCompact ? 'line-clamp-2 text-[13px] sm:text-sm' : 'line-clamp-2 text-[13.5px]'
+          } ${isCompact ? 'min-h-[2.625rem]' : 'min-h-[2.75rem]'}`}
         >
           {product.name}
         </h3>
@@ -188,9 +194,11 @@ export function ProductCard({
         )}
 
         {/* Price — pushed to bottom via mt-auto */}
-        <div className="mt-auto">
+        <div className="mt-auto pt-1">
           <div className={`flex flex-wrap items-baseline gap-1.5 ${isCompact ? 'mt-2' : 'mt-2'}`}>
-            <span className={`font-bold text-primary ${isCompact ? 'text-[15px]' : 'text-[17px]'}`}>
+            <span
+              className={`font-bold tabular-nums text-emerald-800 ${isCompact ? 'text-base' : 'text-[17px]'}`}
+            >
               ৳{price.toFixed(2)}
             </span>
             {hasDiscount && (
@@ -201,7 +209,7 @@ export function ProductCard({
           </div>
 
           {/* Button */}
-          <div className={`${isCompact ? 'pt-1.5' : 'pt-2'}`} onClick={(e) => e.preventDefault()}>
+          <div className={`${isCompact ? 'pt-2' : 'pt-2'}`} onClick={(e) => e.preventDefault()}>
             <AddToCartButton
               medicineId={medicineId}
               productId={productId}
@@ -215,7 +223,8 @@ export function ProductCard({
               mrp={mrp}
               slug={product.slug}
               type={product.type === 'MEDICINE' ? 'MEDICINE' : 'PRODUCT'}
-              className={`w-full ${isCompact ? 'py-1.5 text-xs' : 'py-2'}`}
+              variant={cartButtonVariant}
+              className={`w-full ${isCompact ? '' : 'py-2'} ${cartButtonVariant === 'outline' && isCompact ? 'min-h-[2.25rem]' : ''}`}
             />
           </div>
         </div>

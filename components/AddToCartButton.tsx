@@ -26,6 +26,8 @@ interface AddToCartButtonProps {
   baseUnitLabelBn?: string
   dosageForm?: string
   tabletsPerStrip?: number
+  /** Solid orange (default) or lighter outline — better for dense product grids. */
+  variant?: 'solid' | 'outline'
 }
 
 export function AddToCartButton({
@@ -47,6 +49,7 @@ export function AddToCartButton({
   baseUnitLabelBn,
   dosageForm,
   tabletsPerStrip,
+  variant = 'solid',
 }: AddToCartButtonProps) {
   const { addItem, updateQuantity, items } = useCart()
   const [justAdded, setJustAdded] = useState(false)
@@ -120,13 +123,21 @@ export function AddToCartButton({
     ? 'Out of stock'
     : ''
 
+  const outlineTone = variant === 'outline'
+
   if (cartQty > 0) {
     return (
-      <div className={`flex items-center justify-between gap-1 rounded-lg border-2 border-cta-light bg-orange-50 overflow-hidden ${className}`}>
+      <div
+        className={`flex items-center justify-between gap-1 overflow-hidden rounded-lg border-2 ${
+          outlineTone ? 'border-gray-200 bg-slate-50' : 'border-cta-light bg-orange-50'
+        } ${className}`}
+      >
         <button
           type="button"
           onClick={handleDecrease}
-          className="flex h-9 w-9 flex-shrink-0 items-center justify-center text-cta-dark hover:bg-orange-100 transition-colors"
+          className={`flex h-9 w-9 flex-shrink-0 items-center justify-center transition-colors ${
+            outlineTone ? 'text-slate-700 hover:bg-slate-100' : 'text-cta-dark hover:bg-orange-100'
+          }`}
           aria-label="Remove one"
         >
           <Minus className="h-3.5 w-3.5" />
@@ -140,7 +151,9 @@ export function AddToCartButton({
           type="button"
           onClick={handleIncrease}
           disabled={stockQuantity > 0 && cartQty >= stockQuantity}
-          className="flex h-9 w-9 flex-shrink-0 items-center justify-center text-cta-dark hover:bg-orange-100 transition-colors disabled:opacity-40"
+          className={`flex h-9 w-9 flex-shrink-0 items-center justify-center transition-colors disabled:opacity-40 ${
+            outlineTone ? 'text-slate-700 hover:bg-slate-100' : 'text-cta-dark hover:bg-orange-100'
+          }`}
           aria-label="Add one more"
         >
           <Plus className="h-3.5 w-3.5" />
@@ -150,17 +163,24 @@ export function AddToCartButton({
   }
 
   // ── Not in cart yet ──
+  const solidEnabled =
+    'bg-cta text-white hover:bg-cta-dark hover:shadow-[0_4px_12px_rgba(249,115,22,0.25)] hover:-translate-y-0.5 active:translate-y-0 active:scale-95'
+  const outlineEnabled =
+    'border border-emerald-600/85 bg-white text-emerald-800 hover:bg-emerald-50/90 active:scale-[0.98] shadow-sm'
+
   const button = (
     <button
       type="button"
       onClick={handleAdd}
       disabled={isDisabled}
-      className={`flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold whitespace-nowrap transition-all duration-300 ${
+      className={`flex items-center justify-center gap-1.5 rounded-lg whitespace-nowrap transition-all duration-300 ${
         isDisabled
-          ? 'cursor-not-allowed bg-gray-200 text-gray-400'
+          ? 'cursor-not-allowed bg-gray-200 text-gray-400 px-3 py-2 text-sm font-semibold'
           : justAdded
-          ? 'bg-green-500 text-white scale-95'
-          : 'bg-cta text-white hover:bg-cta-dark hover:shadow-[0_4px_12px_rgba(249,115,22,0.25)] hover:-translate-y-0.5 active:translate-y-0 active:scale-95'
+            ? 'bg-green-600 text-white px-3 py-2 text-sm font-semibold scale-95'
+            : outlineTone
+              ? `px-2.5 py-1.5 text-xs font-semibold ${outlineEnabled}`
+              : `px-3 py-2 text-sm font-semibold ${solidEnabled}`
       } ${className}`}
     >
       {justAdded ? (
