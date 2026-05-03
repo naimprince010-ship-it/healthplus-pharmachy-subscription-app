@@ -213,10 +213,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
             {customerFacingLeafLabel ? `Back to ${customerFacingLeafLabel}` : 'Back to Products'}
           </Link>
 
-          {/* MedEasy grid: 1.8fr image column + 1.4fr info column with gap-8 */}
-          <div className="mt-8 grid grid-cols-1 lg:grid-cols-[minmax(0,1.8fr)_minmax(0,1.4fr)] gap-6 lg:gap-8 items-start">
+          {/* lg:flex avoids CSS grid row stretching (no huge blank under image beside long details). Mobile: column stack unchanged. */}
+          <div className="mt-8 flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
             {/* Image container - max 600px width, 360px height like MedEasy (~573x343px) */}
-            <div className="w-full max-w-[600px] h-[360px] mx-auto lg:mx-0 bg-white rounded-xl flex items-center justify-center overflow-hidden">
+            <div className="h-[360px] w-full max-w-[600px] shrink-0 mx-auto bg-white rounded-xl flex items-center justify-center overflow-hidden lg:mx-0">
               {displayImageUrl ? (
                 <img
                   src={displayImageUrl}
@@ -231,7 +231,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </div>
 
             {/* Details container - MedEasy style with white background card */}
-            <div className="w-full bg-white rounded-xl p-6 shadow-sm">
+            <div className="min-w-0 w-full flex-1 bg-white rounded-xl p-6 shadow-sm">
               {/* Product Name */}
               <div className="mb-2">
                 <h1 className="text-2xl font-bold text-gray-900 lg:text-3xl">

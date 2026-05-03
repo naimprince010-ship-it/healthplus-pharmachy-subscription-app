@@ -13,4 +13,4 @@ export const MAIN_CONTAINER = 'mx-auto w-full max-w-[1480px] 2xl:max-w-none px-2
 
 // Main container with sidebar grid for shop pages
 // Use this in ShopLayout for pages that need the category sidebar
-export const MAIN_CONTAINER_WITH_SIDEBAR = `${MAIN_CONTAINER} lg:grid lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-4`
+export const MAIN_CONTAINER_WITH_SIDEBAR = `${MAIN_CONTAINER} lg:grid lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start lg:gap-4`
