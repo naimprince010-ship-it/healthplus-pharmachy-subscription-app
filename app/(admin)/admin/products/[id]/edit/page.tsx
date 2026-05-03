@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Upload, X, Sparkles, Plus, Trash2 } from 'lucide-react'
@@ -83,6 +83,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   const [aiLanguage, setAiLanguage] = useState<'en' | 'bn'>('en')
   const [variants, setVariants] = useState<ProductVariant[]>([])
   const [variantSaving, setVariantSaving] = useState(false)
+  /** MEDICINE vs GENERAL — sent to AI for OTC/compliance-aware tone */
+  const productTypeRef = useRef<'MEDICINE' | 'GENERAL' | null>(null)
 
   const [formData, setFormData] = useState({
     name: '',
@@ -224,6 +226,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
       if (res.ok) {
         const product: Product = data.product
+        productTypeRef.current = product.type
         setFormData({
           name: product.name,
           slug: product.slug,
@@ -350,8 +353,15 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         body: JSON.stringify({
           productName: formData.name,
           brandName: formData.brandName || undefined,
-          category: categories.find(c => c.id === formData.categoryId)?.name || undefined,
+          category: categories.find((c) => c.id === formData.categoryId)?.name || undefined,
           language: aiLanguage,
+          sizeLabel: formData.sizeLabel.trim() || undefined,
+          unit: formData.unit || undefined,
+          productType: productTypeRef.current ?? undefined,
+          existingDescription: formData.description.trim() || undefined,
+          contextKeyFeatures: formData.keyFeatures.trim() || undefined,
+          ingredients: formData.ingredients.trim() || undefined,
+          contextSpecSummary: formData.specSummary.trim() || undefined,
         }),
       })
 
@@ -661,7 +671,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
             <div className="rounded-lg bg-purple-100 p-3">
               <p className="text-xs text-purple-800">
-                <strong>💡 Tip:</strong> Click &quot;Regenerate with AI&quot; to update Description, Key Features, Specifications, and SEO fields based on current product name and category.
+                <strong>Tip:</strong> AI uses name, category, brand, size/unit, and any text you already filled (description, features, ingredients, specs) for Bangladesh-focused SEO—fix wrong category before regenerating.
               </p>
             </div>
           </div>

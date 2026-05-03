@@ -139,14 +139,24 @@ export default function NewProductPage() {
     setAiError('')
 
     try {
+      const cat = categories.find((c) => c.id === formData.categoryId)
+      const productType =
+        cat?.isMedicineCategory === true ? 'MEDICINE' : cat?.isMedicineCategory === false ? 'GENERAL' : undefined
+
       const res = await fetch('/api/ai/product-helper', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           productName: formData.name,
           brandName: formData.brandName || undefined,
-          category: categories.find(c => c.id === formData.categoryId)?.name || undefined,
+          category: cat?.name || undefined,
           language: aiLanguage,
+          sizeLabel: formData.sizeLabel.trim() || undefined,
+          unit: formData.unit || undefined,
+          productType,
+          existingDescription: formData.description.trim() || undefined,
+          contextKeyFeatures: formData.keyFeatures.trim() || undefined,
+          contextSpecSummary: formData.specSummary.trim() || undefined,
         }),
       })
 
@@ -404,7 +414,7 @@ export default function NewProductPage() {
 
             <div className="rounded-lg bg-purple-100 p-3">
               <p className="text-xs text-purple-800">
-                <strong>💡 Tip:</strong> Fill in the Product Name (and optionally Brand & Category) first, then click &quot;Generate All Fields with AI&quot; to auto-fill Description, Key Features, Specifications, and SEO fields.
+                <strong>Tip:</strong> Fill name, category, brand, size—AI uses them for Bangladesh-focused Bangla/SEO. Add partial description or features first if you want those facts preserved.
               </p>
             </div>
           </div>

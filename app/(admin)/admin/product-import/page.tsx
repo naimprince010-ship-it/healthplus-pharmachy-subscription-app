@@ -267,14 +267,28 @@ export default function ProductImportPage() {
     setAiError('')
 
     try {
+      const cat = categories.find((c) => c.id === editedProduct.categoryId)
+      let isMedicine = cat?.isMedicineCategory
+      if (editedProduct.isMedicineOverride !== undefined && editedProduct.isMedicineOverride !== null) {
+        isMedicine = editedProduct.isMedicineOverride
+      }
+      const productType =
+        typeof isMedicine === 'boolean' ? (isMedicine ? 'MEDICINE' : 'GENERAL') : undefined
+
       const res = await fetch('/api/ai/product-helper', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           productName: editedProduct.name,
-          brandName: manufacturers.find(m => m.id === editedProduct.manufacturerId)?.name || undefined,
-          category: categories.find(c => c.id === editedProduct.categoryId)?.name || undefined,
+          brandName: manufacturers.find((m) => m.id === editedProduct.manufacturerId)?.name || undefined,
+          category: cat?.name || undefined,
           language: aiLanguage,
+          sizeLabel: editedProduct.packSize.trim() || undefined,
+          unit: undefined,
+          productType,
+          existingDescription: editedProduct.description.trim() || undefined,
+          contextKeyFeatures: editedProduct.keyFeatures.trim() || undefined,
+          contextSpecSummary: editedProduct.specSummary.trim() || undefined,
         }),
       })
 
@@ -727,14 +741,27 @@ export default function ProductImportPage() {
     setDraftAiLoading(draftId)
 
     try {
+      const cat = categories.find((c) => c.id === draft.editedData.categoryId)
+      let isMedicine = cat?.isMedicineCategory
+      if (draft.editedData.isMedicineOverride !== undefined && draft.editedData.isMedicineOverride !== null) {
+        isMedicine = draft.editedData.isMedicineOverride
+      }
+      const productType =
+        typeof isMedicine === 'boolean' ? (isMedicine ? 'MEDICINE' : 'GENERAL') : undefined
+
       const res = await fetch('/api/ai/product-helper', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           productName: draft.editedData.name,
-          brandName: manufacturers.find(m => m.id === draft.editedData.manufacturerId)?.name || undefined,
-          category: categories.find(c => c.id === draft.editedData.categoryId)?.name || undefined,
+          brandName: manufacturers.find((m) => m.id === draft.editedData.manufacturerId)?.name || undefined,
+          category: cat?.name || undefined,
           language: 'en',
+          sizeLabel: draft.editedData.packSize.trim() || undefined,
+          productType,
+          existingDescription: draft.editedData.description.trim() || undefined,
+          contextKeyFeatures: draft.editedData.keyFeatures.trim() || undefined,
+          contextSpecSummary: draft.editedData.specSummary.trim() || undefined,
         }),
       })
 
