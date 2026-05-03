@@ -3,6 +3,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   serverExternalPackages: ['@prisma/client', 'bcryptjs'],
   turbopack: {},
+  // Fewer concurrent prerenders ⇒ fewer simultaneous DB connects (matches small pg Pool per worker).
+  experimental: {
+    staticGenerationMaxConcurrency: 2,
+  },
   images: {
     // next/image rejects same-origin URLs with ?query unless explicitly allowed (e.g. /api/image-proxy?url=...).
     localPatterns: [

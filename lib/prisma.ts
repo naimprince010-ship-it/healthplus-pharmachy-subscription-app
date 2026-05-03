@@ -12,17 +12,25 @@ if (!globalForPrisma.pool) {
     ?.replace(/[?&]pgbouncer=[^&]*/g, '')
     ?.replace(/[?&]connection_limit=[^&]*/g, '')
     ?.replace(/[?&]sslmode=[^&]*/g, '')
-  
+
+  // Cap pooled connections per Node process — builds can spawn multiple workers each
+  // importing this module; default pg Pool(max=10) × many workers hits Supabase (EMAXCONN ~200).
+  const parsed = Number(process.env.DATABASE_POOL_MAX)
+  const max = Number.isFinite(parsed) && parsed > 0 ? Math.min(parsed, 20) : 5
+
   globalForPrisma.pool = new Pool({
     connectionString,
-    ssl: {
-      rejectUnauthorized: false
-    }
+    max,
+    ssl: { rejectUnauthorized: false },
+    idleTimeoutMillis: 20_000,
+    connectionTimeoutMillis: 20_000,
   })
 }
 
 const adapter = new PrismaPg(globalForPrisma.pool)
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter })
+if (!globalForPrisma.prisma) {
+  globalForPrisma.prisma = new PrismaClient({ adapter })
+}
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+export const prisma = globalForPrisma.prisma
