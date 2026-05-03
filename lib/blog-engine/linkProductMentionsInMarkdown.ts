@@ -105,22 +105,30 @@ function flattenNeedlesBySlug(
   return flat
 }
 
+function getMarkdownLinkIntervals(line: string): Array<{ start: number; end: number }> {
+  return [...line.matchAll(/\[[^\]]+\]\([^)]+\)/g)]
+    .map((m) => {
+      const start = m.index ?? 0
+      return { start, end: start + m[0].length }
+    })
+    .filter((r) => r.end > r.start)
+}
+
+function overlapsLink(idx: number, end: number, intervals: Array<{ start: number; end: number }>): boolean {
+  return intervals.some((r) => idx < r.end && end > r.start)
+}
+
 export function replaceFirstPlainMentionInLine(line: string, needle: string, slug: string): string {
   const lowerLine = line.toLowerCase()
   const lowerNeedle = needle.toLowerCase()
   let fromIdx = 0
+  const intervals = getMarkdownLinkIntervals(line)
 
   while (true) {
     const idx = lowerLine.indexOf(lowerNeedle, fromIdx)
     if (idx === -1) return line
 
-    const linkMatches = [...line.matchAll(/\[[^\]]+\]\([^)]+\)/g)]
-    const insideLink = linkMatches.some((m) => {
-      const start = m.index ?? -1
-      const end = start + m[0].length
-      return idx >= start && idx < end
-    })
-    if (insideLink) {
+    if (overlapsLink(idx, idx + needle.length, intervals)) {
       fromIdx = idx + lowerNeedle.length
       continue
     }
@@ -129,6 +137,44 @@ export function replaceFirstPlainMentionInLine(line: string, needle: string, slu
     const linked = `[${raw}](/products/${slug})`
     return `${line.slice(0, idx)}${linked}${line.slice(idx + needle.length)}`
   }
+}
+
+/**
+ * Match needle words with any whitespace/run (handles double spaces, NBSP, line breaks inside prose).
+ */
+function replaceFirstFlexibleMentionInLine(line: string, needle: string, slug: string): string {
+  const words = needle.normalize('NFKC').trim().split(/\s+/).filter(Boolean)
+  if (words.length < 2) return line
+
+  const intervals = getMarkdownLinkIntervals(line)
+  // \s includes common Unicode separators with flag u; "+" allows double spaces etc.
+  const pattern = words.map(escapeRegExp).join('\\s+')
+  const re = new RegExp(pattern, 'giu')
+
+  let m: RegExpExecArray | null
+  while ((m = re.exec(line)) !== null) {
+    const idx = m.index
+    const end = idx + m[0].length
+    if (overlapsLink(idx, end, intervals)) continue
+    const display = m[0]
+    return `${line.slice(0, idx)}[${display}](/products/${slug})${line.slice(end)}`
+  }
+  return line
+}
+
+/** Exact substring first, then whitespace-flexible phrase (2+ words). */
+export function replaceFirstProductNeedle(line: string, needle: string, slug: string): string {
+  const plain = replaceFirstPlainMentionInLine(line, needle, slug)
+  if (plain !== line) return plain
+  return replaceFirstFlexibleMentionInLine(line, needle, slug)
+}
+
+function lineMayContainNeedle(line: string, needle: string): boolean {
+  if (new RegExp(escapeRegExp(needle), 'iu').test(line)) return true
+  const words = needle.normalize('NFKC').trim().split(/\s+/).filter(Boolean)
+  if (words.length < 2) return false
+  const pattern = words.map(escapeRegExp).join('\\s+')
+  return new RegExp(pattern, 'iu').test(line)
 }
 
 /** At most one link per product slug in the whole document (first matching needle wins per line traversal). */
@@ -157,9 +203,9 @@ export function linkProductMentionsInMarkdown(
     for (const { slug, needle } of sortedNeedles) {
       if (linkedSlugs.has(slug)) continue
 
-      if (!new RegExp(escapeRegExp(needle), 'i').test(nextLine)) continue
+      if (!lineMayContainNeedle(nextLine, needle)) continue
 
-      const replaced = replaceFirstPlainMentionInLine(nextLine, needle, slug)
+      const replaced = replaceFirstProductNeedle(nextLine, needle, slug)
       if (replaced !== nextLine) {
         nextLine = replaced
         linkedSlugs.add(slug)
