@@ -1,57 +1,68 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Metadata } from 'next'
-import { MapPin, Truck, ShieldCheck, Clock } from 'lucide-react'
+import { MapPin, Truck, ShieldCheck, Clock, ChevronRight } from 'lucide-react'
 import { MAIN_CONTAINER } from '@/lib/layout'
 import { serializeJsonLd } from '@/lib/serialize-json-ld'
-import { districts, getDistrictBySlug } from '@/lib/districts'
+import { getAllThanasWithDistrictSlug } from '@/lib/bd-locations'
 
 export const revalidate = 86400 // Revalidate once a day
 
-interface DistrictPageProps {
+interface ThanaPageProps {
   params: Promise<{
     district: string
+    thana: string
   }>
 }
 
 export async function generateStaticParams() {
-  return districts.map((district) => ({
-    district: district.slug,
+  const allThanas = getAllThanasWithDistrictSlug()
+  return allThanas.map((thana) => ({
+    district: thana.districtSlug,
+    thana: thana.slug,
   }))
 }
 
-export async function generateMetadata({ params }: DistrictPageProps): Promise<Metadata> {
-  const { district: slug } = await params
-  const district = getDistrictBySlug(slug)
+export async function generateMetadata({ params }: ThanaPageProps): Promise<Metadata> {
+  const { district: districtSlug, thana: thanaSlug } = await params
+  
+  const allThanas = getAllThanasWithDistrictSlug()
+  const location = allThanas.find(
+    (t) => t.slug === thanaSlug && t.districtSlug === districtSlug
+  )
 
-  if (!district) {
+  if (!location) {
     return {}
   }
 
-  const title = `Top E-commerce & Online Shopping in ${district.name} | Halalzi`
-  const description = `Looking for the best online shopping experience in ${district.name}? Halalzi offers fast home delivery for authentic medicines, cosmetics, groceries, and baby care products in ${district.name}, Bangladesh.`
+  const title = `Top E-commerce & Online Shopping in ${location.name}, ${location.districtName} | Halalzi`
+  const description = `Looking for the best online shopping experience in ${location.name}? Halalzi offers fast home delivery for authentic medicines, cosmetics, groceries, and baby care products in ${location.name}, ${location.districtName}, Bangladesh.`
 
   return {
     title,
     description,
-    keywords: `online shopping ${district.name}, ecommerce ${district.name}, medicine delivery ${district.name}, cosmetics shop ${district.name}, online pharmacy ${district.name}, grocery delivery ${district.name}`,
+    keywords: `online shopping ${location.name}, ecommerce ${location.name}, medicine delivery ${location.name}, cosmetics shop ${location.name}, online pharmacy ${location.name}, grocery delivery ${location.name}, ${location.districtName}`,
     alternates: {
-      canonical: `/delivery/${district.slug}`,
+      canonical: `/delivery/${location.districtSlug}/${location.slug}`,
     },
     openGraph: {
       title,
       description,
       type: 'website',
-      url: `https://halalzi.com/delivery/${district.slug}`,
+      url: `https://halalzi.com/delivery/${location.districtSlug}/${location.slug}`,
     },
   }
 }
 
-export default async function DistrictDeliveryPage({ params }: DistrictPageProps) {
-  const { district: slug } = await params
-  const district = getDistrictBySlug(slug)
+export default async function ThanaDeliveryPage({ params }: ThanaPageProps) {
+  const { district: districtSlug, thana: thanaSlug } = await params
+  
+  const allThanas = getAllThanasWithDistrictSlug()
+  const location = allThanas.find(
+    (t) => t.slug === thanaSlug && t.districtSlug === districtSlug
+  )
 
-  if (!district) {
+  if (!location) {
     notFound()
   }
 
@@ -59,7 +70,7 @@ export default async function DistrictDeliveryPage({ params }: DistrictPageProps
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Service',
-    name: `Halalzi Home Delivery in ${district.name}`,
+    name: `Halalzi Home Delivery in ${location.name}, ${location.districtName}`,
     provider: {
       '@type': 'Organization',
       name: 'Halalzi',
@@ -67,10 +78,14 @@ export default async function DistrictDeliveryPage({ params }: DistrictPageProps
     },
     areaServed: {
       '@type': 'City',
-      name: district.name,
+      name: location.name,
+      containedInPlace: {
+        '@type': 'City',
+        name: location.districtName
+      },
       addressCountry: 'BD'
     },
-    description: `Fast and reliable home delivery of medicines, cosmetics, and groceries in ${district.name}.`
+    description: `Fast and reliable home delivery of medicines, cosmetics, and groceries in ${location.name}, ${location.districtName}.`
   }
 
   return (
@@ -87,16 +102,25 @@ export default async function DistrictDeliveryPage({ params }: DistrictPageProps
           <div className="absolute top-10 -right-10 w-72 h-72 bg-cta/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000"></div>
           
           <div className="relative max-w-3xl mx-auto z-10">
+            {/* Breadcrumb */}
+            <div className="flex justify-center items-center gap-2 mb-6 text-sm font-medium text-primary-100 opacity-80">
+              <Link href="/delivery" className="hover:text-white transition-colors">Delivery</Link>
+              <ChevronRight className="h-3 w-3" />
+              <Link href={`/delivery/${location.districtSlug}`} className="hover:text-white transition-colors">{location.districtName}</Link>
+              <ChevronRight className="h-3 w-3" />
+              <span className="text-white">{location.name}</span>
+            </div>
+
             <div className="flex justify-center mb-8 animate-fade-in-up">
               <div className="bg-white/10 p-5 rounded-2xl backdrop-blur-md shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/20">
                 <MapPin className="h-10 w-10 text-white" />
               </div>
             </div>
             <h1 className="text-4xl md:text-6xl font-black tracking-tight mb-6 animate-fade-in-up animation-delay-200">
-              Fast Delivery in <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-200 to-cta-light">{district.name}</span>
+              Fast Delivery in <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-200 to-cta-light">{location.name}</span>
             </h1>
             <p className="text-lg md:text-xl text-primary-50 max-w-2xl mx-auto mb-10 animate-fade-in-up animation-delay-400 font-medium leading-relaxed opacity-90">
-              Your premium online shopping destination in {district.name}. Get authentic medicines, branded cosmetics, and daily essentials delivered right to your doorstep.
+              Your premium online shopping destination in {location.name}, {location.districtName}. Get authentic medicines, branded cosmetics, and daily essentials delivered right to your doorstep.
             </p>
             <div className="flex justify-center gap-4 flex-wrap animate-fade-in-up animation-delay-600">
               <Link
@@ -125,7 +149,7 @@ export default async function DistrictDeliveryPage({ params }: DistrictPageProps
                 </div>
                 <h3 className="text-xl font-extrabold text-gray-900 mb-3">Home Delivery</h3>
                 <p className="text-gray-500 font-medium leading-relaxed">
-                  Reliable shipping across all areas in {district.name}. We ensure your products reach you safely and on time.
+                  Reliable shipping across all areas in {location.name}. We ensure your products reach you safely and on time.
                 </p>
               </div>
               <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center transition-transform hover:-translate-y-1 duration-300">
@@ -134,7 +158,7 @@ export default async function DistrictDeliveryPage({ params }: DistrictPageProps
                 </div>
                 <h3 className="text-xl font-extrabold text-gray-900 mb-3">100% Authentic</h3>
                 <p className="text-gray-500 font-medium leading-relaxed">
-                  Every product we deliver to {district.name} is genuine and sourced directly from verified manufacturers.
+                  Every product we deliver to {location.name} is genuine and sourced directly from verified manufacturers.
                 </p>
               </div>
               <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center transition-transform hover:-translate-y-1 duration-300">
@@ -143,7 +167,7 @@ export default async function DistrictDeliveryPage({ params }: DistrictPageProps
                 </div>
                 <h3 className="text-xl font-extrabold text-gray-900 mb-3">Fast Service</h3>
                 <p className="text-gray-500 font-medium leading-relaxed">
-                  Quick processing and dispatch. Need essential medicines in {district.name}? Count on us.
+                  Quick processing and dispatch. Need essential medicines in {location.name}? Count on us.
                 </p>
               </div>
             </div>
@@ -151,7 +175,7 @@ export default async function DistrictDeliveryPage({ params }: DistrictPageProps
             {/* Popular Categories in this District */}
             <div className="mb-16">
               <h2 className="text-2xl font-black text-gray-900 mb-8 text-center">
-                Popular Categories in {district.name}
+                Popular Categories in {location.name}
               </h2>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <Link href="/medicines" className="group relative rounded-2xl overflow-hidden shadow-sm bg-white border border-gray-100 hover:border-primary transition-all duration-300 hover:shadow-md p-6 text-center">
@@ -176,14 +200,14 @@ export default async function DistrictDeliveryPage({ params }: DistrictPageProps
             {/* SEO Text Section */}
             <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
               <h2 className="text-xl font-bold text-gray-900 mb-4">
-                Why Choose Halalzi for Online Shopping in {district.name}?
+                Why Choose Halalzi for Online Shopping in {location.name}, {location.districtName}?
               </h2>
               <div className="prose max-w-none text-gray-600">
                 <p>
-                  As one of Bangladesh's leading e-commerce platforms, Halalzi is dedicated to providing the residents of {district.name} with a seamless online shopping experience. Whether you need urgent medicines, everyday groceries, or premium cosmetic brands, our comprehensive catalog has everything you need.
+                  As one of Bangladesh's leading e-commerce platforms, Halalzi is dedicated to providing the residents of {location.name} with a seamless online shopping experience. Whether you need urgent medicines, everyday groceries, or premium cosmetic brands, our comprehensive catalog has everything you need.
                 </p>
                 <p className="mt-4">
-                  We understand the importance of quality and authenticity. That's why every product dispatched to our customers in {district.name} undergoes strict quality checks. Enjoy the convenience of ordering from home and let our dedicated delivery network handle the rest.
+                  We understand the importance of quality and authenticity. That's why every product dispatched to our customers in {location.name} undergoes strict quality checks. Enjoy the convenience of ordering from home and let our dedicated delivery network handle the rest.
                 </p>
               </div>
               <div className="mt-8 text-center">

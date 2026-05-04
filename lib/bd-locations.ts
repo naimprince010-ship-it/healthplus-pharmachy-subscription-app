@@ -46,3 +46,46 @@ export function getAllDistricts(): Array<LocationOption & { divisionId: string }
   }
   return rows
 }
+
+export function getAllThanasWithDistrictSlug(): Array<{
+  id: string
+  name: string
+  slug: string
+  districtId: string
+  districtName: string
+  districtSlug: string
+}> {
+  const { slugify } = require('./slugify')
+  const byDivision = districts_en as RawLocationMap
+  const byDistrict = upazilas_en as RawLocationMap
+  const result: Array<{
+    id: string
+    name: string
+    slug: string
+    districtId: string
+    districtName: string
+    districtSlug: string
+  }> = []
+
+  for (const districts of Object.values(byDivision)) {
+    for (const district of districts) {
+      const districtId = String(district.value)
+      const districtName = district.title
+      const districtSlug = slugify(districtName)
+
+      const thanas = byDistrict[districtId] || []
+      for (const thana of thanas) {
+        result.push({
+          id: String(thana.value),
+          name: thana.title,
+          slug: slugify(thana.title),
+          districtId,
+          districtName,
+          districtSlug,
+        })
+      }
+    }
+  }
+
+  return result
+}

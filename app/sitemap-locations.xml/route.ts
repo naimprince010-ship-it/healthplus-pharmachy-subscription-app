@@ -25,10 +25,26 @@ export async function GET() {
     <priority>0.9</priority>
   </url>`
 
+  const { getAllThanasWithDistrictSlug } = require('@/lib/bd-locations')
+  const allThanas = getAllThanasWithDistrictSlug()
+  const thanaEntries = allThanas
+    .map(
+      (thana: any) => {
+        return `  <url>
+    <loc>${baseUrl}/delivery/${thana.districtSlug}/${thana.slug}</loc>
+    <lastmod>${new Date().toISOString()}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>`
+      }
+    )
+    .join('\n')
+
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${indexPage}
 ${urlEntries}
+${thanaEntries}
 </urlset>`
 
   return new NextResponse(sitemap, {
