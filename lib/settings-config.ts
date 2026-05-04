@@ -164,7 +164,8 @@ export const SETTINGS_SECTIONS: SettingsSectionConfig[] = [
     key: 'checkout',
     path: '/admin/settings/checkout',
     title: 'Checkout Settings',
-    description: 'Checkout flow and payment options',
+    description:
+      'Checkout flow: guest checkout, required fields, payment methods. For Bangla labels on the checkout/success pages use Admin → Checkout Settings (/admin/checkout-settings).',
     group: 'orders',
     icon: ShoppingCart,
     defaultValue: {},

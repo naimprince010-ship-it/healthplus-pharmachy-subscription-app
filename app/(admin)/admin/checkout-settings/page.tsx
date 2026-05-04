@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { Save, Loader2 } from 'lucide-react'
 
 interface CheckoutSettings {
@@ -121,6 +122,20 @@ export default function CheckoutSettingsPage() {
           {message.text}
         </div>
       )}
+
+      <div className="rounded-lg border border-teal-200 bg-teal-50/80 px-4 py-3 text-sm text-teal-900">
+        <p className="font-medium text-teal-950">Checkout flow &amp; payment behaviour</p>
+        <p className="mt-1 text-teal-900/90">
+          Required fields, guest checkout, and payment method options are under Settings →{' '}
+          <Link
+            href="/admin/settings/checkout"
+            className="font-semibold underline underline-offset-2 hover:text-teal-800"
+          >
+            Checkout Settings
+          </Link>
+          .
+        </p>
+      </div>
 
       {settings && (
         <div className="space-y-6">

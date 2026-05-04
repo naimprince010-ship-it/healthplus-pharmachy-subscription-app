@@ -47,7 +47,7 @@ export default async function AdminDashboard() {
           </Link>
 
           <Link
-            href="/admin/membership"
+            href="/admin/memberships"
             className="rounded-lg bg-white p-6 shadow transition-transform hover:scale-105"
           >
             <Shield className="h-12 w-12 text-teal-600" />
