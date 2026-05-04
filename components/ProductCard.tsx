@@ -65,6 +65,7 @@ export function ProductCard({
   variant = 'default',
   className = '',
   imagePriority = false,
+  cartButtonVariant,
 }: ProductCardComponentProps) {
   const href =
     product.href ||
