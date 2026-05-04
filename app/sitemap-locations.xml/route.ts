@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { districts } from '@/lib/districts'
+import { getAllThanasWithDistrictSlug } from '@/lib/bd-locations'
 
 export async function GET() {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://halalzi.com'
@@ -25,7 +26,6 @@ export async function GET() {
     <priority>0.9</priority>
   </url>`
 
-  const { getAllThanasWithDistrictSlug } = require('@/lib/bd-locations')
   const allThanas = getAllThanasWithDistrictSlug()
   const thanaEntries = allThanas
     .map(
