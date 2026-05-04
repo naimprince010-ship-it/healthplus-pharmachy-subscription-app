@@ -7,6 +7,7 @@ import { ShoppingBag, Package, CreditCard, Heart, Camera, ChevronRight, LogOut, 
 import Link from 'next/link'
 import Image from 'next/image'
 import { useCart } from '@/contexts/CartContext'
+import { PrescriptionUploadModal } from '@/components/PrescriptionUploadModal'
 
 interface Order {
   id: string
@@ -130,6 +131,7 @@ export default function DashboardPageClient() {
     const [dashboardSections, setDashboardSections] = useState<DashboardSection[]>([])
     const [settings, setSettings] = useState<DashboardSettings>(DEFAULT_SETTINGS)
     const [isLoading, setIsLoading] = useState(true)
+    const [isPrescriptionOpen, setIsPrescriptionOpen] = useState(false)
 
     useEffect(() => {
       if (status === 'unauthenticated') {
@@ -853,13 +855,18 @@ export default function DashboardPageClient() {
         </div>
 
         {/* Floating Prescription Upload Button - Mobile Only */}
-        <Link
-          href="/prescriptions"
+        <button
+          onClick={() => setIsPrescriptionOpen(true)}
           className="fixed bottom-36 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#0A9F6E] text-white shadow-xl hover:bg-[#088a5b] transition-colors"
         >
           <Camera className="h-6 w-6" />
-        </Link>
+        </button>
       </div>
+
+      <PrescriptionUploadModal 
+        isOpen={isPrescriptionOpen} 
+        onClose={() => setIsPrescriptionOpen(false)} 
+      />
     </div>
   )
 }
