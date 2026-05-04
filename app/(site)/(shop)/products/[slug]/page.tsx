@@ -8,6 +8,7 @@ import { ArrowLeft, ShieldCheck } from 'lucide-react'
 import { Metadata } from 'next'
 import { isProductLinkedToAzanCatalog } from '@/lib/integrations/azan-catalog'
 import { getStorefrontImageUrl } from '@/lib/image-url'
+import { buildProductShareMeta } from '@/lib/product-og'
 import { serializeJsonLd } from '@/lib/serialize-json-ld'
 import { getCachedProductBySlug } from './get-product-by-slug'
 import { GROCERY_CATEGORY_SLUG, isGroceryShopEnabled, isMedicineShopEnabled } from '@/lib/site-features'
@@ -33,32 +34,37 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
       return {}
     }
 
-    const categoryName = product.category?.name || ''
-    const shouldHideCategoryInSeoTitle = categoryName.trim().toLowerCase() === 'azan wholesale'
-    const safeCategorySuffix = categoryName && !shouldHideCategoryInSeoTitle ? ` - ${categoryName}` : ''
-    const seoTitle = product.seoTitle || `${product.name}${safeCategorySuffix} | Halalzi`
-    const seoDescription = product.seoDescription || product.description || `Buy ${product.name} online at best price from Halalzi. Fast delivery across Bangladesh.`
-
-    const siteBase = (process.env.NEXT_PUBLIC_SITE_URL || 'https://halalzi.com').replace(/\/$/, '')
-    let ogImage = product.imageUrl ? getStorefrontImageUrl(product.imageUrl) : null
-    if (ogImage && ogImage.startsWith('/')) {
-      ogImage = `${siteBase}${ogImage}`
-    }
+    const meta = buildProductShareMeta({
+      name: product.name,
+      slug: product.slug,
+      seoTitle: product.seoTitle,
+      seoDescription: product.seoDescription,
+      description: product.description,
+      seoKeywords: product.seoKeywords,
+      imageUrl: product.imageUrl,
+      category: product.category ?? null,
+    })
 
     return {
-      title: seoTitle,
-      description: seoDescription,
-      keywords: product.seoKeywords || undefined,
+      title: meta.title,
+      description: meta.description,
+      keywords: meta.keywords,
       alternates: {
-        canonical: `/products/${slug}`,
+        canonical: meta.canonicalPath,
       },
       openGraph: {
-        title: seoTitle,
-        description: seoDescription,
-        url: `${siteBase}/products/${slug}`,
+        title: meta.title,
+        description: meta.description,
+        url: meta.canonicalUrl,
         siteName: 'Halalzi',
         type: 'website',
-        images: ogImage ? [ogImage] : [],
+        images: [{ url: meta.ogImageAbs }],
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: meta.title,
+        description: meta.description,
+        images: [meta.ogImageAbs],
       },
     }
   } catch (error) {

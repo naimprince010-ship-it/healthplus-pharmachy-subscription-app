@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { AddToCartButton } from '@/components/AddToCartButton'
 import type { Metadata } from 'next'
+import { getSiteBaseUrl, resolveProductOgImageAbsolute } from '@/lib/product-og'
 import { GenericAlternatives } from '@/components/GenericAlternatives'
 import { isMedicineShopEnabled } from '@/lib/site-features'
 import { serializeJsonLd } from '@/lib/serialize-json-ld'
@@ -31,11 +32,13 @@ export async function generateMetadata({
     }
   }
 
-  const siteBase = (process.env.NEXT_PUBLIC_SITE_URL || 'https://halalzi.com').replace(/\/$/, '')
-  let ogImage = medicine.imageUrl || undefined
-  if (ogImage && ogImage.startsWith('/')) {
-    ogImage = `${siteBase}${ogImage}`
-  }
+  const siteBase = getSiteBaseUrl()
+  const ogImageAbs = resolveProductOgImageAbsolute(medicine.imageUrl ?? null, siteBase)
+  const ogTitle = medicine.seoTitle || medicine.name
+  const ogDescription =
+    medicine.seoDescription ||
+    medicine.description ||
+    `${medicine.name} — order online from Halalzi.`
 
   return {
     title: medicine.seoTitle || `${medicine.name} - HealthPlus`,
@@ -45,11 +48,20 @@ export async function generateMetadata({
       canonical: medicine.canonicalUrl || undefined,
     },
     openGraph: {
-      title: medicine.seoTitle || medicine.name,
-      description: medicine.seoDescription || medicine.description || undefined,
-      images: ogImage ? [ogImage] : undefined,
+      title: ogTitle,
+      description: ogDescription,
+      url:
+        medicine.canonicalUrl ||
+        (medicine.slug ? `${siteBase}/medicines/${medicine.slug}` : undefined),
+      images: [{ url: ogImageAbs }],
       type: 'website',
       siteName: 'Halalzi',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: ogTitle,
+      description: ogDescription,
+      images: [ogImageAbs],
     },
   }
 }
