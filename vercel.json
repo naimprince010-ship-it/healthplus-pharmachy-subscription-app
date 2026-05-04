@@ -20,6 +20,10 @@
     {
       "path": "/api/cron/rebuild-product-cooccurrence",
       "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/blog-engine",
+      "schedule": "0 4 * * *"
     }
   ]
 }
