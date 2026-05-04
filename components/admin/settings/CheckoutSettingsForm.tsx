@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2, Save, X } from 'lucide-react'
@@ -100,6 +101,17 @@ export default function CheckoutSettingsForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <div className="rounded-lg border border-teal-200 bg-teal-50/80 px-4 py-3 text-sm text-teal-900">
+        <p className="font-medium text-teal-950">Bangla copy for checkout & success pages</p>
+        <p className="mt-1 text-teal-900/90">
+          This form controls behaviour (fields, payment toggles). Edit section titles and buttons on{' '}
+          <Link href="/admin/checkout-settings" className="font-semibold underline underline-offset-2 hover:text-teal-800">
+            Checkout &amp; Order Success Settings
+          </Link>
+          .
+        </p>
+      </div>
+
       {message && (
         <div
           className={`rounded-lg p-4 ${
