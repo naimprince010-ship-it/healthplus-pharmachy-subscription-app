@@ -22,9 +22,11 @@ export async function GET(request: Request) {
         topicId: topic.id,
         title: topic.title,
         type: topic.type,
+        block: topic.block,
         status: 'TOPIC_ONLY',
         slug: 'shariatpur-online-shopping-sanitary-napkins-' + Date.now(),
-      }
+        internalLinkSlugs: [],
+      },
     })
 
     // 3. Ensure Women's Care category exists with proper SEO
