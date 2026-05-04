@@ -45,10 +45,24 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
       category: product.category ?? null,
     })
 
+    const isHygieneProduct = 
+      product.category?.name.toLowerCase().includes('women') || 
+      product.category?.name.toLowerCase().includes('hygiene') ||
+      product.name.toLowerCase().includes('pad') ||
+      product.name.toLowerCase().includes('napkin') ||
+      product.name.toLowerCase().includes('senora') ||
+      product.name.toLowerCase().includes('joya') ||
+      product.name.toLowerCase().includes('freedom')
+
+    let customKeywords = meta.keywords
+    if (isHygieneProduct) {
+      customKeywords = `${customKeywords ? customKeywords + ', ' : ''}সেনোরা হোম ডেলিভারি, গোপন প্যাকেজিং, Joya Pad Online, স্যানিটারি ন্যাপকিন হোম ডেলিভারি, discreet packaging delivery`
+    }
+
     return {
       title: meta.title,
       description: meta.description,
-      keywords: meta.keywords,
+      keywords: customKeywords,
       alternates: {
         canonical: meta.canonicalPath,
       },
@@ -288,6 +302,25 @@ export default async function ProductPage({ params }: ProductPageProps) {
                     </span>
                   ) : null}
                 </h1>
+                
+                {(() => {
+                  const isHygieneProduct = 
+                    product.category?.name.toLowerCase().includes('women') || 
+                    product.category?.name.toLowerCase().includes('hygiene') ||
+                    product.name.toLowerCase().includes('pad') ||
+                    product.name.toLowerCase().includes('napkin') ||
+                    product.name.toLowerCase().includes('senora') ||
+                    product.name.toLowerCase().includes('joya') ||
+                    product.name.toLowerCase().includes('freedom');
+                  
+                  if (!isHygieneProduct) return null;
+                  
+                  return (
+                    <div className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-pink-50 px-3 py-1.5 text-sm font-semibold text-pink-700 border border-pink-100">
+                      <span aria-hidden="true">🔒</span> ১০০% গোপন প্যাকেজিং ও প্রাইভেসির গ্যারান্টি
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Line 1 (grey): Parent Category/Department (for general products) OR Dosage Form (for medicines) */}
