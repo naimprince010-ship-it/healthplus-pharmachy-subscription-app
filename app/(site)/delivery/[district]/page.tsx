@@ -34,7 +34,7 @@ export async function generateMetadata({ params }: DistrictPageProps): Promise<M
   return {
     title,
     description,
-    keywords: `online shopping ${district.name}, ecommerce ${district.name}, medicine delivery ${district.name}, cosmetics shop ${district.name}, online pharmacy ${district.name}, grocery delivery ${district.name}`,
+    keywords: `online shopping ${district.name}, ecommerce ${district.name}, medicine delivery ${district.name}, cosmetics shop ${district.name}, online pharmacy ${district.name}, grocery delivery ${district.name}, অনলাইনে কেনাকাটা ${district.name}, ঔষধ ডেলিভারি ${district.name}, কসমেটিকস ${district.name}`,
     alternates: {
       canonical: `/delivery/${district.slug}`,
     },

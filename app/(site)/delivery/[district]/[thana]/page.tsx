@@ -41,7 +41,7 @@ export async function generateMetadata({ params }: ThanaPageProps): Promise<Meta
   return {
     title,
     description,
-    keywords: `online shopping ${location.name}, ecommerce ${location.name}, medicine delivery ${location.name}, cosmetics shop ${location.name}, online pharmacy ${location.name}, grocery delivery ${location.name}, ${location.districtName}`,
+    keywords: `online shopping ${location.name}, ecommerce ${location.name}, medicine delivery ${location.name}, cosmetics shop ${location.name}, online pharmacy ${location.name}, grocery delivery ${location.name}, ${location.districtName}, অনলাইনে কেনাকাটা ${location.name}, ঔষধ ডেলিভারি ${location.name}, কসমেটিকস ${location.name}`,
     alternates: {
       canonical: `/delivery/${location.districtSlug}/${location.slug}`,
     },
