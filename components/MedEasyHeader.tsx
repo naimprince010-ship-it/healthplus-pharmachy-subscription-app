@@ -135,7 +135,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
 
   const searchPlaceholder =
     isMedicineShopEnabled() && isGroceryShopEnabled()
-      ? 'ওষুধ, কসমেটিক্স বা গ্রোসারি খুঁজুন...'
+      ? 'ওষুধ, স্বাস্থ্যপণ্য এবং আরো অনেক কিছু খুঁজুন...'
       : isMedicineShopEnabled()
         ? 'ওষুধ বা কসমেটিক্স খুঁজুন...'
         : isGroceryShopEnabled()
@@ -268,7 +268,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onClick={() => setMobileSearchOpen(true)}
-                  placeholder="ওষুধ, ব্র্যান্ড বা লক্ষণ খুঁজুন"
+                  placeholder={searchPlaceholder}
                   className="w-full rounded-full border-0 bg-white/90 py-2 pl-4 pr-10 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/50"
                   readOnly
                 />
@@ -406,9 +406,9 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                 setShowSuggestions(false)
               }}
               aria-label="Close search"
-              className="rounded-full p-2 text-gray-600 hover:bg-gray-100"
+              className="rounded-full p-3 -ml-1 text-gray-600 hover:bg-gray-100"
             >
-              <X className="h-5 w-5" />
+              <X className="h-6 w-6" />
             </button>
             <form onSubmit={handleSearch} className="flex-1">
               <input
@@ -472,8 +472,8 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                 No products found
               </div>
             ) : (
-              <div className="p-4">
-                <p className="text-sm text-gray-500">Search for medicines, health products, and more...</p>
+              <div className="p-4 text-center mt-4">
+                <p className="text-sm text-gray-500">ওষুধ, স্বাস্থ্যপণ্য এবং আরো অনেক কিছু খুঁজুন...</p>
               </div>
             )}
           </div>

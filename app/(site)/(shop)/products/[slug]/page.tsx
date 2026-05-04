@@ -226,7 +226,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }}
       />
-      <div className="bg-gray-50 py-8">
+      <div className="bg-gray-50 py-8 pb-32 md:pb-8">
         {/* MedEasy-style layout: centered container matching home page */}
         <div className="w-full max-w-[1480px] mx-auto px-4">
           <Link
@@ -271,7 +271,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             <div className="min-w-0 w-full flex-1 bg-white rounded-xl p-6 shadow-sm">
               {/* Product Name */}
               <div className="mb-2">
-                <h1 className="text-2xl font-bold text-gray-900 lg:text-3xl">
+                <h1 className="text-xl font-bold text-gray-900 sm:text-2xl lg:text-3xl">
                   {product.name}
                   {showStrengthBesideTitle ? (
                     <span className="ml-2 text-lg font-normal text-gray-500">{strength}</span>

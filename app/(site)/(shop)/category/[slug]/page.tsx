@@ -8,10 +8,13 @@ import type { Metadata } from 'next'
 import { GROCERY_CATEGORY_SLUG, isGroceryShopEnabled, isMedicineShopEnabled } from '@/lib/site-features'
 import { serializeJsonLd } from '@/lib/serialize-json-ld'
 
+import { CategorySortBar } from '@/components/CategorySortBar'
+
 export const revalidate = 60 // Revalidate page every 60 seconds (ISR)
 
 interface CategoryPageProps {
   params: Promise<{ slug: string }>
+  searchParams: Promise<{ sort?: string }>
 }
 
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
@@ -62,8 +65,10 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
   }
 }
 
-export default async function CategoryPage({ params }: CategoryPageProps) {
+export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
   const { slug } = await params
+  const resolvedSearchParams = await searchParams
+  const sort = resolvedSearchParams.sort
 
   const category = await prisma.category.findUnique({
     where: { slug },
@@ -143,6 +148,19 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     flashSaleEnd?: Date | null
   }> = []
 
+  let orderBy: any = [
+    { isFeatured: 'desc' },
+    { createdAt: 'desc' },
+  ]
+  
+  if (sort === 'price_asc') {
+    orderBy = [{ sellingPrice: 'asc' }]
+  } else if (sort === 'price_desc') {
+    orderBy = [{ sellingPrice: 'desc' }]
+  } else if (sort === 'newest') {
+    orderBy = [{ createdAt: 'desc' }]
+  }
+
   if (category.isMedicineCategory) {
     const medicines = await prisma.medicine.findMany({
       where: {
@@ -167,10 +185,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         discountPercentage: true,
         brandName: true,
       },
-      orderBy: [
-        { isFeatured: 'desc' },
-        { createdAt: 'desc' },
-      ],
+      orderBy,
       take: 100,
     })
 
@@ -208,10 +223,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         brandName: true,
         sizeLabel: true,
       },
-      orderBy: [
-        { isFeatured: 'desc' },
-        { createdAt: 'desc' },
-      ],
+      orderBy,
       take: 100,
     })
 
@@ -355,7 +367,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                 </div>
               )}
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">{category.name} এর দাম এবং অফার</h1>
+                <h1 className="text-xl sm:text-3xl font-bold text-gray-900">{category.name} এর দাম এবং অফার</h1>
                 {category.description ? (
                   <p className="mt-1 text-gray-600">{category.description}</p>
                 ) : (
@@ -364,9 +376,10 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
               </div>
             </div>
 
-            <div className="mt-4 text-sm text-gray-500">
-              {items.length} {category.isMedicineCategory ? 'medicines' : 'products'} found
-            </div>
+            <CategorySortBar 
+              totalItems={items.length} 
+              label={category.isMedicineCategory ? 'medicines found' : 'products found'} 
+            />
           </div>
 
           {/* Products Grid */}
@@ -375,7 +388,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
               <p className="text-gray-500">No {category.isMedicineCategory ? 'medicines' : 'products'} found in this category</p>
             </div>
           ) : (
-            <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-6 lg:grid-cols-4 xl:grid-cols-5">
               {items.map((item) => {
                 const isMedicine = category.isMedicineCategory
                 return (
@@ -415,6 +428,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                         ? { kind: 'medicine' as const, medicineId: item.id }
                         : { kind: 'product' as const, productId: item.id },
                     }}
+                    variant="compact"
                   />
                 )
               })}

@@ -61,7 +61,7 @@ export function MobileHome({ subscriptionPlans, homeSections }: MobileHomeProps)
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section — min-height reserves space before the photo paints (CLS). */}
       <section className="relative overflow-hidden">
-        <div className="relative min-h-[260px] sm:min-h-[300px]">
+        <div className="relative min-h-[200px] sm:min-h-[240px]">
           <div className="absolute inset-0">
             <Image
               src="/images/hero-pharmacy.jpg"
@@ -196,7 +196,7 @@ export function MobileHome({ subscriptionPlans, homeSections }: MobileHomeProps)
 
       {/* Home Sections - Horizontal Scrollable */}
       {homeSections.map(({ section, products }, sectionIndex) => (
-        <section key={section.id} className="py-4">
+        <section key={section.id} className="py-4 relative">
           <div className="mb-3 flex items-center justify-between px-4">
             <div>
               <h2 className="text-lg font-bold text-gray-900">{section.title}</h2>
@@ -206,8 +206,8 @@ export function MobileHome({ subscriptionPlans, homeSections }: MobileHomeProps)
                 </span>
               )}
             </div>
-            <Link prefetch href={`/products?section=${section.slug}`} className="text-sm font-medium text-teal-600">
-              View All
+            <Link prefetch href={`/products?section=${section.slug}`} className="text-sm font-medium text-teal-600 p-2 -mr-2">
+              সবগুলো দেখুন
             </Link>
           </div>
           <div className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide">
@@ -240,6 +240,8 @@ export function MobileHome({ subscriptionPlans, homeSections }: MobileHomeProps)
               </div>
             ))}
           </div>
+          {/* Right side fade indicator for horizontal scroll */}
+          <div className="absolute right-0 top-12 bottom-2 w-10 bg-gradient-to-l from-gray-50 to-transparent pointer-events-none" />
         </section>
       ))}
 

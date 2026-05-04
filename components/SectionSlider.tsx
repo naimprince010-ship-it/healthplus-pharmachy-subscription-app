@@ -75,7 +75,7 @@ export function SectionSlider({ section, products }: SectionSliderProps) {
           <Link
             prefetch
             href={`/sections/${section.slug}`}
-            className="text-sm font-medium text-teal-600 hover:text-teal-700"
+            className="text-sm font-medium text-teal-600 hover:text-teal-700 p-2 -mr-2"
           >
             সবগুলো দেখুন
           </Link>

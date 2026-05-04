@@ -40,7 +40,7 @@ export function WhatsAppButton({
       <button
         onClick={handleClick}
         aria-label="Contact us on WhatsApp"
-        className="wa-btn fixed bottom-20 right-6 z-50 lg:bottom-6"
+        className="wa-btn fixed bottom-24 right-4 z-50 scale-[0.85] opacity-90 transition-all hover:scale-[0.95] hover:opacity-100 lg:bottom-6 lg:right-6 lg:scale-100 lg:opacity-100"
         style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
       >
         {/* Ping ring */}

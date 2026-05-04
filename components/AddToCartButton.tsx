@@ -135,12 +135,12 @@ export function AddToCartButton({
         <button
           type="button"
           onClick={handleDecrease}
-          className={`flex h-9 w-9 flex-shrink-0 items-center justify-center transition-colors ${
+          className={`flex h-10 w-10 sm:h-9 sm:w-9 flex-shrink-0 items-center justify-center transition-colors ${
             outlineTone ? 'text-slate-700 hover:bg-slate-100' : 'text-cta-dark hover:bg-orange-100'
           }`}
           aria-label="Remove one"
         >
-          <Minus className="h-3.5 w-3.5" />
+          <Minus className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
         </button>
 
         <span className="flex-1 text-center text-sm font-bold text-cta-dark tabular-nums">
@@ -151,12 +151,12 @@ export function AddToCartButton({
           type="button"
           onClick={handleIncrease}
           disabled={stockQuantity > 0 && cartQty >= stockQuantity}
-          className={`flex h-9 w-9 flex-shrink-0 items-center justify-center transition-colors disabled:opacity-40 ${
+          className={`flex h-10 w-10 sm:h-9 sm:w-9 flex-shrink-0 items-center justify-center transition-colors disabled:opacity-40 ${
             outlineTone ? 'text-slate-700 hover:bg-slate-100' : 'text-cta-dark hover:bg-orange-100'
           }`}
           aria-label="Add one more"
         >
-          <Plus className="h-3.5 w-3.5" />
+          <Plus className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
         </button>
       </div>
     )
@@ -191,7 +191,8 @@ export function AddToCartButton({
       ) : (
         <>
           <ShoppingCart className="h-4 w-4 flex-shrink-0" />
-          <span>কার্টে যোগ করুন</span>
+          <span className="hidden sm:inline">কার্টে যোগ করুন</span>
+          <span className="inline sm:hidden">অ্যাড</span>
         </>
       )}
     </button>

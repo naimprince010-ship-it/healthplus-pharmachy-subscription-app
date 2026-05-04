@@ -372,6 +372,28 @@ export function ProductDetailClient({
           মাত্র {currentStock}টি বাকি — দ্রুত অর্ডার করুন।
         </p>
       )}
+
+      {/* Sticky Mobile Bottom Bar (Only visible on mobile, positioned above bottom nav) */}
+      {!isOutOfStock && (
+        <div className="fixed bottom-[60px] left-0 right-0 z-40 flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 shadow-[0_-4px_10px_-1px_rgba(0,0,0,0.1)] md:hidden pb-safe">
+          <div className="flex flex-col">
+            {hasDiscount && <span className="text-xs font-medium text-gray-500 line-through">৳{effectiveMrp.toFixed(2)}</span>}
+            <span className="text-lg font-bold text-teal-700 leading-tight">৳{price.toFixed(2)}</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            disabled={isAdding}
+            className={`flex items-center justify-center gap-2 rounded-xl px-6 py-2.5 text-sm font-semibold transition-all duration-200 ${isAdding
+              ? 'bg-green-600 text-white scale-[0.98]'
+              : 'bg-orange-500 text-white hover:bg-orange-600 active:scale-[0.98]'
+              }`}
+          >
+            <ShoppingCart className="h-4 w-4" />
+            {isAdding ? 'যোগ হয়েছে!' : 'অ্যাড টু কার্ট'}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

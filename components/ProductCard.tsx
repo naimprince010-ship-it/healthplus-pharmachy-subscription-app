@@ -172,8 +172,8 @@ export function ProductCard({
       <div className={`flex min-h-0 flex-1 flex-col ${isCompact ? 'mt-2.5' : 'mt-3'}`}>
         <h3
           className={`shrink-0 font-semibold leading-snug text-slate-900 ${
-            isCompact ? 'line-clamp-2 text-[13px] sm:text-sm' : 'line-clamp-2 text-[13.5px]'
-          } ${isCompact ? 'min-h-[2.625rem]' : 'min-h-[2.75rem]'}`}
+            isCompact ? 'line-clamp-3 text-[13px] sm:text-sm' : 'line-clamp-2 text-[13.5px]'
+          } ${isCompact ? 'min-h-[3.75rem] sm:min-h-[2.625rem]' : 'min-h-[2.75rem]'}`}
         >
           {product.name}
         </h3>
@@ -210,7 +210,7 @@ export function ProductCard({
           </div>
 
           {/* Button */}
-          <div className={`${isCompact ? 'pt-2' : 'pt-2'}`} onClick={(e) => e.preventDefault()}>
+          <div className={`${isCompact ? 'pt-2 pb-1.5' : 'pt-2 pb-1'}`} onClick={(e) => e.preventDefault()}>
             <AddToCartButton
               medicineId={medicineId}
               productId={productId}
