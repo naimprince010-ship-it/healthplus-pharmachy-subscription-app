@@ -472,8 +472,60 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                 No products found
               </div>
             ) : (
-              <div className="p-4 text-center mt-4">
-                <p className="text-sm text-gray-500">ওষুধ, স্বাস্থ্যপণ্য এবং আরো অনেক কিছু খুঁজুন...</p>
+              <div className="p-4 mt-2">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">জনপ্রিয় ক্যাটাগরি</h3>
+                <div className="flex flex-wrap gap-2">
+                  <Link
+                    href="/category/medicine"
+                    onClick={() => {
+                      setMobileSearchOpen(false)
+                      setShowSuggestions(false)
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition-colors"
+                  >
+                    <span>💊</span> ঔষধ
+                  </Link>
+                  <Link
+                    href="/category/baby-care"
+                    onClick={() => {
+                      setMobileSearchOpen(false)
+                      setShowSuggestions(false)
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition-colors"
+                  >
+                    <span>🍼</span> বেবি কেয়ার
+                  </Link>
+                  <Link
+                    href="/category/beauty-care"
+                    onClick={() => {
+                      setMobileSearchOpen(false)
+                      setShowSuggestions(false)
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition-colors"
+                  >
+                    <span>💄</span> কসমেটিক্স
+                  </Link>
+                  <Link
+                    href="/category/devices"
+                    onClick={() => {
+                      setMobileSearchOpen(false)
+                      setShowSuggestions(false)
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition-colors"
+                  >
+                    <span>🩺</span> ডিভাইস
+                  </Link>
+                  <Link
+                    href="/category/personal-care"
+                    onClick={() => {
+                      setMobileSearchOpen(false)
+                      setShowSuggestions(false)
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition-colors"
+                  >
+                    <span>🧴</span> পার্সোনাল কেয়ার
+                  </Link>
+                </div>
               </div>
             )}
           </div>
