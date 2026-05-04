@@ -268,7 +268,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onClick={() => setMobileSearchOpen(true)}
-                  placeholder={searchPlaceholder}
+                  placeholder="ওষুধ ও পণ্য খুঁজুন..."
                   className="w-full rounded-full border-0 bg-white/90 py-2 pl-4 pr-10 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/50"
                   readOnly
                 />

@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useSession } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { ShoppingBag, Package, CreditCard, Heart, Camera, ChevronRight } from 'lucide-react'
+import { ShoppingBag, Package, CreditCard, Heart, Camera, ChevronRight, LogOut, User, PackageX } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useCart } from '@/contexts/CartContext'
@@ -573,55 +573,39 @@ export default function DashboardPageClient() {
             <p className="text-sm text-gray-500">{settings.welcomeTextBn} {session.user?.name}</p>
           </div>
 
-          {/* Stats Cards - Stacked */}
-          <div className="space-y-4 mb-6">
+          {/* Stats Cards - 2x2 Grid */}
+          <div className="grid grid-cols-2 gap-3 mb-6">
             {settings.showTotalOrdersCard && (
-              <Link href="/orders" className="block bg-white rounded-xl shadow-sm p-4">
-                <div className="flex items-center gap-4">
-                  <ShoppingBag className="h-10 w-10 text-[#0A9F6E]" />
-                  <div>
-                    <p className="text-2xl font-semibold text-gray-900">{orders.length}</p>
-                    <p className="text-sm text-gray-500">{settings.totalOrdersLabelBn}</p>
-                  </div>
-                </div>
+              <Link href="/orders" className="flex flex-col items-center justify-center bg-white rounded-xl shadow-sm p-4 text-center hover:bg-gray-50 transition-colors">
+                <ShoppingBag className="h-8 w-8 text-[#0A9F6E] mb-2" />
+                <p className="text-xl font-bold text-gray-900">{orders.length}</p>
+                <p className="text-xs font-medium text-gray-500 mt-1">{settings.totalOrdersLabelBn}</p>
               </Link>
             )}
 
             {settings.showSubscriptionsCard && (
-              <Link href="/subscriptions" className="block bg-white rounded-xl shadow-sm p-4">
-                <div className="flex items-center gap-4">
-                  <Package className="h-10 w-10 text-[#0A9F6E]" />
-                  <div>
-                    <p className="text-2xl font-semibold text-gray-900">{activeSubscriptions.length}</p>
-                    <p className="text-sm text-gray-500">{settings.subscriptionsLabelBn}</p>
-                  </div>
-                </div>
+              <Link href="/subscriptions" className="flex flex-col items-center justify-center bg-white rounded-xl shadow-sm p-4 text-center hover:bg-gray-50 transition-colors">
+                <Package className="h-8 w-8 text-[#0A9F6E] mb-2" />
+                <p className="text-xl font-bold text-gray-900">{activeSubscriptions.length}</p>
+                <p className="text-xs font-medium text-gray-500 mt-1">{settings.subscriptionsLabelBn}</p>
               </Link>
             )}
 
             {settings.showMembershipCard && (
-              <Link href="/membership" className="block bg-white rounded-xl shadow-sm p-4">
-                <div className="flex items-center gap-4">
-                  <CreditCard className="h-10 w-10 text-[#0A9F6E]" />
-                  <div>
-                    <p className="text-lg font-semibold text-gray-900">
-                      {membership ? membership.plan.name : 'No Membership'}
-                    </p>
-                    <p className="text-sm text-gray-500">{settings.membershipLabelBn}</p>
-                  </div>
-                </div>
+              <Link href="/membership" className="flex flex-col items-center justify-center bg-white rounded-xl shadow-sm p-4 text-center hover:bg-gray-50 transition-colors">
+                <CreditCard className="h-8 w-8 text-[#0A9F6E] mb-2" />
+                <p className="text-lg font-bold text-gray-900 leading-tight">
+                  {membership ? membership.plan.name : 'No Plan'}
+                </p>
+                <p className="text-xs font-medium text-gray-500 mt-1">{settings.membershipLabelBn}</p>
               </Link>
             )}
 
             {settings.showWishlistCard && (
-              <Link href="/dashboard/wishlist" className="block bg-white rounded-xl shadow-sm p-4">
-                <div className="flex items-center gap-4">
-                  <Heart className="h-10 w-10 text-red-500" />
-                  <div>
-                    <p className="text-2xl font-semibold text-gray-900">{wishlistCount}</p>
-                    <p className="text-sm text-gray-500">{settings.wishlistLabelBn}</p>
-                  </div>
-                </div>
+              <Link href="/dashboard/wishlist" className="flex flex-col items-center justify-center bg-white rounded-xl shadow-sm p-4 text-center hover:bg-gray-50 transition-colors">
+                <Heart className="h-8 w-8 text-red-500 mb-2" />
+                <p className="text-xl font-bold text-gray-900">{wishlistCount}</p>
+                <p className="text-xs font-medium text-gray-500 mt-1">{settings.wishlistLabelBn}</p>
               </Link>
             )}
           </div>
@@ -649,9 +633,10 @@ export default function DashboardPageClient() {
             </div>
             <div className="space-y-3">
               {orders.length === 0 ? (
-                <div className="bg-white rounded-xl p-6 text-center shadow-sm">
-                  <p className="text-gray-500">{settings.noOrdersTextBn}</p>
-                  <Link href="/products" className="mt-2 inline-block text-sm font-semibold text-[#0A9F6E]">
+                <div className="bg-white rounded-xl p-8 text-center shadow-sm flex flex-col items-center">
+                  <PackageX className="h-12 w-12 text-gray-300 mb-3" />
+                  <p className="text-gray-500 font-medium">{settings.noOrdersTextBn}</p>
+                  <Link href="/products" className="mt-4 rounded-full bg-[#0A9F6E]/10 px-6 py-2.5 text-sm font-semibold text-[#0A9F6E] hover:bg-[#0A9F6E]/20 transition-colors">
                     {settings.startShoppingBn}
                   </Link>
                 </div>
@@ -674,6 +659,37 @@ export default function DashboardPageClient() {
                       </span>
                     </div>
                   </Link>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Active Subscriptions - Mobile */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-semibold text-gray-900">{settings.subscriptionsTitleBn}</h2>
+              <Link href="/subscriptions" className="text-sm font-medium text-[#0A9F6E]">
+                {settings.viewAllBn}
+              </Link>
+            </div>
+            <div className="space-y-3">
+              {activeSubscriptions.length === 0 ? (
+                <div className="bg-white rounded-xl p-8 text-center shadow-sm flex flex-col items-center">
+                  <PackageX className="h-12 w-12 text-gray-300 mb-3" />
+                  <p className="text-gray-500 font-medium">{settings.noSubscriptionsTextBn}</p>
+                  <Link href="/subscriptions" className="mt-4 rounded-full bg-[#0A9F6E]/10 px-6 py-2.5 text-sm font-semibold text-[#0A9F6E] hover:bg-[#0A9F6E]/20 transition-colors">
+                    {settings.browsePlansBn}
+                  </Link>
+                </div>
+              ) : (
+                activeSubscriptions.slice(0, 3).map((subscription) => (
+                  <div key={subscription.id} className="bg-white rounded-xl p-4 shadow-sm flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-gray-900">{subscription.plan.name}</p>
+                      <p className="text-sm text-gray-500">Next: {new Date(subscription.nextDeliveryDate).toLocaleDateString('bn-BD')}</p>
+                    </div>
+                    <p className="font-semibold text-[#0A9F6E]">৳{subscription.plan.price}</p>
+                  </div>
                 ))
               )}
             </div>
@@ -719,9 +735,9 @@ export default function DashboardPageClient() {
                                       <p className="text-sm font-semibold text-[#0A9F6E]">৳{product.sellingPrice}</p>
                                       <button
                                         onClick={() => handleAddToCart(product)}
-                                        className="rounded-full bg-orange-500 px-2 py-1 text-xs font-medium text-white shadow-sm hover:bg-orange-600 transition-colors"
+                                        className="flex items-center justify-center rounded-full bg-orange-500 px-3 py-1 text-xs font-semibold text-white shadow-sm hover:bg-orange-600 transition-colors"
                                       >
-                                        +
+                                        Add
                                       </button>
                                     </div>
                                   </div>
@@ -756,9 +772,9 @@ export default function DashboardPageClient() {
                                       <p className="text-sm font-semibold text-[#0A9F6E]">৳{product.sellingPrice}</p>
                                       <button
                                         onClick={() => handleAddToCart(product)}
-                                        className="rounded-full bg-orange-500 px-2 py-1 text-xs font-medium text-white shadow-sm hover:bg-orange-600 transition-colors"
+                                        className="flex items-center justify-center rounded-full bg-orange-500 px-3 py-1 text-xs font-semibold text-white shadow-sm hover:bg-orange-600 transition-colors"
                                       >
-                                        +
+                                        Add
                                       </button>
                                     </div>
                                   </div>
@@ -791,9 +807,9 @@ export default function DashboardPageClient() {
                                       <p className="text-sm font-semibold text-[#0A9F6E]">৳{product.sellingPrice}</p>
                                       <button
                                         onClick={() => handleAddToCart(product)}
-                                        className="rounded-full bg-orange-500 px-2 py-1 text-xs font-medium text-white shadow-sm hover:bg-orange-600 transition-colors"
+                                        className="flex items-center justify-center rounded-full bg-orange-500 px-3 py-1 text-xs font-semibold text-white shadow-sm hover:bg-orange-600 transition-colors"
                                       >
-                                        +
+                                        Add
                                       </button>
                                     </div>
                                   </div>
@@ -804,12 +820,42 @@ export default function DashboardPageClient() {
                         )}
                       </>
                     )}
+
+          {/* Quick Actions / Logout - Mobile */}
+          <div className="mt-8 pt-6 border-t border-gray-200">
+            <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 px-2">Account Options</h2>
+            <div className="bg-white rounded-xl shadow-sm divide-y divide-gray-100">
+              <Link href="/dashboard/profile" className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+                  <User className="h-5 w-5" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-900">My Profile</p>
+                  <p className="text-xs text-gray-500">View and edit your details</p>
+                </div>
+                <ChevronRight className="h-5 w-5 text-gray-300" />
+              </Link>
+              <button 
+                onClick={() => signOut({ callbackUrl: '/' })}
+                className="flex w-full items-center gap-4 p-4 hover:bg-red-50 transition-colors text-left"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-50 text-red-500">
+                  <LogOut className="h-5 w-5" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-red-600">Log Out</p>
+                  <p className="text-xs text-red-400">Sign out of your account</p>
+                </div>
+              </button>
+            </div>
+          </div>
+
         </div>
 
         {/* Floating Prescription Upload Button - Mobile Only */}
         <Link
           href="/prescriptions"
-          className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#0A9F6E] text-white shadow-xl hover:bg-[#088a5b] transition-colors"
+          className="fixed bottom-36 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#0A9F6E] text-white shadow-xl hover:bg-[#088a5b] transition-colors"
         >
           <Camera className="h-6 w-6" />
         </Link>

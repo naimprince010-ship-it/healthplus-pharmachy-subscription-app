@@ -60,7 +60,7 @@ export function SubscriptionsLanding({ plans, pageCopy }: SubscriptionsLandingPr
           <p className="mb-4 inline-flex rounded-full bg-teal-500/25 px-4 py-1.5 text-sm font-semibold text-teal-200 ring-1 ring-teal-400/40">
             {pageCopy.heroBadgeBn}
           </p>
-          <h1 className="text-2xl font-bold tracking-tight text-white sm:text-4xl sm:leading-tight">
+          <h1 className="text-xl font-bold tracking-tight text-white sm:text-3xl lg:text-4xl sm:leading-tight">
             {pageCopy.heroTitleBn}
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base text-slate-300 sm:text-lg">
@@ -185,8 +185,65 @@ export function SubscriptionsLanding({ plans, pageCopy }: SubscriptionsLandingPr
           </div>
         </section>
 
+        {/* FAQ Section */}
+        <section className="mt-16 border-t border-gray-100 pt-12">
+          <h2 className="text-center text-2xl font-bold text-gray-900 sm:text-3xl">সচরাচর জিজ্ঞাসিত প্রশ্ন (FAQ)</h2>
+          <div className="mx-auto mt-8 max-w-3xl space-y-4">
+            <details className="group rounded-xl border border-teal-100 bg-white p-6 shadow-sm [&_summary::-webkit-details-marker]:hidden">
+              <summary className="flex cursor-pointer items-center justify-between gap-1.5 text-gray-900">
+                <h3 className="font-semibold">সাবস্ক্রিপশন প্ল্যান কীভাবে কিনব?</h3>
+                <span className="relative h-5 w-5 shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="absolute inset-0 h-5 w-5 opacity-100 group-open:opacity-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="absolute inset-0 h-5 w-5 opacity-0 group-open:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </span>
+              </summary>
+              <p className="mt-4 leading-relaxed text-gray-600 text-sm">
+                আপনি যেকোনো প্ল্যান সিলেক্ট করে 'সাবস্ক্রাইব করুন' বাটনে ক্লিক করে সহজেই বিকাশ, নগদ বা কার্ডের মাধ্যমে পেমেন্ট করে সাবস্ক্রিপশন কিনতে পারবেন।
+              </p>
+            </details>
+            
+            <details className="group rounded-xl border border-teal-100 bg-white p-6 shadow-sm [&_summary::-webkit-details-marker]:hidden">
+              <summary className="flex cursor-pointer items-center justify-between gap-1.5 text-gray-900">
+                <h3 className="font-semibold">সাবস্ক্রিপশন ক্যানসেল করা যাবে কি?</h3>
+                <span className="relative h-5 w-5 shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="absolute inset-0 h-5 w-5 opacity-100 group-open:opacity-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="absolute inset-0 h-5 w-5 opacity-0 group-open:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </span>
+              </summary>
+              <p className="mt-4 leading-relaxed text-gray-600 text-sm">
+                হ্যাঁ, আপনি যেকোনো সময় আপনার ড্যাশবোর্ড থেকে সাবস্ক্রিপশন বাতিল করতে পারবেন। তবে বাতিল করার পর রিফান্ড পলিসি প্রযোজ্য হবে।
+              </p>
+            </details>
+            
+            <details className="group rounded-xl border border-teal-100 bg-white p-6 shadow-sm [&_summary::-webkit-details-marker]:hidden">
+              <summary className="flex cursor-pointer items-center justify-between gap-1.5 text-gray-900">
+                <h3 className="font-semibold">প্ল্যানের সুবিধাগুলো কতদিন থাকবে?</h3>
+                <span className="relative h-5 w-5 shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="absolute inset-0 h-5 w-5 opacity-100 group-open:opacity-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="absolute inset-0 h-5 w-5 opacity-0 group-open:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </span>
+              </summary>
+              <p className="mt-4 leading-relaxed text-gray-600 text-sm">
+                প্রতিটি প্ল্যানের মেয়াদ ১ মাস বা ১ বছর হতে পারে। মেয়াদ শেষ হওয়ার পর আবার রিনিউ করলে আপনি সুবিধাগুলো পেতে থাকবেন।
+              </p>
+            </details>
+          </div>
+        </section>
+
         {/* Spacer for fixed mobile bottom nav */}
-        <div className="h-12 lg:hidden" aria-hidden />
+        <div className="h-28 lg:hidden" aria-hidden />
       </div>
     </div>
   )
