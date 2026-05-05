@@ -332,7 +332,7 @@ export function ProductDetailClient({
             type="button"
             onClick={handleAddToCart}
             disabled={isOutOfStock}
-            className={`flex w-full items-center justify-center gap-2 rounded-xl px-8 py-3.5 text-base font-semibold transition-all duration-200 ${isAdding
+            className={`flex w-full max-w-sm items-center justify-center gap-2 rounded-xl px-8 py-3.5 text-base font-semibold transition-all duration-200 ${isAdding
               ? 'bg-green-600 text-white scale-[0.98]'
               : 'bg-orange-500 text-white hover:bg-orange-600 active:scale-[0.98]'
               }`}
@@ -361,7 +361,7 @@ export function ProductDetailClient({
               // ignore
             }
           }}
-          className="w-full rounded-lg border border-gray-200 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="w-full max-w-sm rounded-lg border border-gray-200 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
         >
           {shortLinkCopied ? 'লিংক কপি হয়েছে ✓' : '🔗 শেয়ার করুন'}
         </button>
