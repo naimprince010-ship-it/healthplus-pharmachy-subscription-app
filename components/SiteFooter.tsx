@@ -38,6 +38,7 @@ const DEFAULT_SETTINGS: FooterSettingsData = {
   quickLinks: [
     { label: 'হোম', href: '/' },
     { label: 'সব ঔষধ', href: '/products' },
+    { label: 'আমাদের সম্পর্কে', href: '/about' },
     { label: 'মেম্বারশিপ প্ল্যান', href: '/membership' },
     { label: 'প্রেসক্রিপশন আপলোড', href: '/prescription' },
     { label: 'অফারসমূহ', href: '/offers' },
