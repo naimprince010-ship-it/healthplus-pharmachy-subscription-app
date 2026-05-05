@@ -22,7 +22,7 @@ export async function SimilarProductsSection({
   if (!similarProducts.length) return null
 
   return (
-    <section className="mt-10">
+    <section className="mt-6">
       <h2 className="text-xl font-semibold text-gray-900 mb-4">সমজাতীয় প্রোডাক্ট</h2>
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
         {similarProducts.map((item) => (

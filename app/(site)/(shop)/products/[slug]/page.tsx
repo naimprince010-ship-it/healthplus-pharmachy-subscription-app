@@ -246,7 +246,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }}
       />
-      <div className="bg-gray-50 py-8">
+      <div className="bg-gray-50 pt-8 pb-4">
         {/* MedEasy-style layout: centered container matching home page */}
         <div className="w-full max-w-[1480px] mx-auto px-4">
           <Link
@@ -459,7 +459,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </Suspense>
           )}
 
-          <Suspense fallback={<div className="mt-10 h-40 animate-pulse rounded-lg bg-gray-100" aria-hidden />}>
+          <Suspense fallback={<div className="mt-6 h-40 animate-pulse rounded-lg bg-gray-100" aria-hidden />}>
             <SimilarProductsSection
               productId={product.id}
               categoryId={product.category?.id ?? null}
@@ -468,7 +468,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           </Suspense>
 
           {/* Reviews Section */}
-          <section className="mt-10 bg-white rounded-xl p-6 shadow-sm">
+          <section className="mt-6 bg-white rounded-xl p-6 shadow-sm">
             <ProductReviews productId={product.id} />
           </section>
         </div>
