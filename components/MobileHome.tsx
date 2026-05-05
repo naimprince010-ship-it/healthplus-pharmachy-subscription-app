@@ -207,10 +207,10 @@ export function MobileHome({ subscriptionPlans, homeSections }: MobileHomeProps)
               )}
             </div>
             <Link prefetch href={`/products?section=${section.slug}`} className="text-sm font-medium text-teal-600">
-              View All
+              সবগুলো →
             </Link>
           </div>
-          <div className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide">
+          <div className="flex gap-3 overflow-x-auto pl-4 pr-8 pb-2 scrollbar-hide">
             {products.map((product, productIndex) => (
               <div key={product.id} className="flex-shrink-0 w-40">
                 <ProductCard
