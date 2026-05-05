@@ -4,90 +4,94 @@ import { Metadata } from 'next'
 import { MapPin, Truck, ShieldCheck, Clock, ChevronRight } from 'lucide-react'
 import { MAIN_CONTAINER } from '@/lib/layout'
 import { serializeJsonLd } from '@/lib/serialize-json-ld'
-import { getAllThanasWithDistrictSlug, getUnionsByUpazilaSlug } from '@/lib/bd-locations'
+import { getAllUnionsWithUpazilaSlug } from '@/lib/bd-locations'
 
 export const revalidate = 86400 // Revalidate once a day
 
-interface ThanaPageProps {
+interface UnionPageProps {
   params: Promise<{
     district: string
     thana: string
+    union: string
   }>
 }
 
 export async function generateStaticParams() {
-  const allThanas = getAllThanasWithDistrictSlug()
-  return allThanas.map((thana) => ({
-    district: thana.districtSlug,
-    thana: thana.slug,
+  const allUnions = getAllUnionsWithUpazilaSlug()
+  return allUnions.map((union) => ({
+    district: union.districtSlug,
+    thana: union.upazilaSlug,
+    union: union.slug,
   }))
 }
 
-export async function generateMetadata({ params }: ThanaPageProps): Promise<Metadata> {
-  const { district: districtSlug, thana: thanaSlug } = await params
-  
-  const allThanas = getAllThanasWithDistrictSlug()
-  const location = allThanas.find(
-    (t) => t.slug === thanaSlug && t.districtSlug === districtSlug
+export async function generateMetadata({ params }: UnionPageProps): Promise<Metadata> {
+  const { district: districtSlug, thana: thanaSlug, union: unionSlug } = await params
+
+  const allUnions = getAllUnionsWithUpazilaSlug()
+  const location = allUnions.find(
+    (u) => u.slug === unionSlug && u.upazilaSlug === thanaSlug && u.districtSlug === districtSlug
   )
 
   if (!location) {
     return {}
   }
 
-  const title = `Top E-commerce & Online Shopping in ${location.name}, ${location.districtName} | Halalzi`
-  const description = `Looking for the best online shopping experience in ${location.name}? Halalzi offers fast home delivery for authentic medicines, cosmetics, groceries, and baby care products in ${location.name}, ${location.districtName}, Bangladesh.`
+  const title = `Online Shopping & Medicine Delivery in ${location.name}, ${location.upazilaName}, ${location.districtName} | Halalzi`
+  const description = `Halalzi delivers authentic medicines, cosmetics, groceries, and baby care products to ${location.name} union in ${location.upazilaName}, ${location.districtName}. Fast, reliable home delivery at your doorstep.`
 
   return {
     title,
     description,
-    keywords: `online shopping ${location.name}, ecommerce ${location.name}, medicine delivery ${location.name}, cosmetics shop ${location.name}, online pharmacy ${location.name}, grocery delivery ${location.name}, ${location.districtName}, অনলাইনে কেনাকাটা ${location.name}, ঔষধ ডেলিভারি ${location.name}, কসমেটিকস ${location.name}`,
+    keywords: `online shopping ${location.name}, medicine delivery ${location.name}, ecommerce ${location.name}, online pharmacy ${location.upazilaName}, ${location.districtName}, অনলাইনে কেনাকাটা ${location.name}, ঔষধ ডেলিভারি ${location.name}, ${location.upazilaName}, ${location.districtName}`,
     alternates: {
-      canonical: `/delivery/${location.districtSlug}/${location.slug}`,
+      canonical: `/delivery/${location.districtSlug}/${location.upazilaSlug}/${location.slug}`,
     },
     openGraph: {
       title,
       description,
       type: 'website',
-      url: `https://halalzi.com/delivery/${location.districtSlug}/${location.slug}`,
+      url: `https://halalzi.com/delivery/${location.districtSlug}/${location.upazilaSlug}/${location.slug}`,
     },
   }
 }
 
-export default async function ThanaDeliveryPage({ params }: ThanaPageProps) {
-  const { district: districtSlug, thana: thanaSlug } = await params
-  
-  const allThanas = getAllThanasWithDistrictSlug()
-  const location = allThanas.find(
-    (t) => t.slug === thanaSlug && t.districtSlug === districtSlug
+export default async function UnionDeliveryPage({ params }: UnionPageProps) {
+  const { district: districtSlug, thana: thanaSlug, union: unionSlug } = await params
+
+  const allUnions = getAllUnionsWithUpazilaSlug()
+  const location = allUnions.find(
+    (u) => u.slug === unionSlug && u.upazilaSlug === thanaSlug && u.districtSlug === districtSlug
   )
 
   if (!location) {
     notFound()
   }
 
-  const unions = getUnionsByUpazilaSlug(districtSlug, thanaSlug) || []
-
   // Generate structured data for local business/service area
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Service',
-    name: `Halalzi Home Delivery in ${location.name}, ${location.districtName}`,
+    name: `Halalzi Home Delivery in ${location.name}, ${location.upazilaName}`,
     provider: {
       '@type': 'Organization',
       name: 'Halalzi',
       url: 'https://halalzi.com',
     },
     areaServed: {
-      '@type': 'City',
+      '@type': 'Place',
       name: location.name,
       containedInPlace: {
         '@type': 'City',
-        name: location.districtName
+        name: location.upazilaName,
+        containedInPlace: {
+          '@type': 'City',
+          name: location.districtName,
+        },
       },
-      addressCountry: 'BD'
+      addressCountry: 'BD',
     },
-    description: `Fast and reliable home delivery of medicines, cosmetics, and groceries in ${location.name}, ${location.districtName}.`
+    description: `Fast and reliable home delivery of medicines, cosmetics, and groceries in ${location.name} union, ${location.upazilaName}, ${location.districtName}.`,
   }
 
   return (
@@ -99,16 +103,18 @@ export default async function ThanaDeliveryPage({ params }: ThanaPageProps) {
       <div className="bg-gray-50/50">
         {/* Premium Hero Section */}
         <div className="relative overflow-hidden bg-gradient-to-br from-primary via-primary-dark to-[#042f2e] py-20 px-4 sm:px-6 lg:px-8 text-center text-white">
-          {/* Animated Background Blob */}
+          {/* Animated Background Blobs */}
           <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary-light/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob"></div>
           <div className="absolute top-10 -right-10 w-72 h-72 bg-cta/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000"></div>
-          
+
           <div className="relative max-w-3xl mx-auto z-10">
             {/* Breadcrumb */}
-            <div className="flex justify-center items-center gap-2 mb-6 text-sm font-medium text-primary-100 opacity-80">
+            <div className="flex justify-center items-center gap-2 mb-6 text-sm font-medium text-primary-100 opacity-80 flex-wrap">
               <Link href="/delivery" className="hover:text-white transition-colors">Delivery</Link>
               <ChevronRight className="h-3 w-3" />
               <Link href={`/delivery/${location.districtSlug}`} className="hover:text-white transition-colors">{location.districtName}</Link>
+              <ChevronRight className="h-3 w-3" />
+              <Link href={`/delivery/${location.districtSlug}/${location.upazilaSlug}`} className="hover:text-white transition-colors">{location.upazilaName}</Link>
               <ChevronRight className="h-3 w-3" />
               <span className="text-white">{location.name}</span>
             </div>
@@ -122,7 +128,7 @@ export default async function ThanaDeliveryPage({ params }: ThanaPageProps) {
               Fast Delivery in <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-200 to-cta-light">{location.name}</span>
             </h1>
             <p className="text-lg md:text-xl text-primary-50 max-w-2xl mx-auto mb-10 animate-fade-in-up animation-delay-400 font-medium leading-relaxed opacity-90">
-              Your premium online shopping destination in {location.name}, {location.districtName}. Get authentic medicines, branded cosmetics, and daily essentials delivered right to your doorstep.
+              Your premium online shopping destination in {location.name}, {location.upazilaName}, {location.districtName}. Get authentic medicines, branded cosmetics, and daily essentials delivered right to your doorstep.
             </p>
             <div className="flex justify-center gap-4 flex-wrap animate-fade-in-up animation-delay-600">
               <Link
@@ -151,7 +157,7 @@ export default async function ThanaDeliveryPage({ params }: ThanaPageProps) {
                 </div>
                 <h3 className="text-xl font-extrabold text-gray-900 mb-3">Home Delivery</h3>
                 <p className="text-gray-500 font-medium leading-relaxed">
-                  Reliable shipping across all areas in {location.name}. We ensure your products reach you safely and on time.
+                  Reliable shipping directly to your address in {location.name}. We ensure your products reach you safely and on time.
                 </p>
               </div>
               <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center transition-transform hover:-translate-y-1 duration-300">
@@ -174,23 +180,23 @@ export default async function ThanaDeliveryPage({ params }: ThanaPageProps) {
               </div>
             </div>
 
-            {/* Popular Categories in this District */}
+            {/* Popular Categories */}
             <div className="mb-16">
               <h2 className="text-2xl font-black text-gray-900 mb-8 text-center">
                 Popular Categories in {location.name}
               </h2>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <Link href="/medicines" className="group relative rounded-2xl overflow-hidden shadow-sm bg-white border border-gray-100 hover:border-primary transition-all duration-300 hover:shadow-md p-6 text-center">
-                  <h3 className="font-bold text-lg text-gray-900 group-hover:text-primary">Pharmacy & Medicines</h3>
-                  <p className="text-sm text-gray-500 mt-2">Prescription & OTC items</p>
+                  <h3 className="font-bold text-lg text-gray-900 group-hover:text-primary">Pharmacy &amp; Medicines</h3>
+                  <p className="text-sm text-gray-500 mt-2">Prescription &amp; OTC items</p>
                 </Link>
                 <Link href="/category/cosmetics" className="group relative rounded-2xl overflow-hidden shadow-sm bg-white border border-gray-100 hover:border-primary transition-all duration-300 hover:shadow-md p-6 text-center">
                   <h3 className="font-bold text-lg text-gray-900 group-hover:text-primary">Premium Cosmetics</h3>
-                  <p className="text-sm text-gray-500 mt-2">Skincare & beauty</p>
+                  <p className="text-sm text-gray-500 mt-2">Skincare &amp; beauty</p>
                 </Link>
                 <Link href="/category/baby-care" className="group relative rounded-2xl overflow-hidden shadow-sm bg-white border border-gray-100 hover:border-primary transition-all duration-300 hover:shadow-md p-6 text-center">
                   <h3 className="font-bold text-lg text-gray-900 group-hover:text-primary">Baby Care</h3>
-                  <p className="text-sm text-gray-500 mt-2">Diapers & baby food</p>
+                  <p className="text-sm text-gray-500 mt-2">Diapers &amp; baby food</p>
                 </Link>
                 <Link href="/category/grocery" className="group relative rounded-2xl overflow-hidden shadow-sm bg-white border border-gray-100 hover:border-primary transition-all duration-300 hover:shadow-md p-6 text-center">
                   <h3 className="font-bold text-lg text-gray-900 group-hover:text-primary">Daily Groceries</h3>
@@ -199,52 +205,30 @@ export default async function ThanaDeliveryPage({ params }: ThanaPageProps) {
               </div>
             </div>
 
-            {/* Unions in this Upazila */}
-            {unions.length > 0 && (
-              <div className="mb-16">
-                <h2 className="text-2xl font-black text-gray-900 mb-2 text-center">
-                  Unions & Areas in {location.name}
-                </h2>
-                <p className="text-center text-gray-500 mb-8 font-medium">
-                  Select your union for area-specific delivery info
-                </p>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {unions.map((union) => (
-                    <Link
-                      key={union.id}
-                      href={`/delivery/${districtSlug}/${thanaSlug}/${union.slug}`}
-                      className="group flex items-center gap-3 bg-white border border-gray-100 rounded-xl p-4 hover:border-primary hover:shadow-md transition-all duration-300"
-                    >
-                      <div className="bg-primary/10 rounded-lg p-2 group-hover:bg-primary/20 transition-colors">
-                        <MapPin className="h-4 w-4 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-900 group-hover:text-primary transition-colors">{union.name}</p>
-                        <p className="text-xs text-gray-400">{location.name}, {location.districtName}</p>
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-primary ml-auto transition-colors" />
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* SEO Text Section */}
             <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
               <h2 className="text-xl font-bold text-gray-900 mb-4">
-                Why Choose Halalzi for Online Shopping in {location.name}, {location.districtName}?
+                Why Choose Halalzi for Online Shopping in {location.name}, {location.upazilaName}?
               </h2>
               <div className="prose max-w-none text-gray-600">
                 <p>
-                  As one of Bangladesh's leading e-commerce platforms, Halalzi is dedicated to providing the residents of {location.name} with a seamless online shopping experience. Whether you need urgent medicines, everyday groceries, or premium cosmetic brands, our comprehensive catalog has everything you need.
+                  As one of Bangladesh&apos;s leading e-commerce platforms, Halalzi is dedicated to providing the residents of {location.name} union in {location.upazilaName}, {location.districtName} with a seamless online shopping experience. Whether you need urgent medicines, everyday groceries, or premium cosmetic brands, our comprehensive catalog has everything you need.
                 </p>
                 <p className="mt-4">
-                  We understand the importance of quality and authenticity. That's why every product dispatched to our customers in {location.name} undergoes strict quality checks. Enjoy the convenience of ordering from home and let our dedicated delivery network handle the rest.
+                  We understand the importance of quality and authenticity. That&apos;s why every product dispatched to our customers in {location.name} undergoes strict quality checks. Enjoy the convenience of ordering from home and let our dedicated delivery network handle the rest.
                 </p>
               </div>
-              <div className="mt-8 text-center">
+              <div className="mt-8 flex flex-col sm:flex-row gap-4 items-center justify-center">
+                <Link
+                  href={`/delivery/${location.districtSlug}/${location.upazilaSlug}`}
+                  className="inline-flex items-center gap-2 text-primary font-bold hover:text-primary-dark transition-colors"
+                >
+                  <ChevronRight className="h-4 w-4 rotate-180" />
+                  Back to {location.upazilaName}
+                </Link>
+                <span className="text-gray-300 hidden sm:block">|</span>
                 <Link href="/delivery" className="inline-flex items-center gap-2 text-primary font-bold hover:text-primary-dark transition-colors">
-                  View all delivery locations across Bangladesh
+                  View all delivery locations
                   <span aria-hidden="true">&rarr;</span>
                 </Link>
               </div>
