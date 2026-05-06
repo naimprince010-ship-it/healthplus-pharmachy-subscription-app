@@ -232,6 +232,7 @@ model Zone {
   addresses      Address[]
   orders         Order[]
   subscriptions  Subscription[]
+  kitchens       Kitchen[]
 }
 
 model Category {
