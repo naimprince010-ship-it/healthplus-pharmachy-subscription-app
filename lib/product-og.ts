@@ -8,6 +8,38 @@ export function getSiteBaseUrl(): string {
 }
 
 /**
+ * Follow nested /api/image-proxy?url=… chains (some DB rows store proxied URLs; getStorefrontImageUrl wraps again).
+ * Crawlers must get the final HTTPS image origin, not our proxy.
+ */
+function unwrapImageProxyToDirectUrl(input: string, siteBase: string): string {
+  const base = siteBase.replace(/\/$/, '')
+  let current = input.trim()
+  for (let depth = 0; depth < 8; depth += 1) {
+    try {
+      const u = /^https?:\/\//i.test(current) ? new URL(current) : new URL(current, `${base}/`)
+      const pathNorm = u.pathname.replace(/\/$/, '') || '/'
+      if (pathNorm !== '/api/image-proxy') break
+      const inner = u.searchParams.get('url')
+      if (!inner || !/^https?:\/\//i.test(inner)) break
+      current = inner
+    } catch {
+      break
+    }
+  }
+  return current
+}
+
+function urlLooksLikeOurImageProxy(resolvedUrl: string, siteBase: string): boolean {
+  const base = siteBase.replace(/\/$/, '')
+  try {
+    const u = /^https?:\/\//i.test(resolvedUrl) ? new URL(resolvedUrl) : new URL(resolvedUrl, `${base}/`)
+    return u.pathname.replace(/\/$/, '') === '/api/image-proxy'
+  } catch {
+    return resolvedUrl.includes('/api/image-proxy')
+  }
+}
+
+/**
  * Stable absolute URL for Open Graph / Facebook / Twitter previews.
  * - Unwraps /api/image-proxy?url=... to the original HTTPS URL (crawlers handle this better).
  * - Never returns empty: falls back to site default product image.
@@ -22,22 +54,20 @@ export function resolveProductOgImageAbsolute(
   const storefront = getStorefrontImageUrl(imageUrl)
   if (!storefront) return fallback
 
-  // Unwrap image proxy to direct origin URL for link-preview crawlers
-  if (storefront.startsWith('/api/image-proxy')) {
-    try {
-      const u = new URL(storefront, `${base}/`)
-      const original = u.searchParams.get('url')
-      if (original && /^https?:\/\//i.test(original)) return original
-    } catch {
-      /* noop */
-    }
+  const candidate = storefront.includes('/api/image-proxy')
+    ? unwrapImageProxyToDirectUrl(storefront, base)
+    : storefront
+
+  // Do not advertise proxy URLs to link-preview bots (Facebook "corrupted image" etc.).
+  if (urlLooksLikeOurImageProxy(candidate, base)) {
+    return fallback
   }
 
-  if (storefront.startsWith('http://') || storefront.startsWith('https://')) {
-    return storefront
+  if (candidate.startsWith('http://') || candidate.startsWith('https://')) {
+    return candidate
   }
 
-  const path = storefront.startsWith('/') ? storefront : `/${storefront}`
+  const path = candidate.startsWith('/') ? candidate : `/${candidate}`
   return `${base}${path}`
 }
 
