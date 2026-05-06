@@ -96,6 +96,7 @@ enum BlogType {
   GROCERY
   RECIPE
   MONEY_SAVING
+  GENERAL
 }
 
 enum BlogStatus {
@@ -111,6 +112,7 @@ enum TopicBlock {
   GROCERY
   RECIPE
   MONEY_SAVING
+  GENERAL
 }
 
 /// Paid / partner placements on public blog (label as sponsored in UI)
