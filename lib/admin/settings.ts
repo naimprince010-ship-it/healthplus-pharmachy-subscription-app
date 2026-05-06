@@ -231,8 +231,8 @@ export const DEFAULT_ORDER_OTP_SETTINGS: OrderOtpSettings = {
 
 // Phase 4: Marketing/Tracking Defaults
 export const DEFAULT_FACEBOOK_PIXEL_SETTINGS: FacebookPixelSettings = {
-  enabled: false,
-  pixelId: '',
+  enabled: true,
+  pixelId: '1688845629097671',
 }
 
 export const DEFAULT_FACEBOOK_CAPI_SETTINGS: FacebookCapiSettings = {

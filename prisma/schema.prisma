@@ -139,6 +139,26 @@ enum BudgetLevel {
   PREMIUM
 }
 
+// Cloud Kitchen enums
+enum FoodOrderStatus {
+  PLACED           // Customer placed order
+  ACCEPTED         // Kitchen accepted
+  PREPARING        // Being cooked
+  READY            // Ready for pickup by rider
+  OUT_FOR_DELIVERY // Rider picked up
+  DELIVERED        // Customer received
+  CANCELLED        // Cancelled
+}
+
+enum MenuItemCategory {
+  MAIN_COURSE
+  SNACKS
+  DRINKS
+  DESSERTS
+  BREAKFAST
+  COMBO
+}
+
 model User {
   id            String           @id @default(cuid())
   name          String
@@ -156,6 +176,7 @@ model User {
   wishlistItems WishlistItem[]
   reviews       Review[]
   productInteractionLogs ProductInteractionLog[]
+  foodOrders    FoodOrder[]
 }
 
 enum ProductInteractionKind {
@@ -1332,4 +1353,112 @@ model MarketIntelSyncLog {
 
   @@index([startedAt])
   @@index([status])
+}
+
+// ─────────────────────────────────────────────
+// Cloud Kitchen Module
+// ─────────────────────────────────────────────
+
+model Kitchen {
+  id           String      @id @default(cuid())
+  name         String
+  slug         String      @unique
+  description  String?
+  logoUrl      String?
+  coverUrl     String?
+  cuisineTypes String[]    // ["Bangladeshi", "Chinese", "Fast Food"]
+  address      String
+  phone        String?
+  isActive     Boolean     @default(true)
+  isOpen       Boolean     @default(false)
+  openTime     String?     // "09:00"
+  closeTime    String?     // "22:00"
+  avgDelivery  Int         @default(30)  // estimated minutes
+  minOrder     Float       @default(0)   // minimum order amount
+  commission   Float       @default(0.20) // 20% platform commission
+  sortOrder    Int         @default(0)
+  // Partner login — reuses User model with a KITCHEN_PARTNER role flag
+  partnerId    String?     // User.id of the kitchen owner (optional)
+  // Delivery zone
+  zoneId       String?
+  zone         Zone?       @relation(fields: [zoneId], references: [id], onDelete: SetNull)
+  menuItems    MenuItem[]
+  foodOrders   FoodOrder[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([isActive, isOpen])
+  @@index([slug])
+}
+
+model MenuItem {
+  id           String           @id @default(cuid())
+  kitchenId    String
+  kitchen      Kitchen          @relation(fields: [kitchenId], references: [id], onDelete: Cascade)
+  name         String
+  description  String?
+  price        Float
+  imageUrl     String?
+  category     MenuItemCategory @default(MAIN_COURSE)
+  isAvailable  Boolean          @default(true)
+  isVeg        Boolean          @default(false)
+  spiceLevel   Int              @default(0)  // 0=mild 1=medium 2=hot 3=extra-hot
+  sortOrder    Int              @default(0)
+  orderItems   FoodOrderItem[]
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@index([kitchenId, isAvailable])
+  @@index([kitchenId, category])
+}
+
+model FoodOrder {
+  id              String          @id @default(cuid())
+  orderNumber     String          @unique // e.g. FD-20260505-0001
+  userId          String
+  user            User            @relation(fields: [userId], references: [id])
+  kitchenId       String
+  kitchen         Kitchen         @relation(fields: [kitchenId], references: [id])
+  items           FoodOrderItem[]
+  status          FoodOrderStatus @default(PLACED)
+  subtotal        Float
+  deliveryCharge  Float           @default(60)
+  total           Float
+  deliveryAddress String
+  phone           String
+  note            String?         // Customer note to kitchen
+  estimatedMinutes Int?           // Estimated delivery time in minutes
+  // Timestamps per status
+  placedAt        DateTime        @default(now())
+  acceptedAt      DateTime?
+  readyAt         DateTime?
+  deliveredAt     DateTime?
+  cancelledAt     DateTime?
+  cancelReason    String?
+  // Rider info
+  riderName       String?
+  riderPhone      String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([userId])
+  @@index([kitchenId, status])
+  @@index([status, createdAt])
+}
+
+model FoodOrderItem {
+  id          String    @id @default(cuid())
+  orderId     String
+  order       FoodOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId  String
+  menuItem    MenuItem  @relation(fields: [menuItemId], references: [id])
+  // Snapshot (price may change later)
+  nameSnapshot  String  // Menu item name at time of order
+  priceSnapshot Float   // Unit price at time of order
+  quantity      Int
+  totalPrice    Float
+  note          String? // Special instruction (e.g. no onion)
+  createdAt     DateTime @default(now())
+
+  @@index([orderId])
 }

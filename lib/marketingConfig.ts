@@ -22,7 +22,7 @@ export const marketingConfig = {
    * Meta (Facebook/Instagram) Pixel ID
    * Optional - can be managed via GTM
    */
-  metaPixelId: process.env.NEXT_PUBLIC_META_PIXEL_ID || '',
+  metaPixelId: process.env.NEXT_PUBLIC_META_PIXEL_ID || '1688845629097671',
 
   /**
    * TikTok Pixel ID
