@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
-import { ShoppingCart, ChevronDown } from 'lucide-react'
+import { useState, useMemo, useEffect, useRef } from 'react'
+import { ShoppingCart, ChevronDown, Truck, Zap } from 'lucide-react'
 import { useCart, buildUnitLabelBn } from '@/contexts/CartContext'
 import { trackAddToCart } from '@/lib/trackEvent'
 import { logProductInteraction } from '@/lib/logProductInteraction'
 import { getEffectivePrices } from '@/lib/pricing'
+
+const FREE_DELIVERY_THRESHOLD = 1000
 
 interface ProductVariant {
   id: string
@@ -79,6 +81,8 @@ export function ProductDetailClient({
   const [isAdding, setIsAdding] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [shortLinkCopied, setShortLinkCopied] = useState(false)
+  const [showStickyBar, setShowStickyBar] = useState(false)
+  const addToCartRef = useRef<HTMLButtonElement>(null)
 
   const defaultVariant = variants.find(v => v.isDefault) || variants[0]
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
@@ -181,6 +185,22 @@ export function ProductDetailClient({
   }
 
   const isOutOfStock = currentStock === 0
+
+  // Show sticky bar when main Add to Cart button scrolls out of view
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowStickyBar(!entry.isIntersecting),
+      { threshold: 0, rootMargin: '-80px 0px 0px 0px' }
+    )
+    if (addToCartRef.current) observer.observe(addToCartRef.current)
+    return () => observer.disconnect()
+  }, [isOutOfStock])
+
+  // Free delivery progress based on cart total
+  const { total: cartTotal } = useCart()
+  const freeDeliveryRemaining = Math.max(0, FREE_DELIVERY_THRESHOLD - cartTotal)
+  const freeDeliveryProgress = Math.min(100, (cartTotal / FREE_DELIVERY_THRESHOLD) * 100)
+  const hasFreeDelivery = cartTotal >= FREE_DELIVERY_THRESHOLD
 
   return (
     <div className="space-y-4">
@@ -328,7 +348,34 @@ export function ProductDetailClient({
             </div>
           </div>
 
+          {/* Free Delivery Progress */}
+          <div className={`rounded-xl px-4 py-3 ${hasFreeDelivery ? 'bg-green-50 border border-green-100' : 'bg-orange-50 border border-orange-100'}`}>
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="flex items-center gap-1.5">
+                <Truck className="h-3.5 w-3.5 shrink-0" style={{ color: hasFreeDelivery ? '#0F6E56' : '#ea580c' }} />
+                {hasFreeDelivery ? (
+                  <span className="text-xs font-semibold text-green-700">🎉 ফ্রি ডেলিভারি পেয়েছেন!</span>
+                ) : (
+                  <span className="text-xs font-medium text-orange-700">
+                    আরো <span className="font-bold">৳{Math.ceil(freeDeliveryRemaining)}</span> যোগ করুন → ফ্রি ডেলিভারি
+                  </span>
+                )}
+              </div>
+              <span className="text-[10px] text-gray-500">৳{FREE_DELIVERY_THRESHOLD}-এ ফ্রি</span>
+            </div>
+            <div className="h-1.5 w-full rounded-full bg-gray-200 overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${freeDeliveryProgress}%`,
+                  backgroundColor: hasFreeDelivery ? '#0F6E56' : '#ea580c',
+                }}
+              />
+            </div>
+          </div>
+
           <button
+            ref={addToCartRef}
             type="button"
             onClick={handleAddToCart}
             disabled={isOutOfStock}
@@ -339,6 +386,33 @@ export function ProductDetailClient({
           >
             <ShoppingCart className="h-5 w-5" />
             {isAdding ? 'যোগ হয়েছে!' : 'কার্টে যোগ করুন'}
+          </button>
+        </div>
+      )}
+
+      {/* Sticky Add to Cart bar — appears on desktop when main button scrolls off screen */}
+      {!isOutOfStock && (
+        <div
+          className={`fixed bottom-0 left-0 right-0 z-50 hidden lg:flex items-center justify-between gap-4 bg-white border-t border-gray-200 px-6 py-3 shadow-xl transition-all duration-300 ${
+            showStickyBar ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
+          }`}
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-1.5">
+              <Zap className="h-4 w-4 text-orange-500 shrink-0" />
+              <span className="text-sm font-bold text-gray-900 truncate max-w-[300px]">{name}</span>
+            </div>
+            <span className="text-base font-bold text-teal-700 shrink-0">৳{price.toFixed(2)}</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            className={`shrink-0 flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-bold text-white transition-all duration-200 ${
+              isAdding ? 'bg-green-600 scale-95' : 'bg-orange-500 hover:bg-orange-600'
+            }`}
+          >
+            <ShoppingCart className="h-4 w-4" />
+            {isAdding ? 'যোগ হয়েছে! ✓' : 'কার্টে যোগ করুন'}
           </button>
         </div>
       )}

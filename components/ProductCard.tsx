@@ -153,6 +153,13 @@ export function ProductCard({
         </div>
       )}
 
+      {/* Low stock urgency badge */}
+      {product.stockQuantity > 0 && product.stockQuantity <= 5 && (
+        <div className="absolute right-2 top-2 z-10 flex items-center gap-0.5 rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm animate-pulse">
+          ⚠️ মাত্র {product.stockQuantity}টি বাকি
+        </div>
+      )}
+
       <div
         className="relative aspect-square shrink-0 overflow-hidden rounded-lg bg-gradient-to-b from-slate-100 to-slate-50 ring-1 ring-inset ring-slate-200/80"
       >

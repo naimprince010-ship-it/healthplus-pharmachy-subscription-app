@@ -184,15 +184,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.name,
-    description: product.description || `${product.name} - Buy online at best price`,
+    description: product.description || `${product.name} — বাংলাদেশে অনলাইনে কিনুন সেরা দামে। Halalzi-তে ১০০% অরিজিনাল পণ্য, দ্রুত ডেলিভারি।`,
     image: jsonLdImageUrl,
     sku: product.id,
-    brand: product.manufacturer?.name || product.brandName ? {
+    // 'brand' — always provided; fixes "No global identifier" warning
+    brand: {
       '@type': 'Brand',
-      name: product.manufacturer?.name || product.brandName,
-    } : {
-      '@type': 'Brand',
-      name: 'Halalzi',
+      name: product.manufacturer?.name || product.brandName || 'Halalzi',
     },
     category: product.category?.name,
     offers: {
@@ -207,6 +205,45 @@ export default async function ProductPage({ params }: ProductPageProps) {
       seller: {
         '@type': 'Organization',
         name: 'Halalzi',
+        url: 'https://halalzi.com',
+      },
+      // Fixes: "Missing field 'hasMerchantReturnPolicy' (in 'offers')"
+      hasMerchantReturnPolicy: {
+        '@type': 'MerchantReturnPolicy',
+        applicableCountry: 'BD',
+        returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+        merchantReturnDays: 3,
+        returnMethod: 'https://schema.org/ReturnByMail',
+        returnFees: 'https://schema.org/FreeReturn',
+        refundType: 'https://schema.org/FullRefund',
+      },
+      // Fixes: "Missing field 'shippingDetails' (in 'offers')"
+      shippingDetails: {
+        '@type': 'OfferShippingDetails',
+        shippingRate: {
+          '@type': 'MonetaryAmount',
+          value: 60,
+          currency: 'BDT',
+        },
+        shippingDestination: {
+          '@type': 'DefinedRegion',
+          addressCountry: 'BD',
+        },
+        deliveryTime: {
+          '@type': 'ShippingDeliveryTime',
+          handlingTime: {
+            '@type': 'QuantitativeValue',
+            minValue: 0,
+            maxValue: 1,
+            unitCode: 'DAY',
+          },
+          transitTime: {
+            '@type': 'QuantitativeValue',
+            minValue: 1,
+            maxValue: 3,
+            unitCode: 'DAY',
+          },
+        },
       },
     },
   }

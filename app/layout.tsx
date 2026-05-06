@@ -78,6 +78,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const travelpayoutsDriveInlineScript = process.env.TRAVELPAYOUTS_DRIVE_INLINE_SCRIPT?.trim() || ''
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
@@ -196,6 +197,11 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
+        {travelpayoutsDriveInlineScript ? (
+          <script
+            dangerouslySetInnerHTML={{ __html: travelpayoutsDriveInlineScript }}
+          />
+        ) : null}
       </head>
       <body className={`${inter.variable} font-sans antialiased`}>
         <SessionProvider>

@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Package, Heart, Baby, Activity, Users, Shield } from 'lucide-react'
+import { Package, Heart, Baby, Activity, Users, Shield, Plane } from 'lucide-react'
 import { HeroBannerSlider, type HeroBanner } from '@/components/HeroBannerSlider'
 
 function AnimatedDeliveryTruck() {
@@ -113,7 +113,7 @@ interface HomeSection {
     badgeText: string | null
     bgColor: string | null
   }
-  products: any[]
+  products: import('@/components/ProductCard').ProductCardProps[]
 }
 
 interface DesktopHomeProps {
@@ -221,6 +221,15 @@ export function DesktopHome({ subscriptionPlans, homeSections, heroBanners = [] 
                     </span>
                     <span className="text-sm font-bold text-gray-800">ফ্লাশ সেল</span>
                     <span className="absolute bottom-3 right-3 rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">১০% অফ</span>
+                  </Link>
+                  <Link href="/travel" className="col-span-2 flex items-center justify-between rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 transition-all hover:-translate-y-0.5 hover:shadow-md">
+                    <div>
+                      <p className="text-sm font-bold text-sky-900">নতুন সার্ভিস: ট্রাভেল</p>
+                      <p className="text-xs text-sky-700">ফ্লাইট ডিল ও ট্রাভেল অফার দেখুন</p>
+                    </div>
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-sky-600 shadow-sm">
+                      <Plane className="h-5 w-5" />
+                    </span>
                   </Link>
                 </div>
               </div>
