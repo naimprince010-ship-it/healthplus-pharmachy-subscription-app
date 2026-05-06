@@ -1,7 +1,7 @@
 import { config } from 'dotenv'
 config({ path: '.env.local' })
 import { prisma } from '../lib/prisma'
-import { BlogStatus, BlogType } from '@prisma/client'
+import { BlogStatus, BlogType, TopicBlock } from '@prisma/client'
 
 async function main() {
   const title = 'রাত ১২টাতেও ইমার্জেন্সি ওষুধ? Halalzi এর ২৪ ঘণ্টা ডেলিভারি সার্ভিস!'
@@ -36,6 +36,7 @@ async function main() {
       contentMd,
       status: BlogStatus.PUBLISHED,
       type: BlogType.GENERAL,
+      block: TopicBlock.GENERAL,
       seoTitle: title,
       seoDescription: summary,
       seoKeywords: 'ইমার্জেন্সি ওষুধ ডেলিভারি ঢাকা, ২৪ ঘণ্টা ফার্মেসি, 24/7 medicine delivery dhaka, online pharmacy bd',
