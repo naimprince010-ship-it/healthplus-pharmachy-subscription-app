@@ -125,6 +125,24 @@ interface DesktopHomeProps {
 export function DesktopHome({ subscriptionPlans, homeSections, heroBanners = [] }: DesktopHomeProps) {
   return (
     <>
+      {/* ── Trust Strip (desktop) ── */}
+      <div className="hidden lg:block w-full bg-teal-700 py-2">
+        <div className="flex items-center justify-center gap-8">
+          {[
+            { icon: '✅', text: '১০০% অরিজিনাল পণ্য' },
+            { icon: '🚚', text: 'দ্রুত ডেলিভারি সারা বাংলাদেশ' },
+            { icon: '🔒', text: 'গোপনীয় প্যাকেজিং' },
+            { icon: '↩', text: '৩ দিনের রিটার্ন পলিসি' },
+            { icon: '📞', text: '২৪/৭ কাস্টমার সাপোর্ট' },
+          ].map((item, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <span className="text-base">{item.icon}</span>
+              <span className="text-xs font-semibold text-white whitespace-nowrap">{item.text}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Hero Section */}
       <section className="w-full bg-white py-5 lg:pb-10 lg:pt-6">
         <div className="w-full px-2 sm:px-4">

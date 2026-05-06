@@ -550,6 +550,28 @@ export default function CheckoutPage() {
         </div>
       </div>
 
+      {/* Trust Badges Strip */}
+      <div className="bg-teal-700 py-2.5 px-4">
+        <div className="flex items-center justify-center gap-6 flex-wrap">
+          <div className="flex items-center gap-1.5 text-white text-xs font-medium">
+            <Shield className="h-3.5 w-3.5 text-teal-200 shrink-0" />
+            <span>১০০% নিরাপদ পেমেন্ট</span>
+          </div>
+          <div className="hidden sm:flex items-center gap-1.5 text-white text-xs font-medium">
+            <Truck className="h-3.5 w-3.5 text-teal-200 shrink-0" />
+            <span>দ্রুত ডেলিভারি সারা বাংলাদেশ</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-white text-xs font-medium">
+            <Award className="h-3.5 w-3.5 text-teal-200 shrink-0" />
+            <span>১০০% অরিজিনাল পণ্য</span>
+          </div>
+          <div className="hidden sm:flex items-center gap-1.5 text-white text-xs font-medium">
+            <span className="text-teal-200">↩</span>
+            <span>৩ দিনের রিটার্ন পলিসি</span>
+          </div>
+        </div>
+      </div>
+
       <form onSubmit={handleSubmit}>
         {/* Main Content - with bottom padding for sticky footer */}
         <div className="px-4 py-4 pb-32 lg:pb-8 space-y-4 lg:max-w-4xl lg:mx-auto">
@@ -779,26 +801,49 @@ export default function CheckoutPage() {
             )}
           </div>
 
-          {/* Section 2: Payment Method */}
+          {/* Section 2: Payment Method - Visual Cards */}
           <div className="bg-white rounded-xl p-4">
             <h2 className="text-lg font-bold text-gray-900 mb-4">{settings.paymentSectionTitleBn}</h2>
-            
-            <div className="flex items-center gap-6">
+            <div className="grid grid-cols-2 gap-3">
               {/* Cash on Delivery */}
-              <label className="flex items-center gap-2 cursor-pointer" onClick={() => setPaymentMethod('COD')}>
-                <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'COD' ? 'border-teal-500' : 'border-gray-300'}`}>
-                  {paymentMethod === 'COD' && <div className="h-2.5 w-2.5 rounded-full bg-teal-500" />}
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('COD')}
+                className={`flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all duration-200 ${
+                  paymentMethod === 'COD'
+                    ? 'border-teal-500 bg-teal-50 shadow-sm'
+                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <span className="text-2xl">💵</span>
+                <div className="text-center">
+                  <p className="text-sm font-bold text-gray-900">{settings.codLabelBn}</p>
+                  <p className="text-[11px] text-gray-500 mt-0.5">ডেলিভারিতে টাকা দিন</p>
                 </div>
-                <span className="text-gray-900">{settings.codLabelBn}</span>
-              </label>
+                {paymentMethod === 'COD' && (
+                  <span className="text-[10px] font-bold text-teal-600 bg-teal-100 px-2 py-0.5 rounded-full">✓ নির্বাচিত</span>
+                )}
+              </button>
 
               {/* Bkash / Nagad */}
-              <label className="flex items-center gap-2 cursor-pointer" onClick={() => setPaymentMethod('BKASH')}>
-                <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'BKASH' ? 'border-teal-500' : 'border-gray-300'}`}>
-                  {paymentMethod === 'BKASH' && <div className="h-2.5 w-2.5 rounded-full bg-teal-500" />}
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('BKASH')}
+                className={`flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all duration-200 ${
+                  paymentMethod === 'BKASH'
+                    ? 'border-pink-500 bg-pink-50 shadow-sm'
+                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <span className="text-2xl">📱</span>
+                <div className="text-center">
+                  <p className="text-sm font-bold text-gray-900">{settings.bkashLabelBn}</p>
+                  <p className="text-[11px] text-gray-500 mt-0.5">বিকাশ / নগদ / রকেট</p>
                 </div>
-                <span className="text-gray-900">{settings.bkashLabelBn}</span>
-              </label>
+                {paymentMethod === 'BKASH' && (
+                  <span className="text-[10px] font-bold text-pink-600 bg-pink-100 px-2 py-0.5 rounded-full">✓ নির্বাচিত</span>
+                )}
+              </button>
             </div>
           </div>
 
@@ -960,6 +1005,16 @@ export default function CheckoutPage() {
                     <span className="text-xl font-extrabold text-primary">৳ {grandTotal.toFixed(0)}</span>
                   </div>
                 </div>
+                {/* Savings Highlight */}
+                {savings > 0 && (
+                  <div className="mx-4 mb-3 flex items-center justify-between rounded-xl bg-green-50 border border-green-100 px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">🎉</span>
+                      <span className="text-sm font-semibold text-green-700">আপনি সাশ্রয় করছেন</span>
+                    </div>
+                    <span className="text-base font-extrabold text-green-700">৳ {savings.toFixed(0)}</span>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -997,8 +1052,17 @@ export default function CheckoutPage() {
           className="fixed bottom-0 left-0 right-0 z-[100] bg-[#1a1a2e] lg:hidden"
           style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
         >
+          {savings > 0 && (
+            <div className="flex items-center justify-center gap-1.5 bg-green-600 py-1.5 text-xs text-white font-medium">
+              <span>🎉</span>
+              <span>আপনি ৳{savings.toFixed(0)} সাশ্রয় করছেন এই অর্ডারে!</span>
+            </div>
+          )}
           <div className="flex items-center justify-between px-4 py-4">
-            <span className="text-white text-lg font-bold">{settings.totalLabelBn} ৳ {grandTotal.toFixed(0)}</span>
+            <div>
+              <p className="text-gray-400 text-xs">সর্বমোট</p>
+              <span className="text-white text-xl font-extrabold">৳ {grandTotal.toFixed(0)}</span>
+            </div>
             <button
               type="submit"
               disabled={isLoading}
