@@ -21,6 +21,7 @@ const typeColors: Record<BlogType, string> = {
     GROCERY: 'bg-green-100 text-green-800',
     RECIPE: 'bg-orange-100 text-orange-800',
     MONEY_SAVING: 'bg-blue-100 text-blue-800',
+    GENERAL: 'bg-slate-100 text-slate-800',
 }
 
 const typeLabels: Record<BlogType, string> = {
@@ -28,6 +29,7 @@ const typeLabels: Record<BlogType, string> = {
     GROCERY: 'Grocery',
     RECIPE: 'Recipe',
     MONEY_SAVING: 'Money Saving',
+    GENERAL: 'General',
 }
 
 export function BlogCard({ blog }: BlogCardProps) {

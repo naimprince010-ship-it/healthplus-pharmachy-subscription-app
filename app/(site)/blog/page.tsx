@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 
 export const revalidate = 60 // Revalidate every minute
 
-const BLOG_TYPES: BlogType[] = ['BEAUTY', 'GROCERY', 'RECIPE', 'MONEY_SAVING']
+const BLOG_TYPES: BlogType[] = ['BEAUTY', 'GROCERY', 'RECIPE', 'MONEY_SAVING', 'GENERAL']
 
 function parseBlogTypeParam(raw: string | string[] | undefined): BlogType | undefined {
     const v = Array.isArray(raw) ? raw[0] : raw
@@ -70,6 +70,7 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
         { value: 'GROCERY', label: 'Grocery' },
         { value: 'RECIPE', label: 'Recipe' },
         { value: 'MONEY_SAVING', label: 'Money Saving' },
+        { value: 'GENERAL', label: 'General' },
     ]
 
     const websiteJsonLd = {

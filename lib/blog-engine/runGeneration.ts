@@ -159,7 +159,9 @@ async function generateBlogCoverImageUrl(
           ? 'bangladeshi cooking ingredients and plated food, warm appetizing tones, rustic authentic vibe'
           : type === BlogType.MONEY_SAVING
             ? 'smart shopping cart, grocery and beauty icons, budget-friendly lifestyle, bright and clean'
-            : 'fresh grocery and wellness lifestyle composition, vibrant organic colors'
+            : type === BlogType.GENERAL
+              ? 'fresh grocery and wellness lifestyle composition, vibrant organic colors'
+              : 'high-quality ecommerce lifestyle photography, clean composition'
 
     const prompt = `Create a premium ecommerce blog cover image for Halalzi (Bangladesh).
 Topic: ${title}
@@ -332,6 +334,9 @@ export async function runBlogDraftGeneration(blogId: string): Promise<RunBlogDra
         break
       case BlogType.MONEY_SAVING:
         result = await generateMoneySavingBlog(context)
+        break
+      case BlogType.GENERAL:
+        result = await generateGroceryBlog(context)
         break
       default:
         result = await generateGroceryBlog(context)
