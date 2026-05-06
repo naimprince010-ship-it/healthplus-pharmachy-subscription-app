@@ -439,9 +439,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
               {product.description && (
                 <div className="mt-8">
                   <h2 className="text-xl font-bold text-gray-900">বিবরণ</h2>
-                  <p className="mt-1 text-xs text-gray-500">
-                    বিষয়বস্তু বাংলায় দেখাতে অ্যাডমিনে বিবরণ বাংলায় সংরক্ষণ করুন।
-                  </p>
                   <p className="mt-4 text-gray-600 whitespace-pre-line">
                     {product.description}
                   </p>
