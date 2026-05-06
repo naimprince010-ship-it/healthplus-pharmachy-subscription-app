@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { BlogStatus, BlogType } from '@prisma/client'
+import { BlogStatus, BlogType, TopicBlock } from '@prisma/client'
 
 export async function GET() {
   try {
@@ -25,6 +25,7 @@ export async function GET() {
         seoKeywords: 'ইমার্জেন্সি ওষুধ ডেলিভারি ঢাকা, ২৪ ঘণ্টা ফার্মেসি, 24/7 medicine delivery dhaka, online pharmacy bd',
         status: BlogStatus.PUBLISHED,
         type: BlogType.GENERAL,
+        block: TopicBlock.GENERAL,
       },
       {
         title: '১০০% হালাল ও বিশ্বস্ত পণ্য: পরিবারের সুরক্ষায় Halalzi এর প্রতিশ্রুতি',
@@ -45,6 +46,7 @@ Halalzi কীভাবে প্রতিটি পণ্যের অরিজ
         seoKeywords: 'হালাল কসমেটিক্স বাংলাদেশ, ১০০% অরিজিনাল স্কিনকেয়ার, halal cosmetics bd, authentic makeup products bangladesh',
         status: BlogStatus.PUBLISHED,
         type: BlogType.BEAUTY,
+        block: TopicBlock.BEAUTY,
       },
       {
         title: 'প্রতিটি কেনাকাটায় ১০% সাশ্রয়! জানুন Halalzi মেম্বারশিপের দারুণ সব সুবিধা',
@@ -67,6 +69,7 @@ Halalzi কীভাবে প্রতিটি পণ্যের অরিজ
         seoKeywords: 'মেডিসিন ডিসকাউন্ট অফার, অনলাইন ফার্মেসি মেম্বারশিপ, medicine discount bd, healthcare subscription bangladesh',
         status: BlogStatus.PUBLISHED,
         type: BlogType.MONEY_SAVING,
+        block: TopicBlock.MONEY_SAVING,
       },
       {
         title: 'মা-বাবা থেকে শিশু: সবার সুস্বাস্থ্য ও প্রয়োজনীয় পণ্য এখন এক অ্যাপেই!',
@@ -90,6 +93,7 @@ Halalzi কীভাবে প্রতিটি পণ্যের অরিজ
         seoKeywords: 'বেবি কেয়ার প্রোডাক্টস, বয়স্কদের ওষুধ, baby care products online bd, family health care app bangladesh',
         status: BlogStatus.PUBLISHED,
         type: BlogType.GENERAL,
+        block: TopicBlock.GENERAL,
       }
     ]
 
