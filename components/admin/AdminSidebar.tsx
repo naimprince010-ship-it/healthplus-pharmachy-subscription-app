@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import {
   LayoutDashboard,
   Package,
@@ -35,6 +35,7 @@ import {
   Megaphone,
   Store,
   DollarSign,
+  ShoppingBasket,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -54,6 +55,7 @@ const navItems: NavItem[] = [
   { label: 'Product Tagging', href: '/admin/product-tagging', icon: Tag },
   { label: 'AI Import', href: '/admin/ai-import', icon: Upload },
   { label: 'Product Import', href: '/admin/product-import', icon: Download },
+  { label: 'Chaldal import', href: '/admin/chaldal-import', icon: ShoppingBasket },
   { label: 'Azan Wholesale', href: '/admin/azan-wholesale', icon: Store },
   { label: 'Medicines', href: '/admin/medicines', icon: Package },
   { label: 'Products', href: '/admin/products', icon: Box },
@@ -95,10 +97,20 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const chaldalImportActive =
+    pathname === '/admin/chaldal-import' ||
+    (pathname.startsWith('/admin/product-import') && searchParams.get('from') === 'chaldal')
 
   const isActive = (href: string) => {
     if (href === '/admin') {
       return pathname === '/admin'
+    }
+    if (href === '/admin/chaldal-import') {
+      return chaldalImportActive
+    }
+    if (href === '/admin/product-import') {
+      return pathname.startsWith(href) && !chaldalImportActive
     }
     return pathname.startsWith(href)
   }

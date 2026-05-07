@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { AdminSidebar } from './AdminSidebar'
 import { AdminHeader } from './AdminHeader'
 
@@ -25,7 +25,9 @@ export function AdminLayoutWrapper({ userName, children }: AdminLayoutWrapperPro
 
   return (
     <>
-      <AdminSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Suspense fallback={<aside className="fixed inset-y-0 left-0 z-50 w-64 border-r border-gray-200 bg-white md:relative" aria-hidden />}>
+        <AdminSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      </Suspense>
       
       <div className="flex-1 flex flex-col min-w-0">
         <AdminHeader onMenuClick={() => setSidebarOpen(true)} userName={userName} />

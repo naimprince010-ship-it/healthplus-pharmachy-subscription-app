@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState, useEffect, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
+import React, { useState, useEffect, useMemo, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Download, ExternalLink, AlertCircle, CheckCircle, Loader2, Sparkles, FolderOpen, Package, ChevronDown, ChevronUp, Trash2, Save, Plus, X } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -67,8 +67,10 @@ interface DraftProduct {
   error?: string
 }
 
-export default function ProductImportPage() {
+function ProductImportPageInner() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const isChaldalModule = searchParams.get('from') === 'chaldal'
   const [importMode, setImportMode] = useState<'single' | 'bulk'>('single')
   const [url, setUrl] = useState('')
   const [loading, setLoading] = useState(false)
@@ -1042,10 +1044,22 @@ export default function ProductImportPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Import Product</h1>
+        <h1 className="text-3xl font-bold text-gray-900">
+          {isChaldalModule ? 'Chaldal product import' : 'Import Product'}
+        </h1>
         <p className="mt-2 text-sm text-gray-600">
-          Import product details from Arogga, Chaldal, MedEasy, Othoba, or BDShop
+          {isChaldalModule
+            ? 'Paste a Chaldal product or category URL. Same importer as Product Import — this entry stays separate in the sidebar.'
+            : 'Import product details from Arogga, Chaldal, MedEasy, Othoba, or BDShop'}
         </p>
+        {isChaldalModule && (
+          <p className="mt-2 text-sm text-gray-500">
+            <Link href="/admin/product-import" className="font-medium text-teal-700 underline hover:text-teal-800">
+              Open general product import
+            </Link>{' '}
+            (all supported sites).
+          </p>
+        )}
       </div>
 
       <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
@@ -1090,7 +1104,9 @@ export default function ProductImportPage() {
           <div className="rounded-lg border border-gray-200 bg-white p-6">
             <h2 className="text-lg font-semibold text-gray-900">Step 1: Enter Product URL</h2>
             <p className="mt-1 text-sm text-gray-600">
-              Paste a product URL from Arogga, Chaldal, MedEasy, Othoba, or BDShop
+              {isChaldalModule
+                ? 'Paste a Chaldal product page URL (single item).'
+                : 'Paste a product URL from Arogga, Chaldal, MedEasy, Othoba, or BDShop'}
             </p>
 
             <form onSubmit={handleFetch} className="mt-4">
@@ -1099,7 +1115,11 @@ export default function ProductImportPage() {
                   type="url"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
-                  placeholder="https://www.bdshop.com/product/... or https://www.othoba.com/product/..."
+                  placeholder={
+                    isChaldalModule
+                      ? 'https://chaldal.com/...'
+                      : 'https://www.bdshop.com/product/... or https://www.othoba.com/product/...'
+                  }
                   className="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
                   disabled={loading}
                 />
@@ -1131,13 +1151,28 @@ export default function ProductImportPage() {
             )}
 
             <div className="mt-4 text-xs text-gray-500">
-              <p>Supported URLs:</p>
+              <p>{isChaldalModule ? 'Chaldal examples:' : 'Supported URLs:'}</p>
               <ul className="mt-1 list-inside list-disc">
-                <li>Arogga: https://www.arogga.com/product/...</li>
-                <li>Chaldal: https://chaldal.com/...</li>
-                <li>MedEasy: https://medeasy.health/medicines/...</li>
-                <li>Othoba: https://www.othoba.com/product-slug-id</li>
-                <li>BDShop: https://www.bdshop.com/product/...</li>
+                {isChaldalModule ? (
+                  <>
+                    <li>Product: https://chaldal.com/...</li>
+                    <li>
+                      For other sites, use{' '}
+                      <Link href="/admin/product-import" className="text-teal-700 underline">
+                        general import
+                      </Link>
+                      .
+                    </li>
+                  </>
+                ) : (
+                  <>
+                    <li>Arogga: https://www.arogga.com/product/...</li>
+                    <li>Chaldal: https://chaldal.com/...</li>
+                    <li>MedEasy: https://medeasy.health/medicines/...</li>
+                    <li>Othoba: https://www.othoba.com/product-slug-id</li>
+                    <li>BDShop: https://www.bdshop.com/product/...</li>
+                  </>
+                )}
               </ul>
             </div>
           </div>
@@ -1146,7 +1181,9 @@ export default function ProductImportPage() {
             <div className="rounded-lg border border-gray-200 bg-white p-6">
               <h2 className="text-lg font-semibold text-gray-900">Step 1: Enter Category URL</h2>
               <p className="mt-1 text-sm text-gray-600">
-                Paste a category page URL to extract all products from that category
+                {isChaldalModule
+                  ? 'Paste a Chaldal category or listing URL to bulk-fetch product links.'
+                  : 'Paste a category page URL to extract all products from that category'}
               </p>
 
               <form onSubmit={handleFetchCategory} className="mt-4">
@@ -1155,7 +1192,11 @@ export default function ProductImportPage() {
                     type="url"
                     value={categoryUrl}
                     onChange={(e) => setCategoryUrl(e.target.value)}
-                    placeholder="https://www.bdshop.com/products.php?category=... or https://www.arogga.com/category/..."
+                    placeholder={
+                      isChaldalModule
+                        ? 'https://chaldal.com/cooking or https://chaldal.com/soaps'
+                        : 'https://www.bdshop.com/products.php?category=... or https://www.arogga.com/category/...'
+                    }
                     className="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
                     disabled={bulkLoading}
                   />
@@ -1187,12 +1228,22 @@ export default function ProductImportPage() {
               )}
 
               <div className="mt-4 text-xs text-gray-500">
-                <p>Supported Category URLs:</p>
+                <p>{isChaldalModule ? 'Chaldal category examples:' : 'Supported Category URLs:'}</p>
                 <ul className="mt-1 list-inside list-disc">
-                  <li>BDShop: https://www.bdshop.com/products.php?category=computer-and-office</li>
-                  <li>Arogga: https://www.arogga.com/category/beauty/6980/skincare</li>
-                  <li>Chaldal: https://chaldal.com/soaps</li>
-                  <li>MedEasy: https://medeasy.health/skin-care</li>
+                  {isChaldalModule ? (
+                    <>
+                      <li>https://chaldal.com/cooking</li>
+                      <li>https://chaldal.com/soaps</li>
+                      <li>https://chaldal.com/search/rice</li>
+                    </>
+                  ) : (
+                    <>
+                      <li>BDShop: https://www.bdshop.com/products.php?category=computer-and-office</li>
+                      <li>Arogga: https://www.arogga.com/category/beauty/6980/skincare</li>
+                      <li>Chaldal: https://chaldal.com/soaps</li>
+                      <li>MedEasy: https://medeasy.health/skin-care</li>
+                    </>
+                  )}
                 </ul>
               </div>
             </div>
@@ -2449,5 +2500,13 @@ export default function ProductImportPage() {
         )
       }
     </div >
+  )
+}
+
+export default function ProductImportPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-[240px] items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-600">Loading import tool…</div>}>
+      <ProductImportPageInner />
+    </Suspense>
   )
 }
