@@ -118,6 +118,11 @@ interface DataLayerEvent {
 declare global {
   interface Window {
     dataLayer: DataLayerEvent[];
+    fbq?: (...args: any[]) => void;
+    ttq?: {
+      track: (event: string, params?: any) => void;
+      page: () => void;
+    };
   }
 }
 
@@ -209,15 +214,38 @@ export function trackEvent(event: EventName, params: EventParams = {}): void {
 }
 
 /**
+ * Helper to dispatch events to Meta (Facebook) Pixel
+ */
+function trackFbEvent(eventName: string, params: any = {}): void {
+  if (typeof window !== 'undefined' && window.fbq) {
+    window.fbq('track', eventName, params);
+  }
+}
+
+/**
+ * Helper to dispatch events to TikTok Pixel
+ */
+function trackTikTokEvent(eventName: string, params: any = {}): void {
+  if (typeof window !== 'undefined' && window.ttq) {
+    window.ttq.track(eventName, params);
+  }
+}
+
+/**
  * Track page view
  * Should be called on route changes
  */
 export function trackPageView(path: string, title?: string): void {
   trackEvent('page_view', {
     page_path: path,
-    page_title: title || document.title,
-    page_location: window.location.href,
+    page_title: title || (typeof document !== 'undefined' ? document.title : ''),
+    page_location: typeof window !== 'undefined' ? window.location.href : '',
   });
+
+  if (typeof window !== 'undefined') {
+    if (window.fbq) window.fbq('track', 'PageView');
+    if (window.ttq) window.ttq.page();
+  }
 }
 
 /**
@@ -237,6 +265,17 @@ export function trackProductView(item: GA4Item): void {
     value: item.price,
     items: [item],
   });
+
+  const pixelParams = {
+    content_name: item.item_name,
+    content_category: item.item_category,
+    content_ids: [item.item_id],
+    content_type: 'product',
+    value: item.price,
+    currency: item.currency || 'BDT',
+  };
+  trackFbEvent('ViewContent', pixelParams);
+  trackTikTokEvent('ViewContent', pixelParams);
 }
 
 /**
@@ -251,11 +290,22 @@ export function trackProductView(item: GA4Item): void {
  * });
  */
 export function trackAddToCart(item: GA4Item): void {
+  const value = (item.price || 0) * (item.quantity || 1);
   trackEvent('add_to_cart', {
     currency: item.currency || 'BDT',
-    value: (item.price || 0) * (item.quantity || 1),
+    value: value,
     items: [item],
   });
+
+  const pixelParams = {
+    content_name: item.item_name,
+    content_ids: [item.item_id],
+    content_type: 'product',
+    value: value,
+    currency: item.currency || 'BDT',
+  };
+  trackFbEvent('AddToCart', pixelParams);
+  trackTikTokEvent('AddToCart', pixelParams);
 }
 
 /**
@@ -278,6 +328,17 @@ export function trackBeginCheckout(items: GA4Item[], value: number): void {
     value,
     items,
   });
+
+  const contentIds = items.map(item => item.item_id);
+  const pixelParams = {
+    content_ids: contentIds,
+    content_type: 'product',
+    value: value,
+    currency: 'BDT',
+    num_items: items.length
+  };
+  trackFbEvent('InitiateCheckout', pixelParams);
+  trackTikTokEvent('InitiateCheckout', pixelParams);
 }
 
 /**
@@ -304,6 +365,17 @@ export function trackPurchase(params: {
     currency: 'BDT',
     ...params,
   });
+
+  const contentIds = params.items.map(item => item.item_id);
+  const pixelParams = {
+    content_ids: contentIds,
+    content_type: 'product',
+    value: params.value,
+    currency: 'BDT',
+    num_items: params.items.length
+  };
+  trackFbEvent('Purchase', pixelParams);
+  trackTikTokEvent('CompletePayment', pixelParams);
 }
 
 /**
@@ -343,6 +415,9 @@ export function trackSubscribeSuccess(
     subscription_id: subscriptionId,
     value: price, // For conversion tracking
   });
+
+  trackFbEvent('Subscribe', { currency: 'BDT', value: price, plan_name: plan });
+  trackTikTokEvent('Subscribe', { currency: 'BDT', value: price });
 }
 
 /**
@@ -370,4 +445,7 @@ export function trackSearch(searchTerm: string): void {
   trackEvent('search', {
     search_term: searchTerm,
   });
+
+  trackFbEvent('Search', { search_string: searchTerm });
+  trackTikTokEvent('Search', { query: searchTerm });
 }
