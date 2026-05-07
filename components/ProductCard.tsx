@@ -122,6 +122,15 @@ export function ProductCard({
 
   const hasDiscount = discountPercent > 0
 
+  const isHygieneProduct = 
+    product.category.name.toLowerCase().includes('women') || 
+    product.category.name.toLowerCase().includes('hygiene') ||
+    product.name.toLowerCase().includes('pad') ||
+    product.name.toLowerCase().includes('napkin') ||
+    product.name.toLowerCase().includes('senora') ||
+    product.name.toLowerCase().includes('joya') ||
+    product.name.toLowerCase().includes('freedom')
+
   return (
     <Link
       href={href}
@@ -134,6 +143,20 @@ export function ProductCard({
       {hasDiscount && (
         <div className={`absolute left-3 top-3 z-10 rounded bg-cta px-2 py-0.5 text-[11px] font-bold tracking-wide text-white shadow-sm`}>
           {discountPercent}% {showOrangeOffBadge ? 'OFF' : 'ডিস্কাউন্ট'}
+        </div>
+      )}
+
+      {/* Discreet Packaging badge */}
+      {isHygieneProduct && (
+        <div className={`absolute ${hasDiscount ? 'top-10' : 'top-3'} left-3 z-10 rounded-full bg-pink-500/90 px-2 py-0.5 text-[10px] font-bold tracking-wide text-white shadow-sm flex items-center gap-1 backdrop-blur-sm`}>
+          <span aria-hidden="true">🔒</span> Privacy
+        </div>
+      )}
+
+      {/* Low stock urgency badge */}
+      {product.stockQuantity > 0 && product.stockQuantity <= 5 && (
+        <div className="absolute right-2 top-2 z-10 flex items-center gap-0.5 rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm animate-pulse">
+          ⚠️ মাত্র {product.stockQuantity}টি বাকি
         </div>
       )}
 

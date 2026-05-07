@@ -129,6 +129,27 @@ export function MobileHome({ subscriptionPlans, homeSections }: MobileHomeProps)
         </div>
       </section>
 
+      {/* ── Trust Strip ── */}
+      <div className="bg-white border-b border-gray-100 overflow-x-auto scrollbar-hide">
+        <div className="flex items-center gap-0 min-w-max px-2 py-2.5">
+          {[
+            { icon: '✅', text: '১০০% অরিজিনাল' },
+            { icon: '🚚', text: 'দ্রুত ডেলিভারি' },
+            { icon: '🔒', text: 'গোপনীয় প্যাকেজিং' },
+            { icon: '↩', text: '৩ দিনে রিটার্ন' },
+            { icon: '📞', text: '২৪/৭ সাপোর্ট' },
+          ].map((item, i) => (
+            <div key={i} className="flex items-center shrink-0">
+              <div className="flex items-center gap-1.5 px-3 py-1">
+                <span className="text-sm">{item.icon}</span>
+                <span className="text-[11px] font-semibold text-gray-600 whitespace-nowrap">{item.text}</span>
+              </div>
+              {i < 4 && <span className="text-gray-200 text-sm">|</span>}
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* ── Category Icon Strip ── */}
       <section className="bg-white px-2 py-3 shadow-sm">
         <div className="flex items-center justify-around gap-1">
@@ -207,10 +228,10 @@ export function MobileHome({ subscriptionPlans, homeSections }: MobileHomeProps)
               )}
             </div>
             <Link prefetch href={`/products?section=${section.slug}`} className="text-sm font-medium text-teal-600 p-2 -mr-2">
-              সবগুলো দেখুন
+              সবগুলো →
             </Link>
           </div>
-          <div className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide">
+          <div className="flex gap-3 overflow-x-auto pl-4 pr-8 pb-2 scrollbar-hide">
             {products.map((product, productIndex) => (
               <div key={product.id} className="flex-shrink-0 w-40">
                 <ProductCard

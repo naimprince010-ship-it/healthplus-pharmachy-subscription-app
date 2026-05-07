@@ -131,7 +131,7 @@ export function MobileShop({ categoryGrid, flashSaleProducts, categorySections }
               href="/flash-sale"
               className="flex items-center gap-1 text-sm font-medium text-teal-600"
             >
-              View All
+              সবগুলো →
               <ChevronRight className="h-4 w-4" />
             </Link>
           </div>
@@ -173,7 +173,7 @@ export function MobileShop({ categoryGrid, flashSaleProducts, categorySections }
               href={category.sidebarLinkUrl || `/category/${category.slug}`}
               className="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary-dark transition-colors"
             >
-              View All
+              সবগুলো →
               <ChevronRight className="h-4 w-4" />
             </Link>
           </div>

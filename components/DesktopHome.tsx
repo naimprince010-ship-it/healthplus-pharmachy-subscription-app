@@ -1,7 +1,8 @@
-﻿'use client'
+'use client'
 
 import Link from 'next/link'
-import { Package, Heart, Baby, Activity, Users, CheckCircle, Shield } from 'lucide-react'
+import { Package, Heart, Baby, Activity, Users, Shield, Plane } from 'lucide-react'
+import { HeroBannerSlider, type HeroBanner } from '@/components/HeroBannerSlider'
 
 function AnimatedDeliveryTruck() {
   return (
@@ -112,125 +113,149 @@ interface HomeSection {
     badgeText: string | null
     bgColor: string | null
   }
-  products: any[]
+  products: import('@/components/ProductCard').ProductCardProps[]
 }
 
 interface DesktopHomeProps {
   subscriptionPlans: SubscriptionPlan[]
   homeSections: HomeSection[]
+  heroBanners?: HeroBanner[]
 }
 
-export function DesktopHome({ subscriptionPlans, homeSections }: DesktopHomeProps) {
+export function DesktopHome({ subscriptionPlans, homeSections, heroBanners = [] }: DesktopHomeProps) {
   return (
     <>
+      {/* ── Trust Strip (desktop) ── */}
+      <div className="hidden lg:block w-full bg-teal-700 py-2">
+        <div className="flex items-center justify-center gap-8">
+          {[
+            { icon: '✅', text: '১০০% অরিজিনাল পণ্য' },
+            { icon: '🚚', text: 'দ্রুত ডেলিভারি সারা বাংলাদেশ' },
+            { icon: '🔒', text: 'গোপনীয় প্যাকেজিং' },
+            { icon: '↩', text: '৩ দিনের রিটার্ন পলিসি' },
+            { icon: '📞', text: '২৪/৭ কাস্টমার সাপোর্ট' },
+          ].map((item, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <span className="text-base">{item.icon}</span>
+              <span className="text-xs font-semibold text-white whitespace-nowrap">{item.text}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Hero Section */}
-      <section className="w-full bg-white py-5 lg:pb-12 lg:pt-8">
+      <section className="w-full bg-white py-5 lg:pb-10 lg:pt-6">
         <div className="w-full px-2 sm:px-4">
 
-          {/* Desktop layout: 55/45 two-column */}
-          <div className="hidden lg:flex lg:items-center lg:gap-8 lg:py-2">
+          {/* ── CMS Banner Slider (when admin has configured banners) ── */}
+          {heroBanners.length > 0 ? (
+            <div className="hidden lg:block">
+              <HeroBannerSlider banners={heroBanners} interval={4500} />
+            </div>
+          ) : (
+            /* ── Static fallback hero (shown when no banners are in DB) ── */
+            <div className="hidden lg:flex lg:items-center lg:gap-8 lg:py-2">
 
-            {/* Left 55%: Text + CTAs */}
-            <div style={{ flex: '0 0 55%' }}>
-              <h1 className="font-bold tracking-tight text-gray-900" style={{ fontSize: '2rem', lineHeight: 1.3 }}>
-                ঔষধ, কসমেটিক্স ও গ্রোসারি —<br />
-                <span style={{ color: '#0e9a6e' }}>এক জায়গায়, সাশ্রয়ী দামে</span>
-              </h1>
-              <p className="mt-4 max-w-md text-base text-gray-500 lg:text-lg">
-                প্রেসক্রিপশনের ঔষধ, পছন্দের কসমেটিক্স, আর রোজকার গ্রোসারি — অর্ডার করুন, আমরা পৌঁছে দেব।
-              </p>
+              {/* Left 55%: Text + CTAs */}
+              <div style={{ flex: '0 0 55%' }}>
+                <h1 className="font-bold tracking-tight text-gray-900" style={{ fontSize: '2rem', lineHeight: 1.3 }}>
+                  ঔষধ, কসমেটিক্স ও গ্রোসারি —<br />
+                  <span style={{ color: '#0e9a6e' }}>এক জায়গায়, সাশ্রয়ী দামে</span>
+                </h1>
+                <p className="mt-4 max-w-md text-base text-gray-500 lg:text-lg">
+                  প্রেসক্রিপশনের ঔষধ, পছন্দের কসমেটিক্স, আর রোজকার গ্রোসারি — অর্ডার করুন, আমরা পৌঁছে দেব।
+                </p>
 
-              {/* Badges */}
-              <div className="mt-5 flex flex-wrap gap-4">
-                <span className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                  <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: '#0e9a6e' }}>
-                    <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                {/* Badges */}
+                <div className="mt-5 flex flex-wrap gap-4">
+                  <span className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: '#0e9a6e' }}>
+                      <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                    </span>
+                    সব পণ্যে ১০% ছাড়
                   </span>
-                  সব পণ্যে ১০% ছাড়
-                </span>
-                <span className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                  <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: '#0e9a6e' }}>
-                    <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  <span className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: '#0e9a6e' }}>
+                      <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                    </span>
+                    ২৪–৪৮ ঘন্টায় ডেলিভারি
                   </span>
-                  <svg className="mr-2 flex-shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="none">
-                    <path d="M1 3h15v13H1z" stroke="#0e9a6e" strokeWidth="1.5"/>
-                    <path d="M16 8h4l3 4v5h-7V8z" stroke="#0e9a6e" strokeWidth="1.5"/>
-                    <circle cx="5.5" cy="18.5" r="2" stroke="#0e9a6e" strokeWidth="1.5"/>
-                    <circle cx="18.5" cy="18.5" r="2" stroke="#0e9a6e" strokeWidth="1.5"/>
-                  </svg>
-                  ২৪–৪৮ ঘন্টায় ডেলিভারি
-                </span>
+                </div>
+
+                {/* Buttons */}
+                <div className="mt-7 flex items-center gap-4">
+                  <Link
+                    href="/membership"
+                    className="rounded-xl px-7 py-3 text-base font-bold text-white shadow-md transition-all hover:-translate-y-0.5 hover:opacity-90"
+                    style={{ backgroundColor: '#0e9a6e' }}
+                  >
+                    মেম্বারশিপ নিন
+                  </Link>
+                  <Link
+                    href="/subscriptions"
+                    className="rounded-xl border-2 bg-white px-7 py-3 text-base font-bold transition-all hover:-translate-y-0.5 hover:bg-green-50"
+                    style={{ borderColor: '#0e9a6e', color: '#0e9a6e' }}
+                  >
+                    মাসিক প্ল্যান দেখুন
+                  </Link>
+                </div>
               </div>
 
-              {/* Buttons */}
-              <div className="mt-7 flex items-center gap-4">
-                <Link
-                  href="/membership"
-                  className="rounded-xl px-7 py-3 text-base font-bold text-white shadow-md transition-all hover:-translate-y-0.5 hover:opacity-90"
-                  style={{ backgroundColor: '#0e9a6e' }}
-                >
-                  মেম্বারশিপ নিন
-                </Link>
-                <Link
-                  href="/subscriptions"
-                  className="rounded-xl border-2 bg-white px-7 py-3 text-base font-bold transition-all hover:-translate-y-0.5 hover:bg-green-50"
-                  style={{ borderColor: '#0e9a6e', color: '#0e9a6e' }}
-                >
-                  মাসিক প্ল্যান দেখুন
-                </Link>
+              {/* Right 45%: Category grid */}
+              <div className="rounded-2xl p-5" style={{ flex: '0 0 45%', backgroundColor: '#f0faf5' }}>
+                <div className="grid grid-cols-2 gap-3">
+                  <Link href="/medicines" className="flex flex-col items-center rounded-xl border border-gray-100 bg-white p-5 transition-all hover:-translate-y-0.5 hover:shadow-md">
+                    <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl" style={{ backgroundColor: '#dbeafe' }}>
+                      <svg className="h-6 w-6" style={{ color: '#378ADD' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-3-3v6m-7 4h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                    </span>
+                    <span className="text-sm font-bold text-gray-800">ওষুধ</span>
+                    <span className="mt-0.5 text-xs text-gray-400">৫০০০+ পণ্য</span>
+                  </Link>
+                  <Link href="/products?category=cosmetics" className="flex flex-col items-center rounded-xl border border-gray-100 bg-white p-5 transition-all hover:-translate-y-0.5 hover:shadow-md">
+                    <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl" style={{ backgroundColor: '#fce7f3' }}>
+                      <svg className="h-6 w-6" style={{ color: '#D4537E' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </span>
+                    <span className="text-sm font-bold text-gray-800">কসমেটিক্স</span>
+                    <span className="mt-0.5 text-xs text-gray-400">৩০০০+ পণ্য</span>
+                  </Link>
+                  <Link href="/products?category=grocery" className="flex flex-col items-center rounded-xl border border-gray-100 bg-white p-5 transition-all hover:-translate-y-0.5 hover:shadow-md">
+                    <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl" style={{ backgroundColor: '#dcfce7' }}>
+                      <svg className="h-6 w-6" style={{ color: '#639922' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    </span>
+                    <span className="text-sm font-bold text-gray-800">গ্রোসারি</span>
+                    <span className="mt-0.5 text-xs text-gray-400">২০০০+ পণ্য</span>
+                  </Link>
+                  <Link href="/flash-sale" className="relative flex flex-col items-center rounded-xl border-2 bg-white p-5 transition-all hover:-translate-y-0.5 hover:shadow-md" style={{ borderColor: '#0e9a6e' }}>
+                    <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl" style={{ backgroundColor: '#d1fae5' }}>
+                      <svg className="h-6 w-6" style={{ color: '#0e9a6e' }} fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </svg>
+                    </span>
+                    <span className="text-sm font-bold text-gray-800">ফ্লাশ সেল</span>
+                    <span className="absolute bottom-3 right-3 rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">১০% অফ</span>
+                  </Link>
+                  <Link href="/travel" className="col-span-2 flex items-center justify-between rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 transition-all hover:-translate-y-0.5 hover:shadow-md">
+                    <div>
+                      <p className="text-sm font-bold text-sky-900">নতুন সার্ভিস: ট্রাভেল</p>
+                      <p className="text-xs text-sky-700">ফ্লাইট ডিল ও ট্রাভেল অফার দেখুন</p>
+                    </div>
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-sky-600 shadow-sm">
+                      <Plane className="h-5 w-5" />
+                    </span>
+                  </Link>
+                </div>
               </div>
             </div>
+          )}
 
-            {/* Right 45%: Category grid */}
-            <div className="rounded-2xl p-5" style={{ flex: '0 0 45%', backgroundColor: '#f0faf5' }}>
-              <div className="grid grid-cols-2 gap-3">
-                {/* ওষুধ */}
-                <Link href="/medicines" className="flex flex-col items-center rounded-xl border border-gray-100 bg-white p-5 transition-all hover:-translate-y-0.5 hover:shadow-md">
-                  <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl" style={{ backgroundColor: '#dbeafe' }}>
-                    <svg className="h-6 w-6" style={{ color: '#378ADD' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-3-3v6m-7 4h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                  </span>
-                  <span className="text-sm font-bold text-gray-800">ওষুধ</span>
-                  <span className="mt-0.5 text-xs text-gray-400">৫০০০+ পণ্য</span>
-                </Link>
-                {/* কসমেটিক্স */}
-                <Link href="/products?category=cosmetics" className="flex flex-col items-center rounded-xl border border-gray-100 bg-white p-5 transition-all hover:-translate-y-0.5 hover:shadow-md">
-                  <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl" style={{ backgroundColor: '#fce7f3' }}>
-                    <svg className="h-6 w-6" style={{ color: '#D4537E' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </span>
-                  <span className="text-sm font-bold text-gray-800">কসমেটিক্স</span>
-                  <span className="mt-0.5 text-xs text-gray-400">৩০০০+ পণ্য</span>
-                </Link>
-                {/* গ্রোসারি */}
-                <Link href="/products?category=grocery" className="flex flex-col items-center rounded-xl border border-gray-100 bg-white p-5 transition-all hover:-translate-y-0.5 hover:shadow-md">
-                  <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl" style={{ backgroundColor: '#dcfce7' }}>
-                    <svg className="h-6 w-6" style={{ color: '#639922' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                  </span>
-                  <span className="text-sm font-bold text-gray-800">গ্রোসারি</span>
-                  <span className="mt-0.5 text-xs text-gray-400">২০০০+ পণ্য</span>
-                </Link>
-                {/* ফ্লাশ সেল */}
-                <Link href="/flash-sale" className="relative flex flex-col items-center rounded-xl border-2 bg-white p-5 transition-all hover:-translate-y-0.5 hover:shadow-md" style={{ borderColor: '#0e9a6e' }}>
-                  <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl" style={{ backgroundColor: '#d1fae5' }}>
-                    <svg className="h-6 w-6" style={{ color: '#0e9a6e' }} fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                    </svg>
-                  </span>
-                  <span className="text-sm font-bold text-gray-800">ফ্লাশ সেল</span>
-                  <span className="absolute bottom-3 right-3 rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">১০% অফ</span>
-                </Link>
-              </div>
-            </div>
-          </div>
-
-          {/* Mobile/Tablet layout */}
-          <div className="lg:hidden">
-            <div className="mb-5">
+          {/* Mobile/Tablet layout — unchanged */}
+          <div className="lg:hidden">            <div className="mb-5">
               <p aria-hidden="true" className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
                 ঔষধ, কসমেটিক্স ও গ্রোসারি —{' '}
                 <span className="text-teal-600">এক জায়গায়, সাশ্রয়ী দামে</span>

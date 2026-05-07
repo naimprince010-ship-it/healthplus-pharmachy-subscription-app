@@ -8,6 +8,7 @@ import { ArrowLeft, ShieldCheck } from 'lucide-react'
 import { Metadata } from 'next'
 import { isProductLinkedToAzanCatalog } from '@/lib/integrations/azan-catalog'
 import { getStorefrontImageUrl } from '@/lib/image-url'
+import { buildProductShareMeta } from '@/lib/product-og'
 import { serializeJsonLd } from '@/lib/serialize-json-ld'
 import { getCachedProductBySlug } from './get-product-by-slug'
 import { GROCERY_CATEGORY_SLUG, isGroceryShopEnabled, isMedicineShopEnabled } from '@/lib/site-features'
@@ -33,32 +34,51 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
       return {}
     }
 
-    const categoryName = product.category?.name || ''
-    const shouldHideCategoryInSeoTitle = categoryName.trim().toLowerCase() === 'azan wholesale'
-    const safeCategorySuffix = categoryName && !shouldHideCategoryInSeoTitle ? ` - ${categoryName}` : ''
-    const seoTitle = product.seoTitle || `${product.name}${safeCategorySuffix} | Halalzi`
-    const seoDescription = product.seoDescription || product.description || `Buy ${product.name} online at best price from Halalzi. Fast delivery across Bangladesh.`
+    const meta = buildProductShareMeta({
+      name: product.name,
+      slug: product.slug,
+      seoTitle: product.seoTitle,
+      seoDescription: product.seoDescription,
+      description: product.description,
+      seoKeywords: product.seoKeywords,
+      imageUrl: product.imageUrl,
+      category: product.category ?? null,
+    })
 
-    const siteBase = (process.env.NEXT_PUBLIC_SITE_URL || 'https://halalzi.com').replace(/\/$/, '')
-    let ogImage = product.imageUrl ? getStorefrontImageUrl(product.imageUrl) : null
-    if (ogImage && ogImage.startsWith('/')) {
-      ogImage = `${siteBase}${ogImage}`
+    const isHygieneProduct = 
+      product.category?.name.toLowerCase().includes('women') || 
+      product.category?.name.toLowerCase().includes('hygiene') ||
+      product.name.toLowerCase().includes('pad') ||
+      product.name.toLowerCase().includes('napkin') ||
+      product.name.toLowerCase().includes('senora') ||
+      product.name.toLowerCase().includes('joya') ||
+      product.name.toLowerCase().includes('freedom')
+
+    let customKeywords = meta.keywords
+    if (isHygieneProduct) {
+      customKeywords = `${customKeywords ? customKeywords + ', ' : ''}সেনোরা হোম ডেলিভারি, গোপন প্যাকেজিং, Joya Pad Online, স্যানিটারি ন্যাপকিন হোম ডেলিভারি, discreet packaging delivery`
     }
 
     return {
-      title: seoTitle,
-      description: seoDescription,
-      keywords: product.seoKeywords || undefined,
+      title: meta.title,
+      description: meta.description,
+      keywords: customKeywords,
       alternates: {
-        canonical: `/products/${slug}`,
+        canonical: meta.canonicalPath,
       },
       openGraph: {
-        title: seoTitle,
-        description: seoDescription,
-        url: `${siteBase}/products/${slug}`,
+        title: meta.title,
+        description: meta.description,
+        url: meta.canonicalUrl,
         siteName: 'Halalzi',
         type: 'website',
-        images: ogImage ? [ogImage] : [],
+        images: [{ url: meta.ogImageAbs }],
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: meta.title,
+        description: meta.description,
+        images: [meta.ogImageAbs],
       },
     }
   } catch (error) {
@@ -164,15 +184,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.name,
-    description: product.description || `${product.name} - Buy online at best price`,
+    description: product.description || `${product.name} — বাংলাদেশে অনলাইনে কিনুন সেরা দামে। Halalzi-তে ১০০% অরিজিনাল পণ্য, দ্রুত ডেলিভারি।`,
     image: jsonLdImageUrl,
     sku: product.id,
-    brand: product.manufacturer?.name || product.brandName ? {
+    // 'brand' — always provided; fixes "No global identifier" warning
+    brand: {
       '@type': 'Brand',
-      name: product.manufacturer?.name || product.brandName,
-    } : {
-      '@type': 'Brand',
-      name: 'Halalzi',
+      name: product.manufacturer?.name || product.brandName || 'Halalzi',
     },
     category: product.category?.name,
     offers: {
@@ -187,6 +205,45 @@ export default async function ProductPage({ params }: ProductPageProps) {
       seller: {
         '@type': 'Organization',
         name: 'Halalzi',
+        url: 'https://halalzi.com',
+      },
+      // Fixes: "Missing field 'hasMerchantReturnPolicy' (in 'offers')"
+      hasMerchantReturnPolicy: {
+        '@type': 'MerchantReturnPolicy',
+        applicableCountry: 'BD',
+        returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+        merchantReturnDays: 3,
+        returnMethod: 'https://schema.org/ReturnByMail',
+        returnFees: 'https://schema.org/FreeReturn',
+        refundType: 'https://schema.org/FullRefund',
+      },
+      // Fixes: "Missing field 'shippingDetails' (in 'offers')"
+      shippingDetails: {
+        '@type': 'OfferShippingDetails',
+        shippingRate: {
+          '@type': 'MonetaryAmount',
+          value: 60,
+          currency: 'BDT',
+        },
+        shippingDestination: {
+          '@type': 'DefinedRegion',
+          addressCountry: 'BD',
+        },
+        deliveryTime: {
+          '@type': 'ShippingDeliveryTime',
+          handlingTime: {
+            '@type': 'QuantitativeValue',
+            minValue: 0,
+            maxValue: 1,
+            unitCode: 'DAY',
+          },
+          transitTime: {
+            '@type': 'QuantitativeValue',
+            minValue: 1,
+            maxValue: 3,
+            unitCode: 'DAY',
+          },
+        },
       },
     },
   }
@@ -226,7 +283,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }}
       />
-      <div className="bg-gray-50 py-8 pb-32 md:pb-8">
+      <div className="bg-gray-50 pt-8 pb-32 md:pb-4">
         {/* MedEasy-style layout: centered container matching home page */}
         <div className="w-full max-w-[1480px] mx-auto px-4">
           <Link
@@ -282,6 +339,25 @@ export default async function ProductPage({ params }: ProductPageProps) {
                     </span>
                   ) : null}
                 </h1>
+                
+                {(() => {
+                  const isHygieneProduct = 
+                    product.category?.name.toLowerCase().includes('women') || 
+                    product.category?.name.toLowerCase().includes('hygiene') ||
+                    product.name.toLowerCase().includes('pad') ||
+                    product.name.toLowerCase().includes('napkin') ||
+                    product.name.toLowerCase().includes('senora') ||
+                    product.name.toLowerCase().includes('joya') ||
+                    product.name.toLowerCase().includes('freedom');
+                  
+                  if (!isHygieneProduct) return null;
+                  
+                  return (
+                    <div className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-pink-50 px-3 py-1.5 text-sm font-semibold text-pink-700 border border-pink-100">
+                      <span aria-hidden="true">🔒</span> ১০০% গোপন প্যাকেজিং ও প্রাইভেসির গ্যারান্টি
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Line 1 (grey): Parent Category/Department (for general products) OR Dosage Form (for medicines) */}
@@ -363,9 +439,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
               {product.description && (
                 <div className="mt-8">
                   <h2 className="text-xl font-bold text-gray-900">বিবরণ</h2>
-                  <p className="mt-1 text-xs text-gray-500">
-                    বিষয়বস্তু বাংলায় দেখাতে অ্যাডমিনে বিবরণ বাংলায় সংরক্ষণ করুন।
-                  </p>
                   <p className="mt-4 text-gray-600 whitespace-pre-line">
                     {product.description}
                   </p>
@@ -420,7 +493,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </Suspense>
           )}
 
-          <Suspense fallback={<div className="mt-10 h-40 animate-pulse rounded-lg bg-gray-100" aria-hidden />}>
+          <Suspense fallback={<div className="mt-6 h-40 animate-pulse rounded-lg bg-gray-100" aria-hidden />}>
             <SimilarProductsSection
               productId={product.id}
               categoryId={product.category?.id ?? null}
@@ -429,7 +502,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           </Suspense>
 
           {/* Reviews Section */}
-          <section className="mt-10 bg-white rounded-xl p-6 shadow-sm">
+          <section className="mt-6 bg-white rounded-xl p-6 shadow-sm">
             <ProductReviews productId={product.id} />
           </section>
         </div>
