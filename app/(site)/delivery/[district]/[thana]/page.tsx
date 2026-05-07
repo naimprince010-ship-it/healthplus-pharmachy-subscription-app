@@ -16,11 +16,10 @@ interface ThanaPageProps {
 }
 
 export async function generateStaticParams() {
-  const allThanas = getAllThanasWithDistrictSlug()
-  return allThanas.map((thana) => ({
-    district: thana.districtSlug,
-    thana: thana.slug,
-  }))
+  // Return empty array to use On-Demand ISR.
+  // This prevents generating 5000+ thana pages during the Vercel build.
+  // Pages will be generated and cached on the first user request.
+  return []
 }
 
 export async function generateMetadata({ params }: ThanaPageProps): Promise<Metadata> {

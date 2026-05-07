@@ -3,6 +3,15 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   serverExternalPackages: ['@prisma/client', 'bcryptjs'],
   turbopack: {},
+  async rewrites() {
+    return [
+      // Dedicated sidebar URL; internally loads Product Import with Chaldal-focused copy.
+      {
+        source: '/admin/chaldal-import',
+        destination: '/admin/product-import?from=chaldal',
+      },
+    ]
+  },
   // Fewer concurrent prerenders ⇒ fewer simultaneous DB connects (matches small pg Pool per worker).
   experimental: {
     staticGenerationMaxConcurrency: 2,

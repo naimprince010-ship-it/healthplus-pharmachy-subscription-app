@@ -15,9 +15,10 @@ interface DistrictPageProps {
 }
 
 export async function generateStaticParams() {
-  return districts.map((district) => ({
-    district: district.slug,
-  }))
+  // Return empty array to use On-Demand ISR.
+  // This prevents generating all district pages during the Vercel build.
+  // Pages will be generated and cached on the first user request.
+  return []
 }
 
 export async function generateMetadata({ params }: DistrictPageProps): Promise<Metadata> {
