@@ -23,6 +23,7 @@ const nextConfig: NextConfig = {
       { pathname: "/api/image-proxy/**" },
       { pathname: "/images/**" },
       { pathname: "/icons/**" },
+      { pathname: "/banners/**" },
     ],
     remotePatterns: [
       {
