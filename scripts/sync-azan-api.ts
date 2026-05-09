@@ -15,6 +15,7 @@ type AnyRecord = Record<string, unknown>
 interface AzanProduct {
   name: string
   supplierPrice: number
+  mrpPrice: number | null
   stock: number
   sku: string | null
   imageUrl: string | null
@@ -506,13 +507,7 @@ async function upsertAzanProducts(products: AzanProduct[]) {
 
   for (const item of products) {
     const slug = item.sku ? `${slugify(item.name)}-${slugify(item.sku)}` : slugify(item.name)
-    let sellingPrice = Math.ceil(item.supplierPrice * markupMultiplier)
-    
-    // Cap sellingPrice to Azan's true MRP to prevent 'Invalid price' errors on API
-    if (item.mrpPrice && sellingPrice > item.mrpPrice) {
-      sellingPrice = Math.max(item.mrpPrice, item.supplierPrice)
-    }
-
+    const sellingPrice = item.mrpPrice ?? Math.ceil(item.supplierPrice * markupMultiplier)
     const mrp = item.mrpPrice || sellingPrice
 
     const k = item.sourceCategoryKey?.trim().toLowerCase() ?? null

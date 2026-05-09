@@ -18,6 +18,7 @@ interface AzanNormalizedProduct {
   sku: string | null
   imageUrl: string | null
   purchasePrice: number | null
+  mrpPrice: number | null
   stockQuantity: number
   brandName: string | null
   sourceCategoryKey: string | null
@@ -128,6 +129,8 @@ function normalizeProduct(item: AnyRecord): AzanNormalizedProduct | null {
 
   if (purchasePrice == null || purchasePrice <= 0) return null
 
+  const mrpPrice = parseNumber(item.mrp_price) ?? parseNumber(item.mrp)
+
   let firstPicture: string | null = null
   if (Array.isArray(item.pictures) && item.pictures[0]) {
     const p0 = item.pictures[0]
@@ -157,6 +160,7 @@ function normalizeProduct(item: AnyRecord): AzanNormalizedProduct | null {
     sku,
     imageUrl: normalizeImage(rawImage),
     purchasePrice,
+    mrpPrice,
     stockQuantity: stockQuantity > 0 ? stockQuantity : 0,
     brandName: getStringValue(item, ['brand_name', 'brand']),
     sourceCategoryKey: sourceCategory.key,
@@ -360,7 +364,8 @@ export async function POST() {
     for (const product of products) {
       const baseSlug = slugify(product.name)
       const slug = product.sku ? `${baseSlug}-${slugify(product.sku)}` : baseSlug
-      const sellingPrice = product.purchasePrice ? Math.ceil(product.purchasePrice * multiplier) : 0
+      const sellingPrice = product.mrpPrice ?? (product.purchasePrice ? Math.ceil(product.purchasePrice * multiplier) : 0)
+      const mrp = product.mrpPrice ?? sellingPrice
       const k = product.sourceCategoryKey?.trim().toLowerCase() ?? null
       let resolvedCategoryId: string | null = null
       if (k) {
@@ -399,7 +404,7 @@ export async function POST() {
         supplierSku: product.sku,
         sourceCategoryName: product.sourceCategoryLabel || product.sourceCategoryKey,
         supplierProductId: product.supplierProductId,
-        ...(product.purchasePrice ? { purchasePrice: product.purchasePrice, sellingPrice, mrp: sellingPrice } : {}),
+        ...(product.purchasePrice ? { purchasePrice: product.purchasePrice, sellingPrice, mrp } : {}),
       }
 
       if (existing) {

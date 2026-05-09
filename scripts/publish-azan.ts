@@ -13,7 +13,7 @@ async function main() {
       isActive: false,
       purchasePrice: { gt: 0 }
     },
-    select: { id: true, purchasePrice: true }
+    select: { id: true, purchasePrice: true, mrp: true }
   })
 
   console.log('Found ' + products.length + ' draft products with a valid cost price.')
@@ -27,10 +27,10 @@ async function main() {
   for (let i = 0; i < products.length; i += batchSize) {
     const batch = products.slice(i, i + batchSize)
     await Promise.all(batch.map(p => {
-      const sp = Math.ceil((p.purchasePrice || 0) * marginMultiplier)
+      const sp = p.mrp ?? Math.ceil((p.purchasePrice || 0) * marginMultiplier)
       return prisma.product.update({
         where: { id: p.id },
-        data: { sellingPrice: sp, mrp: sp, isActive: true }
+        data: { sellingPrice: sp, mrp: p.mrp ?? sp, isActive: true }
       })
     }))
     updated += batch.length
