@@ -389,7 +389,7 @@ async function main() {
       data: {
         title: 'Welcome to HealthPlus',
         description: 'Get 10% discount with membership',
-        imageUrl: '/banners/welcome.jpg',
+        imageUrl: '/images/hero-pharmacy.jpg',
         link: '/membership',
         location: 'HOME_HERO',
         order: 1,
