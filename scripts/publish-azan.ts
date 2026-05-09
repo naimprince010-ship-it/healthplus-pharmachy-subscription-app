@@ -7,8 +7,8 @@ async function main() {
       deletedAt: null,
       OR: [
         { category: { is: { name: 'Azan Wholesale' } } },
-        { supplierSku: { not: null, not: '' } },
-        { sourceCategoryName: { not: null, not: '' } }
+        { AND: [{ supplierSku: { not: null } }, { supplierSku: { not: '' } }] },
+        { AND: [{ sourceCategoryName: { not: null } }, { sourceCategoryName: { not: '' } }] }
       ],
       isActive: false,
       purchasePrice: { gt: 0 }
