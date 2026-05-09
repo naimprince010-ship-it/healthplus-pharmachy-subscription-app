@@ -7,6 +7,7 @@ import { serializeJsonLd } from '@/lib/serialize-json-ld'
 import { getAllThanasWithDistrictSlug, getUnionsByUpazilaSlug } from '@/lib/bd-locations'
 
 export const revalidate = 86400 // Revalidate once a day
+export const dynamicParams = true // On-demand ISR — don't pre-build all ~500 thanas at deploy time
 
 interface ThanaPageProps {
   params: Promise<{
@@ -17,8 +18,8 @@ interface ThanaPageProps {
 
 export async function generateStaticParams() {
   // Return empty array to use On-Demand ISR.
-  // This prevents generating 5000+ thana pages during the Vercel build.
-  // Pages will be generated and cached on the first user request.
+  // This prevents generating 500+ thana pages during the Vercel build.
+  // Pages will be generated and cached on the first user request (24 h via revalidate).
   return []
 }
 

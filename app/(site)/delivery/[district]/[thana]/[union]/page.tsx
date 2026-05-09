@@ -7,6 +7,7 @@ import { serializeJsonLd } from '@/lib/serialize-json-ld'
 import { getAllUnionsWithUpazilaSlug } from '@/lib/bd-locations'
 
 export const revalidate = 86400 // Revalidate once a day
+export const dynamicParams = true // Allow on-demand generation (don't pre-build all unions at deploy time)
 
 interface UnionPageProps {
   params: Promise<{
@@ -16,14 +17,10 @@ interface UnionPageProps {
   }>
 }
 
-export async function generateStaticParams() {
-  const allUnions = getAllUnionsWithUpazilaSlug()
-  return allUnions.map((union) => ({
-    district: union.districtSlug,
-    thana: union.upazilaSlug,
-    union: union.slug,
-  }))
-}
+// generateStaticParams removed: pre-building all ~10,000 union pages was the
+// main reason deploys took so long. Pages are now generated on first visit and
+// cached for 24 h (revalidate = 86400). SEO is unaffected — Googlebot triggers
+// the first render just like any other visitor.
 
 export async function generateMetadata({ params }: UnionPageProps): Promise<Metadata> {
   const { district: districtSlug, thana: thanaSlug, union: unionSlug } = await params

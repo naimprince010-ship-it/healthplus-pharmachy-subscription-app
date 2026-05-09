@@ -14,7 +14,7 @@ const nextConfig: NextConfig = {
   },
   // Fewer concurrent prerenders ⇒ fewer simultaneous DB connects (matches small pg Pool per worker).
   experimental: {
-    staticGenerationMaxConcurrency: 2,
+    staticGenerationMaxConcurrency: 4, // Increased from 2 — delivery pages now use ISR so fewer pages pre-build
   },
   images: {
     // next/image rejects same-origin URLs with ?query unless explicitly allowed (e.g. /api/image-proxy?url=...).
