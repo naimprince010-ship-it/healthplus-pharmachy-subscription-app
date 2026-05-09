@@ -417,7 +417,8 @@ async function fetchAzanProducts(): Promise<AzanProduct[]> {
     })
 
     if (!response.ok) {
-      throw new Error(`Azan API failed at page ${page}: ${response.status} ${response.statusText}`)
+      console.warn(`Azan API failed at page ${page}: ${response.status} ${response.statusText}. Stopping pagination and saving what we have.`)
+      break
     }
 
     const payload = (await response.json()) as AnyRecord
