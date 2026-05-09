@@ -53,6 +53,7 @@ export async function POST(request: NextRequest) {
         id: true,
         purchasePrice: true,
         sellingPrice: true,
+        mrp: true,
       },
     })
 
@@ -72,12 +73,18 @@ export async function POST(request: NextRequest) {
         continue
       }
 
-      const sellingPrice = Math.ceil(product.purchasePrice * marginMultiplier)
+      let sellingPrice = Math.ceil(product.purchasePrice * marginMultiplier)
+      
+      // Cap the selling price at Azan's MRP if it exists, to avoid "Invalid price" error
+      // But ensure we never sell below the purchase price.
+      if (product.mrp && sellingPrice > product.mrp) {
+        sellingPrice = Math.max(product.mrp, product.purchasePrice)
+      }
+
       await prisma.product.update({
         where: { id: product.id },
         data: {
           sellingPrice,
-          mrp: sellingPrice,
           ...(publish ? { isActive: true } : {}),
         },
       })

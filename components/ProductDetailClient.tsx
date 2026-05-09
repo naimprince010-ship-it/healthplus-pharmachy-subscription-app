@@ -449,10 +449,20 @@ export function ProductDetailClient({
 
       {/* Sticky Mobile Bottom Bar (Only visible on mobile, positioned above bottom nav) */}
       {!isOutOfStock && (
-        <div className="fixed bottom-[60px] left-0 right-0 z-40 flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 shadow-[0_-4px_10px_-1px_rgba(0,0,0,0.1)] md:hidden pb-safe">
-          <div className="flex flex-col">
-            {hasDiscount && <span className="text-xs font-medium text-gray-500 line-through">৳{effectiveMrp.toFixed(2)}</span>}
-            <span className="text-lg font-bold text-teal-700 leading-tight">৳{price.toFixed(2)}</span>
+        <div className="fixed bottom-[60px] left-0 right-0 z-40 flex items-center justify-between gap-3 border-t border-gray-200 bg-white px-4 py-2.5 shadow-[0_-4px_10px_-1px_rgba(0,0,0,0.1)] md:hidden pb-safe">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            {imageUrl && (
+              <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md border border-gray-100 bg-gray-50">
+                <img src={imageUrl} alt={name} className="h-full w-full object-cover" />
+              </div>
+            )}
+            <div className="flex flex-col min-w-0 justify-center">
+              <span className="truncate text-[11px] font-medium text-gray-600 mb-0.5">{name}</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-base font-bold text-teal-700 leading-none">৳{price.toFixed(2)}</span>
+                {hasDiscount && <span className="text-[10px] font-medium text-gray-400 line-through">৳{effectiveMrp.toFixed(2)}</span>}
+              </div>
+            </div>
           </div>
           <button
             type="button"

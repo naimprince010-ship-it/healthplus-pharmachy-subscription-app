@@ -621,6 +621,9 @@ export default function ProductsPage() {
                     Price
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Margin
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                     Stock
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
@@ -683,6 +686,18 @@ export default function ProductsPage() {
                         <div className="text-xs text-gray-500 line-through">
                           ৳{product.mrp.toFixed(2)}
                         </div>
+                      )}
+                    </td>
+                    <td className="whitespace-nowrap px-6 py-4">
+                      {product.purchasePrice && product.purchasePrice > 0 ? (
+                        <span className={`inline-flex rounded-full px-2 text-xs font-bold leading-5 ${((product.sellingPrice - product.purchasePrice) / product.purchasePrice * 100) >= 10
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-amber-100 text-amber-800'
+                          }`}>
+                          {((product.sellingPrice - product.purchasePrice) / product.purchasePrice * 100).toFixed(1)}%
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-400">N/A</span>
                       )}
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">

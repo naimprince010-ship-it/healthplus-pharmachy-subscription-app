@@ -319,6 +319,8 @@ function normalizeProduct(raw: unknown): AzanProduct | null {
     finalSupplierPrice = Number.isFinite(defaultSupplierPrice) && defaultSupplierPrice >= 0 ? defaultSupplierPrice : 0
   }
 
+  const mrpPrice = parseNumber(item.mrp_price) ?? parseNumber(item.mrp) ?? null
+
   const stock =
     parseInteger(item.stock) ??
     parseInteger(item.stock_quantity) ??
@@ -359,6 +361,7 @@ function normalizeProduct(raw: unknown): AzanProduct | null {
     sourceCategoryKey: sourceCategory.key,
     sourceCategoryLabel: sourceCategory.label,
     supplierProductId: parseAzanWholesaleProductNumericId(item as AnyRecord),
+    mrpPrice,
   }
 }
 
@@ -450,6 +453,18 @@ async function fetchAzanProducts(): Promise<AzanProduct[]> {
   return results
 }
 
+interface AzanProduct {
+  name: string
+  supplierPrice: number
+  stock: number
+  sku: string | null
+  imageUrl: string | null
+  sourceCategoryKey: string | null
+  sourceCategoryLabel: string | null
+  supplierProductId: number | null
+  mrpPrice: number | null
+}
+
 async function upsertAzanProducts(products: AzanProduct[]) {
   const prismaClient = getPrismaClient()
   const markupMultiplier = getAzanRetailMultiplierFromEnv()
@@ -491,7 +506,14 @@ async function upsertAzanProducts(products: AzanProduct[]) {
 
   for (const item of products) {
     const slug = item.sku ? `${slugify(item.name)}-${slugify(item.sku)}` : slugify(item.name)
-    const sellingPrice = Math.ceil(item.supplierPrice * markupMultiplier)
+    let sellingPrice = Math.ceil(item.supplierPrice * markupMultiplier)
+    
+    // Cap sellingPrice to Azan's true MRP to prevent 'Invalid price' errors on API
+    if (item.mrpPrice && sellingPrice > item.mrpPrice) {
+      sellingPrice = Math.max(item.mrpPrice, item.supplierPrice)
+    }
+
+    const mrp = item.mrpPrice || sellingPrice
 
     const k = item.sourceCategoryKey?.trim().toLowerCase() ?? null
     let resolvedCategoryId = category.id
@@ -511,7 +533,7 @@ async function upsertAzanProducts(products: AzanProduct[]) {
           name: item.name,
           purchasePrice: item.supplierPrice,
           sellingPrice,
-          mrp: sellingPrice,
+          mrp,
           stockQuantity: item.stock,
           inStock: hasStock,
           isActive: hasStock,
@@ -528,7 +550,7 @@ async function upsertAzanProducts(products: AzanProduct[]) {
           slug,
           sellingPrice,
           purchasePrice: item.supplierPrice,
-          mrp: sellingPrice,
+          mrp,
           imageUrl: item.imageUrl,
           stockQuantity: item.stock,
           isActive: hasStock,
