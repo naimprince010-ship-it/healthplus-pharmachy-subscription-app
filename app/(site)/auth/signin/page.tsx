@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
-import { signIn, getSession } from 'next-auth/react'
+import { signIn, getSession, useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { z } from 'zod'
@@ -26,6 +26,7 @@ const signinSchema = z.object({
 function SignInForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { data: session, status } = useSession()
   const [formData, setFormData] = useState({
     identifier: '',
     password: '',
@@ -35,6 +36,22 @@ function SignInForm() {
   const [serverError, setServerError] = useState('')
   const [step, setStep] = useState<1 | 2>(1)
   const [sessionId, setSessionId] = useState('')
+
+  useEffect(() => {
+    if (status !== 'authenticated' || !session?.user) return
+
+    const callbackUrl = searchParams.get('callbackUrl')
+    const isValidCallback = callbackUrl && callbackUrl.startsWith('/') && !callbackUrl.startsWith('//')
+    const destination =
+      isValidCallback && callbackUrl !== '/'
+        ? callbackUrl
+        : session.user.role === 'ADMIN'
+          ? '/admin'
+          : '/dashboard'
+
+    router.replace(destination)
+    router.refresh()
+  }, [router, searchParams, session, status])
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault()
