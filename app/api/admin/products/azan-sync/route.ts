@@ -9,7 +9,6 @@ import {
 import { slugify } from '@/lib/slugify'
 import { invalidateSearchIndex } from '@/lib/search-index'
 import { getAzanOrderForwardEnvSummary } from '@/lib/integrations/azan-wholesale'
-import { getAzanRetailMultiplierFromEnv } from '@/lib/azan-pricing'
 
 type AnyRecord = Record<string, unknown>
 
@@ -18,7 +17,7 @@ interface AzanNormalizedProduct {
   sku: string | null
   imageUrl: string | null
   purchasePrice: number | null
-  mrpPrice: number | null
+  mrpPrice: number
   stockQuantity: number
   brandName: string | null
   sourceCategoryKey: string | null
@@ -130,6 +129,7 @@ function normalizeProduct(item: AnyRecord): AzanNormalizedProduct | null {
   if (purchasePrice == null || purchasePrice <= 0) return null
 
   const mrpPrice = parseNumber(item.mrp_price) ?? parseNumber(item.mrp)
+  if (!mrpPrice || mrpPrice <= 0) return null
 
   let firstPicture: string | null = null
   if (Array.isArray(item.pictures) && item.pictures[0]) {
@@ -330,9 +330,6 @@ export async function POST() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
-    /** Same rule as `scripts/sync-azan-api.ts`: 60% markup on cost = ×1.6 unless `AZAN_WHOLESALE_MARKUP` set */
-    const multiplier = getAzanRetailMultiplierFromEnv()
-
     const { endpoint, products } = await fetchAzanProducts()
     let created = 0
     let updated = 0
@@ -364,8 +361,8 @@ export async function POST() {
     for (const product of products) {
       const baseSlug = slugify(product.name)
       const slug = product.sku ? `${baseSlug}-${slugify(product.sku)}` : baseSlug
-      const sellingPrice = product.mrpPrice ?? (product.purchasePrice ? Math.ceil(product.purchasePrice * multiplier) : 0)
-      const mrp = product.mrpPrice ?? sellingPrice
+      const sellingPrice = product.mrpPrice
+      const mrp = product.mrpPrice
       const k = product.sourceCategoryKey?.trim().toLowerCase() ?? null
       let resolvedCategoryId: string | null = null
       if (k) {
@@ -435,7 +432,6 @@ export async function POST() {
       success: true,
       endpoint,
       summary: {
-        retailMultiplier: multiplier,
         fetched: products.length,
         created,
         updated,

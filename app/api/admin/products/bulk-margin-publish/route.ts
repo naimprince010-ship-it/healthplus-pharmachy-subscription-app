@@ -29,8 +29,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { marginPercent, publish, ids, applyToAzanCategory } = parsed.data
-    const marginMultiplier = 1 + marginPercent / 100
+    const { publish, ids, applyToAzanCategory } = parsed.data
 
     const where: Prisma.ProductWhereInput = {
       deletedAt: null,
@@ -66,6 +65,7 @@ export async function POST(request: NextRequest) {
 
     let updated = 0
     let skippedMissingPurchasePrice = 0
+    let skippedMissingMrp = 0
 
     for (const product of products) {
       if (!product.purchasePrice || product.purchasePrice <= 0) {
@@ -73,7 +73,12 @@ export async function POST(request: NextRequest) {
         continue
       }
 
-      const sellingPrice = product.mrp ?? Math.ceil(product.purchasePrice * marginMultiplier)
+      if (!product.mrp || product.mrp <= 0) {
+        skippedMissingMrp++
+        continue
+      }
+
+      const sellingPrice = product.mrp
 
       await prisma.product.update({
         where: { id: product.id },
@@ -93,6 +98,7 @@ export async function POST(request: NextRequest) {
         total: products.length,
         updated,
         skippedMissingPurchasePrice,
+        skippedMissingMrp,
       },
       message: publish
         ? 'Margin applied and products published'

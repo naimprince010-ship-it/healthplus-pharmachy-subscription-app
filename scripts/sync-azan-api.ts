@@ -8,14 +8,13 @@ import {
   isAzanAutoCreateSourceCategoriesEnabled,
 } from '@/lib/integrations/azan-source-categories'
 import { parseAzanWholesaleProductNumericId } from '@/lib/integrations/azan-catalog'
-import { getAzanRetailMultiplierFromEnv } from '@/lib/azan-pricing'
 
 type AnyRecord = Record<string, unknown>
 
 interface AzanProduct {
   name: string
   supplierPrice: number
-  mrpPrice: number | null
+  mrpPrice: number
   stock: number
   sku: string | null
   imageUrl: string | null
@@ -321,6 +320,7 @@ function normalizeProduct(raw: unknown): AzanProduct | null {
   }
 
   const mrpPrice = parseNumber(item.mrp_price) ?? parseNumber(item.mrp) ?? null
+  if (!mrpPrice || mrpPrice <= 0) return null
 
   const stock =
     parseInteger(item.stock) ??
@@ -463,12 +463,11 @@ interface AzanProduct {
   sourceCategoryKey: string | null
   sourceCategoryLabel: string | null
   supplierProductId: number | null
-  mrpPrice: number | null
+  mrpPrice: number
 }
 
 async function upsertAzanProducts(products: AzanProduct[]) {
   const prismaClient = getPrismaClient()
-  const markupMultiplier = getAzanRetailMultiplierFromEnv()
   const categoryName = process.env.AZAN_WHOLESALE_CATEGORY || 'Azan Wholesale'
   const categorySlug = slugify(categoryName) || 'azan-wholesale'
 
@@ -507,8 +506,8 @@ async function upsertAzanProducts(products: AzanProduct[]) {
 
   for (const item of products) {
     const slug = item.sku ? `${slugify(item.name)}-${slugify(item.sku)}` : slugify(item.name)
-    const sellingPrice = item.mrpPrice ?? Math.ceil(item.supplierPrice * markupMultiplier)
-    const mrp = item.mrpPrice || sellingPrice
+    const sellingPrice = item.mrpPrice
+    const mrp = item.mrpPrice
 
     const k = item.sourceCategoryKey?.trim().toLowerCase() ?? null
     let resolvedCategoryId = category.id
