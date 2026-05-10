@@ -25,6 +25,10 @@ interface ProductPageProps {
   params: Promise<{ slug: string }>
 }
 
+function normalizeSizeForTitle(value: string) {
+  return value.toLowerCase().replace(/\s+/g, '')
+}
+
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   try {
     const { slug } = await params
@@ -145,9 +149,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const strengthNorm = strength?.trim().toLowerCase() ?? ''
   const volumeNorm = volumeDisplay?.trim().toLowerCase() ?? ''
   const volumeSameAsStrength = Boolean(strengthNorm && volumeNorm && strengthNorm === volumeNorm)
+  const titleContainsVolume = volumeDisplay
+    ? normalizeSizeForTitle(product.name).includes(normalizeSizeForTitle(volumeDisplay))
+    : false
+  const titleVolumeDisplay = titleContainsVolume ? null : volumeDisplay
   const showStrengthBesideTitle =
     !!strength &&
-    !product.name.toLowerCase().includes(strength.toLowerCase()) &&
+    !normalizeSizeForTitle(product.name).includes(normalizeSizeForTitle(strength)) &&
     !volumeSameAsStrength
 
   // Parent/Leaf category for MedEasy-style display
@@ -333,9 +341,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
                   {showStrengthBesideTitle ? (
                     <span className="ml-2 text-lg font-normal text-gray-500">{strength}</span>
                   ) : null}
-                  {volumeDisplay ? (
+                  {titleVolumeDisplay ? (
                     <span className="ml-2 inline-flex items-center align-middle rounded-full bg-teal-100 px-3 py-1 text-base font-semibold text-teal-800 lg:text-lg">
-                      {volumeDisplay}
+                      {titleVolumeDisplay}
                     </span>
                   ) : null}
                 </h1>
