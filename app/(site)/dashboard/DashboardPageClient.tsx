@@ -8,6 +8,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useCart } from '@/contexts/CartContext'
 import { PrescriptionUploadModal } from '@/components/PrescriptionUploadModal'
+import { getStorefrontImageUrl } from '@/lib/image-url'
 
 interface Order {
   id: string
@@ -88,6 +89,24 @@ interface DashboardSettings {
   browsePlansBn: string
   curatedProductsCount: number
   trendingProductsCount: number
+}
+
+function DashboardProductImage({ product }: { product: Product }) {
+  const displayImageUrl = getStorefrontImageUrl(product.imageUrl)
+
+  if (!displayImageUrl) {
+    return <div className="flex h-full items-center justify-center text-gray-400 text-xs">No image</div>
+  }
+
+  return (
+    <Image
+      src={displayImageUrl}
+      alt={product.name}
+      fill
+      sizes="(max-width: 1024px) 140px, 200px"
+      className="object-cover"
+    />
+  )
 }
 
 const DEFAULT_SETTINGS: DashboardSettings = {
@@ -442,16 +461,7 @@ export default function DashboardPageClient() {
                                   <div key={product.id} className="flex-shrink-0 w-[200px] bg-white rounded-xl shadow-sm p-4 hover:shadow-md transition-shadow">
                                     <Link href={`/products/${product.slug}`}>
                                       <div className="relative aspect-square mb-3 rounded-lg bg-gray-100 overflow-hidden">
-                                        {product.imageUrl ? (
-                                          <Image
-                                            src={product.imageUrl}
-                                            alt={product.name}
-                                            fill
-                                            className="object-cover"
-                                          />
-                                        ) : (
-                                          <div className="flex h-full items-center justify-center text-gray-400">No image</div>
-                                        )}
+                                        <DashboardProductImage product={product} />
                                         {product.discountPercentage && product.discountPercentage > 0 && (
                                           <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
                                             -{product.discountPercentage}%
@@ -486,16 +496,7 @@ export default function DashboardPageClient() {
                                   <div key={product.id} className="flex-shrink-0 w-[200px] bg-white rounded-xl shadow-sm p-4 hover:shadow-md transition-shadow">
                                     <Link href={`/products/${product.slug}`}>
                                       <div className="relative aspect-square mb-3 rounded-lg bg-gray-100 overflow-hidden">
-                                        {product.imageUrl ? (
-                                          <Image
-                                            src={product.imageUrl}
-                                            alt={product.name}
-                                            fill
-                                            className="object-cover"
-                                          />
-                                        ) : (
-                                          <div className="flex h-full items-center justify-center text-gray-400">No image</div>
-                                        )}
+                                        <DashboardProductImage product={product} />
                                         {product.discountPercentage && product.discountPercentage > 0 && (
                                           <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
                                             -{product.discountPercentage}%
@@ -528,16 +529,7 @@ export default function DashboardPageClient() {
                                   <div key={product.id} className="flex-shrink-0 w-[200px] bg-white rounded-xl shadow-sm p-4 hover:shadow-md transition-shadow">
                                     <Link href={`/products/${product.slug}`}>
                                       <div className="relative aspect-square mb-3 rounded-lg bg-gray-100 overflow-hidden">
-                                        {product.imageUrl ? (
-                                          <Image
-                                            src={product.imageUrl}
-                                            alt={product.name}
-                                            fill
-                                            className="object-cover"
-                                          />
-                                        ) : (
-                                          <div className="flex h-full items-center justify-center text-gray-400">No image</div>
-                                        )}
+                                        <DashboardProductImage product={product} />
                                         {product.discountPercentage && product.discountPercentage > 0 && (
                                           <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
                                             -{product.discountPercentage}%
@@ -720,16 +712,7 @@ export default function DashboardPageClient() {
                                   <div key={product.id} className="flex-shrink-0 w-[140px] bg-white rounded-xl shadow-sm p-3">
                                     <Link href={`/products/${product.slug}`}>
                                       <div className="relative aspect-square mb-2 rounded-lg bg-gray-100 overflow-hidden">
-                                        {product.imageUrl ? (
-                                          <Image
-                                            src={product.imageUrl}
-                                            alt={product.name}
-                                            fill
-                                            className="object-cover"
-                                          />
-                                        ) : (
-                                          <div className="flex h-full items-center justify-center text-gray-400 text-xs">No image</div>
-                                        )}
+                                        <DashboardProductImage product={product} />
                                       </div>
                                       <h3 className="text-xs font-medium text-gray-900 line-clamp-2 mb-1">{product.name}</h3>
                                     </Link>
@@ -757,16 +740,7 @@ export default function DashboardPageClient() {
                                   <div key={product.id} className="flex-shrink-0 w-[140px] bg-white rounded-xl shadow-sm p-3">
                                     <Link href={`/products/${product.slug}`}>
                                       <div className="relative aspect-square mb-2 rounded-lg bg-gray-100 overflow-hidden">
-                                        {product.imageUrl ? (
-                                          <Image
-                                            src={product.imageUrl}
-                                            alt={product.name}
-                                            fill
-                                            className="object-cover"
-                                          />
-                                        ) : (
-                                          <div className="flex h-full items-center justify-center text-gray-400 text-xs">No image</div>
-                                        )}
+                                        <DashboardProductImage product={product} />
                                       </div>
                                       <h3 className="text-xs font-medium text-gray-900 line-clamp-2 mb-1">{product.name}</h3>
                                     </Link>
@@ -792,16 +766,7 @@ export default function DashboardPageClient() {
                                   <div key={product.id} className="flex-shrink-0 w-[140px] bg-white rounded-xl shadow-sm p-3">
                                     <Link href={`/products/${product.slug}`}>
                                       <div className="relative aspect-square mb-2 rounded-lg bg-gray-100 overflow-hidden">
-                                        {product.imageUrl ? (
-                                          <Image
-                                            src={product.imageUrl}
-                                            alt={product.name}
-                                            fill
-                                            className="object-cover"
-                                          />
-                                        ) : (
-                                          <div className="flex h-full items-center justify-center text-gray-400 text-xs">No image</div>
-                                        )}
+                                        <DashboardProductImage product={product} />
                                       </div>
                                       <h3 className="text-xs font-medium text-gray-900 line-clamp-2 mb-1">{product.name}</h3>
                                     </Link>
