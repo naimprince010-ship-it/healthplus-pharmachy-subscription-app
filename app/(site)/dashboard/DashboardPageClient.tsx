@@ -109,6 +109,29 @@ function DashboardProductImage({ product }: { product: Product }) {
   )
 }
 
+function DashboardAddButton({
+  product,
+  isAdded,
+  onAdd,
+}: {
+  product: Product
+  isAdded: boolean
+  onAdd: (product: Product) => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onAdd(product)}
+      aria-label={isAdded ? `${product.name} added to cart` : `Add ${product.name} to cart`}
+      className={`flex min-w-[44px] items-center justify-center rounded-full px-3 py-1 text-xs font-semibold text-white shadow-sm transition-colors ${
+        isAdded ? 'bg-emerald-600' : 'bg-orange-500 hover:bg-orange-600'
+      }`}
+    >
+      {isAdded ? 'Added' : 'Add'}
+    </button>
+  )
+}
+
 const DEFAULT_SETTINGS: DashboardSettings = {
   pageTitleBn: 'আমার ড্যাশবোর্ড',
   welcomeTextBn: 'স্বাগতম,',
@@ -151,6 +174,7 @@ export default function DashboardPageClient() {
     const [settings, setSettings] = useState<DashboardSettings>(DEFAULT_SETTINGS)
     const [isLoading, setIsLoading] = useState(true)
     const [isPrescriptionOpen, setIsPrescriptionOpen] = useState(false)
+    const [recentlyAddedProductId, setRecentlyAddedProductId] = useState<string | null>(null)
 
     useEffect(() => {
       if (status === 'unauthenticated') {
@@ -198,6 +222,10 @@ export default function DashboardPageClient() {
       image: product.imageUrl || undefined,
       slug: product.slug || undefined,
     })
+    setRecentlyAddedProductId(product.id)
+    window.setTimeout(() => {
+      setRecentlyAddedProductId((current) => (current === product.id ? null : current))
+    }, 1500)
   }
 
   const getStatusBadgeClass = (orderStatus: string) => {
@@ -472,12 +500,7 @@ export default function DashboardPageClient() {
                                     </Link>
                                     <div className="flex items-center justify-between">
                                       <p className="font-semibold text-[#0A9F6E]">৳{product.sellingPrice}</p>
-                                      <button
-                                        onClick={() => handleAddToCart(product)}
-                                        className="rounded-full bg-orange-500 px-3 py-1 text-xs font-medium text-white shadow-sm hover:bg-orange-600 transition-colors"
-                                      >
-                                        Add
-                                      </button>
+                                      <DashboardAddButton product={product} isAdded={recentlyAddedProductId === product.id} onAdd={handleAddToCart} />
                                     </div>
                                   </div>
                                 ))}
@@ -507,12 +530,7 @@ export default function DashboardPageClient() {
                                     </Link>
                                     <div className="flex items-center justify-between">
                                       <p className="font-semibold text-[#0A9F6E]">৳{product.sellingPrice}</p>
-                                      <button
-                                        onClick={() => handleAddToCart(product)}
-                                        className="rounded-full bg-orange-500 px-3 py-1 text-xs font-medium text-white shadow-sm hover:bg-orange-600 transition-colors"
-                                      >
-                                        Add
-                                      </button>
+                                      <DashboardAddButton product={product} isAdded={recentlyAddedProductId === product.id} onAdd={handleAddToCart} />
                                     </div>
                                   </div>
                                 ))}
@@ -540,12 +558,7 @@ export default function DashboardPageClient() {
                                     </Link>
                                     <div className="flex items-center justify-between">
                                       <p className="font-semibold text-[#0A9F6E]">৳{product.sellingPrice}</p>
-                                      <button
-                                        onClick={() => handleAddToCart(product)}
-                                        className="rounded-full bg-orange-500 px-3 py-1 text-xs font-medium text-white shadow-sm hover:bg-orange-600 transition-colors"
-                                      >
-                                        Add
-                                      </button>
+                                      <DashboardAddButton product={product} isAdded={recentlyAddedProductId === product.id} onAdd={handleAddToCart} />
                                     </div>
                                   </div>
                                 ))}
@@ -718,12 +731,7 @@ export default function DashboardPageClient() {
                                     </Link>
                                     <div className="flex items-center justify-between">
                                       <p className="text-sm font-semibold text-[#0A9F6E]">৳{product.sellingPrice}</p>
-                                      <button
-                                        onClick={() => handleAddToCart(product)}
-                                        className="flex items-center justify-center rounded-full bg-orange-500 px-3 py-1 text-xs font-semibold text-white shadow-sm hover:bg-orange-600 transition-colors"
-                                      >
-                                        Add
-                                      </button>
+                                      <DashboardAddButton product={product} isAdded={recentlyAddedProductId === product.id} onAdd={handleAddToCart} />
                                     </div>
                                   </div>
                                 ))}
@@ -746,12 +754,7 @@ export default function DashboardPageClient() {
                                     </Link>
                                     <div className="flex items-center justify-between">
                                       <p className="text-sm font-semibold text-[#0A9F6E]">৳{product.sellingPrice}</p>
-                                      <button
-                                        onClick={() => handleAddToCart(product)}
-                                        className="flex items-center justify-center rounded-full bg-orange-500 px-3 py-1 text-xs font-semibold text-white shadow-sm hover:bg-orange-600 transition-colors"
-                                      >
-                                        Add
-                                      </button>
+                                      <DashboardAddButton product={product} isAdded={recentlyAddedProductId === product.id} onAdd={handleAddToCart} />
                                     </div>
                                   </div>
                                 ))}
@@ -772,12 +775,7 @@ export default function DashboardPageClient() {
                                     </Link>
                                     <div className="flex items-center justify-between">
                                       <p className="text-sm font-semibold text-[#0A9F6E]">৳{product.sellingPrice}</p>
-                                      <button
-                                        onClick={() => handleAddToCart(product)}
-                                        className="flex items-center justify-center rounded-full bg-orange-500 px-3 py-1 text-xs font-semibold text-white shadow-sm hover:bg-orange-600 transition-colors"
-                                      >
-                                        Add
-                                      </button>
+                                      <DashboardAddButton product={product} isAdded={recentlyAddedProductId === product.id} onAdd={handleAddToCart} />
                                     </div>
                                   </div>
                                 ))}
