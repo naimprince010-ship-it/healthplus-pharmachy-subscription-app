@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react'
 import { ArrowLeft, Phone, Loader2, CheckCircle, Circle, MapPin, Clock, RefreshCw } from 'lucide-react'
 import { useCart } from '@/contexts/CartContext'
 import Image from 'next/image'
+import { getStorefrontImageUrl } from '@/lib/image-url'
 
 interface OrderItem {
   id: string
@@ -450,7 +451,7 @@ export default function OrderTrackingPage() {
           <div className="space-y-3">
             {order.items.map((item) => {
               const itemData = item.medicine || item.product
-              const imageUrl = itemData?.imageUrl || '/placeholder-medicine.png'
+              const imageUrl = getStorefrontImageUrl(itemData?.imageUrl) || '/placeholder-medicine.png'
               const name = itemData?.name || 'Unknown Item'
               const unit = itemData?.unit || 'pcs'
 
