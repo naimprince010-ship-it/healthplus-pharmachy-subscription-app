@@ -13,7 +13,30 @@ type EngineResponse = {
   }
 }
 
+type MeiliHit = Partial<SearchableProduct> & Record<string, unknown>
+
+type MeiliResponse = {
+  hits?: MeiliHit[]
+}
+
 const DEFAULT_TIMEOUT_MS = 2500
+
+function getEngineConfig() {
+  const endpoint = (process.env.SEARCH_ENGINE_ENDPOINT || '').trim().replace(/\/+$/, '')
+  const index = (process.env.SEARCH_ENGINE_INDEX || 'products').trim()
+  const apiKey = (process.env.SEARCH_ENGINE_API_KEY || '').trim()
+  const timeoutMs = Number(process.env.SEARCH_ENGINE_TIMEOUT_MS || DEFAULT_TIMEOUT_MS)
+  const type = (process.env.SEARCH_ENGINE_TYPE || 'opensearch').trim().toLowerCase()
+  return { endpoint, index, apiKey, timeoutMs, type }
+}
+
+function buildHeaders(apiKey: string, type: string): Record<string, string> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (!apiKey) return headers
+
+  headers.Authorization = type === 'meilisearch' ? `Bearer ${apiKey}` : `ApiKey ${apiKey}`
+  return headers
+}
 
 function asNumber(v: unknown, fallback: number): number {
   return typeof v === 'number' && Number.isFinite(v) ? v : fallback
@@ -56,10 +79,7 @@ function mapEngineHitToSearchable(source: Partial<SearchableProduct> & Record<st
 }
 
 async function fetchEngineResults(query: string, limit: number, isPrefix: boolean): Promise<SearchResult[] | null> {
-  const endpoint = (process.env.SEARCH_ENGINE_ENDPOINT || '').trim().replace(/\/+$/, '')
-  const index = (process.env.SEARCH_ENGINE_INDEX || 'products').trim()
-  const apiKey = (process.env.SEARCH_ENGINE_API_KEY || '').trim()
-  const timeoutMs = Number(process.env.SEARCH_ENGINE_TIMEOUT_MS || DEFAULT_TIMEOUT_MS)
+  const { endpoint, index, apiKey, timeoutMs, type } = getEngineConfig()
 
   if (!endpoint) return null
 
@@ -67,6 +87,38 @@ async function fetchEngineResults(query: string, limit: number, isPrefix: boolea
   const timeout = setTimeout(() => controller.abort(), Number.isFinite(timeoutMs) ? timeoutMs : DEFAULT_TIMEOUT_MS)
 
   try {
+    if (type === 'meilisearch') {
+      const res = await fetch(`${endpoint}/indexes/${index}/search`, {
+        method: 'POST',
+        headers: buildHeaders(apiKey, type),
+        body: JSON.stringify({
+          q: query,
+          limit: Math.max(1, Math.min(limit, 40)),
+          sort: ['popularityScore:desc'],
+          attributesToRetrieve: ['*'],
+          showRankingScore: true,
+        }),
+        signal: controller.signal,
+      })
+
+      if (!res.ok) return null
+
+      const payload = (await res.json()) as MeiliResponse
+      const hits = payload.hits || []
+      const results: SearchResult[] = []
+      for (const hit of hits) {
+        const item = mapEngineHitToSearchable(hit)
+        if (!item) continue
+        const rankingScore = typeof hit._rankingScore === 'number' ? hit._rankingScore : 0.5
+        results.push({
+          item,
+          score: rankingScore,
+          combinedScore: rankingScore + (item.popularityScore || 0) / 100000,
+        })
+      }
+      return results
+    }
+
     const fields = ['name^4', 'slug^3', 'brandName^2', 'categoryName^2', 'description', 'genericName', 'manufacturer']
     const body = {
       size: Math.max(1, Math.min(limit, 40)),
@@ -80,14 +132,9 @@ async function fetchEngineResults(query: string, limit: number, isPrefix: boolea
       sort: [{ _score: 'desc' }, { popularityScore: { order: 'desc', unmapped_type: 'long' } }],
     }
 
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    }
-    if (apiKey) headers.Authorization = `ApiKey ${apiKey}`
-
     const res = await fetch(`${endpoint}/${index}/_search`, {
       method: 'POST',
-      headers,
+      headers: buildHeaders(apiKey, type),
       body: JSON.stringify(body),
       signal: controller.signal,
     })

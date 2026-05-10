@@ -38,13 +38,14 @@ function getEngineConfig() {
   const index = (process.env.SEARCH_ENGINE_INDEX || 'products').trim()
   const apiKey = (process.env.SEARCH_ENGINE_API_KEY || '').trim()
   const timeoutMs = Number(process.env.SEARCH_ENGINE_TIMEOUT_MS || 5000)
+  const type = (process.env.SEARCH_ENGINE_TYPE || 'opensearch').trim().toLowerCase()
   const enabled = Boolean(endpoint && process.env.SEARCH_PROVIDER?.trim().toLowerCase() === 'engine')
-  return { endpoint, index, apiKey, timeoutMs, enabled }
+  return { endpoint, index, apiKey, timeoutMs, type, enabled }
 }
 
-function buildHeaders(apiKey: string): Record<string, string> {
+function buildHeaders(apiKey: string, type: string): Record<string, string> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-  if (apiKey) headers.Authorization = `ApiKey ${apiKey}`
+  if (apiKey) headers.Authorization = type === 'meilisearch' ? `Bearer ${apiKey}` : `ApiKey ${apiKey}`
   return headers
 }
 
@@ -91,24 +92,85 @@ export function isSearchEngineSyncEnabled(): boolean {
 }
 
 export async function upsertSearchDocument(doc: SearchableProduct): Promise<boolean> {
-  const { enabled, index, apiKey } = getEngineConfig()
+  const { enabled, index, apiKey, type } = getEngineConfig()
   if (!enabled) return false
+
+  if (type === 'meilisearch') {
+    const res = await engineFetch(`/indexes/${index}/documents`, {
+      method: 'POST',
+      headers: buildHeaders(apiKey, type),
+      body: JSON.stringify([doc]),
+    })
+    return res.ok
+  }
+
   const res = await engineFetch(`/${index}/_doc/${doc.id}`, {
     method: 'PUT',
-    headers: buildHeaders(apiKey),
+    headers: buildHeaders(apiKey, type),
     body: JSON.stringify(doc),
   })
   return res.ok
 }
 
 export async function deleteSearchDocument(docId: string): Promise<boolean> {
-  const { enabled, index, apiKey } = getEngineConfig()
+  const { enabled, index, apiKey, type } = getEngineConfig()
   if (!enabled) return false
+
+  if (type === 'meilisearch') {
+    const res = await engineFetch(`/indexes/${index}/documents/${docId}`, {
+      method: 'DELETE',
+      headers: buildHeaders(apiKey, type),
+    })
+    return res.ok || res.status === 404
+  }
+
   const res = await engineFetch(`/${index}/_doc/${docId}`, {
     method: 'DELETE',
-    headers: buildHeaders(apiKey),
+    headers: buildHeaders(apiKey, type),
   })
   return res.ok || res.status === 404
+}
+
+async function configureMeiliIndex(index: string, apiKey: string, type: string): Promise<boolean> {
+  const headers = buildHeaders(apiKey, type)
+
+  const createRes = await engineFetch('/indexes', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ uid: index, primaryKey: 'id' }),
+  })
+  if (!createRes.ok && createRes.status !== 409) return false
+
+  const settingsRes = await engineFetch(`/indexes/${index}/settings`, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify({
+      searchableAttributes: [
+        'name',
+        'brandName',
+        'genericName',
+        'manufacturer',
+        'categoryName',
+        'description',
+        'slug',
+        'sizeLabel',
+        'packSize',
+      ],
+      displayedAttributes: ['*'],
+      sortableAttributes: ['popularityScore', 'sellingPrice', 'name'],
+      filterableAttributes: ['type', 'categorySlug', 'isMedicine', 'isFeatured', 'stockQuantity'],
+      rankingRules: [
+        'words',
+        'typo',
+        'proximity',
+        'attribute',
+        'sort',
+        'exactness',
+      ],
+    }),
+  })
+
+  return settingsRes.ok
 }
 
 export async function syncProductById(productId: string): Promise<boolean> {
@@ -126,7 +188,7 @@ export async function reindexAllProductsToSearchEngine(opts?: {
   batchSize?: number
   maxBatches?: number
 }): Promise<ReindexSummary> {
-  const { enabled, index, apiKey } = getEngineConfig()
+  const { enabled, index, apiKey, type } = getEngineConfig()
   if (!enabled) return { indexed: 0, failed: 0, batches: 0 }
 
   const batchSize = Math.max(50, Math.min(opts?.batchSize || 500, 2000))
@@ -136,6 +198,11 @@ export async function reindexAllProductsToSearchEngine(opts?: {
   let batches = 0
   let indexed = 0
   let failed = 0
+
+  if (type === 'meilisearch') {
+    const configured = await configureMeiliIndex(index, apiKey, type)
+    if (!configured) return { indexed: 0, failed: 0, batches: 0 }
+  }
 
   while (batches < maxBatches) {
     const rows: ProductRow[] = (await prisma.product.findMany({
@@ -151,31 +218,43 @@ export async function reindexAllProductsToSearchEngine(opts?: {
 
     if (!rows.length) break
 
-    const lines: string[] = []
-    for (const row of rows) {
-      lines.push(JSON.stringify({ index: { _index: index, _id: row.id } }))
-      lines.push(JSON.stringify(mapToSearchDoc(row as unknown as ProductRow)))
-    }
+    const docs = rows.map((row) => mapToSearchDoc(row as unknown as ProductRow))
 
-    const bulkBody = `${lines.join('\n')}\n`
-    const res = await engineFetch('/_bulk', {
-      method: 'POST',
-      headers: buildHeaders(apiKey),
-      body: bulkBody,
-    })
-
-    if (!res.ok) {
-      failed += rows.length
+    if (type === 'meilisearch') {
+      const res = await engineFetch(`/indexes/${index}/documents`, {
+        method: 'POST',
+        headers: buildHeaders(apiKey, type),
+        body: JSON.stringify(docs),
+      })
+      if (res.ok) indexed += rows.length
+      else failed += rows.length
     } else {
-      const payload = (await res.json()) as { items?: Array<{ index?: { status?: number; error?: unknown } }> }
-      const items = payload.items || []
-      if (!items.length) {
-        indexed += rows.length
+      const lines: string[] = []
+      for (const doc of docs) {
+        lines.push(JSON.stringify({ index: { _index: index, _id: doc.id } }))
+        lines.push(JSON.stringify(doc))
+      }
+
+      const bulkBody = `${lines.join('\n')}\n`
+      const res = await engineFetch('/_bulk', {
+        method: 'POST',
+        headers: buildHeaders(apiKey, type),
+        body: bulkBody,
+      })
+
+      if (!res.ok) {
+        failed += rows.length
       } else {
-        for (const item of items) {
-          const status = item.index?.status || 500
-          if (status >= 200 && status < 300) indexed += 1
-          else failed += 1
+        const payload = (await res.json()) as { items?: Array<{ index?: { status?: number; error?: unknown } }> }
+        const items = payload.items || []
+        if (!items.length) {
+          indexed += rows.length
+        } else {
+          for (const item of items) {
+            const status = item.index?.status || 500
+            if (status >= 200 && status < 300) indexed += 1
+            else failed += 1
+          }
         }
       }
     }
