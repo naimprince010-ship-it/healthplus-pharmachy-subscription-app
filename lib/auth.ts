@@ -1,17 +1,10 @@
 import { compare } from 'bcryptjs'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import NextAuth from 'next-auth'
+import { authConfig } from './auth.config'
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  trustHost: true,
-  secret: process.env.NEXTAUTH_SECRET,
-  session: {
-    strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-  },
-  pages: {
-    signIn: '/auth/signin',
-  },
+  ...authConfig,
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -69,39 +62,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
     }),
   ],
-  callbacks: {
-    async redirect({ url, baseUrl }) {
-      if (url.startsWith('/')) {
-        return `${baseUrl}${url}`
-      }
-      if (new URL(url).origin === baseUrl) {
-        return url
-      }
-      return baseUrl
-    },
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id
-        token.role = user.role
-        token.phone = user.phone
-        token.email = user.email
-        token.name = user.name
-      }
-      return token
-    },
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string
-        session.user.role = token.role as string
-        session.user.phone = token.phone as string
-        if (typeof token.email === 'string') {
-          session.user.email = token.email
-        }
-        session.user.name = token.name as string
-      }
-      return session
-    },
-  },
 })
 
 function normalizeBdPhone(input: string): string | null {
