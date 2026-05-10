@@ -1,100 +1,136 @@
-/**
- * OTP Authentication Stub
- * 
- * This is a stub implementation for phone-based OTP authentication.
- * In production, integrate with a real OTP provider like:
- * - Twilio Verify
- * - AWS SNS
- * - Firebase Auth
- * - Custom SMS gateway
- * 
- * Current implementation: Stub that simulates OTP flow for development
- */
-
+import { createHmac, randomInt, timingSafeEqual } from 'crypto'
 import { prisma } from '@/lib/prisma'
 import { normalizeBDPhone } from '@/lib/utils'
 import { sendMIMSMS } from '@/lib/sms/mim-sms'
 
-interface OTPSession {
-  phone: string
-  otp: string
-  expiresAt: Date
-  verified: boolean
+const OTP_TTL_MS = 5 * 60 * 1000
+const RESEND_WINDOW_MS = 60 * 1000
+const HOURLY_LIMIT = 5
+const MAX_ATTEMPTS = 5
+
+function getOtpSecret() {
+  return process.env.OTP_HASH_SECRET || process.env.NEXTAUTH_SECRET || 'halalzi-otp-development-secret'
 }
 
-const otpSessions = new Map<string, OTPSession>()
+function hashOtp(phone: string, otp: string) {
+  return createHmac('sha256', getOtpSecret()).update(`${phone}:${otp}`).digest('hex')
+}
 
-/**
- * Send OTP to phone number
- * @param phone - Phone number in any BD format
- * @returns Session ID for verification
- */
-export async function sendOTP(phone: string): Promise<{ sessionId: string; message: string }> {
-  try {
-    const normalizedPhone = normalizeBDPhone(phone)
+function hashesMatch(a: string, b: string) {
+  const left = Buffer.from(a, 'hex')
+  const right = Buffer.from(b, 'hex')
+  return left.length === right.length && timingSafeEqual(left, right)
+}
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString()
+async function cleanupExpiredSessions() {
+  await prisma.otpSession.deleteMany({
+    where: {
+      OR: [
+        { expiresAt: { lt: new Date() } },
+        { verifiedAt: { not: null } },
+      ],
+    },
+  })
+}
 
-    const sessionId = `otp_${Date.now()}_${Math.random().toString(36).substring(7)}`
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
+async function enforceRateLimit(phone: string) {
+  const now = Date.now()
+  const recent = await prisma.otpSession.findFirst({
+    where: {
+      phone,
+      createdAt: { gt: new Date(now - RESEND_WINDOW_MS) },
+      verifiedAt: null,
+    },
+    orderBy: { createdAt: 'desc' },
+    select: { createdAt: true },
+  })
+  if (recent) {
+    const seconds = Math.max(1, Math.ceil((RESEND_WINDOW_MS - (now - recent.createdAt.getTime())) / 1000))
+    throw new Error(`Please wait ${seconds}s before requesting another OTP`)
+  }
 
-    otpSessions.set(sessionId, {
-      phone: normalizedPhone,
-      otp,
-      expiresAt,
-      verified: false,
-    })
-
-    const smsMessage = `Your OTP is ${otp}. Valid for 5 minutes.`
-
-    const smsResult = await sendMIMSMS(normalizedPhone, smsMessage)
-
-    const allowFallback = process.env.OTP_ALLOW_FALLBACK === 'true' || process.env.NODE_ENV !== 'production'
-
-    if (!smsResult.ok) {
-      console.warn(`[OTP STUB ERROR] Failed to send real SMS for ${normalizedPhone}, falling back to console log for developmental purposes`)
-      console.log(`[OTP FALLBACK STUB] OTP for ${normalizedPhone}: ${otp} (expires in 5 minutes)`)
-
-      if (!allowFallback) {
-        otpSessions.delete(sessionId)
-        throw new Error(`OTP SMS delivery failed: ${smsResult.error || 'Unknown SMS provider error'}`)
-      }
-    }
-
-    return {
-      sessionId,
-      message: `OTP sent to ${normalizedPhone}. ${!smsResult.ok ? 'Check console for OTP (stub mode).' : ''}`,
-    }
-  } catch (error) {
-    throw new Error(error instanceof Error ? error.message : 'Failed to send OTP')
+  const hourlyCount = await prisma.otpSession.count({
+    where: {
+      phone,
+      createdAt: { gt: new Date(now - 60 * 60 * 1000) },
+    },
+  })
+  if (hourlyCount >= HOURLY_LIMIT) {
+    throw new Error('Too many OTP requests. Please try again later.')
   }
 }
 
-/**
- * Verify OTP code
- * @param sessionId - Session ID from sendOTP
- * @param otp - OTP code entered by user
- * @returns User object if verification successful
- */
-export async function verifyOTP(sessionId: string, otp: string): Promise<{ user: { id: string; phone: string; name: string; email: string | null; role: string }; isNewUser: boolean }> {
-  const session = otpSessions.get(sessionId)
+export async function sendOTP(phone: string): Promise<{ sessionId: string; message: string; phone: string }> {
+  const normalizedPhone = normalizeBDPhone(phone)
+  await cleanupExpiredSessions()
+  await enforceRateLimit(normalizedPhone)
 
-  if (!session) {
+  const otp = randomInt(100000, 1000000).toString()
+  const expiresAt = new Date(Date.now() + OTP_TTL_MS)
+
+  const session = await prisma.otpSession.create({
+    data: {
+      phone: normalizedPhone,
+      otpHash: hashOtp(normalizedPhone, otp),
+      expiresAt,
+    },
+    select: { id: true },
+  })
+
+  const smsMessage = `Your Halalzi OTP is ${otp}. Valid for 5 minutes.`
+  const smsResult = await sendMIMSMS(normalizedPhone, smsMessage)
+  const allowFallback = process.env.OTP_ALLOW_FALLBACK === 'true' || process.env.NODE_ENV !== 'production'
+
+  if (!smsResult.ok) {
+    await prisma.otpSession.delete({ where: { id: session.id } }).catch(() => undefined)
+    console.warn(`[OTP] SMS failed for ${normalizedPhone}: ${smsResult.error || 'Unknown SMS provider error'}`)
+
+    if (!allowFallback) {
+      throw new Error('OTP SMS delivery failed. Please try again in a moment.')
+    }
+
+    console.log(`[OTP FALLBACK] OTP for ${normalizedPhone}: ${otp} (expires in 5 minutes)`)
+  }
+
+  return {
+    sessionId: session.id,
+    phone: normalizedPhone,
+    message: `OTP sent to ${normalizedPhone}`,
+  }
+}
+
+export async function verifyOTP(
+  sessionId: string,
+  otp: string
+): Promise<{ user: { id: string; phone: string; name: string; email: string | null; role: string }; isNewUser: boolean }> {
+  const cleanOtp = otp.replace(/\D/g, '')
+  if (!/^\d{6}$/.test(cleanOtp)) {
+    throw new Error('Enter the 6-digit OTP code')
+  }
+
+  const session = await prisma.otpSession.findUnique({ where: { id: sessionId } })
+  if (!session || session.verifiedAt) {
     throw new Error('Invalid or expired OTP session')
   }
 
   if (new Date() > session.expiresAt) {
-    otpSessions.delete(sessionId)
-    throw new Error('OTP has expired')
+    await prisma.otpSession.delete({ where: { id: session.id } }).catch(() => undefined)
+    throw new Error('OTP has expired. Please request a new code.')
   }
 
-  const isValidOTP = otp === session.otp || /^\d{6}$/.test(otp)
+  if (session.attempts >= MAX_ATTEMPTS) {
+    await prisma.otpSession.delete({ where: { id: session.id } }).catch(() => undefined)
+    throw new Error('Too many wrong attempts. Please request a new OTP.')
+  }
 
-  if (!isValidOTP) {
+  const expectedHash = hashOtp(session.phone, cleanOtp)
+  if (!hashesMatch(session.otpHash, expectedHash)) {
+    await prisma.otpSession.update({
+      where: { id: session.id },
+      data: { attempts: { increment: 1 } },
+    })
     throw new Error('Invalid OTP code')
   }
-
-  session.verified = true
 
   let user = await prisma.user.findUnique({
     where: { phone: session.phone },
@@ -106,48 +142,32 @@ export async function verifyOTP(sessionId: string, otp: string): Promise<{ user:
     user = await prisma.user.create({
       data: {
         phone: session.phone,
-        name: session.phone, // Default name, user can update later
-        password: '', // No password for OTP-based auth
+        name: session.phone,
+        password: '',
         role: 'USER',
       },
     })
     isNewUser = true
   }
 
-  otpSessions.delete(sessionId)
+  await prisma.otpSession.update({
+    where: { id: session.id },
+    data: { verifiedAt: new Date() },
+  })
 
   return { user, isNewUser }
 }
 
-/**
- * Resend OTP for existing session
- * @param sessionId - Session ID from previous sendOTP
- * @returns New session ID
- */
-export async function resendOTP(sessionId: string): Promise<{ sessionId: string; message: string }> {
-  const session = otpSessions.get(sessionId)
+export async function resendOTP(sessionId: string): Promise<{ sessionId: string; message: string; phone: string }> {
+  const session = await prisma.otpSession.findUnique({
+    where: { id: sessionId },
+    select: { id: true, phone: true },
+  })
 
   if (!session) {
     throw new Error('Invalid session')
   }
 
-  otpSessions.delete(sessionId)
-
+  await prisma.otpSession.delete({ where: { id: session.id } }).catch(() => undefined)
   return sendOTP(session.phone)
-}
-
-/**
- * Clean up expired OTP sessions (run periodically)
- */
-export function cleanupExpiredSessions(): void {
-  const now = new Date()
-  for (const [sessionId, session] of otpSessions.entries()) {
-    if (now > session.expiresAt) {
-      otpSessions.delete(sessionId)
-    }
-  }
-}
-
-if (typeof setInterval !== 'undefined') {
-  setInterval(cleanupExpiredSessions, 10 * 60 * 1000)
 }

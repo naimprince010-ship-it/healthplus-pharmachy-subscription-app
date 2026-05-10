@@ -181,6 +181,20 @@ model User {
   foodOrders    FoodOrder[]
 }
 
+model OtpSession {
+  id         String    @id @default(cuid())
+  phone      String
+  otpHash    String
+  attempts   Int       @default(0)
+  expiresAt  DateTime
+  verifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([phone, createdAt])
+  @@index([expiresAt])
+}
+
 enum ProductInteractionKind {
   VIEW_ITEM
   ADD_TO_CART

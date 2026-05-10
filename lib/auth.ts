@@ -105,11 +105,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 })
 
 function normalizeBdPhone(input: string): string | null {
-  const raw = input.replace(/\s+/g, '')
+  const raw = input.replace(/[\s-]/g, '')
+  const bdBare = /^1[3-9]\d{8}$/
   const bdLocal = /^01[3-9]\d{8}$/
   const bdNoPlus = /^8801[3-9]\d{8}$/
   const bdPlus = /^\+8801[3-9]\d{8}$/
 
+  if (bdBare.test(raw)) return `+880${raw}`
   if (bdLocal.test(raw)) return `+88${raw}`
   if (bdNoPlus.test(raw)) return `+${raw}`
   if (bdPlus.test(raw)) return raw

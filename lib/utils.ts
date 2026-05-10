@@ -34,8 +34,9 @@ export function applyMembershipDiscount(total: number, hasMembership: boolean): 
 }
 
 export function isValidPhone(phone: string): boolean {
-  const phoneRegex = /^(\+?88)?01[3-9]\d{8}$/
-  return phoneRegex.test(phone)
+  const cleaned = phone.replace(/[\s-]/g, '').trim()
+  const phoneRegex = /^(?:\+?8801|01|1)[3-9]\d{8}$/
+  return phoneRegex.test(cleaned)
 }
 
 export function isValidEmail(email: string): boolean {
@@ -49,7 +50,7 @@ export function isValidEmail(email: string): boolean {
  * Returns: +8801712345678 or throws error if invalid
  */
 export function normalizeBDPhone(phone: string): string {
-  const cleaned = phone.replace(/\s+/g, '').trim()
+  const cleaned = phone.replace(/[\s-]/g, '').trim()
   
   if (!isValidPhone(cleaned)) {
     throw new Error('Invalid phone number format. Use 01XXXXXXXXX, 8801XXXXXXXXX, or +8801XXXXXXXXX')
@@ -61,6 +62,8 @@ export function normalizeBDPhone(phone: string): string {
     return `+${cleaned}`
   } else if (cleaned.startsWith('01')) {
     return `+88${cleaned}`
+  } else if (cleaned.startsWith('1')) {
+    return `+880${cleaned}`
   }
   
   throw new Error('Invalid phone number format')

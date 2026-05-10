@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 
 const verifyOTPSchema = z.object({
   sessionId: z.string().min(1),
-  otp: z.string().length(6),
+  otp: z.string().regex(/^\d{6}$/, 'OTP must be 6 digits'),
 })
 
 export async function POST(request: NextRequest) {

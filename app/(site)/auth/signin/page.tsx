@@ -15,7 +15,7 @@ const signinSchema = z.object({
     .refine(
       (val) => {
         const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)
-        const isBdPhone = /^(?:\+?880|0)1[3-9]\d{8}$/.test(val.replace(/\s+/g, ''))
+        const isBdPhone = /^(?:\+?8801|01|1)[3-9]\d{8}$/.test(val.replace(/[\s-]/g, ''))
         return isEmail || isBdPhone
       },
       { message: 'Enter a valid email or Bangladesh phone number' }
@@ -43,7 +43,7 @@ function SignInForm() {
     setIsLoading(true)
 
     // Basic phone validation before sending
-    const isBdPhone = /^(?:\+?880|0)1[3-9]\d{8}$/.test(formData.identifier.replace(/\s+/g, ''))
+    const isBdPhone = /^(?:\+?8801|01|1)[3-9]\d{8}$/.test(formData.identifier.replace(/[\s-]/g, ''))
     // Also allow email for admin fallback
     const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.identifier)
 
@@ -105,7 +105,7 @@ function SignInForm() {
         })
       } else {
         // Normal user OTP login
-        if (formData.password.length < 6) {
+        if (!/^\d{6}$/.test(formData.password)) {
           setErrors({ password: 'OTP must be 6 digits' })
           setIsLoading(false)
           return
@@ -231,12 +231,16 @@ function SignInForm() {
                   autoComplete={isEmailAdmin ? 'current-password' : 'one-time-code'}
                   required
                   value={formData.password}
-                  onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
-                  }
+                  onChange={(e) => {
+                    const value = isEmailAdmin
+                      ? e.target.value
+                      : e.target.value.replace(/\D/g, '').slice(0, 6)
+                    setFormData({ ...formData, password: value })
+                  }}
                   className="mt-2 block w-full tracking-widest text-center rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-gray-900 focus:border-teal-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-teal-500/10 sm:text-lg transition-all"
                   placeholder={isEmailAdmin ? 'Enter password' : '------'}
                   maxLength={isEmailAdmin ? 100 : 6}
+                  inputMode={isEmailAdmin ? undefined : 'numeric'}
                 />
                 {!isEmailAdmin && (
                   <p className="mt-2 text-xs text-center text-gray-500">

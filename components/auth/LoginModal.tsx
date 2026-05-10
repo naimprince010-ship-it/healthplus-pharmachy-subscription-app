@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { signIn, getSession } from 'next-auth/react'
 import { useRouter, usePathname } from 'next/navigation'
-import { z } from 'zod'
 import { Loader2, X } from 'lucide-react'
 import { useAuthModal } from '@/contexts/AuthModalContext'
 import Image from 'next/image'
@@ -40,7 +39,7 @@ export function LoginModal() {
         setIsLoading(true)
 
         // Basic phone validation before sending
-        const isBdPhone = /^(?:\+?880|0)1[3-9]\d{8}$/.test(formData.identifier.replace(/\s+/g, ''))
+        const isBdPhone = /^(?:\+?8801|01|1)[3-9]\d{8}$/.test(formData.identifier.replace(/[\s-]/g, ''))
         // Also allow email for admin fallback
         const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.identifier)
 
@@ -101,7 +100,7 @@ export function LoginModal() {
                 })
             } else {
                 // Normal user OTP login
-                if (formData.password.length < 6) {
+                if (!/^\d{6}$/.test(formData.password)) {
                     setErrors({ password: 'OTP must be 6 digits' })
                     setIsLoading(false)
                     return
@@ -273,12 +272,16 @@ export function LoginModal() {
                                             autoComplete={isEmailAdmin ? 'current-password' : 'one-time-code'}
                                             required
                                             value={formData.password}
-                                            onChange={(e) =>
-                                                setFormData({ ...formData, password: e.target.value })
-                                            }
+                                            onChange={(e) => {
+                                                const value = isEmailAdmin
+                                                    ? e.target.value
+                                                    : e.target.value.replace(/\D/g, '').slice(0, 6)
+                                                setFormData({ ...formData, password: value })
+                                            }}
                                             className="block w-full rounded-lg border-0 py-2.5 text-center text-lg tracking-widest text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-300 focus:ring-2 focus:ring-inset focus:ring-teal-600 sm:leading-6 transition-all"
                                             placeholder={isEmailAdmin ? 'Enter password' : '------'}
                                             maxLength={isEmailAdmin ? 100 : 6}
+                                            inputMode={isEmailAdmin ? undefined : 'numeric'}
                                             autoFocus
                                         />
                                         {!isEmailAdmin && (
