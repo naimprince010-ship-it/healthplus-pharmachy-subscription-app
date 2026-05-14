@@ -213,6 +213,39 @@ export function MobileHome({ subscriptionPlans, homeSections }: MobileHomeProps)
         </div>
       </section>
 
+      {/* Trust Badges - Compact */}
+      <section className="px-4 pb-4">
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 rounded-lg bg-white p-4 shadow-sm">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-teal-100">
+              <Shield className="h-6 w-6 text-teal-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900">100% Authentic</h3>
+              <p className="text-xs text-gray-600">Licensed distributors only</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 rounded-lg bg-white p-4 shadow-sm">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-teal-100">
+              <Package className="h-6 w-6 text-teal-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900">Fast Delivery</h3>
+              <p className="text-xs text-gray-600">Within 24-48 hours</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 rounded-lg bg-white p-4 shadow-sm">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-teal-100">
+              <Heart className="h-6 w-6 text-teal-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900">Expert Support</h3>
+              <p className="text-xs text-gray-600">24/7 pharmacist help</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <PrescriptionUploadModal isOpen={isPrescriptionOpen} onClose={() => setIsPrescriptionOpen(false)} />
 
       {/* Home Sections - Horizontal Scrollable */}
@@ -305,38 +338,7 @@ export function MobileHome({ subscriptionPlans, homeSections }: MobileHomeProps)
         </div>
       </section>
 
-      {/* Trust Badges - Compact */}
-      <section className="px-4 py-6">
-        <div className="space-y-3">
-          <div className="flex items-center gap-3 rounded-lg bg-white p-4 shadow-sm">
-            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-teal-100">
-              <Shield className="h-6 w-6 text-teal-600" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900">100% Authentic</h3>
-              <p className="text-xs text-gray-600">Licensed distributors only</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 rounded-lg bg-white p-4 shadow-sm">
-            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-teal-100">
-              <Package className="h-6 w-6 text-teal-600" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900">Fast Delivery</h3>
-              <p className="text-xs text-gray-600">Within 24-48 hours</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 rounded-lg bg-white p-4 shadow-sm">
-            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-teal-100">
-              <Heart className="h-6 w-6 text-teal-600" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900">Expert Support</h3>
-              <p className="text-xs text-gray-600">24/7 pharmacist help</p>
-            </div>
-          </div>
-        </div>
-      </section>
+
 
       {/* Bottom Spacing for Navigation */}
       <div className="h-20" />

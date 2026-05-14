@@ -159,8 +159,8 @@ export function DesktopHome({ subscriptionPlans, homeSections, heroBanners = [] 
               {/* Left 55%: Text + CTAs */}
               <div style={{ flex: '0 0 55%' }}>
                 <h1 className="font-bold tracking-tight text-gray-900" style={{ fontSize: '2rem', lineHeight: 1.3 }}>
-                  ঔষধ, কসমেটিক্স ও গ্রোসারি —<br />
-                  <span style={{ color: '#0e9a6e' }}>এক জায়গায়, সাশ্রয়ী দামে</span>
+                  ১০০% আসল ঔষধ ও কসমেটিক্স —<br />
+                  <span style={{ color: '#0e9a6e' }}>এখন আপনার দরজায়</span>
                 </h1>
                 <p className="mt-4 max-w-md text-base text-gray-500 lg:text-lg">
                   প্রেসক্রিপশনের ঔষধ, পছন্দের কসমেটিক্স, আর রোজকার গ্রোসারি — অর্ডার করুন, আমরা পৌঁছে দেব।
@@ -185,18 +185,18 @@ export function DesktopHome({ subscriptionPlans, homeSections, heroBanners = [] 
                 {/* Buttons */}
                 <div className="mt-7 flex items-center gap-4">
                   <Link
-                    href="/membership"
+                    href="/medicines"
                     className="rounded-xl px-7 py-3 text-base font-bold text-white shadow-md transition-all hover:-translate-y-0.5 hover:opacity-90"
                     style={{ backgroundColor: '#0e9a6e' }}
                   >
-                    মেম্বারশিপ নিন
+                    Shop Now
                   </Link>
                   <Link
-                    href="/subscriptions"
+                    href="/membership"
                     className="rounded-xl border-2 bg-white px-7 py-3 text-base font-bold transition-all hover:-translate-y-0.5 hover:bg-green-50"
                     style={{ borderColor: '#0e9a6e', color: '#0e9a6e' }}
                   >
-                    মাসিক প্ল্যান দেখুন
+                    মেম্বারশিপ নিন
                   </Link>
                 </div>
               </div>
@@ -254,12 +254,13 @@ export function DesktopHome({ subscriptionPlans, homeSections, heroBanners = [] 
             </div>
           )}
 
-          {/* Mobile/Tablet layout — unchanged */}
-          <div className="lg:hidden">            <div className="mb-5">
-              <p aria-hidden="true" className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-                ঔষধ, কসমেটিক্স ও গ্রোসারি —{' '}
-                <span className="text-teal-600">এক জায়গায়, সাশ্রয়ী দামে</span>
-              </p>
+          {/* Mobile/Tablet layout */}
+          <div className="lg:hidden">
+            <div className="mb-5">
+              <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+                ১০০% আসল ঔষধ ও কসমেটিক্স —{' '}
+                <span className="text-teal-600">এখন আপনার দরজায়</span>
+              </h1>
               <p className="mt-4 text-base text-gray-600">
                 প্রেসক্রিপশনের ঔষধ, পছন্দের কসমেটিক্স, আর রোজকার গ্রোসারি — অর্ডার করুন, আমরা পৌঁছে দেব।
               </p>
@@ -280,6 +281,83 @@ export function DesktopHome({ subscriptionPlans, homeSections, heroBanners = [] 
             </div>
             {/* Mobile inline prescription form */}
             <PrescriptionUploadForm />
+          </div>
+        </div>
+      </section>
+
+      {/* Trust Badges - Moved up for better CRO */}
+      <style>{`
+        .trust-card {
+          transition: transform 0.3s cubic-bezier(.22,.68,0,1.2), border-color 0.3s, box-shadow 0.3s;
+          border: 1.5px solid transparent;
+          border-radius: 12px;
+          padding: 16px;
+          background: white;
+        }
+        .trust-card-blue:hover {
+          transform: translateY(-6px);
+          border-color: #1e6fb5;
+          box-shadow: 0 0 0 3px rgba(30,111,181,0.1), 0 0 20px rgba(30,111,181,0.2), 0 12px 32px rgba(30,111,181,0.15);
+        }
+        .trust-card-green:hover {
+          transform: translateY(-6px);
+          border-color: #1a7a5e;
+          box-shadow: 0 0 0 3px rgba(26,122,94,0.1), 0 0 20px rgba(26,122,94,0.22), 0 12px 32px rgba(26,122,94,0.15);
+        }
+        .trust-card-pink:hover {
+          transform: translateY(-6px);
+          border-color: #d4537e;
+          box-shadow: 0 0 0 3px rgba(212,83,126,0.1), 0 0 20px rgba(212,83,126,0.2), 0 12px 32px rgba(212,83,126,0.15);
+        }
+        .icon-wrap { transition: transform 0.3s; }
+        .trust-card:hover .icon-wrap { transform: scale(1.12) rotate(-4deg); }
+      `}</style>
+      <section className="w-full py-4 lg:py-6">
+        <div className="w-full px-2 sm:px-4">
+          <div className="grid gap-4 sm:grid-cols-3 lg:gap-6" style={{ background: '#f0faf6', borderRadius: '16px', padding: '28px' }}>
+
+            {/* ১০০% খাঁটি পণ্য */}
+            <div className="trust-card trust-card-blue flex flex-col items-start">
+              <div className="icon-wrap mb-3 flex h-12 w-12 items-center justify-center" style={{ borderRadius: '12px', backgroundColor: '#dbeafe' }}>
+                <Shield className="h-6 w-6" style={{ color: '#378ADD' }} />
+              </div>
+              <h3 className="text-base font-bold text-gray-900 lg:text-lg">১০০% খাঁটি পণ্য</h3>
+              <p className="mt-1.5 flex-grow text-xs text-gray-500 lg:mt-2 lg:text-sm">
+                লাইসেন্সপ্রাপ্ত ডিস্ট্রিবিউটর থেকে সংগ্রহ করা ঔষধ, কসমেটিক্স ও গ্রোসারি।
+              </p>
+              <span className="mt-3 inline-block rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: '#dbeafe', color: '#1d4ed8' }}>
+                অরিজিনাল গ্যারান্টি
+              </span>
+            </div>
+
+            {/* দ্রুত ডেলিভারি */}
+            <div className="trust-card trust-card-green flex flex-col items-start">
+              <div className="icon-wrap mb-3 flex h-12 w-12 items-center justify-center" style={{ borderRadius: '12px', backgroundColor: '#d1fae5' }}>
+                <Package className="h-6 w-6" style={{ color: '#0e9a6e' }} />
+              </div>
+              <h3 className="text-base font-bold text-gray-900 lg:text-lg">দ্রুত ডেলিভারি</h3>
+              <p className="mt-1.5 flex-grow text-xs text-gray-500 lg:mt-2 lg:text-sm">
+                ২৪–৪৮ ঘন্টার মধ্যে আপনার দরজায় পৌঁছে দেওয়া হবে।
+              </p>
+              <span className="mt-3 inline-block rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: '#d1fae5', color: '#065f46' }}>
+                ঢাকায় একই দিনে
+              </span>
+            </div>
+
+            {/* বিশেষজ্ঞ সাপোর্ট */}
+            <div className="trust-card trust-card-pink flex flex-col items-start">
+              <div className="icon-wrap mb-3 flex h-12 w-12 items-center justify-center" style={{ borderRadius: '12px', backgroundColor: '#fce7f3' }}>
+                <Heart className="h-6 w-6" style={{ color: '#D4537E' }} />
+              </div>
+              <h3 className="text-base font-bold text-gray-900 lg:text-lg">বিশেষজ্ঞ সাপোর্ট</h3>
+              <p className="mt-1.5 flex-grow text-xs text-gray-500 lg:mt-2 lg:text-sm">
+                আমাদের ফার্মাসিস্টরা সপ্তাহের ৭ দিন, ২৪ ঘন্টা আপনার পাশে আছেন।
+              </p>
+              <span className="mt-3 inline-block rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: '#fce7f3', color: '#9d174d' }}>
+                ২৪/৭ সক্রিয়
+              </span>
+            </div>
+
           </div>
         </div>
       </section>
@@ -331,82 +409,7 @@ export function DesktopHome({ subscriptionPlans, homeSections, heroBanners = [] 
         </div>
       </section>
 
-      {/* Trust Badges */}
-      <style>{`
-        .trust-card {
-          transition: transform 0.3s cubic-bezier(.22,.68,0,1.2), border-color 0.3s, box-shadow 0.3s;
-          border: 1.5px solid transparent;
-          border-radius: 12px;
-          padding: 16px;
-          background: white;
-        }
-        .trust-card-blue:hover {
-          transform: translateY(-6px);
-          border-color: #1e6fb5;
-          box-shadow: 0 0 0 3px rgba(30,111,181,0.1), 0 0 20px rgba(30,111,181,0.2), 0 12px 32px rgba(30,111,181,0.15);
-        }
-        .trust-card-green:hover {
-          transform: translateY(-6px);
-          border-color: #1a7a5e;
-          box-shadow: 0 0 0 3px rgba(26,122,94,0.1), 0 0 20px rgba(26,122,94,0.22), 0 12px 32px rgba(26,122,94,0.15);
-        }
-        .trust-card-pink:hover {
-          transform: translateY(-6px);
-          border-color: #d4537e;
-          box-shadow: 0 0 0 3px rgba(212,83,126,0.1), 0 0 20px rgba(212,83,126,0.2), 0 12px 32px rgba(212,83,126,0.15);
-        }
-        .icon-wrap { transition: transform 0.3s; }
-        .trust-card:hover .icon-wrap { transform: scale(1.12) rotate(-4deg); }
-      `}</style>
-      <section className="w-full py-6 lg:py-10">
-        <div className="w-full px-2 sm:px-4">
-          <div className="grid gap-4 sm:grid-cols-3 lg:gap-6" style={{ background: '#f0faf6', borderRadius: '16px', padding: '28px' }}>
 
-            {/* ১০০% খাঁটি পণ্য */}
-            <div className="trust-card trust-card-blue flex flex-col items-start">
-              <div className="icon-wrap mb-3 flex h-12 w-12 items-center justify-center" style={{ borderRadius: '12px', backgroundColor: '#dbeafe' }}>
-                <Shield className="h-6 w-6" style={{ color: '#378ADD' }} />
-              </div>
-              <h3 className="text-base font-bold text-gray-900 lg:text-lg">১০০% খাঁটি পণ্য</h3>
-              <p className="mt-1.5 flex-grow text-xs text-gray-500 lg:mt-2 lg:text-sm">
-                লাইসেন্সপ্রাপ্ত ডিস্ট্রিবিউটর থেকে সংগ্রহ করা ঔষধ, কসমেটিক্স ও গ্রোসারি।
-              </p>
-              <span className="mt-3 inline-block rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: '#dbeafe', color: '#1d4ed8' }}>
-                অরিজিনাল গ্যারান্টি
-              </span>
-            </div>
-
-            {/* দ্রুত ডেলিভারি */}
-            <div className="trust-card trust-card-green flex flex-col items-start">
-              <div className="icon-wrap mb-3 flex h-12 w-12 items-center justify-center" style={{ borderRadius: '12px', backgroundColor: '#d1fae5' }}>
-                <Package className="h-6 w-6" style={{ color: '#0e9a6e' }} />
-              </div>
-              <h3 className="text-base font-bold text-gray-900 lg:text-lg">দ্রুত ডেলিভারি</h3>
-              <p className="mt-1.5 flex-grow text-xs text-gray-500 lg:mt-2 lg:text-sm">
-                ২৪–৪৮ ঘন্টার মধ্যে আপনার দরজায় পৌঁছে দেওয়া হবে।
-              </p>
-              <span className="mt-3 inline-block rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: '#d1fae5', color: '#065f46' }}>
-                ঢাকায় একই দিনে
-              </span>
-            </div>
-
-            {/* বিশেষজ্ঞ সাপোর্ট */}
-            <div className="trust-card trust-card-pink flex flex-col items-start">
-              <div className="icon-wrap mb-3 flex h-12 w-12 items-center justify-center" style={{ borderRadius: '12px', backgroundColor: '#fce7f3' }}>
-                <Heart className="h-6 w-6" style={{ color: '#D4537E' }} />
-              </div>
-              <h3 className="text-base font-bold text-gray-900 lg:text-lg">বিশেষজ্ঞ সাপোর্ট</h3>
-              <p className="mt-1.5 flex-grow text-xs text-gray-500 lg:mt-2 lg:text-sm">
-                আমাদের ফার্মাসিস্টরা সপ্তাহের ৭ দিন, ২৪ ঘন্টা আপনার পাশে আছেন।
-              </p>
-              <span className="mt-3 inline-block rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: '#fce7f3', color: '#9d174d' }}>
-                ২৪/৭ সক্রিয়
-              </span>
-            </div>
-
-          </div>
-        </div>
-      </section>
     </>
   )
 }

@@ -83,7 +83,7 @@ export function SectionSlider({ section, products }: SectionSliderProps) {
 
         {/* Mobile/Tablet: CSS Grid with auto-wrap */}
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:grid-cols-4 lg:hidden">
-          {products.slice(0, 12).map((product, idx) => (
+          {products.slice(0, 8).map((product, idx) => (
             <div key={product.id} className="w-full">
               <ProductCard product={product} variant="compact" className="h-full" imagePriority={idx < 4} />
             </div>
@@ -94,7 +94,7 @@ export function SectionSlider({ section, products }: SectionSliderProps) {
         {/* Container: flex row nowrap, overflow-x auto, px-4 (16px), gap-4 (16px) */}
         {/* Cards: flex 0 0 196px, min-width 190px - shows 5-6 cards + partial on ~1365px screen */}
         <div className="hidden lg:flex lg:w-full lg:flex-nowrap lg:gap-4 lg:overflow-x-auto lg:px-4 lg:pb-2">
-          {products.slice(0, 12).map((product, idx) => (
+          {products.slice(0, 8).map((product, idx) => (
             <div key={product.id} className="shrink-0 flex-[0_0_196px] min-w-[190px]">
               <ProductCard product={product} variant="compact" className="h-full" imagePriority={idx < 5} />
             </div>
