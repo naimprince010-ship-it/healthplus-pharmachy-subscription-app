@@ -216,17 +216,57 @@ async function importFromChaldal(url: string): Promise<ImportedProduct> {
     }
   })
 
+  const parseBigDtoPrice = (val: unknown): number | null => {
+    if (typeof val === 'number') return val
+    if (val && typeof val === 'object' && 'Lo' in (val as Record<string, unknown>)) {
+      const lo = (val as Record<string, unknown>).Lo
+      if (typeof lo === 'number') return lo
+    }
+    return null
+  }
+
+  const stateMatch = html.match(/window\.__reactAsyncStatePacket\s*=\s*(\{[\s\S]*?\})\s*<\/script>/)
+  if (stateMatch && sellingPrice === null) {
+    try {
+      const state = JSON.parse(stateMatch[1])
+      const blocks = Object.values(state).filter(b => b && typeof b === 'object') as any[]
+      for (const block of blocks) {
+        const items = block.products?.items || []
+        for (const item of items) {
+          const discounted = parseBigDtoPrice(item.DiscountedPrice)
+          const regular = parseBigDtoPrice(item.Price)
+          const price = discounted ?? regular ?? null
+          if (price !== null && price > 0) {
+            sellingPrice = price
+            if (regular !== null && regular > price) {
+              mrp = regular
+            }
+            break
+          }
+        }
+        if (sellingPrice !== null) break
+      }
+    } catch {
+      // ignore state parse errors
+    }
+  }
+
   const priceText = $('body').text()
   if (sellingPrice === null) {
+    // Look for a price that comes right after "৳" but try to avoid taking the first one 
+    // which might be the "Free delivery over ৳ 400" banner.
+    // Instead of taking validPrices[0], let's try to find it near the add to cart button or take the most common price.
+    // Since state extraction should cover 99% of cases, we just keep this as a very last resort,
+    // but filter out common banner amounts like 400, 49, 59, 29, 19
     const priceMatches = priceText.match(/৳\s*([\d,.]+)/g) || []
     const validPrices = priceMatches
       .map(p => parsePrice(p))
-      .filter((p): p is number => p !== null && p > 0)
+      .filter((p): p is number => p !== null && p > 0 && ![400, 49, 59, 29, 19].includes(p))
 
     if (validPrices.length >= 1) {
-      sellingPrice = validPrices[0]
-      if (validPrices.length >= 2 && validPrices[1] > validPrices[0]) {
-        mrp = validPrices[1]
+      sellingPrice = validPrices[validPrices.length > 1 ? 1 : 0] // try second price if multiple exist
+      if (validPrices.length >= 2 && validPrices[0] > validPrices[1]) {
+        mrp = validPrices[0]
       }
     }
   }
