@@ -1,4 +1,4 @@
-import { prisma } from './lib/prisma.ts';
+import { prisma } from './lib/prisma';
 
 async function main() {
   const banners = await prisma.banner.findMany();
