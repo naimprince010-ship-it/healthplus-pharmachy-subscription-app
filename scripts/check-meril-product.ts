@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 async function main() {
   const product = await prisma.product.findUnique({
     where: { slug: 'meril-baby-gel-toothpaste-strawberry' },
-    include: { inventory: true, ProductBrand: true }
+    include: { manufacturer: true, category: true, medicine: true }
   });
   console.log(JSON.stringify(product, null, 2));
 }
