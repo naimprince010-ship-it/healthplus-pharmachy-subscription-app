@@ -45,49 +45,89 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>
 }
 
-const navItems: NavItem[] = [
-  { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-  { label: 'AI Assistant', href: '/admin/ai-assistant', icon: Sparkles },
-  { label: 'Blog Topics', href: '/admin/blog-topics', icon: BookOpen },
-  { label: 'Blog Queue', href: '/admin/blog-queue', icon: List },
-  { label: 'Blog sponsors', href: '/admin/blog-sponsors', icon: DollarSign },
-  { label: 'Missing Products', href: '/admin/missing-products', icon: AlertCircle },
-  { label: 'Product Tagging', href: '/admin/product-tagging', icon: Tag },
-  { label: 'AI Import', href: '/admin/ai-import', icon: Upload },
-  { label: 'Product Import', href: '/admin/product-import', icon: Download },
-  { label: 'Chaldal import', href: '/admin/chaldal-import', icon: ShoppingBasket },
-  { label: 'Azan Wholesale', href: '/admin/azan-wholesale', icon: Store },
-  { label: 'Medicines', href: '/admin/medicines', icon: Package },
-  { label: 'Products', href: '/admin/products', icon: Box },
-  { label: 'Categories', href: '/admin/categories', icon: FolderTree },
-  { label: 'Manufacturers', href: '/admin/manufacturers', icon: Factory },
-  { label: 'Orders', href: '/admin/orders', icon: ShoppingBag },
-  { label: 'Subscriptions', href: '/admin/subscriptions', icon: Calendar },
-  { label: 'Subscription Plans', href: '/admin/subscription-plans', icon: PackageCheck },
-  { label: 'Subscriptions page texts', href: '/admin/subscription-plans/site-copy', icon: FileText },
-  { label: 'Memberships', href: '/admin/memberships', icon: Shield },
-  { label: 'Prescriptions', href: '/admin/prescriptions', icon: FileText },
-  { label: 'Delivery Zones', href: '/admin/delivery-zones', icon: MapPin },
-  { label: 'Home Sections', href: '/admin/home-sections', icon: LayoutGrid },
-  { label: 'Banners', href: '/admin/banners', icon: Image },
-  { label: 'Pages', href: '/admin/pages', icon: FileText },
-  { label: 'Landing Pages', href: '/admin/landing-pages', icon: Megaphone },
-  { label: 'Cart Settings', href: '/admin/cart-settings', icon: ShoppingCart },
-  { label: 'Checkout Settings', href: '/admin/checkout-settings', icon: ShoppingBag },
-  { label: 'Order Tracking Settings', href: '/admin/order-tracking-settings', icon: MapPin },
-  { label: 'Dashboard Settings', href: '/admin/dashboard-settings', icon: LayoutDashboard },
-  { label: 'Cart Suggestions', href: '/admin/cart-suggestions', icon: Lightbulb },
-  { label: 'Fix Images', href: '/admin/fix-images', icon: ImageOff },
-  { label: 'Users', href: '/admin/users', icon: Users },
-  { label: 'Sales / Reports', href: '/admin/sales', icon: BarChart3 },
-  { label: 'Market Intelligence', href: '/admin/market-intel', icon: TrendingUp },
-  { label: 'Price Comparison', href: '/admin/market-intel/comparison', icon: BarChart3 },
-  { label: 'Medex Scraper', href: '/admin/medex-scraper', icon: Sparkles },
-  { label: 'Discount Manager', href: '/admin/discounts', icon: Percent },
-  { label: 'Membership Page', href: '/admin/membership-settings', icon: Shield },
-  { label: 'Membership Banner', href: '/admin/membership-banner', icon: Image },
-  { label: 'Footer Settings', href: '/admin/footer-settings', icon: FileText },
-  { label: 'Settings', href: '/admin/settings', icon: Settings },
+interface NavSection {
+  title: string
+  items: NavItem[]
+}
+
+const navSections: NavSection[] = [
+  {
+    title: 'Core',
+    items: [
+      { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+      { label: 'AI Assistant', href: '/admin/ai-assistant', icon: Sparkles },
+      { label: 'Users', href: '/admin/users', icon: Users },
+    ],
+  },
+  {
+    title: 'Catalog',
+    items: [
+      { label: 'Medicines', href: '/admin/medicines', icon: Package },
+      { label: 'Products', href: '/admin/products', icon: Box },
+      { label: 'Categories', href: '/admin/categories', icon: FolderTree },
+      { label: 'Manufacturers', href: '/admin/manufacturers', icon: Factory },
+      { label: 'Missing Products', href: '/admin/missing-products', icon: AlertCircle },
+      { label: 'Product Tagging', href: '/admin/product-tagging', icon: Tag },
+      { label: 'Fix Images', href: '/admin/fix-images', icon: ImageOff },
+    ],
+  },
+  {
+    title: 'Commerce',
+    items: [
+      { label: 'Orders', href: '/admin/orders', icon: ShoppingBag },
+      { label: 'Prescriptions', href: '/admin/prescriptions', icon: FileText },
+      { label: 'Subscriptions', href: '/admin/subscriptions', icon: Calendar },
+      { label: 'Subscription Plans', href: '/admin/subscription-plans', icon: PackageCheck },
+      { label: 'Subscriptions page texts', href: '/admin/subscription-plans/site-copy', icon: FileText },
+      { label: 'Memberships', href: '/admin/memberships', icon: Shield },
+      { label: 'Discount Manager', href: '/admin/discounts', icon: Percent },
+      { label: 'Delivery Zones', href: '/admin/delivery-zones', icon: MapPin },
+      { label: 'Cart Suggestions', href: '/admin/cart-suggestions', icon: Lightbulb },
+    ],
+  },
+  {
+    title: 'Content & Marketing',
+    items: [
+      { label: 'Home Sections', href: '/admin/home-sections', icon: LayoutGrid },
+      { label: 'Banners', href: '/admin/banners', icon: Image },
+      { label: 'Pages', href: '/admin/pages', icon: FileText },
+      { label: 'Landing Pages', href: '/admin/landing-pages', icon: Megaphone },
+      { label: 'Membership Page', href: '/admin/membership-settings', icon: Shield },
+      { label: 'Membership Banner', href: '/admin/membership-banner', icon: Image },
+      { label: 'Footer Settings', href: '/admin/footer-settings', icon: FileText },
+      { label: 'Blog Topics', href: '/admin/blog-topics', icon: BookOpen },
+      { label: 'Blog Queue', href: '/admin/blog-queue', icon: List },
+      { label: 'Blog sponsors', href: '/admin/blog-sponsors', icon: DollarSign },
+    ],
+  },
+  {
+    title: 'Data & Intelligence',
+    items: [
+      { label: 'Sales / Reports', href: '/admin/sales', icon: BarChart3 },
+      { label: 'Market Intelligence', href: '/admin/market-intel', icon: TrendingUp },
+      { label: 'Price Comparison', href: '/admin/market-intel/comparison', icon: BarChart3 },
+      { label: 'Medex Scraper', href: '/admin/medex-scraper', icon: Sparkles },
+    ],
+  },
+  {
+    title: 'Imports & Integrations',
+    items: [
+      { label: 'AI Import', href: '/admin/ai-import', icon: Upload },
+      { label: 'Product Import', href: '/admin/product-import', icon: Download },
+      { label: 'Chaldal import', href: '/admin/chaldal-import', icon: ShoppingBasket },
+      { label: 'Azan Wholesale', href: '/admin/azan-wholesale', icon: Store },
+    ],
+  },
+  {
+    title: 'System Settings',
+    items: [
+      { label: 'Cart Settings', href: '/admin/cart-settings', icon: ShoppingCart },
+      { label: 'Checkout Settings', href: '/admin/checkout-settings', icon: ShoppingBag },
+      { label: 'Order Tracking Settings', href: '/admin/order-tracking-settings', icon: MapPin },
+      { label: 'Dashboard Settings', href: '/admin/dashboard-settings', icon: LayoutDashboard },
+      { label: 'Settings', href: '/admin/settings', icon: Settings },
+    ],
+  },
 ]
 
 interface AdminSidebarProps {
@@ -153,34 +193,43 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
 
           {/* Navigation */}
           <nav className="flex-1 overflow-y-auto p-4">
-            <ul className="space-y-1">
-              {navItems.map((item) => {
-                const Icon = item.icon
-                const active = isActive(item.href)
+            <div className="space-y-6">
+              {navSections.map((section) => (
+                <section key={section.title}>
+                  <h3 className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+                    {section.title}
+                  </h3>
+                  <ul className="space-y-1">
+                    {section.items.map((item) => {
+                      const Icon = item.icon
+                      const active = isActive(item.href)
 
-                return (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      onClick={() => {
-                        if (window.innerWidth < 768) {
-                          onClose()
-                        }
-                      }}
-                      className={cn(
-                        'flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                        active
-                          ? 'bg-teal-50 text-teal-700 border-l-4 border-teal-600 pl-2'
-                          : 'text-gray-700 hover:bg-gray-100'
-                      )}
-                    >
-                      <Icon className={cn('h-5 w-5', active ? 'text-teal-600' : 'text-gray-500')} />
-                      <span>{item.label}</span>
-                    </Link>
-                  </li>
-                )
-              })}
-            </ul>
+                      return (
+                        <li key={item.href}>
+                          <Link
+                            href={item.href}
+                            onClick={() => {
+                              if (window.innerWidth < 768) {
+                                onClose()
+                              }
+                            }}
+                            className={cn(
+                              'flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                              active
+                                ? 'bg-teal-50 text-teal-700 border-l-4 border-teal-600 pl-2'
+                                : 'text-gray-700 hover:bg-gray-100'
+                            )}
+                          >
+                            <Icon className={cn('h-5 w-5', active ? 'text-teal-600' : 'text-gray-500')} />
+                            <span>{item.label}</span>
+                          </Link>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </section>
+              ))}
+            </div>
           </nav>
 
           {/* Footer */}
