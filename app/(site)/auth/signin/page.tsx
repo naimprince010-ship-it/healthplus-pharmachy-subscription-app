@@ -36,6 +36,20 @@ function SignInForm() {
   const [step, setStep] = useState<1 | 2>(1)
   const [sessionId, setSessionId] = useState('')
 
+  const waitForSession = async () => {
+    let session = await getSession()
+    let retries = 0
+
+    // Credentials sign-in may take a short moment to persist the JWT cookie.
+    while (!session?.user && retries < 10) {
+      await new Promise(resolve => setTimeout(resolve, 300))
+      session = await getSession()
+      retries++
+    }
+
+    return session
+  }
+
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrors({})
@@ -124,21 +138,19 @@ function SignInForm() {
         return
       }
 
-      const callbackUrl = searchParams.get('callbackUrl')
+      const session = await waitForSession()
+      if (!session?.user) {
+        setServerError('Login was successful but session setup is delayed. Please try again.')
+        return
+      }
+
+      const callbackUrl = searchParams.get('callbackUrl') || searchParams.get('redirect')
       const isValidCallback = callbackUrl && callbackUrl.startsWith('/') && !callbackUrl.startsWith('//')
 
       if (isValidCallback && callbackUrl !== '/') {
         router.push(callbackUrl)
         router.refresh()
         return
-      }
-
-      let session = await getSession()
-      let retries = 0
-      while (!session?.user && retries < 3) {
-        await new Promise(resolve => setTimeout(resolve, 300))
-        session = await getSession()
-        retries++
       }
 
       if (session?.user?.role === 'ADMIN') {
@@ -150,6 +162,7 @@ function SignInForm() {
     } catch (error) {
       console.error('Sign in error:', error)
       setServerError('An error occurred. Please try again.')
+    } finally {
       setIsLoading(false)
     }
   }

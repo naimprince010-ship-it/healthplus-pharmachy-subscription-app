@@ -23,6 +23,20 @@ export function LoginModal() {
     const [step, setStep] = useState<1 | 2>(1)
     const [sessionId, setSessionId] = useState('')
 
+    const waitForSession = async () => {
+        let session = await getSession()
+        let retries = 0
+
+        // JWT cookie can take a moment to be readable after credentials login.
+        while (!session?.user && retries < 10) {
+            await new Promise(resolve => setTimeout(resolve, 300))
+            session = await getSession()
+            retries++
+        }
+
+        return session
+    }
+
     if (!isOpen) return null
 
     const handleClose = () => {
@@ -120,13 +134,10 @@ export function LoginModal() {
                 return
             }
 
-            // Check session
-            let session = await getSession()
-            let retries = 0
-            while (!session?.user && retries < 3) {
-                await new Promise(resolve => setTimeout(resolve, 300))
-                session = await getSession()
-                retries++
+            const session = await waitForSession()
+            if (!session?.user) {
+                setServerError('Login was successful but session setup is delayed. Please try again.')
+                return
             }
 
             // Login Successful! Close modal and refresh to update navbar
