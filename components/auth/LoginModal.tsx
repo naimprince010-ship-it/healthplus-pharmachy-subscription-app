@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { signIn, getSession } from 'next-auth/react'
 import { useRouter, usePathname } from 'next/navigation'
 import { z } from 'zod'
@@ -22,6 +22,7 @@ export function LoginModal() {
     const [serverError, setServerError] = useState('')
     const [step, setStep] = useState<1 | 2>(1)
     const [sessionId, setSessionId] = useState('')
+    const isEmailAdmin = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.identifier)
 
     const waitForSession = async () => {
         let session = await getSession()
@@ -36,6 +37,32 @@ export function LoginModal() {
 
         return session
     }
+
+    useEffect(() => {
+        if (step !== 2 || isEmailAdmin) return
+        if (typeof window === 'undefined') return
+        if (!('OTPCredential' in window) || !('credentials' in navigator)) return
+
+        const controller = new AbortController()
+
+        ;(async () => {
+            try {
+                const otpCredential = await (navigator.credentials as CredentialsContainer).get({
+                    otp: { transport: ['sms'] },
+                    signal: controller.signal,
+                } as CredentialRequestOptions) as Credential | null
+
+                const code = (otpCredential as { code?: string } | null)?.code
+                if (code && /^\d{6}$/.test(code)) {
+                    setFormData((prev) => ({ ...prev, password: code }))
+                }
+            } catch {
+                // Ignore unsupported browsers or denied permission.
+            }
+        })()
+
+        return () => controller.abort()
+    }, [step, isEmailAdmin])
 
     if (!isOpen) return null
 
@@ -161,8 +188,6 @@ export function LoginModal() {
         }
     }
 
-    const isEmailAdmin = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.identifier)
-
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-0">
             {/* Backdrop */}
@@ -279,7 +304,7 @@ export function LoginModal() {
                                         </div>
                                         <input
                                             id="modal-password"
-                                            name="password"
+                                            name={isEmailAdmin ? 'password' : 'otp'}
                                             type={isEmailAdmin ? 'password' : 'text'}
                                             autoComplete={isEmailAdmin ? 'current-password' : 'one-time-code'}
                                             required
@@ -287,6 +312,8 @@ export function LoginModal() {
                                             onChange={(e) =>
                                                 setFormData({ ...formData, password: e.target.value })
                                             }
+                                            inputMode={isEmailAdmin ? undefined : 'numeric'}
+                                            pattern={isEmailAdmin ? undefined : '[0-9]*'}
                                             className="block w-full rounded-lg border-0 py-2.5 text-center text-lg tracking-widest text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-300 focus:ring-2 focus:ring-inset focus:ring-teal-600 sm:leading-6 transition-all"
                                             placeholder={isEmailAdmin ? 'Enter password' : '------'}
                                             maxLength={isEmailAdmin ? 100 : 6}

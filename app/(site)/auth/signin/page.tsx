@@ -35,6 +35,7 @@ function SignInForm() {
   const [serverError, setServerError] = useState('')
   const [step, setStep] = useState<1 | 2>(1)
   const [sessionId, setSessionId] = useState('')
+  const isEmailAdmin = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.identifier)
 
   const waitForSession = async () => {
     let session = await getSession()
@@ -49,6 +50,32 @@ function SignInForm() {
 
     return session
   }
+
+  useEffect(() => {
+    if (step !== 2 || isEmailAdmin) return
+    if (typeof window === 'undefined') return
+    if (!('OTPCredential' in window) || !('credentials' in navigator)) return
+
+    const controller = new AbortController()
+
+    ;(async () => {
+      try {
+        const otpCredential = await (navigator.credentials as CredentialsContainer).get({
+          otp: { transport: ['sms'] },
+          signal: controller.signal,
+        } as CredentialRequestOptions) as Credential | null
+
+        const code = (otpCredential as { code?: string } | null)?.code
+        if (code && /^\d{6}$/.test(code)) {
+          setFormData((prev) => ({ ...prev, password: code }))
+        }
+      } catch {
+        // Ignore; browser/user may not allow WebOTP.
+      }
+    })()
+
+    return () => controller.abort()
+  }, [step, isEmailAdmin])
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -167,8 +194,6 @@ function SignInForm() {
     }
   }
 
-  const isEmailAdmin = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.identifier)
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-teal-50 via-white to-orange-50 px-4 py-12 sm:px-6 lg:px-8 relative overflow-hidden">
       {/* Decorative background blobs */}
@@ -239,7 +264,7 @@ function SignInForm() {
                 </div>
                 <input
                   id="password"
-                  name="password"
+                  name={isEmailAdmin ? 'password' : 'otp'}
                   type={isEmailAdmin ? 'password' : 'text'}
                   autoComplete={isEmailAdmin ? 'current-password' : 'one-time-code'}
                   required
@@ -247,6 +272,8 @@ function SignInForm() {
                   onChange={(e) =>
                     setFormData({ ...formData, password: e.target.value })
                   }
+                  inputMode={isEmailAdmin ? undefined : 'numeric'}
+                  pattern={isEmailAdmin ? undefined : '[0-9]*'}
                   className="mt-2 block w-full tracking-widest text-center rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-gray-900 focus:border-teal-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-teal-500/10 sm:text-lg transition-all"
                   placeholder={isEmailAdmin ? 'Enter password' : '------'}
                   maxLength={isEmailAdmin ? 100 : 6}
