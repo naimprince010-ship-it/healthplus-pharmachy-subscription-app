@@ -26,6 +26,23 @@ enum PaymentMethod {
   ONLINE
 }
 
+enum ReturnRequestStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  RECEIVED
+  CLOSED
+}
+
+enum ReturnReason {
+  DAMAGED
+  WRONG_ITEM
+  EXPIRED
+  QUALITY_ISSUE
+  NOT_AS_DESCRIBED
+  OTHER
+}
+
 enum BannerLocation {
   HOME_HERO
   HOME_MID
@@ -153,6 +170,7 @@ model User {
   orders        Order[]
   memberships   UserMembership[]
   subscriptions Subscription[]
+  returnRequests ReturnRequest[]
   wishlistItems WishlistItem[]
   reviews       Review[]
   productInteractionLogs ProductInteractionLog[]
@@ -558,6 +576,7 @@ model Order {
   updatedAt                DateTime      @updatedAt
   items                    OrderItem[]
   statusHistory            OrderStatusHistory[]
+  returnRequests           ReturnRequest[]
 }
 
 model OrderItem {
@@ -582,6 +601,59 @@ model OrderItem {
   discount  Float    @default(0)
   total     Float
   createdAt DateTime @default(now())
+  returnItems ReturnItem[]
+}
+
+model ReturnRequest {
+  id             String              @id @default(cuid())
+  orderId        String
+  order          Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status         ReturnRequestStatus @default(REQUESTED)
+  reason         ReturnReason
+  customerNote   String?
+  adminNote      String?
+  evidenceUrls   Json?
+  requestedAt    DateTime            @default(now())
+  reviewedAt     DateTime?
+  closedAt       DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  items          ReturnItem[]
+  statusHistory  ReturnStatusHistory[]
+
+  @@index([orderId])
+  @@index([userId])
+  @@index([status, requestedAt])
+  @@index([createdAt])
+}
+
+model ReturnItem {
+  id              String        @id @default(cuid())
+  returnRequestId String
+  returnRequest   ReturnRequest @relation(fields: [returnRequestId], references: [id], onDelete: Cascade)
+  orderItemId     String
+  orderItem       OrderItem     @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+  quantity        Int
+  note            String?
+  createdAt       DateTime      @default(now())
+
+  @@index([returnRequestId])
+  @@index([orderItemId])
+}
+
+model ReturnStatusHistory {
+  id              String              @id @default(cuid())
+  returnRequestId String
+  returnRequest   ReturnRequest       @relation(fields: [returnRequestId], references: [id], onDelete: Cascade)
+  fromStatus      ReturnRequestStatus?
+  toStatus        ReturnRequestStatus
+  note            String?
+  changedByUserId String?
+  changedAt       DateTime            @default(now())
+
+  @@index([returnRequestId, changedAt])
 }
 
 // Order Status History - tracks status changes with timestamps for timeline

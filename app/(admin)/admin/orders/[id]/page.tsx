@@ -50,6 +50,13 @@ interface Order {
   azanPushError: string | null
   /** Last Azan API JSON (e.g. error body when push failed). */
   azanStatusRaw?: unknown | null
+  returnRequests?: Array<{
+    id: string
+    status: string
+    reason: string
+    requestedAt: string
+    items: Array<{ quantity: number }>
+  }>
   user: {
     name: string
     phone: string
@@ -292,21 +299,29 @@ export default function OrderDetailsPage() {
               })}
             </p>
           </div>
-          <span
-            className={`inline-flex rounded-full px-4 py-2 text-sm font-semibold ${
-              order.status === 'DELIVERED'
-                ? 'bg-green-100 text-green-800'
-                : order.status === 'CANCELLED'
-                ? 'bg-red-100 text-red-800'
-                : order.status === 'SHIPPED'
-                ? 'bg-blue-100 text-blue-800'
-                : order.status === 'CONFIRMED' || order.status === 'PROCESSING'
-                ? 'bg-purple-100 text-purple-800'
-                : 'bg-yellow-100 text-yellow-800'
-            }`}
-          >
-            {order.status}
-          </span>
+          <div className="flex items-center gap-3">
+            <Link
+              href={`/admin/returns/new?orderId=${order.id}`}
+              className="inline-flex items-center rounded-md border border-teal-600 px-3 py-2 text-sm font-medium text-teal-700 hover:bg-teal-50"
+            >
+              Create Return
+            </Link>
+            <span
+              className={`inline-flex rounded-full px-4 py-2 text-sm font-semibold ${
+                order.status === 'DELIVERED'
+                  ? 'bg-green-100 text-green-800'
+                  : order.status === 'CANCELLED'
+                  ? 'bg-red-100 text-red-800'
+                  : order.status === 'SHIPPED'
+                  ? 'bg-blue-100 text-blue-800'
+                  : order.status === 'CONFIRMED' || order.status === 'PROCESSING'
+                  ? 'bg-purple-100 text-purple-800'
+                  : 'bg-yellow-100 text-yellow-800'
+              }`}
+            >
+              {order.status}
+            </span>
+          </div>
         </div>
 
         {error && (
@@ -314,6 +329,43 @@ export default function OrderDetailsPage() {
             <p className="text-sm text-red-800">{error}</p>
           </div>
         )}
+
+        <div className="mb-8 rounded-lg bg-white p-6 shadow">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-xl font-bold text-gray-900">Return Requests</h2>
+            <Link
+              href={`/admin/returns/new?orderId=${order.id}`}
+              className="rounded-md bg-teal-600 px-3 py-2 text-sm font-medium text-white hover:bg-teal-700"
+            >
+              New Return
+            </Link>
+          </div>
+
+          {order.returnRequests && order.returnRequests.length > 0 ? (
+            <div className="space-y-3">
+              {order.returnRequests.map((request) => (
+                <div key={request.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-gray-200 p-3">
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900">#{request.id.slice(0, 8)}</div>
+                    <div className="text-xs text-gray-600">
+                      {request.reason} | Qty: {request.items.reduce((sum, item) => sum + item.quantity, 0)}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700">
+                      {request.status}
+                    </span>
+                    <Link href={`/admin/returns/${request.id}`} className="text-sm font-medium text-teal-600 hover:text-teal-700">
+                      Open
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-600">No return requests created for this order yet.</p>
+          )}
+        </div>
 
         <div className="mb-8 rounded-lg bg-white p-6 shadow">
           <h2 className="mb-6 text-xl font-bold text-gray-900">Order Status Timeline</h2>

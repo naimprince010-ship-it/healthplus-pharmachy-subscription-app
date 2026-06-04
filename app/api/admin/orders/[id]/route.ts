@@ -23,6 +23,18 @@ export async function GET(
         user: {
           select: { name: true, phone: true, email: true },
         },
+        returnRequests: {
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            status: true,
+            reason: true,
+            requestedAt: true,
+            items: {
+              select: { quantity: true },
+            },
+          },
+        },
         items: {
           include: {
             medicine: {

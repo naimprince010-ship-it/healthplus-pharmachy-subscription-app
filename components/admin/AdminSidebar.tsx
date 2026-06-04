@@ -36,6 +36,7 @@ import {
   Store,
   DollarSign,
   ShoppingBasket,
+  RotateCcw,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -75,6 +76,7 @@ const navSections: NavSection[] = [
     title: 'Commerce',
     items: [
       { label: 'Orders', href: '/admin/orders', icon: ShoppingBag },
+      { label: 'Returns', href: '/admin/returns', icon: RotateCcw },
       { label: 'Prescriptions', href: '/admin/prescriptions', icon: FileText },
       { label: 'Subscriptions', href: '/admin/subscriptions', icon: Calendar },
       { label: 'Subscription Plans', href: '/admin/subscription-plans', icon: PackageCheck },
