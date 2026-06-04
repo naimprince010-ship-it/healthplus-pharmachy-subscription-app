@@ -21,6 +21,7 @@ const nextConfig: NextConfig = {
     localPatterns: [
       { pathname: "/api/image-proxy" },
       { pathname: "/api/image-proxy/**" },
+      { pathname: "/banners/**" },
       { pathname: "/images/**" },
       { pathname: "/icons/**" },
     ],
