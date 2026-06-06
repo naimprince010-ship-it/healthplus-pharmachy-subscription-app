@@ -7,13 +7,7 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
-    let settings = await prisma.cartPageSettings.findFirst()
-
-    if (!settings) {
-      settings = await prisma.cartPageSettings.create({
-        data: {},
-      })
-    }
+    const settings = await prisma.cartPageSettings.findFirst()
 
     const cartParam = request.nextUrl.searchParams.get('cart') || ''
     const cartLineIds = cartParam

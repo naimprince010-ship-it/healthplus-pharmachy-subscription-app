@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/requireAdmin'
 
-export async function GET(request: Request) {
-  // Simple auth check just to prevent random public hits if needed
-  // For demo/admin seeding purposes, we'll allow it or you can protect it with auth logic
+export async function GET() {
+  return NextResponse.json({ error: 'Method not allowed. Use POST.' }, { status: 405 })
+}
+
+export async function POST() {
+  const { authorized, response } = await requireAdmin()
+  if (!authorized) return response
 
   try {
     // 1. Create the localized BlogTopic

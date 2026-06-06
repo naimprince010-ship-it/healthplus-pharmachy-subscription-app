@@ -23,6 +23,7 @@
     "sync:azan": "npx tsx scripts/sync-azan-api.ts",
     "db:report-azan": "npx tsx scripts/report-azan-wholesale-db.ts",
     "db:audit-azan-margins": "npx tsx scripts/audit-azan-margins.ts",
+    "admin:setup": "npx tsx scripts/setup-admin.ts",
     "activate:azan": "npx tsx scripts/activate-azan-products.ts",
     "cleanup:azan:inactive": "npx tsx scripts/cleanup-inactive-azan-products.ts",
     "azan:coverage-hint": "node scripts/azan-coverage-hint.mjs",

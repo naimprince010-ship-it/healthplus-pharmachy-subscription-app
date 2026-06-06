@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import {
@@ -37,6 +38,9 @@ import {
   DollarSign,
   ShoppingBasket,
   RotateCcw,
+  ChevronDown,
+  ChevronRight,
+  Search,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -47,12 +51,14 @@ interface NavItem {
 }
 
 interface NavSection {
+  id: string
   title: string
   items: NavItem[]
 }
 
 const navSections: NavSection[] = [
   {
+    id: 'core',
     title: 'Core',
     items: [
       { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
@@ -61,6 +67,7 @@ const navSections: NavSection[] = [
     ],
   },
   {
+    id: 'catalog',
     title: 'Catalog',
     items: [
       { label: 'Medicines', href: '/admin/medicines', icon: Package },
@@ -73,6 +80,7 @@ const navSections: NavSection[] = [
     ],
   },
   {
+    id: 'commerce',
     title: 'Commerce',
     items: [
       { label: 'Orders', href: '/admin/orders', icon: ShoppingBag },
@@ -80,7 +88,7 @@ const navSections: NavSection[] = [
       { label: 'Prescriptions', href: '/admin/prescriptions', icon: FileText },
       { label: 'Subscriptions', href: '/admin/subscriptions', icon: Calendar },
       { label: 'Subscription Plans', href: '/admin/subscription-plans', icon: PackageCheck },
-      { label: 'Subscriptions page texts', href: '/admin/subscription-plans/site-copy', icon: FileText },
+      { label: 'Subscription Page Copy', href: '/admin/subscription-plans/site-copy', icon: FileText },
       { label: 'Memberships', href: '/admin/memberships', icon: Shield },
       { label: 'Discount Manager', href: '/admin/discounts', icon: Percent },
       { label: 'Delivery Zones', href: '/admin/delivery-zones', icon: MapPin },
@@ -88,6 +96,7 @@ const navSections: NavSection[] = [
     ],
   },
   {
+    id: 'content-marketing',
     title: 'Content & Marketing',
     items: [
       { label: 'Home Sections', href: '/admin/home-sections', icon: LayoutGrid },
@@ -99,10 +108,11 @@ const navSections: NavSection[] = [
       { label: 'Footer Settings', href: '/admin/footer-settings', icon: FileText },
       { label: 'Blog Topics', href: '/admin/blog-topics', icon: BookOpen },
       { label: 'Blog Queue', href: '/admin/blog-queue', icon: List },
-      { label: 'Blog sponsors', href: '/admin/blog-sponsors', icon: DollarSign },
+      { label: 'Blog Sponsors', href: '/admin/blog-sponsors', icon: DollarSign },
     ],
   },
   {
+    id: 'data-intelligence',
     title: 'Data & Intelligence',
     items: [
       { label: 'Sales / Reports', href: '/admin/sales', icon: BarChart3 },
@@ -112,15 +122,17 @@ const navSections: NavSection[] = [
     ],
   },
   {
+    id: 'imports',
     title: 'Imports & Integrations',
     items: [
       { label: 'AI Import', href: '/admin/ai-import', icon: Upload },
       { label: 'Product Import', href: '/admin/product-import', icon: Download },
-      { label: 'Chaldal import', href: '/admin/chaldal-import', icon: ShoppingBasket },
+      { label: 'Chaldal Import', href: '/admin/chaldal-import', icon: ShoppingBasket },
       { label: 'Azan Wholesale', href: '/admin/azan-wholesale', icon: Store },
     ],
   },
   {
+    id: 'system',
     title: 'System Settings',
     items: [
       { label: 'Cart Settings', href: '/admin/cart-settings', icon: ShoppingCart },
@@ -140,6 +152,27 @@ interface AdminSidebarProps {
 export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const [query, setQuery] = useState('')
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({})
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem('admin-sidebar-collapsed')
+      if (raw) {
+        setCollapsedSections(JSON.parse(raw) as Record<string, boolean>)
+      }
+    } catch {
+      setCollapsedSections({})
+    }
+  }, [])
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('admin-sidebar-collapsed', JSON.stringify(collapsedSections))
+    } catch {
+      // Ignore storage errors silently.
+    }
+  }, [collapsedSections])
   const chaldalImportActive =
     pathname === '/admin/chaldal-import' ||
     (pathname.startsWith('/admin/product-import') && searchParams.get('from') === 'chaldal')
@@ -155,6 +188,35 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       return pathname.startsWith(href) && !chaldalImportActive
     }
     return pathname.startsWith(href)
+  }
+
+  const filteredSections = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase()
+
+    if (!normalizedQuery) {
+      return navSections
+    }
+
+    return navSections
+      .map((section) => {
+        const titleMatch = section.title.toLowerCase().includes(normalizedQuery)
+        const items = titleMatch
+          ? section.items
+          : section.items.filter((item) => item.label.toLowerCase().includes(normalizedQuery))
+
+        return {
+          ...section,
+          items,
+        }
+      })
+      .filter((section) => section.items.length > 0)
+  }, [query])
+
+  const toggleSection = (sectionId: string) => {
+    setCollapsedSections((prev) => ({
+      ...prev,
+      [sectionId]: !prev[sectionId],
+    }))
   }
 
   return (
@@ -195,13 +257,40 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
 
           {/* Navigation */}
           <nav className="flex-1 overflow-y-auto p-4">
+            <div className="mb-4">
+              <label htmlFor="admin-nav-search" className="sr-only">
+                Search admin navigation
+              </label>
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <input
+                  id="admin-nav-search"
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search pages..."
+                  className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                />
+              </div>
+            </div>
+
             <div className="space-y-6">
-              {navSections.map((section) => (
+              {filteredSections.map((section) => {
+                const isCollapsed = query ? false : Boolean(collapsedSections[section.id])
+
+                return (
                 <section key={section.title}>
-                  <h3 className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
-                    {section.title}
-                  </h3>
-                  <ul className="space-y-1">
+                  <button
+                    type="button"
+                    onClick={() => toggleSection(section.id)}
+                    className="mb-2 flex w-full items-center justify-between rounded-md px-3 py-1 text-xs font-semibold uppercase tracking-wider text-gray-500 hover:bg-gray-100"
+                    aria-expanded={!isCollapsed}
+                    aria-controls={`admin-section-${section.id}`}
+                  >
+                    <span>{section.title}</span>
+                    {isCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                  </button>
+                  <ul id={`admin-section-${section.id}`} className={cn('space-y-1', isCollapsed && 'hidden')}>
                     {section.items.map((item) => {
                       const Icon = item.icon
                       const active = isActive(item.href)
@@ -230,7 +319,14 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                     })}
                   </ul>
                 </section>
-              ))}
+                )
+              })}
+
+              {filteredSections.length === 0 && (
+                <p className="rounded-lg border border-dashed border-gray-200 px-3 py-4 text-sm text-gray-500">
+                  No matching page found.
+                </p>
+              )}
             </div>
           </nav>
 

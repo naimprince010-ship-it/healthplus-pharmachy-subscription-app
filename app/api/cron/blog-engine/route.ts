@@ -3,12 +3,11 @@ import { prisma } from '@/lib/prisma'
 import { TopicBlock, BlogStatus } from '@prisma/client'
 import { runBlogDraftGeneration } from '@/lib/blog-engine/runGeneration'
 import { generateSlug, makeUniqueSlug } from '@/lib/blog-engine/slugUtils'
+import { requireCronAuth } from '@/lib/cronAuth'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
-
-const CRON_SECRET = process.env.BLOG_ENGINE_SECRET || process.env.CRON_SECRET
 
 const BLOCKS = [
   TopicBlock.BEAUTY,
@@ -19,14 +18,15 @@ const BLOCKS = [
 
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization')
-    const cronSecret = authHeader?.replace('Bearer ', '')
+    const authError = requireCronAuth(request, {
+      additionalSecrets: [process.env.BLOG_ENGINE_SECRET],
+    })
+    if (authError) return authError
 
-    if (!CRON_SECRET || cronSecret !== CRON_SECRET) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
+    // Keep GET execution for Vercel Cron compatibility.
+    // This route is protected by CRON_SECRET via Authorization header.
     const dryRun = request.nextUrl.searchParams.get('dryRun') === 'true'
+
     const autoGenerate = request.nextUrl.searchParams.get('autoGenerate') === 'true'
     const forceBlock = request.nextUrl.searchParams.get('block') as TopicBlock | null
 
@@ -167,12 +167,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization')
-    const cronSecret = authHeader?.replace('Bearer ', '')
-
-    if (!CRON_SECRET || cronSecret !== CRON_SECRET) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const authError = requireCronAuth(request, {
+      additionalSecrets: [process.env.BLOG_ENGINE_SECRET],
+    })
+    if (authError) return authError
 
     const body = await request.json()
     const { blogId, action } = body as { blogId?: string; action?: string }

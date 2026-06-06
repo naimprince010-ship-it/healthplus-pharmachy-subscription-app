@@ -3,13 +3,7 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET() {
   try {
-    let settings = await prisma.checkoutPageSettings.findFirst()
-
-    if (!settings) {
-      settings = await prisma.checkoutPageSettings.create({
-        data: {},
-      })
-    }
+    const settings = await prisma.checkoutPageSettings.findFirst()
 
     return NextResponse.json({ settings })
   } catch (error) {

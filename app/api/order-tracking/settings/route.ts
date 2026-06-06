@@ -3,13 +3,7 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET() {
   try {
-    let settings = await prisma.orderTrackingSettings.findFirst()
-
-    if (!settings) {
-      settings = await prisma.orderTrackingSettings.create({
-        data: {},
-      })
-    }
+    const settings = await prisma.orderTrackingSettings.findFirst()
 
     return NextResponse.json({ settings })
   } catch (error) {

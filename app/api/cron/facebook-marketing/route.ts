@@ -4,6 +4,7 @@ import {
   runFacebookMarketingJob,
   type FacebookMarketingMode,
 } from '@/lib/facebook-marketing'
+import { requireCronAuth } from '@/lib/cronAuth'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -20,10 +21,8 @@ function parseMode(searchParams: URLSearchParams): FacebookMarketingMode {
  * - Query: ?mode=newest|random (default: newest)  ?dryRun=1 (no Facebook post, still uses OpenAI)
  */
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const authError = requireCronAuth(request)
+  if (authError) return authError
 
   const mode = parseMode(request.nextUrl.searchParams)
   const dryRun =

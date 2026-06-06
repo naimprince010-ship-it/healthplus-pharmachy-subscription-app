@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { runMarketIntelSync } from '@/lib/market-intel/sync'
+import { requireCronAuth } from '@/lib/cronAuth'
 
 /**
  * Cron job endpoint for Market Intelligence sync
@@ -11,14 +12,8 @@ import { runMarketIntelSync } from '@/lib/market-intel/sync'
  * (Vercel automatically adds this header for cron jobs)
  */
 export async function GET(req: NextRequest) {
-  // Verify cron secret (Vercel sends this automatically for cron jobs)
-  const authHeader = req.headers.get('authorization')
-  const cronSecret = process.env.CRON_SECRET
-
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    console.error('Market intel cron: Unauthorized request')
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const authError = requireCronAuth(req)
+  if (authError) return authError
 
   console.log('Market intel cron: Starting sync...')
 

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { runMarketIntelSync } from '@/lib/market-intel/sync'
 
-export async function GET(req: NextRequest) {
+async function runSync(req: NextRequest) {
   const token = req.nextUrl.searchParams.get('token')
   const cronSecret = process.env.MARKET_INTEL_CRON_SECRET
 
-  // Only require token if MARKET_INTEL_CRON_SECRET is set
+  // Require matching token when MARKET_INTEL_CRON_SECRET is set.
   if (cronSecret && token !== cronSecret) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -34,6 +34,10 @@ export async function GET(req: NextRequest) {
   }
 }
 
+export async function GET() {
+  return NextResponse.json({ error: 'Method not allowed. Use POST.' }, { status: 405 })
+}
+
 export async function POST(req: NextRequest) {
-  return GET(req)
+  return runSync(req)
 }

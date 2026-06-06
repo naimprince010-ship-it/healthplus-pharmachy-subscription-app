@@ -51,15 +51,8 @@ const DEFAULT_SETTINGS = {
 
 export async function GET() {
   try {
-    let settings = await prisma.footerSettings.findFirst()
-
-    if (!settings) {
-      settings = await prisma.footerSettings.create({
-        data: {},
-      })
-    }
-
-    return NextResponse.json({ settings })
+    const settings = await prisma.footerSettings.findFirst()
+    return NextResponse.json({ settings: settings ?? DEFAULT_SETTINGS })
   } catch (error) {
     console.error('Failed to fetch footer settings:', error)
     // Fall back to safe defaults so preview builds don't fail

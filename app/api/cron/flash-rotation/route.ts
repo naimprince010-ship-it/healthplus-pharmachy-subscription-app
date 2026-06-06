@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { runFlashSaleAutoRotation } from '@/lib/flash-sale-engine'
+import { requireCronAuth } from '@/lib/cronAuth'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -11,10 +12,8 @@ export const maxDuration = 300
  * - Clears `flashSaleSource: auto` rows, then assigns new Azan SKUs (see `lib/flash-sale-engine.ts`)
  */
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const authError = requireCronAuth(request)
+  if (authError) return authError
 
   const result = await runFlashSaleAutoRotation()
   if (result.error) {

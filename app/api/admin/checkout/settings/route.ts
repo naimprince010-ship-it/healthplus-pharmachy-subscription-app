@@ -9,13 +9,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    let settings = await prisma.checkoutPageSettings.findFirst()
-
-    if (!settings) {
-      settings = await prisma.checkoutPageSettings.create({
-        data: {},
-      })
-    }
+    const settings = await prisma.checkoutPageSettings.findFirst()
 
     return NextResponse.json({ settings })
   } catch (error) {

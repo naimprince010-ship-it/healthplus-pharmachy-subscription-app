@@ -9,13 +9,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    let settings = await prisma.dashboardPageSettings.findFirst()
-
-    if (!settings) {
-      settings = await prisma.dashboardPageSettings.create({
-        data: {},
-      })
-    }
+    const settings = await prisma.dashboardPageSettings.findFirst()
 
     return NextResponse.json({ settings })
   } catch (error) {
