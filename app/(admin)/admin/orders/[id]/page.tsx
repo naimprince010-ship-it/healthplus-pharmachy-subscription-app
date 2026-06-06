@@ -84,6 +84,16 @@ const statusFlow = [
   { key: 'DELIVERED', label: 'Delivered', icon: CheckCircle },
 ]
 
+const ORDER_FETCH_RETRIES = 3
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === 'AbortError'
+}
+
+async function sleep(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 export default function OrderDetailsPage() {
   const router = useRouter()
   const params = useParams<{ id: string }>()
@@ -102,9 +112,12 @@ export default function OrderDetailsPage() {
     const [azanForwardMessage, setAzanForwardMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
     useEffect(() => {
-      if (orderId) {
-        fetchOrder()
-      }
+      if (!orderId) return
+
+      const controller = new AbortController()
+      void fetchOrder({ signal: controller.signal })
+
+      return () => controller.abort()
     }, [orderId])
 
     useEffect(() => {
@@ -115,35 +128,72 @@ export default function OrderDetailsPage() {
       }
     }, [order])
 
-    const fetchOrder = async () => {
+    const fetchOrder = async (options?: { signal?: AbortSignal; showLoading?: boolean }) => {
+    const signal = options?.signal
+    const showLoading = options?.showLoading ?? true
+
     if (!orderId) {
       setError('Order ID is missing')
       setIsLoading(false)
       return
     }
 
+    if (showLoading) {
+      setIsLoading(true)
+    }
+
     try {
-      const response = await fetch(`/api/admin/orders/${encodeURIComponent(orderId)}`, {
-        credentials: 'include',
-      })
-      
-      if (response.status === 404) {
-        setError('Order not found')
-        setIsLoading(false)
-        return
+      let response: Response | null = null
+
+      for (let attempt = 0; attempt < ORDER_FETCH_RETRIES; attempt++) {
+        try {
+          response = await fetch(`/api/admin/orders/${encodeURIComponent(orderId)}`, {
+            credentials: 'include',
+            cache: 'no-store',
+            signal,
+          })
+
+          if (response.status === 404) {
+            throw new Error('ORDER_NOT_FOUND')
+          }
+
+          if (!response.ok) {
+            throw new Error(`Failed to fetch order (${response.status})`)
+          }
+
+          break
+        } catch (err) {
+          if (isAbortError(err)) return
+
+          const isTerminalError = err instanceof Error && err.message === 'ORDER_NOT_FOUND'
+          const isLastAttempt = attempt === ORDER_FETCH_RETRIES - 1
+          if (isTerminalError || isLastAttempt) {
+            throw err
+          }
+
+          await sleep(300 * (attempt + 1))
+        }
       }
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch order')
+
+      if (!response) {
+        throw new Error('Failed to fetch order after retries')
       }
-      
+
       const data = await response.json()
+      if (signal?.aborted) return
       setOrder(data.order)
     } catch (err) {
+      if (isAbortError(err)) return
       console.error('Error fetching order:', err)
-      setError('Failed to load order details')
+      if (err instanceof Error && err.message === 'ORDER_NOT_FOUND') {
+        setError('Order not found')
+      } else {
+        setError('Failed to load order details')
+      }
     } finally {
-      setIsLoading(false)
+      if (showLoading && !signal?.aborted) {
+        setIsLoading(false)
+      }
     }
   }
 
@@ -222,7 +272,7 @@ export default function OrderDetailsPage() {
           setAzanForwardMessage({ type: 'error', text: data.error || 'Forward request failed' })
           return
         }
-        await fetchOrder()
+        await fetchOrder({ showLoading: false })
         const r = data.result
         if (r?.error) {
           // Error text is in order.azanPushError after refetch; avoid duplicate red banners

@@ -9,6 +9,7 @@
 import { extractProductsFromCategory, importProductFromUrl } from '../lib/importers/product-import'
 import { prisma } from '../lib/prisma'
 import { slugify } from '../lib/slugify'
+import { invalidateCache } from '../lib/cache'
 
 const CATEGORY_URL = 'https://chaldal.com/condensed-milk-cream'
 const CATEGORY_NAME = 'Condensed Milk & Cream'
@@ -177,6 +178,12 @@ async function main() {
   console.log(`  ⚠️  Skipped : ${skipped}`)
   console.log(`${'─'.repeat(50)}`)
   console.log(`\n💡 Tip: Go to Admin → Products → filter by "${CATEGORY_NAME}" → use "Generate AI Content" to upgrade SEO.`)
+
+  // Clear search cache so new products appear in search immediately
+  console.log('\nClearing search cache...')
+  await invalidateCache('search:top-products').catch(() => null)
+  await invalidateCache('search:dictionary').catch(() => null)
+  console.log('✅ Search cache cleared — new products will appear in search right away.')
 }
 
 main()

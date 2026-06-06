@@ -45,6 +45,16 @@ interface ReturnDetail {
 
 const statusOptions: ReturnStatus[] = ['REQUESTED', 'APPROVED', 'REJECTED', 'RECEIVED', 'CLOSED']
 
+const RETURN_FETCH_RETRIES = 3
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === 'AbortError'
+}
+
+async function sleep(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 export default function ReturnDetailsPage() {
   const params = useParams<{ id: string }>()
   const id = params?.id
@@ -66,28 +76,78 @@ export default function ReturnDetailsPage() {
 
   useEffect(() => {
     if (!id) return
-    void fetchReturn()
+
+    const controller = new AbortController()
+    void fetchReturn({ signal: controller.signal })
+
+    return () => controller.abort()
   }, [id])
 
-  async function fetchReturn() {
+  async function fetchReturn(options?: { signal?: AbortSignal; showLoading?: boolean }) {
+    const signal = options?.signal
+    const showLoading = options?.showLoading ?? true
+
     if (!id) return
-    setLoading(true)
+
+    if (showLoading) {
+      setLoading(true)
+    }
     setError('')
 
     try {
-      const res = await fetch(`/api/admin/returns/${encodeURIComponent(id)}`, { credentials: 'include' })
-      if (!res.ok) throw new Error('Failed to fetch return request')
+      let res: Response | null = null
+
+      for (let attempt = 0; attempt < RETURN_FETCH_RETRIES; attempt++) {
+        try {
+          res = await fetch(`/api/admin/returns/${encodeURIComponent(id)}`, {
+            credentials: 'include',
+            cache: 'no-store',
+            signal,
+          })
+
+          if (res.status === 404) {
+            throw new Error('RETURN_NOT_FOUND')
+          }
+          if (!res.ok) {
+            throw new Error(`Failed to fetch return request (${res.status})`)
+          }
+
+          break
+        } catch (e) {
+          if (isAbortError(e)) return
+
+          const isTerminal = e instanceof Error && e.message === 'RETURN_NOT_FOUND'
+          const isLastAttempt = attempt === RETURN_FETCH_RETRIES - 1
+          if (isTerminal || isLastAttempt) {
+            throw e
+          }
+
+          await sleep(300 * (attempt + 1))
+        }
+      }
+
+      if (!res) {
+        throw new Error('Failed to fetch return request after retries')
+      }
 
       const json = await res.json()
+      if (signal?.aborted) return
       const request = json.returnRequest as ReturnDetail
       setData(request)
       setSelectedStatus(request.status)
       setNote(request.adminNote || '')
     } catch (e) {
+      if (isAbortError(e)) return
       console.error(e)
-      setError('Failed to load return request')
+      if (e instanceof Error && e.message === 'RETURN_NOT_FOUND') {
+        setError('Return request not found')
+      } else {
+        setError('Failed to load return request')
+      }
     } finally {
-      setLoading(false)
+      if (showLoading && !signal?.aborted) {
+        setLoading(false)
+      }
     }
   }
 
@@ -115,7 +175,7 @@ export default function ReturnDetailsPage() {
         throw new Error(json.error || 'Failed to update status')
       }
 
-      await fetchReturn()
+      await fetchReturn({ showLoading: false })
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to update return request')
     } finally {

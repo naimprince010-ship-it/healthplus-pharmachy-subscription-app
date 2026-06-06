@@ -26,6 +26,16 @@ interface OrderView {
 
 const reasons: ReturnReason[] = ['DAMAGED', 'WRONG_ITEM', 'EXPIRED', 'QUALITY_ISSUE', 'NOT_AS_DESCRIBED', 'OTHER']
 
+const ORDER_FETCH_RETRIES = 3
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === 'AbortError'
+}
+
+async function sleep(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 export default function NewReturnPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -45,27 +55,70 @@ export default function NewReturnPage() {
       return
     }
 
-    void fetchOrder(orderId)
+    const controller = new AbortController()
+    void fetchOrder(orderId, controller.signal)
+
+    return () => controller.abort()
   }, [orderId])
 
-  async function fetchOrder(id: string) {
+  async function fetchOrder(id: string, signal?: AbortSignal) {
     setLoading(true)
     setError('')
+
     try {
-      const res = await fetch(`/api/admin/orders/${encodeURIComponent(id)}`, { credentials: 'include' })
-      if (!res.ok) throw new Error('Failed to load order')
+      let res: Response | null = null
+
+      for (let attempt = 0; attempt < ORDER_FETCH_RETRIES; attempt++) {
+        try {
+          res = await fetch(`/api/admin/orders/${encodeURIComponent(id)}`, {
+            credentials: 'include',
+            cache: 'no-store',
+            signal,
+          })
+
+          if (res.status === 404) {
+            throw new Error('ORDER_NOT_FOUND')
+          }
+          if (!res.ok) {
+            throw new Error(`Failed to load order (${res.status})`)
+          }
+
+          break
+        } catch (e) {
+          if (isAbortError(e)) return
+
+          const isTerminal = e instanceof Error && e.message === 'ORDER_NOT_FOUND'
+          const isLastAttempt = attempt === ORDER_FETCH_RETRIES - 1
+          if (isTerminal || isLastAttempt) {
+            throw e
+          }
+          await sleep(300 * (attempt + 1))
+        }
+      }
+
+      if (!res) {
+        throw new Error('Failed to load order after retries')
+      }
 
       const json = await res.json()
+      if (signal?.aborted) return
       const orderData = json.order as OrderView
       setOrder(orderData)
       setQtyMap(
         Object.fromEntries(orderData.items.map((item) => [item.id, 0]))
       )
     } catch (e) {
+      if (isAbortError(e)) return
       console.error(e)
-      setError('Failed to load order details')
+      if (e instanceof Error && e.message === 'ORDER_NOT_FOUND') {
+        setError('Order not found')
+      } else {
+        setError('Failed to load order details')
+      }
     } finally {
-      setLoading(false)
+      if (!signal?.aborted) {
+        setLoading(false)
+      }
     }
   }
 
