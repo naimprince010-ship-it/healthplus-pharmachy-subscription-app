@@ -4,75 +4,97 @@ import { useState } from 'react'
 import { addMinutes, format, parse } from 'date-fns'
 
 export function SleepCalculator() {
-  const [wakeTime, setWakeTime] = useState('07:00')
-  const [results, setResults] = useState<string[]>([])
+  const [mode, setMode] = useState<'wake' | 'sleep'>('wake')
+  const [timeInput, setTimeInput] = useState('07:00')
+  const [results, setResults] = useState<{ time: string; cycles: number; hours: number }[]>([])
 
   const calculateSleep = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!wakeTime) return
+    if (!timeInput) return
 
-    // Convert input time string to a Date object (using today's date)
-    const timeToWake = parse(wakeTime, 'HH:mm', new Date())
-
-    // Calculate backward: 90 minute cycles + 15 mins falling asleep time
-    // 6 cycles = 9 hours
-    // 5 cycles = 7.5 hours
-    // 4 cycles = 6 hours
-    // 3 cycles = 4.5 hours
-    
+    const baseTime = parse(timeInput, 'HH:mm', new Date())
     const times = []
+
     for (let cycles = 6; cycles >= 3; cycles--) {
-      // cycles * 90 mins + 15 mins to fall asleep
-      const totalMinutesToSubtract = (cycles * 90) + 15
-      const bedTime = addMinutes(timeToWake, -totalMinutesToSubtract)
-      times.push(format(bedTime, 'hh:mm a'))
+      const totalMins = (cycles * 90) + 15
+      const resultTime = mode === 'wake'
+        ? addMinutes(baseTime, -totalMins) // bedtime from wake time
+        : addMinutes(baseTime, totalMins) // wake time from bedtime
+
+      times.push({
+        time: format(resultTime, 'hh:mm a'),
+        cycles,
+        hours: cycles * 1.5,
+      })
     }
 
     setResults(times)
   }
 
-  const reset = () => {
-    setResults([])
-  }
+  const reset = () => { setResults([]) }
 
   return (
     <div className="max-w-lg w-full mx-auto">
-      <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-t-2xl p-6 text-white text-center">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm mb-3">
-          <span className="text-3xl">🌙</span>
+      <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-violet-700 rounded-t-2xl p-6 text-white text-center relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-2 right-10 text-5xl">⭐</div>
+          <div className="absolute bottom-3 left-8 text-3xl">✨</div>
+          <div className="absolute top-6 left-20 text-2xl">🌟</div>
         </div>
-        <h2 className="text-2xl font-bold">Sleep Cycle Calculator</h2>
-        <p className="text-indigo-100 text-sm mt-1">কখন ঘুমাতে যাওয়া উচিত?</p>
+        <div className="relative">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm mb-3">
+            <span className="text-4xl">🌙</span>
+          </div>
+          <h2 className="text-2xl font-bold">Sleep Cycle Calculator</h2>
+          <p className="text-indigo-200 text-sm mt-1">ঠিক সময়ে ঘুমান, সতেজ হয়ে উঠুন</p>
+        </div>
       </div>
 
       <div className="bg-white rounded-b-2xl shadow-xl border border-gray-100 p-6">
         <form onSubmit={calculateSleep} className="space-y-5">
+          {/* Mode Toggle */}
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 text-center">
-              আপনি কখন ঘুম থেকে উঠতে চান?
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">আপনি জানতে চান</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => { setMode('wake'); setResults([]) }}
+                className={`flex flex-col items-center p-3 rounded-xl border transition-all ${
+                  mode === 'wake' ? 'bg-indigo-50 border-indigo-300 shadow-sm' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                }`}
+              >
+                <span className="text-2xl">⏰</span>
+                <p className={`text-xs font-bold mt-1 ${mode === 'wake' ? 'text-indigo-700' : 'text-gray-600'}`}>কখন ঘুমাবো?</p>
+                <p className="text-[9px] text-gray-400">উঠার সময় দিন</p>
+              </button>
+              <button type="button" onClick={() => { setMode('sleep'); setResults([]) }}
+                className={`flex flex-col items-center p-3 rounded-xl border transition-all ${
+                  mode === 'sleep' ? 'bg-indigo-50 border-indigo-300 shadow-sm' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                }`}
+              >
+                <span className="text-2xl">🛏️</span>
+                <p className={`text-xs font-bold mt-1 ${mode === 'sleep' ? 'text-indigo-700' : 'text-gray-600'}`}>কখন উঠবো?</p>
+                <p className="text-[9px] text-gray-400">ঘুমানোর সময় দিন</p>
+              </button>
+            </div>
+          </div>
+
+          {/* Time Input */}
+          <div className="text-center">
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+              {mode === 'wake' ? 'আপনি কখন উঠতে চান?' : 'আপনি কখন ঘুমাতে চান?'}
             </label>
             <input
-              type="time"
-              value={wakeTime}
-              onChange={(e) => setWakeTime(e.target.value)}
-              className="w-full max-w-xs mx-auto block px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-2xl font-bold text-gray-800 bg-gray-50 text-center"
+              type="time" value={timeInput} onChange={(e) => setTimeInput(e.target.value)}
+              className="w-full max-w-[200px] mx-auto block px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition text-3xl font-bold text-gray-800 bg-gray-50 text-center"
               required
             />
           </div>
 
           <div className="flex gap-3 max-w-xs mx-auto">
-            <button
-              type="submit"
-              className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all active:scale-[0.98] shadow-md shadow-indigo-200"
-            >
+            <button type="submit" className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3.5 rounded-xl font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all active:scale-[0.98] shadow-lg shadow-indigo-200/50">
               হিসাব করুন
             </button>
             {results.length > 0 && (
-              <button
-                type="button"
-                onClick={reset}
-                className="px-4 py-3 bg-gray-100 text-gray-600 rounded-xl font-medium hover:bg-gray-200 transition active:scale-[0.98]"
-              >
+              <button type="button" onClick={reset} className="px-4 py-3.5 bg-gray-100 text-gray-600 rounded-xl font-medium hover:bg-gray-200 transition active:scale-[0.98]">
                 রিসেট
               </button>
             )}
@@ -80,31 +102,30 @@ export function SleepCalculator() {
         </form>
 
         {results.length > 0 && (
-          <div className="mt-8 animate-in fade-in slide-in-from-bottom-3 text-center">
-            <p className="text-sm font-medium text-gray-500 mb-4">
-              ফ্রেশ হয়ে ওঠার জন্য আপনার এই সময়গুলোতে ঘুমানো উচিত:
+          <div className="mt-8 animate-in fade-in slide-in-from-bottom-3 duration-500">
+            <p className="text-sm font-medium text-gray-500 text-center mb-4">
+              {mode === 'wake' ? '🛏️ এই সময়গুলোতে ঘুমাতে যান:' : '⏰ এই সময়গুলোতে অ্যালার্ম দিন:'}
             </p>
             <div className="grid grid-cols-2 gap-3">
-              {results.map((time, idx) => {
-                const cycles = 6 - idx;
-                const hours = cycles * 1.5;
-                const isOptimal = cycles === 5; // 7.5 hours is optimal for most
-                
+              {results.map((r) => {
+                const isOptimal = r.cycles === 5
+                const isGood = r.cycles === 6
                 return (
-                  <div key={time} className={`p-4 rounded-xl border ${isOptimal ? 'bg-indigo-50 border-indigo-200 shadow-sm' : 'bg-gray-50 border-gray-100'}`}>
-                    <p className={`text-xl font-bold ${isOptimal ? 'text-indigo-700' : 'text-gray-700'}`}>{time}</p>
-                    <p className="text-xs text-gray-500 mt-1">{cycles} সাইকেল ({hours} ঘণ্টা)</p>
-                    {isOptimal && <span className="inline-block mt-2 text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold">Recommended</span>}
+                  <div key={r.time} className={`p-4 rounded-xl border text-center transition-all ${
+                    isOptimal ? 'bg-indigo-50 border-indigo-200 shadow-md ring-2 ring-indigo-100' : isGood ? 'bg-purple-50 border-purple-100' : 'bg-gray-50 border-gray-100'
+                  }`}>
+                    <p className={`text-2xl font-extrabold ${isOptimal ? 'text-indigo-700' : isGood ? 'text-purple-700' : 'text-gray-700'}`}>{r.time}</p>
+                    <p className="text-xs text-gray-500 mt-1">{r.cycles} সাইকেল • {r.hours} ঘণ্টা</p>
+                    {isOptimal && <span className="inline-block mt-2 text-[10px] bg-indigo-200 text-indigo-800 px-2.5 py-0.5 rounded-full font-bold">⭐ সবচেয়ে ভালো</span>}
+                    {isGood && !isOptimal && <span className="inline-block mt-2 text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-bold">ভালো</span>}
                   </div>
                 )
               })}
             </div>
-            
-            <div className="mt-6 p-4 bg-purple-50 rounded-xl text-xs text-purple-700 text-left">
-              <p>💡 <strong>Note:</strong></p>
-              <p className="mt-1">
-                মানুষ সাধারণত ৯০ মিনিটের স্লিপ সাইকেলে ঘুমায়। সাইকেলের মাঝখানে ঘুম ভাঙলে ক্লান্তি লাগে। এই হিসাবে বিছানায় যাওয়ার পর ঘুমিয়ে পড়তে <strong>১৫ মিনিট</strong> সময় ধরা হয়েছে।
-              </p>
+
+            <div className="mt-5 p-4 bg-indigo-50 rounded-xl text-xs text-indigo-700">
+              <p>💡 <strong>টিপস:</strong> ঘুমের ৯০ মিনিটের সাইকেলের শেষে উঠলে আপনি সতেজ অনুভব করবেন। 
+              এখানে ঘুমিয়ে পড়তে <strong>১৫ মিনিট</strong> সময় ধরা হয়েছে।</p>
             </div>
           </div>
         )}
