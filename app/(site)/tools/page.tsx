@@ -3,7 +3,7 @@ import { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'ফ্রি হেলথ টুলস | Halalzi',
-  description: 'ফ্রি BMI ক্যালকুলেটর, প্রেগন্যান্সি ডিউ ডেট ক্যালকুলেটর এবং ডায়াবেটিস চেকার। আপনার স্বাস্থ্য সহজে ট্র্যাক করুন।',
+  description: 'ফ্রি BMI ক্যালকুলেটর, প্রেগন্যান্সি ডিউ ডেট ক্যালকুলেটর, ডায়াবেটিস চেকার সহ আরও অনেক টুল। আপনার স্বাস্থ্য সহজে ট্র্যাক করুন।',
 }
 
 export default function ToolsPage() {
@@ -13,11 +13,7 @@ export default function ToolsPage() {
       titleBn: 'বিএমআই ক্যালকুলেটর',
       description: 'আপনার উচ্চতা অনুযায়ী ওজন ঠিক আছে কিনা জানুন',
       href: '/tools/bmi-calculator',
-      icon: (
-        <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
-        </svg>
-      ),
+      icon: <span className="text-3xl">⚖️</span>,
       gradient: 'from-teal-500 to-emerald-500',
       shadowColor: 'shadow-teal-200',
       bgLight: 'bg-teal-50',
@@ -41,7 +37,67 @@ export default function ToolsPage() {
       gradient: 'from-blue-500 to-indigo-500',
       shadowColor: 'shadow-blue-200',
       bgLight: 'bg-blue-50',
-    }
+    },
+    {
+      title: 'Water Calculator',
+      titleBn: 'পানির হিসাব',
+      description: 'প্রতিদিন আপনার কতটুকু পানি পান করা উচিত তা জানুন',
+      href: '/tools/water-intake-calculator',
+      icon: <span className="text-3xl">💧</span>,
+      gradient: 'from-cyan-400 to-blue-500',
+      shadowColor: 'shadow-cyan-200',
+      bgLight: 'bg-cyan-50',
+    },
+    {
+      title: 'Calorie Calculator',
+      titleBn: 'ক্যালরি ক্যালকুলেটর',
+      description: 'দৈনিক কত ক্যালরি প্রয়োজন তার হিসাব করুন',
+      href: '/tools/calorie-calculator',
+      icon: <span className="text-3xl">🔥</span>,
+      gradient: 'from-orange-400 to-red-500',
+      shadowColor: 'shadow-orange-200',
+      bgLight: 'bg-orange-50',
+    },
+    {
+      title: 'Blood Donation Tracker',
+      titleBn: 'রক্তদান ট্র্যাকার',
+      description: 'পরবর্তী রক্তদানের সম্ভাব্য তারিখ জানুন',
+      href: '/tools/blood-donation-calculator',
+      icon: <span className="text-3xl">❤️</span>,
+      gradient: 'from-red-500 to-rose-700',
+      shadowColor: 'shadow-red-200',
+      bgLight: 'bg-red-50',
+    },
+    {
+      title: 'Sleep Cycle Calculator',
+      titleBn: 'স্লিপ সাইকেল ক্যালকুলেটর',
+      description: 'সকালে ওঠার জন্য রাতে ঠিক কয়টায় ঘুমানো উচিত জানুন',
+      href: '/tools/sleep-cycle-calculator',
+      icon: <span className="text-3xl">🌙</span>,
+      gradient: 'from-indigo-600 to-purple-700',
+      shadowColor: 'shadow-indigo-200',
+      bgLight: 'bg-indigo-50',
+    },
+    {
+      title: 'Period Tracker',
+      titleBn: 'পিরিয়ড ও ওভুলেশন ট্র্যাকার',
+      description: 'পরবর্তী সাইকেল ও সন্তান ধারণের উপযুক্ত সময় জানুন',
+      href: '/tools/period-tracker',
+      icon: <span className="text-3xl">🌸</span>,
+      gradient: 'from-rose-400 to-pink-600',
+      shadowColor: 'shadow-rose-200',
+      bgLight: 'bg-rose-50',
+    },
+    {
+      title: 'Quit Smoking Tracker',
+      titleBn: 'ধূমপান ছাড়ার হিসাব',
+      description: 'ধূমপান ছাড়ার ফলে জমানো টাকা ও স্বাস্থ্যের উন্নতি দেখুন',
+      href: '/tools/smoking-calculator',
+      icon: <span className="text-3xl">🚭</span>,
+      gradient: 'from-slate-600 to-gray-800',
+      shadowColor: 'shadow-slate-200',
+      bgLight: 'bg-slate-50',
+    },
   ]
 
   return (
@@ -74,15 +130,17 @@ export default function ToolsPage() {
               {/* Gradient Top */}
               <div className={`h-2 bg-gradient-to-r ${tool.gradient}`} />
               
-              <div className="p-6">
+              <div className="p-6 flex flex-col h-full">
                 {/* Icon */}
                 <div className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl ${tool.bgLight} mb-4 group-hover:scale-110 transition-transform duration-300`}>
                   {tool.icon}
                 </div>
 
-                <h2 className="text-lg font-bold text-gray-900">{tool.title}</h2>
-                <p className="text-xs text-gray-400 font-medium">{tool.titleBn}</p>
-                <p className="text-sm text-gray-500 mt-2 leading-relaxed">{tool.description}</p>
+                <div className="flex-grow">
+                  <h2 className="text-lg font-bold text-gray-900">{tool.title}</h2>
+                  <p className="text-xs text-gray-400 font-medium">{tool.titleBn}</p>
+                  <p className="text-sm text-gray-500 mt-2 leading-relaxed">{tool.description}</p>
+                </div>
 
                 {/* CTA */}
                 <div className={`mt-5 inline-flex items-center gap-2 text-sm font-bold bg-gradient-to-r ${tool.gradient} bg-clip-text text-transparent group-hover:gap-3 transition-all`}>
@@ -112,7 +170,7 @@ export default function ToolsPage() {
           </div>
           <div className="flex items-center gap-1.5">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08-.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <span>সম্পূর্ণ ফ্রি</span>
           </div>
