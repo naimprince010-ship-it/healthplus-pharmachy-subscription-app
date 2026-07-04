@@ -3,37 +3,62 @@ import { DiabetesChecker } from '@/components/tools/DiabetesChecker'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Diabetes & Blood Sugar Checker | HealthPlus',
-  description: 'Check if your blood sugar (glucose) levels are within the normal range. Free diabetes checker tool.',
+  title: 'Diabetes & Blood Sugar Checker | ডায়াবেটিস চেকার | Halalzi',
+  description: 'আপনার রক্তে শর্করার মাত্রা (ব্লাড সুগার) স্বাভাবিক কিনা জানুন। ফ্রি ডায়াবেটিস চেকার টুল।',
 }
 
 export default function DiabetesCheckerPage() {
   return (
-    <div className="bg-gray-50 min-h-[calc(100vh-4rem)] py-12">
+    <div className="bg-gray-50 min-h-[calc(100vh-4rem)] py-10">
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <Link href="/tools" className="text-teal-600 hover:text-teal-700 font-medium inline-flex items-center text-sm">
-            <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Back to Tools
-          </Link>
+        {/* Breadcrumb */}
+        <div className="mb-6 flex items-center gap-2 text-sm text-gray-400">
+          <Link href="/tools" className="hover:text-teal-600 transition-colors">হেলথ টুলস</Link>
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+          <span className="text-gray-600 font-medium">Diabetes Checker</span>
         </div>
 
         <DiabetesChecker />
 
-        <div className="mt-12 bg-white p-8 rounded-xl shadow-sm border border-gray-100 prose prose-blue max-w-none">
-          <h3>Understanding Blood Sugar Levels</h3>
-          <p>
-            Monitoring your blood sugar is crucial for managing diabetes and preventing complications. 
-            There are different types of tests used to measure blood glucose levels.
+        {/* SEO Content */}
+        <div className="mt-10 bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+          <h3 className="text-lg font-bold text-gray-800 mb-3">রক্তে শর্করার মাত্রা বোঝা</h3>
+          <p className="text-sm text-gray-600 leading-relaxed mb-4">
+            ডায়াবেটিস প্রতিরোধ ও নিয়ন্ত্রণের জন্য নিয়মিত রক্তে শর্করার মাত্রা পরীক্ষা করা অত্যন্ত গুরুত্বপূর্ণ। 
+            বিভিন্ন ধরনের পরীক্ষার মাধ্যমে রক্তে গ্লুকোজের পরিমাণ মাপা হয়।
           </p>
-          <h4>Target Ranges</h4>
-          <ul>
-            <li><strong>Fasting Blood Sugar:</strong> Taken after not eating for at least 8 hours. Normal is less than 100 mg/dL.</li>
-            <li><strong>Post-Prandial:</strong> Taken 2 hours after a meal. Normal is less than 140 mg/dL.</li>
-            <li><strong>HbA1c:</strong> Shows your average blood sugar levels over the past 2-3 months. Normal is below 5.7%.</li>
-          </ul>
+          <h4 className="text-sm font-bold text-gray-700 mb-2">স্বাভাবিক মাত্রা</h4>
+          <div className="space-y-2 text-xs">
+            <div className="flex items-center gap-3 bg-gray-50 border border-gray-100 rounded-xl p-3">
+              <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                <span className="text-blue-600 font-bold text-sm">F</span>
+              </div>
+              <div>
+                <p className="font-bold text-gray-700">খালি পেটে (Fasting)</p>
+                <p className="text-gray-400">স্বাভাবিক: ১০০ mg/dL এর কম</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 bg-gray-50 border border-gray-100 rounded-xl p-3">
+              <div className="w-10 h-10 rounded-lg bg-pink-100 flex items-center justify-center flex-shrink-0">
+                <span className="text-pink-600 font-bold text-sm">PP</span>
+              </div>
+              <div>
+                <p className="font-bold text-gray-700">খাবারের পর (Post-Prandial)</p>
+                <p className="text-gray-400">স্বাভাবিক: ১৪০ mg/dL এর কম</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 bg-gray-50 border border-gray-100 rounded-xl p-3">
+              <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <span className="text-amber-600 font-bold text-sm">A1c</span>
+              </div>
+              <div>
+                <p className="font-bold text-gray-700">HbA1c (৩ মাসের গড়)</p>
+                <p className="text-gray-400">স্বাভাবিক: ৫.৭% এর কম</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
