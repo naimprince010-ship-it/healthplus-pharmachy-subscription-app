@@ -13,7 +13,8 @@ async function main() {
   $('*').each((_, el) => {
     const text = $(el).clone().children().remove().end().text().trim();
     if (text.includes('৳') && text.includes('380')) {
-      console.log('Found price in tag:', el.tagName, 'class:', $(el).attr('class'));
+      const tagName = 'name' in el ? el.name : 'unknown';
+      console.log('Found price in tag:', tagName, 'class:', $(el).attr('class'));
     }
   });
 }

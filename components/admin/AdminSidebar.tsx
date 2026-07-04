@@ -115,6 +115,7 @@ const navSections: NavSection[] = [
     id: 'data-intelligence',
     title: 'Data & Intelligence',
     items: [
+      { label: 'Local Traffic Analytics', href: '/admin/analytics', icon: MapPin },
       { label: 'Sales / Reports', href: '/admin/sales', icon: BarChart3 },
       { label: 'Market Intelligence', href: '/admin/market-intel', icon: TrendingUp },
       { label: 'Price Comparison', href: '/admin/market-intel/comparison', icon: BarChart3 },

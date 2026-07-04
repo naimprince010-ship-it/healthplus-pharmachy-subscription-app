@@ -191,6 +191,14 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                   </Link>
                 </>
               )}
+              <span className="text-white/40 text-sm">|</span>
+              <Link
+                prefetch
+                href="/tools"
+                className="px-3 py-1.5 text-[14px] text-white hover:underline transition-all"
+              >
+                হেলথ টুলস
+              </Link>
             </div>
 
             {/* Desktop Search Bar */}
