@@ -1,15 +1,46 @@
 import { Metadata } from 'next'
 import { PeriodTracker } from '@/components/tools/PeriodTracker'
 import Link from 'next/link'
+import Script from 'next/script'
 
 export const metadata: Metadata = {
   title: 'Period & Ovulation Tracker | পিরিয়ড ক্যালকুলেটর | Halalzi',
   description: 'পরবর্তী পিরিয়ড এবং সন্তান ধারণের সবচেয়ে উপযুক্ত সময় (Ovulation) জানুন।',
+  keywords: ['Period Tracker', 'পিরিয়ড ক্যালকুলেটর', 'Ovulation Calculator', 'Menstrual Cycle Tracker', 'Women Health', 'Halalzi'],
+  openGraph: {
+    title: 'Period & Ovulation Tracker | পিরিয়ড ক্যালকুলেটর | Halalzi',
+    description: 'পরবর্তী পিরিয়ড এবং সন্তান ধারণের সবচেয়ে উপযুক্ত সময় (Ovulation) জানুন।',
+    type: 'website',
+    url: 'https://halalzi.com/tools/period-tracker',
+    siteName: 'Halalzi',
+  },
+  alternates: {
+    canonical: 'https://halalzi.com/tools/period-tracker',
+  }
 }
 
 export default function PeriodTrackerPage() {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Period Tracker - Halalzi',
+    applicationCategory: 'HealthApplication',
+    operatingSystem: 'Any',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'BDT',
+    },
+    description: 'পরবর্তী পিরিয়ড এবং সন্তান ধারণের সবচেয়ে উপযুক্ত সময় (Ovulation) জানুন।',
+  }
+
   return (
     <div className="bg-gray-50 min-h-[calc(100vh-4rem)] py-10">
+      <Script
+        id="period-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <div className="mb-6 flex items-center gap-2 text-sm text-gray-400">
           <Link href="/tools" className="hover:text-teal-600 transition-colors">হেলথ টুলস</Link>

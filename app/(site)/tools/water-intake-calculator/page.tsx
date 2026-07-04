@@ -1,15 +1,46 @@
 import { Metadata } from 'next'
 import { WaterCalculator } from '@/components/tools/WaterCalculator'
 import Link from 'next/link'
+import Script from 'next/script'
 
 export const metadata: Metadata = {
   title: 'Water Intake Calculator | পানির হিসাব | Halalzi',
   description: 'আপনার ওজন এবং দৈনন্দিন কাজের ধরন অনুযায়ী প্রতিদিন কতটুকু পানি পান করা উচিত তা হিসাব করুন।',
+  keywords: ['Water Intake Calculator', 'পানির হিসাব', 'Water Tracker', 'Hydration Calculator', 'Halalzi Health', 'Daily Water Needs'],
+  openGraph: {
+    title: 'Water Intake Calculator | পানির হিসাব | Halalzi',
+    description: 'আপনার ওজন এবং দৈনন্দিন কাজের ধরন অনুযায়ী প্রতিদিন কতটুকু পানি পান করা উচিত তা হিসাব করুন।',
+    type: 'website',
+    url: 'https://halalzi.com/tools/water-intake-calculator',
+    siteName: 'Halalzi',
+  },
+  alternates: {
+    canonical: 'https://halalzi.com/tools/water-intake-calculator',
+  }
 }
 
 export default function WaterCalculatorPage() {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Water Intake Calculator - Halalzi',
+    applicationCategory: 'HealthApplication',
+    operatingSystem: 'Any',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'BDT',
+    },
+    description: 'আপনার ওজন এবং দৈনন্দিন কাজের ধরন অনুযায়ী প্রতিদিন কতটুকু পানি পান করা উচিত তা হিসাব করুন।',
+  }
+
   return (
     <div className="bg-gray-50 min-h-[calc(100vh-4rem)] py-10">
+      <Script
+        id="water-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <div className="mb-6 flex items-center gap-2 text-sm text-gray-400">
           <Link href="/tools" className="hover:text-teal-600 transition-colors">হেলথ টুলস</Link>

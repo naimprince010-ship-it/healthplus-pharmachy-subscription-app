@@ -1,15 +1,46 @@
 import { Metadata } from 'next'
 import { BmiCalculator } from '@/components/tools/BmiCalculator'
 import Link from 'next/link'
+import Script from 'next/script'
 
 export const metadata: Metadata = {
   title: 'BMI Calculator | বিএমআই ক্যালকুলেটর | Halalzi',
   description: 'আপনার Body Mass Index (BMI) সহজে হিসাব করুন। আপনার উচ্চতা অনুযায়ী আদর্শ ওজন জানুন। সম্পূর্ণ ফ্রি।',
+  keywords: ['BMI Calculator', 'বিএমআই ক্যালকুলেটর', 'আদর্শ ওজন', 'Body Mass Index', 'Health Tools', 'Halalzi', 'HealthPlus'],
+  openGraph: {
+    title: 'BMI Calculator | বিএমআই ক্যালকুলেটর | Halalzi',
+    description: 'আপনার Body Mass Index (BMI) সহজে হিসাব করুন। আপনার উচ্চতা অনুযায়ী আদর্শ ওজন জানুন। সম্পূর্ণ ফ্রি।',
+    type: 'website',
+    url: 'https://halalzi.com/tools/bmi-calculator',
+    siteName: 'Halalzi',
+  },
+  alternates: {
+    canonical: 'https://halalzi.com/tools/bmi-calculator',
+  }
 }
 
 export default function BmiCalculatorPage() {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'BMI Calculator - Halalzi',
+    applicationCategory: 'HealthApplication',
+    operatingSystem: 'Any',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'BDT',
+    },
+    description: 'আপনার Body Mass Index (BMI) সহজে হিসাব করুন। আপনার উচ্চতা অনুযায়ী আদর্শ ওজন জানুন। সম্পূর্ণ ফ্রি।',
+  }
+
   return (
     <div className="bg-gray-50 min-h-[calc(100vh-4rem)] py-10">
+      <Script
+        id="bmi-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
         <div className="mb-6 flex items-center gap-2 text-sm text-gray-400">

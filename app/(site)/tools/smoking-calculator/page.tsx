@@ -1,15 +1,46 @@
 import { Metadata } from 'next'
 import { SmokingCalculator } from '@/components/tools/SmokingCalculator'
 import Link from 'next/link'
+import Script from 'next/script'
 
 export const metadata: Metadata = {
   title: 'Quit Smoking Calculator | ধূমপান ছাড়ার হিসাব | Halalzi',
   description: 'ধূমপান ছাড়লে কত টাকা বাঁচবে এবং স্বাস্থ্যের কতটুকু উন্নতি হবে তা হিসাব করুন।',
+  keywords: ['Quit Smoking Calculator', 'ধূমপান ছাড়ার হিসাব', 'Smoking Calculator', 'Health Recovery Tracker', 'Stop Smoking Benefits', 'Halalzi'],
+  openGraph: {
+    title: 'Quit Smoking Calculator | ধূমপান ছাড়ার হিসাব | Halalzi',
+    description: 'ধূমপান ছাড়লে কত টাকা বাঁচবে এবং স্বাস্থ্যের কতটুকু উন্নতি হবে তা হিসাব করুন।',
+    type: 'website',
+    url: 'https://halalzi.com/tools/smoking-calculator',
+    siteName: 'Halalzi',
+  },
+  alternates: {
+    canonical: 'https://halalzi.com/tools/smoking-calculator',
+  }
 }
 
 export default function SmokingCalculatorPage() {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Quit Smoking Calculator - Halalzi',
+    applicationCategory: 'HealthApplication',
+    operatingSystem: 'Any',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'BDT',
+    },
+    description: 'ধূমপান ছাড়লে কত টাকা বাঁচবে এবং স্বাস্থ্যের কতটুকু উন্নতি হবে তা হিসাব করুন।',
+  }
+
   return (
     <div className="bg-gray-50 min-h-[calc(100vh-4rem)] py-10">
+      <Script
+        id="smoking-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <div className="mb-6 flex items-center gap-2 text-sm text-gray-400">
           <Link href="/tools" className="hover:text-teal-600 transition-colors">হেলথ টুলস</Link>

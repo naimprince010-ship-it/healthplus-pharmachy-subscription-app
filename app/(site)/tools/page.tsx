@@ -2,8 +2,19 @@ import Link from 'next/link'
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'ফ্রি হেলথ টুলস | Halalzi',
+  title: 'ফ্রি হেলথ টুলস | Free Health Tools | Halalzi',
   description: 'ফ্রি BMI ক্যালকুলেটর, প্রেগন্যান্সি ডিউ ডেট ক্যালকুলেটর, ডায়াবেটিস চেকার সহ আরও অনেক টুল। আপনার স্বাস্থ্য সহজে ট্র্যাক করুন।',
+  keywords: ['Health Tools', 'Free Health Calculators', 'BMI Calculator', 'Pregnancy Calculator', 'Diabetes Checker', 'Halalzi', 'হেলথ টুলস'],
+  openGraph: {
+    title: 'ফ্রি হেলথ টুলস | Free Health Tools | Halalzi',
+    description: 'ফ্রি BMI ক্যালকুলেটর, প্রেগন্যান্সি ডিউ ডেট ক্যালকুলেটর, ডায়াবেটিস চেকার সহ আরও অনেক টুল। আপনার স্বাস্থ্য সহজে ট্র্যাক করুন।',
+    type: 'website',
+    url: 'https://halalzi.com/tools',
+    siteName: 'Halalzi',
+  },
+  alternates: {
+    canonical: 'https://halalzi.com/tools',
+  }
 }
 
 export default function ToolsPage() {

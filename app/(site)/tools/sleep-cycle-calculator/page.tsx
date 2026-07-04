@@ -1,15 +1,46 @@
 import { Metadata } from 'next'
 import { SleepCalculator } from '@/components/tools/SleepCalculator'
 import Link from 'next/link'
+import Script from 'next/script'
 
 export const metadata: Metadata = {
   title: 'Sleep Cycle Calculator | স্লিপ সাইকেল ক্যালকুলেটর | Halalzi',
   description: 'সকালে নির্দিষ্ট সময়ে ওঠার জন্য রাতে ঠিক কয়টায় ঘুমানো উচিত তা হিসাব করুন।',
+  keywords: ['Sleep Cycle Calculator', 'স্লিপ সাইকেল ক্যালকুলেটর', 'Sleep Tracker', 'Bedtime Calculator', 'Wake Up Calculator', 'Halalzi'],
+  openGraph: {
+    title: 'Sleep Cycle Calculator | স্লিপ সাইকেল ক্যালকুলেটর | Halalzi',
+    description: 'সকালে নির্দিষ্ট সময়ে ওঠার জন্য রাতে ঠিক কয়টায় ঘুমানো উচিত তা হিসাব করুন।',
+    type: 'website',
+    url: 'https://halalzi.com/tools/sleep-cycle-calculator',
+    siteName: 'Halalzi',
+  },
+  alternates: {
+    canonical: 'https://halalzi.com/tools/sleep-cycle-calculator',
+  }
 }
 
 export default function SleepCalculatorPage() {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Sleep Cycle Calculator - Halalzi',
+    applicationCategory: 'HealthApplication',
+    operatingSystem: 'Any',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'BDT',
+    },
+    description: 'সকালে নির্দিষ্ট সময়ে ওঠার জন্য রাতে ঠিক কয়টায় ঘুমানো উচিত তা হিসাব করুন।',
+  }
+
   return (
     <div className="bg-gray-50 min-h-[calc(100vh-4rem)] py-10">
+      <Script
+        id="sleep-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <div className="mb-6 flex items-center gap-2 text-sm text-gray-400">
           <Link href="/tools" className="hover:text-teal-600 transition-colors">হেলথ টুলস</Link>

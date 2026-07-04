@@ -1,15 +1,46 @@
 import { Metadata } from 'next'
 import { DiabetesChecker } from '@/components/tools/DiabetesChecker'
 import Link from 'next/link'
+import Script from 'next/script'
 
 export const metadata: Metadata = {
   title: 'Diabetes & Blood Sugar Checker | ডায়াবেটিস চেকার | Halalzi',
   description: 'আপনার রক্তে শর্করার মাত্রা (ব্লাড সুগার) স্বাভাবিক কিনা জানুন। ফ্রি ডায়াবেটিস চেকার টুল।',
+  keywords: ['Diabetes Checker', 'ডায়াবেটিস চেকার', 'ব্লাড সুগার টেস্ট', 'Blood Sugar Checker', 'HbA1c', 'Halalzi Health'],
+  openGraph: {
+    title: 'Diabetes & Blood Sugar Checker | ডায়াবেটিস চেকার | Halalzi',
+    description: 'আপনার রক্তে শর্করার মাত্রা (ব্লাড সুগার) স্বাভাবিক কিনা জানুন। ফ্রি ডায়াবেটিস চেকার টুল।',
+    type: 'website',
+    url: 'https://halalzi.com/tools/diabetes-checker',
+    siteName: 'Halalzi',
+  },
+  alternates: {
+    canonical: 'https://halalzi.com/tools/diabetes-checker',
+  }
 }
 
 export default function DiabetesCheckerPage() {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Diabetes Checker - Halalzi',
+    applicationCategory: 'HealthApplication',
+    operatingSystem: 'Any',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'BDT',
+    },
+    description: 'আপনার রক্তে শর্করার মাত্রা (ব্লাড সুগার) স্বাভাবিক কিনা জানুন। ফ্রি ডায়াবেটিস চেকার টুল।',
+  }
+
   return (
     <div className="bg-gray-50 min-h-[calc(100vh-4rem)] py-10">
+      <Script
+        id="diabetes-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
         <div className="mb-6 flex items-center gap-2 text-sm text-gray-400">

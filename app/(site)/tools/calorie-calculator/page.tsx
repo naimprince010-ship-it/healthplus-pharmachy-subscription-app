@@ -1,15 +1,46 @@
 import { Metadata } from 'next'
 import { CalorieCalculator } from '@/components/tools/CalorieCalculator'
 import Link from 'next/link'
+import Script from 'next/script'
 
 export const metadata: Metadata = {
   title: 'Daily Calorie Calculator | দৈনিক ক্যালরি ক্যালকুলেটর | Halalzi',
   description: 'ওজন কমাতে, বাড়াতে বা ধরে রাখতে আপনার প্রতিদিন কত ক্যালরি প্রয়োজন তা হিসাব করুন।',
+  keywords: ['Calorie Calculator', 'দৈনিক ক্যালরি ক্যালকুলেটর', 'BMR Calculator', 'TDEE Calculator', 'Weight Loss Calculator', 'Halalzi'],
+  openGraph: {
+    title: 'Daily Calorie Calculator | দৈনিক ক্যালরি ক্যালকুলেটর | Halalzi',
+    description: 'ওজন কমাতে, বাড়াতে বা ধরে রাখতে আপনার প্রতিদিন কত ক্যালরি প্রয়োজন তা হিসাব করুন।',
+    type: 'website',
+    url: 'https://halalzi.com/tools/calorie-calculator',
+    siteName: 'Halalzi',
+  },
+  alternates: {
+    canonical: 'https://halalzi.com/tools/calorie-calculator',
+  }
 }
 
 export default function CalorieCalculatorPage() {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Daily Calorie Calculator - Halalzi',
+    applicationCategory: 'HealthApplication',
+    operatingSystem: 'Any',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'BDT',
+    },
+    description: 'ওজন কমাতে, বাড়াতে বা ধরে রাখতে আপনার প্রতিদিন কত ক্যালরি প্রয়োজন তা হিসাব করুন।',
+  }
+
   return (
     <div className="bg-gray-50 min-h-[calc(100vh-4rem)] py-10">
+      <Script
+        id="calorie-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <div className="mb-6 flex items-center gap-2 text-sm text-gray-400">
           <Link href="/tools" className="hover:text-teal-600 transition-colors">হেলথ টুলস</Link>

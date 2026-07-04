@@ -1,15 +1,46 @@
 import { Metadata } from 'next'
 import { PregnancyCalculator } from '@/components/tools/PregnancyCalculator'
 import Link from 'next/link'
+import Script from 'next/script'
 
 export const metadata: Metadata = {
   title: 'Pregnancy Due Date Calculator | প্রেগন্যান্সি ক্যালকুলেটর | Halalzi',
   description: 'সম্ভাব্য প্রসবের তারিখ, বর্তমান সপ্তাহ এবং ট্রাইমেস্টার সহজে জানুন। সম্পূর্ণ ফ্রি প্রেগন্যান্সি ক্যালকুলেটর।',
+  keywords: ['Pregnancy Calculator', 'প্রেগন্যান্সি ক্যালকুলেটর', 'প্রসবের তারিখ', 'Due Date Calculator', 'Halalzi', 'Health Tools'],
+  openGraph: {
+    title: 'Pregnancy Due Date Calculator | প্রেগন্যান্সি ক্যালকুলেটর | Halalzi',
+    description: 'সম্ভাব্য প্রসবের তারিখ, বর্তমান সপ্তাহ এবং ট্রাইমেস্টার সহজে জানুন। সম্পূর্ণ ফ্রি প্রেগন্যান্সি ক্যালকুলেটর।',
+    type: 'website',
+    url: 'https://halalzi.com/tools/pregnancy-calculator',
+    siteName: 'Halalzi',
+  },
+  alternates: {
+    canonical: 'https://halalzi.com/tools/pregnancy-calculator',
+  }
 }
 
 export default function PregnancyCalculatorPage() {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Pregnancy Due Date Calculator - Halalzi',
+    applicationCategory: 'HealthApplication',
+    operatingSystem: 'Any',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'BDT',
+    },
+    description: 'সম্ভাব্য প্রসবের তারিখ, বর্তমান সপ্তাহ এবং ট্রাইমেস্টার সহজে জানুন। সম্পূর্ণ ফ্রি প্রেগন্যান্সি ক্যালকুলেটর।',
+  }
+
   return (
     <div className="bg-gray-50 min-h-[calc(100vh-4rem)] py-10">
+      <Script
+        id="pregnancy-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
         <div className="mb-6 flex items-center gap-2 text-sm text-gray-400">
