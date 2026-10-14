@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
-import { addDays, format } from 'date-fns'
 import { prisma } from '@/lib/prisma'
 import { sendSMS, sendEmail } from '@/lib/notifications'
 import { processOrderOtp } from '@/lib/settings/server'
@@ -15,6 +14,8 @@ import {
   initialPaymentStatus,
   orderReadyForFulfillment,
 } from '@/lib/order-payment-status'
+import { generateOrderNumber } from '@/lib/utils'
+import { InventoryUnavailableError, reserveOrderInventory } from '@/lib/order-inventory'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -62,6 +63,22 @@ export async function POST(request: NextRequest) {
 
     const { addressId, zoneId, items, paymentMethod, notes, couponCode } =
       validationResult.data
+
+    // No payment gateway or settlement callback exists yet (audit P1-02); only COD is accepted.
+    if (paymentMethod !== 'COD') {
+      return NextResponse.json(
+        { error: 'অনলাইন পেমেন্ট সাময়িকভাবে বন্ধ আছে। ক্যাশ অন ডেলিভারি বেছে নিন।' },
+        { status: 400 }
+      )
+    }
+
+    // Membership entitlements must wait for verified settlement (audit P0-04).
+    if (items.some((item) => item.membershipPlanId)) {
+      return NextResponse.json(
+        { error: 'মেম্বারশিপ কেনা সাময়িকভাবে বন্ধ আছে। কার্ট থেকে মেম্বারশিপ সরিয়ে আবার চেষ্টা করুন।' },
+        { status: 400 }
+      )
+    }
 
     let address
     let finalAddressId: string
@@ -129,36 +146,14 @@ export async function POST(request: NextRequest) {
     }
 
     const {
-      membershipItems,
       regularItems,
       medicines,
       products,
-      membershipPlans,
       subtotal,
       membershipDiscount,
       eligibleForCoupon,
       activeMembership,
     } = quote
-
-    let existingActiveMembership: {
-      id: string
-      planId: string
-      endDate: Date
-    } | null = null
-    if (membershipItems.length > 0) {
-      existingActiveMembership = await prisma.userMembership.findFirst({
-        where: {
-          userId: session.user.id,
-          isActive: true,
-          endDate: { gte: new Date() },
-        },
-        select: {
-          id: true,
-          planId: true,
-          endDate: true,
-        },
-      })
-    }
 
     const cartSettings = await prisma.cartPageSettings.findFirst()
     const freeDeliveryThreshold =
@@ -204,7 +199,7 @@ export async function POST(request: NextRequest) {
     const total =
       subtotal - membershipDiscount - couponPreviewDiscount + deliveryCharge
 
-    const orderNumber = `ORD-${Date.now()}`
+    const orderNumber = generateOrderNumber()
     const payStatus = initialPaymentStatus(paymentMethod)
     const membershipPlanName = activeMembership?.plan.name ?? null
 
@@ -212,6 +207,7 @@ export async function POST(request: NextRequest) {
 
     try {
       order = await prisma.$transaction(async (tx) => {
+        await reserveOrderInventory(tx, regularItems)
         let appliedCouponCode: string | null = null
         let couponDiscountAmount = 0
         let couponIdForUsage: string | null = null
@@ -241,10 +237,19 @@ export async function POST(request: NextRequest) {
           if (c.usageLimit != null && c.usageCount >= c.usageLimit) {
             throw new Error('COUPON_EXHAUSTED')
           }
-          await tx.coupon.update({
-            where: { id: c.id },
+          const couponClaim = await tx.coupon.updateMany({
+            where: {
+              id: c.id,
+              isActive: true,
+              ...(c.usageLimit == null
+                ? {}
+                : { usageCount: { lt: c.usageLimit } }),
+            },
             data: { usageCount: { increment: 1 } },
           })
+          if (couponClaim.count !== 1) {
+            throw new Error('COUPON_EXHAUSTED')
+          }
           appliedCouponCode = c.code
           couponDiscountAmount = cd
           couponIdForUsage = c.id
@@ -333,6 +338,12 @@ export async function POST(request: NextRequest) {
       })
     } catch (e) {
       const err = e as Error & { message: string }
+      if (e instanceof InventoryUnavailableError || err.message === 'INVENTORY_UNAVAILABLE') {
+        return NextResponse.json(
+          { error: 'এক বা একাধিক পণ্যের পর্যাপ্ত স্টক নেই। কার্ট আপডেট করে আবার চেষ্টা করুন।' },
+          { status: 409 }
+        )
+      }
       if (err.message === 'COUPON_INVALID' || err.message === 'COUPON_CHANGED') {
         return NextResponse.json(
           {
@@ -358,83 +369,6 @@ export async function POST(request: NextRequest) {
         )
       }
       throw e
-    }
-
-    // Create/update membership records for any membership items in the order
-    for (const membershipItem of membershipItems) {
-      const plan = membershipPlans.find(p => p.id === membershipItem.membershipPlanId)
-      if (!plan) continue
-
-      let finalEndDate: Date
-
-      if (existingActiveMembership) {
-        const isSamePlan = existingActiveMembership.planId === plan.id
-
-        if (isSamePlan) {
-          // RENEW: Extend the existing membership's endDate
-          finalEndDate = addDays(existingActiveMembership.endDate, plan.durationDays)
-          
-          await prisma.userMembership.update({
-            where: { id: existingActiveMembership.id },
-            data: { endDate: finalEndDate },
-          })
-        } else {
-          // UPGRADE/DOWNGRADE: Deactivate old membership, create new one
-          await prisma.userMembership.update({
-            where: { id: existingActiveMembership.id },
-            data: { isActive: false },
-          })
-
-          const startDate = new Date()
-          finalEndDate = addDays(startDate, plan.durationDays)
-
-          await prisma.userMembership.create({
-            data: {
-              userId: session.user.id,
-              planId: plan.id,
-              startDate,
-              endDate: finalEndDate,
-              isActive: true,
-            },
-          })
-        }
-      } else {
-        // NEW PURCHASE: Create new membership
-        const startDate = new Date()
-        finalEndDate = addDays(startDate, plan.durationDays)
-
-        await prisma.userMembership.create({
-          data: {
-            userId: session.user.id,
-            planId: plan.id,
-            startDate,
-            endDate: finalEndDate,
-            isActive: true,
-          },
-        })
-      }
-
-      // Get user info for notification
-      const userForNotification = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: { name: true, phone: true },
-      })
-
-      if (userForNotification) {
-        // Send membership notification (using MEMBERSHIP_PURCHASED for all cases: purchase, renew, upgrade)
-        await Promise.all([
-          sendSMS(userForNotification.phone, 'MEMBERSHIP_PURCHASED', {
-            name: userForNotification.name,
-            expiresAt: format(finalEndDate, 'MMM dd, yyyy'),
-            planName: plan.name,
-          }),
-          sendEmail(`${userForNotification.phone}@example.com`, 'MEMBERSHIP_PURCHASED', {
-            name: userForNotification.name,
-            expiresAt: format(finalEndDate, 'MMM dd, yyyy'),
-            planName: plan.name,
-          }),
-        ])
-      }
     }
 
     const deliveryDaysHint =

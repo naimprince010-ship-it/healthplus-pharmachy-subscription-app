@@ -6,6 +6,12 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUTPUT_PATH = path.join(__dirname, '..', 'playwright-temp', 'azan_products.json');
 
+function requireEnv(name) {
+  const value = process.env[name];
+  if (!value) throw new Error(`Missing required env var ${name}`);
+  return value;
+}
+
 (async () => {
   const browser = await chromium.launch({ headless: false });
   const context = await browser.newContext();
@@ -18,8 +24,8 @@ const OUTPUT_PATH = path.join(__dirname, '..', 'playwright-temp', 'azan_products
   await page.goto('https://azanwholesale.com/login');
   await page.waitForTimeout(2000);
 
-  await page.fill('input[aria-label="Enter Your Phone"]', '01938264923');
-  await page.fill('input[aria-label="Enter Your Password"]', 'Naim18005@');
+  await page.fill('input[aria-label="Enter Your Phone"]', requireEnv('AZAN_PORTAL_PHONE'));
+  await page.fill('input[aria-label="Enter Your Password"]', requireEnv('AZAN_PORTAL_PASSWORD'));
 
   const buttons = await page.$$('button');
   for (const btn of buttons) {

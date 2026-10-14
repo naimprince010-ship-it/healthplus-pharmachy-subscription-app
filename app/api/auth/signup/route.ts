@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { hash } from 'bcryptjs'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
+import { consumeVerifiedOtp } from '@/lib/auth/otp'
+import { normalizeBDPhone } from '@/lib/utils'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -18,6 +20,9 @@ const signupSchema = z.object({
     .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
     .regex(/[0-9]/, 'Password must contain at least one number'),
   email: z.string().email('Invalid email').min(1, 'Email is required'),
+  // Proof of phone ownership: an OTP session issued by /api/auth/otp/send for this phone.
+  otpSessionId: z.string().min(1, 'Phone verification is required'),
+  otp: z.string().regex(/^\d{6}$/, 'OTP must be 6 digits'),
 })
 
 export async function POST(request: NextRequest) {
@@ -35,24 +40,35 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { name, phone, password, email } = validationResult.data
+    const { name, phone, password, email, otpSessionId, otp } = validationResult.data
 
-    const normalizedPhone = phone.startsWith('+88') ? phone : `+88${phone}`
+    const normalizedPhone = normalizeBDPhone(phone)
     const normalizedEmail = email.toLowerCase().trim()
+
+    try {
+      await consumeVerifiedOtp(otpSessionId, otp, { expectedPhone: normalizedPhone })
+    } catch {
+      return NextResponse.json(
+        { error: 'Phone verification failed. Request a new OTP and try again.' },
+        { status: 400 }
+      )
+    }
 
     const existingUser = await prisma.user.findUnique({
       where: { phone: normalizedPhone },
+      select: { id: true },
     })
 
     if (existingUser) {
       return NextResponse.json(
-        { error: 'User with this phone number already exists' },
+        { error: 'An account already exists for this phone. Please sign in with OTP.' },
         { status: 409 }
       )
     }
 
     const existingEmail = await prisma.user.findUnique({
       where: { email: normalizedEmail },
+      select: { id: true },
     })
 
     if (existingEmail) {

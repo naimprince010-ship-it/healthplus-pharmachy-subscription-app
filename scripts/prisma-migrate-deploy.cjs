@@ -1,5 +1,6 @@
 /**
- * Vercel/CI only: runs `prisma migrate deploy`.
+ * Gated release step: runs `prisma migrate deploy`. Never part of `build`.
+ * Usage: MIGRATION_RELEASE_APPROVED=true npm run db:migrate:release  (after a verified backup)
  *
  * Supabase transaction pool (:6543) stalls migrations → use **session pool** on same
  * *.pooler.supabase.com host, port **5432** (IPv4-friendly).
@@ -8,6 +9,13 @@
  * @see https://supabase.com/docs/guides/troubleshooting/prisma-error-management
  */
 const { spawnSync } = require('node:child_process')
+
+if (process.env.MIGRATION_RELEASE_APPROVED !== 'true') {
+  console.error(
+    '[migrate] Refusing to run: set MIGRATION_RELEASE_APPROVED=true after confirming a database backup and the target DATABASE_URL.'
+  )
+  process.exit(1)
+}
 
 /** Matches duplicate-column drift we hit in prod (_prisma_migrations failed → P3009 / P3018). */
 const STUCK_MIGRATION = '20260504164500_address_hidden_from_checkout'

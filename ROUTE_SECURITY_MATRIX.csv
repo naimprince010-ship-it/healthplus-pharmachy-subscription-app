@@ -1,0 +1,42 @@
+route,method,authentication,authorization,input_validation,rate_limit,idempotency,sensitive_data,mutation,risk,severity,evidence
+/api/setup-admin,GET,none,none,none,none,no,admin credentials,yes (upsert ADMIN user),Public GET creates/resets ADMIN with hard-coded password,P0,app/api/setup-admin/route.ts:5-38
+/api/membership,POST,session,owner,none (raw planId),none,no,membership entitlement,yes,Activates paid membership with no payment,P0,app/api/membership/route.ts:16-53
+/api/membership,GET,session,owner,n/a,none,n/a,membership,no,OK,P3,app/api/membership/route.ts:85-100
+/api/orders,POST,session,owner (address),zod,none,no,order/pricing/PII,yes,Membership activated pre-payment outside tx; no stock decrement; coupon race; order# collision,P0,app/api/orders/route.ts:207;214;241-246;364-410
+/api/orders,GET,session,owner,n/a,none,n/a,order history,no,Unpaginated,P3,app/api/orders/route.ts:515-540
+/api/prescriptions,POST,optional,none,manual + client MIME,none,no,health data file,yes,Public bucket URL; guest upsert binds to existing account by phone,P0,app/api/prescriptions/route.ts:58-72;92 + lib/supabase.ts:258;286
+/api/prescriptions,GET,session,owner or ADMIN,n/a,none,n/a,health data + phone,no,Admin gets all unpaginated; returns permanent public fileUrl,P3,app/api/prescriptions/route.ts:139-150
+/api/prescriptions,PATCH,session,ADMIN,none,none,no,prescription status,yes,Unvalidated status string,P3,app/api/prescriptions/route.ts:166-181
+/api/auth/signup,POST,none,none,zod,none,no,phone/email/password,yes (create USER),Phone pre-registration without OTP enables account pre-hijack; 409 enumeration,P1,app/api/auth/signup/route.ts:40-74
+/api/auth/otp/send,POST,none,none,zod,per-phone 60s only (hourly cap ineffective),no,phone,yes (OtpSession + SMS),SMS bombing/cost; no per-IP limit,P2,lib/auth/otp.ts:25-60;65
+/api/auth/otp/verify,POST,none,OTP proof,zod 6 digits,5 attempts/session,verifiedAt,full User incl. password hash,yes,Response leaks bcrypt hash,P2,app/api/auth/otp/verify/route.ts:31 + lib/auth/otp.ts:135;158
+/api/auth/[...nextauth],GET/POST,nextauth,nextauth,provider,none,n/a,session,yes,OTP path secure; password path has no rate limit,P3,lib/auth.ts:17-62
+/api/subscriptions,POST,session,owner,zod,none,no,subscription,yes,Creates pending/unpaid (OK),P3,app/api/subscriptions/route.ts:20-107
+/api/seed-blogs,GET,none,none,none,none,upsert by slug,none,yes (create/update PUBLISHED blogs),Anonymous content overwrite via GET,P2,app/api/seed-blogs/route.ts:5;104;107
+/api/db-health,GET,none,none,n/a,none,n/a,DB error text,no,Leaks DB error message,P3,app/api/db-health/route.ts:23-28
+/api/checkout/settings,GET,none,none,n/a,none,no,none,yes (lazy create),Mutation via GET; duplicate-row race,P3,app/api/checkout/settings/route.ts:6-9
+/api/footer/settings,GET,none,none,n/a,none,no,none,yes (lazy create),Mutation via GET,P3,app/api/footer/settings/route.ts:54-57
+/api/dashboard/settings,GET,none,none,n/a,none,no,none,yes (lazy create),Mutation via GET,P3,app/api/dashboard/settings/route.ts:6-9
+/api/order-tracking/settings,GET,none,none,n/a,none,no,none,yes (lazy create),Mutation via GET,P3,app/api/order-tracking/settings/route.ts:6-9
+/api/update-stock,POST,static bearer,secret,zod,none,no,stock,yes,Non-constant-time compare; no replay/ordering protection,P2,lib/integrations/azan-inbound-update.ts:165-169
+/api/update-product,POST,static bearer,secret,zod,none,no,price/stock,yes,Same as update-stock,P2,lib/integrations/azan-inbound-update.ts:165-169
+/api/image-proxy,GET,none,host allowlist (exact),URL parse,none,cache,none,no,OK (no size cap/timeout),P3,app/api/image-proxy/route.ts
+/api/admin/medex-scraper,POST,none,none,substring URL check,none,no,none,no (outbound fetch),Unauthenticated SSRF,P1,app/api/admin/medex-scraper/route.ts:26-34
+/api/admin/seed-hygiene-seo,GET,none,none,none,none,no,none,yes (create topic/blog; append category SEO),Unauthenticated unbounded writes via GET,P1,app/api/admin/seed-hygiene-seo/route.ts:4-58
+/api/admin/market-intel/sync,GET/POST,optional query token,none if env unset,none,none,no,none,yes (scrape + insert),Fails open when MARKET_INTEL_CRON_SECRET unset; secret in URL,P1,app/api/admin/market-intel/sync/route.ts:4-11;37-39
+/api/admin/market-intel,GET,none,none,range parse,none,n/a,competitor intel,no,Anonymous read of business intel,P2,app/api/admin/market-intel/route.ts:18
+/api/admin/market-intel/comparison,GET,none,none,?,none,n/a,competitor pricing,no,Anonymous read,P2,app/api/admin/market-intel/comparison/route.ts:5
+/api/admin/check-generics,GET,none,none,none,none,n/a,product list,no,Anonymous unbounded findMany,P2,app/api/admin/check-generics/route.ts:4-6
+/api/admin/membership-settings,GET,none,none,n/a,none,n/a,page settings,no,Unguarded (likely public content),P3,app/api/admin/membership-settings/route.ts:6
+/api/admin/membership-settings,PUT,session,ADMIN,none (raw body to prisma),none,no,settings,yes,Mass assignment of body into update,P3,app/api/admin/membership-settings/route.ts:31-42
+/api/admin/orders/[id]/payment,PATCH,session,ADMIN,zod enum,none,no,payment status,yes,Manual PAID with no reference/audit triggers supplier forward,P1,app/api/admin/orders/[id]/payment/route.ts:19-25;55;88
+/api/admin/debug/cleanup-arogga,GET,session,ADMIN,none,none,no,products,yes (deleteMany),Destructive GET -> CSRF via top-level navigation,P2,app/api/admin/debug/cleanup-arogga/route.ts:5-8;41
+/api/admin/prescriptions/[id]/create-order,POST,session,ADMIN,?,none,no,order,yes,ORD-Date.now() collision,P2,app/api/admin/prescriptions/[id]/create-order/route.ts:148
+/api/admin/subscriptions/[id],PATCH/PUT,session,ADMIN,allowlist,none,no,subscription,yes,PUT delegates to guarded PATCH (OK),P3,app/api/admin/subscriptions/[id]/route.ts:13-17;89-91
+/api/admin/products/azan-category-mappings,GET/POST/DELETE,session,ADMIN (local helper),zod,none,no,mappings,yes,OK,P3,app/api/admin/products/azan-category-mappings/route.ts:13-15
+/api/cron/discount-engine,GET,Bearer CRON_SECRET,secret,n/a,n/a,no,none,yes,OK if CRON_SECRET strong,P3,lib/cronAuth.ts
+/api/cron/market-intel,GET,Bearer CRON_SECRET,secret,n/a,n/a,no,none,yes,OK if CRON_SECRET strong,P3,lib/cronAuth.ts
+/api/cron/facebook-marketing,GET,Bearer CRON_SECRET,secret,n/a,n/a,no,none,yes,OK if CRON_SECRET strong,P3,lib/cronAuth.ts
+/api/cron/flash-rotation,GET,Bearer CRON_SECRET,secret,n/a,n/a,no,none,yes,OK if CRON_SECRET strong,P3,lib/cronAuth.ts
+/api/cron/rebuild-product-cooccurrence,GET,Bearer CRON_SECRET,secret,n/a,n/a,no,none,yes,OK if CRON_SECRET strong,P3,lib/cronAuth.ts
+/api/cron/blog-engine,GET,Bearer CRON_SECRET,secret,n/a,n/a,no,none,yes (AI publish),OK if CRON_SECRET strong; human-approval gate not verified,P3,lib/cronAuth.ts

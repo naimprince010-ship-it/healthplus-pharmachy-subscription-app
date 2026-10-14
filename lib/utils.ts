@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto'
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
@@ -20,7 +21,7 @@ export function formatDate(date: Date | string): string {
 
 export function generateOrderNumber(): string {
   const timestamp = Date.now().toString(36)
-  const random = Math.random().toString(36).substring(2, 7)
+  const random = randomBytes(4).toString('hex')
   return `ORD-${timestamp}-${random}`.toUpperCase()
 }
 

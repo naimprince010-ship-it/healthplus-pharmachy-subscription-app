@@ -233,12 +233,13 @@ export async function deleteMedicineImage(path: string): Promise<void> {
 }
 
 /**
- * Upload prescription file to Supabase Storage using admin client
- * Returns the public URL, storage path, MIME type, and file size
+ * Upload prescription file to Supabase Storage using admin client.
+ * Returns only the private object path; viewers get short-lived signed URLs (lib/prescription-files.ts).
+ * Note: an existing bucket's public/private setting is not changed here; flip it in the Supabase dashboard.
  */
 export async function uploadPrescriptionFile(
   file: File
-): Promise<{ url: string; path: string; mimeType: string; size: number }> {
+): Promise<{ path: string; mimeType: string; size: number }> {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL === 'https://placeholder.supabase.co') {
     throw new Error('NEXT_PUBLIC_SUPABASE_URL is not configured in production environment')
   }
@@ -255,7 +256,7 @@ export async function uploadPrescriptionFile(
     
     if (!bucketExists) {
       await supabaseAdmin.storage.createBucket(bucket, {
-        public: true,
+        public: false,
         fileSizeLimit: 5 * 1024 * 1024,
         allowedMimeTypes: ['image/jpeg', 'image/png', 'application/pdf'],
       })
@@ -264,10 +265,14 @@ export async function uploadPrescriptionFile(
     console.error('Bucket check/create error:', error)
   }
 
-  const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg'
-  const uuid = `${Date.now()}-${Math.random().toString(36).substring(7)}`
-  const fileName = `${uuid}.${fileExt}`
-  const filePath = `prescriptions/${fileName}`
+  const extensionByMime: Record<string, string> = {
+    'image/jpeg': 'jpg',
+    'image/jpg': 'jpg',
+    'image/png': 'png',
+    'application/pdf': 'pdf',
+  }
+  const fileExt = extensionByMime[file.type] ?? 'bin'
+  const filePath = `prescriptions/${crypto.randomUUID()}.${fileExt}`
 
   const { data, error } = await supabaseAdmin.storage
     .from(bucket)
@@ -281,12 +286,7 @@ export async function uploadPrescriptionFile(
     throw new Error(`Upload failed: ${error.message}`)
   }
 
-  const { data: urlData } = supabaseAdmin.storage
-    .from(bucket)
-    .getPublicUrl(data.path)
-
   return {
-    url: urlData.publicUrl,
     path: data.path,
     mimeType: file.type,
     size: file.size,

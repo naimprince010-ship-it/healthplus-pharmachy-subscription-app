@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { signIn } from 'next-auth/react'
 import { Upload, FileText, Image as ImageIcon, X, CheckCircle2, AlertCircle } from 'lucide-react'
 import { trackPrescriptionUpload } from '@/lib/trackEvent'
 
@@ -13,6 +14,7 @@ export default function PrescriptionUploadForm({ hideHeader = false, compact = f
   const [success, setSuccess] = useState(false)
   const [fileError, setFileError] = useState('')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [needsLogin, setNeedsLogin] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   function validateFile(file: File | null): boolean {
@@ -65,6 +67,7 @@ export default function PrescriptionUploadForm({ hideHeader = false, compact = f
     setError('')
     setFileError('')
     setSuccess(false)
+    setNeedsLogin(false)
 
     const formData = new FormData(form)
 
@@ -76,11 +79,17 @@ export default function PrescriptionUploadForm({ hideHeader = false, compact = f
 
       const data = await response.json()
 
+      if (response.status === 401) {
+        setError(data.error || 'প্রেসক্রিপশন আপলোড করতে আগে লগইন করুন।')
+        setNeedsLogin(true)
+        return
+      }
+
       if (!response.ok) {
         throw new Error(data.error || 'আপলোড ব্যর্থ হয়েছে')
       }
 
-      trackPrescriptionUpload(data.prescription?.id)
+      trackPrescriptionUpload(data.receiptId)
       form.reset()
       setSelectedFile(null)
       setSuccess(true)
@@ -117,7 +126,21 @@ export default function PrescriptionUploadForm({ hideHeader = false, compact = f
       {(error || fileError) && (
         <div className="mb-6 flex items-center gap-3 rounded-xl bg-red-50 p-4 text-red-800 border border-red-100">
           <AlertCircle className="h-5 w-5 flex-shrink-0" />
-          <p className="text-sm font-medium">{error || fileError}</p>
+          <p className="text-sm font-medium">
+            {error || fileError}
+            {needsLogin && (
+              <>
+                {' '}
+                <button
+                  type="button"
+                  onClick={() => signIn(undefined, { callbackUrl: window.location.href })}
+                  className="font-semibold underline"
+                >
+                  লগইন করুন
+                </button>
+              </>
+            )}
+          </p>
         </div>
       )}
 

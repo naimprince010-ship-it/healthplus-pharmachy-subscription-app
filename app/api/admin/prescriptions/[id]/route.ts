@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { withSignedPrescriptionFile } from '@/lib/prescription-files'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -57,7 +58,7 @@ export async function GET(
       return NextResponse.json({ error: 'Prescription not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ prescription })
+    return NextResponse.json({ prescription: await withSignedPrescriptionFile(prescription) })
   } catch (error) {
     console.error('Fetch prescription error:', error)
     return NextResponse.json(

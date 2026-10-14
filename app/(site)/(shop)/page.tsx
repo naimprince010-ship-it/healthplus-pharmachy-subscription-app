@@ -2,8 +2,8 @@ import { Suspense } from 'react'
 import { HomePageDeferred } from '@/components/HomePageDeferred'
 import { HomePageSkeleton } from '@/components/HomePageSkeleton'
 
-/** ISR: repeat visits get a cached shell; Suspense paints skeleton until DB resolves. */
-export const revalidate = 60
+/** Database-backed home data is resolved per request; this avoids DB access during builds. */
+export const dynamic = 'force-dynamic'
 
 export default function HomePage() {
   return (

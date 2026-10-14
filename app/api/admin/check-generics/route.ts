@@ -1,7 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/requireAdmin'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
+    const authResult = await requireAdmin()
+    if (!authResult.authorized) return authResult.response
+
     try {
         const products = await prisma.product.findMany({
             where: {
@@ -20,7 +24,8 @@ export async function GET(request: NextRequest) {
         })
 
         return NextResponse.json({ count: products.length, products })
-    } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Unknown error'
+        return NextResponse.json({ error: message }, { status: 500 })
     }
 }

@@ -1,5 +1,11 @@
 import { NextResponse } from 'next/server';
 import * as cheerio from 'cheerio';
+import { requireAdmin } from '@/lib/requireAdmin';
+import { parseMedexUrl } from '@/lib/security/medex-url';
+
+interface AroggaSearchResponse {
+    data?: Array<{ p_f_image?: string; attachedFiles_p_images?: Array<{ src?: string }>; pv?: Array<{ p_f_image?: string }> }>;
+}
 
 const HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -11,8 +17,8 @@ async function fetchAroggaImage(query: string): Promise<string | null> {
         const response = await fetch(apiUrl, { headers: HEADERS });
         if (!response.ok) return null;
 
-        const result = (await response.json()) as any;
-        if (result && result.data && result.data.length > 0) {
+        const result = (await response.json()) as AroggaSearchResponse;
+        if (result.data && result.data.length > 0) {
             const item = result.data[0];
             const imageUrl = item.p_f_image || (item.attachedFiles_p_images?.[0]?.src) || (item.pv?.[0]?.p_f_image);
             return imageUrl || null;
@@ -24,14 +30,20 @@ async function fetchAroggaImage(query: string): Promise<string | null> {
 }
 
 export async function POST(req: Request) {
-    try {
-        const { url, mode = 'single' } = await req.json();
+    const authResult = await requireAdmin();
+    if (!authResult.authorized) return authResult.response;
 
-        if (!url || !url.includes('medex.com.bd')) {
+    try {
+        const { url: rawUrl, mode = 'single' } = await req.json();
+        const parsedUrl = parseMedexUrl(rawUrl);
+
+        if (!parsedUrl) {
             return NextResponse.json({ error: 'Invalid Medex URL' }, { status: 400 });
         }
+        const url = parsedUrl.toString();
 
-        const response = await fetch(url, { headers: HEADERS });
+        // redirect: 'error' stops a medex.com.bd redirect from bouncing the fetch to another host.
+        const response = await fetch(url, { headers: HEADERS, redirect: 'error', signal: AbortSignal.timeout(15_000) });
         if (!response.ok) {
             return NextResponse.json({ error: 'Failed to fetch Medex page' }, { status: response.status });
         }
@@ -91,7 +103,7 @@ export async function POST(req: Request) {
         });
 
         // Price extraction: often in .package-container > span
-        let priceText = $('.package-container > span:nth-child(2)').text().trim() ||
+        const priceText = $('.package-container > span:nth-child(2)').text().trim() ||
             $('span.unit-price-value').text().trim() ||
             $('.package-container').text().trim();
 
@@ -100,7 +112,7 @@ export async function POST(req: Request) {
         const unitPrice = priceMatch ? parseFloat(priceMatch[1]) : null;
 
         // Strip Price extraction
-        let stripPriceText = $('.package-container div:contains("Strip Price:")').text().trim() ||
+        const stripPriceText = $('.package-container div:contains("Strip Price:")').text().trim() ||
             $('.package-container div').filter((i, el) => $(el).text().includes('Strip Price:')).text().trim();
         const stripPriceMatch = stripPriceText.match(/৳\s*([\d.]+)/);
         const stripPrice = stripPriceMatch ? parseFloat(stripPriceMatch[1]) : null;

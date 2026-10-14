@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { sendSMS, sendEmail, notifyAdmin } from '@/lib/notifications'
 import { auth } from '@/lib/auth'
 import { uploadPrescriptionFile, validatePrescriptionFile, deletePrescriptionFile } from '@/lib/supabase'
+import { withSignedPrescriptionFile } from '@/lib/prescription-files'
 import { normalizeBDPhone } from '@/lib/utils'
 
 export const runtime = 'nodejs'
@@ -9,7 +10,16 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
+    // Uploads must belong to a verified (OTP) account; a submitted phone number is never trusted
+    // to pick the owning account (audit P0-06). Prescription.userId is required by the schema.
     const session = await auth()
+    const userId = session?.user?.id
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'প্রেসক্রিপশন আপলোড করতে আগে ফোন নম্বর দিয়ে লগইন করুন।', code: 'LOGIN_REQUIRED' },
+        { status: 401 }
+      )
+    }
     
     const formData = await request.formData()
     const name = formData.get('name') as string
@@ -42,45 +52,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    let uploadResult: { url: string; path: string; mimeType: string; size: number } | null = null
+    let uploadResult: { path: string; mimeType: string; size: number } | null = null
     try {
       uploadResult = await uploadPrescriptionFile(file)
     } catch (error) {
       console.error('File upload error:', error)
       return NextResponse.json(
-        { error: error instanceof Error ? error.message : 'Failed to upload file' },
+        { error: 'Failed to upload file' },
         { status: 500 }
       )
     }
 
     const { prisma } = await import('@/lib/prisma')
-
-    let userId = session?.user?.id
-
-    if (!userId) {
-      try {
-        const guestUser = await prisma.user.upsert({
-          where: { phone: normalizedPhone },
-          update: {},
-          create: {
-            name,
-            phone: normalizedPhone,
-            password: '',
-            role: 'USER',
-          },
-        })
-        userId = guestUser.id
-      } catch (error) {
-        if (uploadResult) {
-          try {
-            await deletePrescriptionFile(uploadResult.path)
-          } catch (deleteError) {
-            console.error('Failed to clean up file after user creation error:', deleteError)
-          }
-        }
-        throw error
-      }
-    }
 
     let prescription
     try {
@@ -89,11 +72,12 @@ export async function POST(request: NextRequest) {
           name,
           phone: normalizedPhone,
           zoneId,
-          fileUrl: uploadResult.url,
+          fileUrl: uploadResult.path,
           fileType: uploadResult.mimeType,
           userId,
           status: 'NEW',
         },
+        select: { id: true, status: true },
       })
     } catch (error) {
       if (uploadResult) {
@@ -116,7 +100,8 @@ export async function POST(request: NextRequest) {
       }),
     ])
 
-    return NextResponse.json({ success: true, prescription })
+    // Receipt only: no file reference or personal data goes back to the uploading client.
+    return NextResponse.json({ success: true, receiptId: prescription.id, status: prescription.status })
   } catch (error) {
     console.error('Prescription upload error:', error)
     return NextResponse.json(
@@ -152,7 +137,7 @@ export async function GET() {
       },
     })
 
-    return NextResponse.json({ prescriptions })
+    return NextResponse.json({ prescriptions: await Promise.all(prescriptions.map(withSignedPrescriptionFile)) })
   } catch (error) {
     console.error('Fetch prescriptions error:', error)
     return NextResponse.json(

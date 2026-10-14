@@ -95,7 +95,8 @@ export default function CheckoutPage() {
   const [couponCode, setCouponCode] = useState('')
   const [couponApplied, setCouponApplied] = useState(false)
   const [couponDiscount, setCouponDiscount] = useState(0)
-  const [paymentMethod, setPaymentMethod] = useState<'COD' | 'BKASH'>('COD')
+  // Online (bKash/Nagad) is disabled until a verified payment gateway exists (audit P1-02).
+  const [paymentMethod, setPaymentMethod] = useState<'COD'>('COD')
   const [orderSummaryExpanded, setOrderSummaryExpanded] = useState(false)
   const [settings, setSettings] = useState<CheckoutSettings>(DEFAULT_SETTINGS)
   const [hasSubmittedOrder, setHasSubmittedOrder] = useState(false)
@@ -422,7 +423,6 @@ export default function CheckoutPage() {
     }
 
     try {
-      const paymentApi = paymentMethod === 'BKASH' ? 'ONLINE' : paymentMethod
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: {
@@ -433,7 +433,7 @@ export default function CheckoutPage() {
             ? { addressId: selectedSavedAddressId }
             : { zoneId: selectedZone }),
           items: mapCartItemsForApi(),
-          paymentMethod: paymentApi,
+          paymentMethod,
           notes,
           ...(couponApplied && couponDiscount > 0
             ? { couponCode: couponCode.trim().toUpperCase() }
@@ -467,10 +467,8 @@ export default function CheckoutPage() {
 
       setHasSubmittedOrder(true)
       clearCart()
-      const awaiting =
-        paymentMethod === 'BKASH' ? '&awaitingPayment=1' : ''
       router.replace(
-        `/order-success?orderId=${data.order.id}&amount=${Math.round(data.order.total ?? paidApprox)}&paymentMethod=${paymentMethod}${awaiting}`
+        `/order-success?orderId=${data.order.id}&amount=${Math.round(data.order.total ?? paidApprox)}&paymentMethod=${paymentMethod}`
       )
     } catch (err) {
       console.error('Checkout error:', err)
@@ -804,7 +802,7 @@ export default function CheckoutPage() {
           {/* Section 2: Payment Method - Visual Cards */}
           <div className="bg-white rounded-xl p-4">
             <h2 className="text-lg font-bold text-gray-900 mb-4">{settings.paymentSectionTitleBn}</h2>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               {/* Cash on Delivery */}
               <button
                 type="button"
@@ -822,26 +820,6 @@ export default function CheckoutPage() {
                 </div>
                 {paymentMethod === 'COD' && (
                   <span className="text-[10px] font-bold text-teal-600 bg-teal-100 px-2 py-0.5 rounded-full">✓ নির্বাচিত</span>
-                )}
-              </button>
-
-              {/* Bkash / Nagad */}
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('BKASH')}
-                className={`flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all duration-200 ${
-                  paymentMethod === 'BKASH'
-                    ? 'border-pink-500 bg-pink-50 shadow-sm'
-                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                <span className="text-2xl">📱</span>
-                <div className="text-center">
-                  <p className="text-sm font-bold text-gray-900">{settings.bkashLabelBn}</p>
-                  <p className="text-[11px] text-gray-500 mt-0.5">বিকাশ / নগদ / রকেট</p>
-                </div>
-                {paymentMethod === 'BKASH' && (
-                  <span className="text-[10px] font-bold text-pink-600 bg-pink-100 px-2 py-0.5 rounded-full">✓ নির্বাচিত</span>
                 )}
               </button>
             </div>
