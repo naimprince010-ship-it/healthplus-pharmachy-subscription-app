@@ -4,6 +4,7 @@ import {
   runFacebookMarketingJob,
   type FacebookMarketingMode,
 } from '@/lib/facebook-marketing'
+import { checkBearerSecret } from '@/lib/security/bearer'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -20,9 +21,12 @@ function parseMode(searchParams: URLSearchParams): FacebookMarketingMode {
  * - Query: ?mode=newest|random (default: newest)  ?dryRun=1 (no Facebook post, still uses OpenAI)
  */
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const authCheck = checkBearerSecret(request.headers.get('authorization'), process.env.CRON_SECRET)
+  if (authCheck !== 'ok') {
+    return NextResponse.json(
+      { error: authCheck === 'missing-secret' ? 'Cron authentication is not configured' : 'Unauthorized' },
+      { status: authCheck === 'missing-secret' ? 503 : 401 }
+    )
   }
 
   const mode = parseMode(request.nextUrl.searchParams)
