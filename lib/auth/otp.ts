@@ -16,7 +16,12 @@ export type OtpUser = { id: string; phone: string; name: string; email: string |
 const OTP_USER_SELECT = { id: true, phone: true, name: true, email: true, role: true } as const
 
 function getOtpSecret() {
-  return process.env.OTP_HASH_SECRET || process.env.NEXTAUTH_SECRET || 'halalzi-otp-development-secret'
+  const secret = process.env.OTP_HASH_SECRET || process.env.NEXTAUTH_SECRET
+  if (secret) return secret
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('OTP hashing is not configured')
+  }
+  return 'halalzi-otp-development-secret'
 }
 
 function hashOtp(phone: string, otp: string) {
@@ -137,16 +142,26 @@ export async function consumeVerifiedOtp(
 
   const expectedHash = hashOtp(session.phone, cleanOtp)
   if (!hashesMatch(session.otpHash, expectedHash)) {
-    await prisma.otpSession.update({
-      where: { id: session.id },
+    const incremented = await prisma.otpSession.updateMany({
+      where: { id: session.id, verifiedAt: null, attempts: { lt: MAX_ATTEMPTS } },
       data: { attempts: { increment: 1 } },
     })
+    if (incremented.count !== 1) {
+      throw new Error('Too many wrong attempts. Please request a new OTP.')
+    }
+
+    const locked = await prisma.otpSession.deleteMany({
+      where: { id: session.id, verifiedAt: null, attempts: { gte: MAX_ATTEMPTS } },
+    })
+    if (locked.count > 0) {
+      throw new Error('Too many wrong attempts. Please request a new OTP.')
+    }
     throw new Error('Invalid OTP code')
   }
 
   // Conditional update makes concurrent replays of the same code lose the race.
   const consumed = await prisma.otpSession.updateMany({
-    where: { id: session.id, verifiedAt: null },
+    where: { id: session.id, verifiedAt: null, attempts: { lt: MAX_ATTEMPTS } },
     data: { verifiedAt: new Date() },
   })
   if (consumed.count !== 1) {

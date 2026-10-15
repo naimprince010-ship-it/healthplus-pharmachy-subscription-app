@@ -35,9 +35,23 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers()
+  vi.unstubAllEnvs()
 })
 
 describe('OTP hourly rate limit', () => {
+  it('uses a validated trusted proxy IP instead of a spoofed left-most XFF value', async () => {
+    const { getClientIp } = await import('@/lib/auth/otp-ip-limit')
+
+    expect(getClientIp(new Headers({
+      'x-vercel-forwarded-for': '198.51.100.7',
+      'x-forwarded-for': '192.0.2.1, 203.0.113.9',
+    }))).toBe('198.51.100.7')
+    expect(getClientIp(new Headers({
+      'x-forwarded-for': 'attacker-controlled, 203.0.113.9',
+    }))).toBe('203.0.113.9')
+    expect(getClientIp(new Headers({ 'x-forwarded-for': 'not-an-ip' }))).toBeNull()
+  })
+
   it('rejects the sixth OTP request for a phone within one hour (lib)', async () => {
     const { sendOTP, OtpRateLimitError } = await import('@/lib/auth/otp')
 
@@ -122,7 +136,17 @@ describe('OTP hourly rate limit', () => {
       retryAfterSeconds: 60,
       reason: 'unavailable',
     })
-    vi.unstubAllEnvs()
+  })
+
+  it('fails closed in production when no OTP hashing secret is configured', async () => {
+    vi.stubEnv('NODE_ENV', 'production')
+    vi.stubEnv('OTP_HASH_SECRET', '')
+    vi.stubEnv('NEXTAUTH_SECRET', '')
+    const { sendOTP } = await import('@/lib/auth/otp')
+
+    await expect(sendOTP(PHONE_LOCAL)).rejects.toThrow('OTP hashing is not configured')
+    expect(h.db.otpSession.rows).toHaveLength(0)
+    expect(h.sentOtps).toHaveLength(0)
   })
 })
 
@@ -161,6 +185,31 @@ describe('OTP verify API returns a minimal DTO', () => {
     await expect(verifyOTP(sessionId, wrong)).rejects.toThrow()
     await expect(verifyOTP(sessionId, code)).resolves.toMatchObject({ isNewUser: true })
     await expect(verifyOTP(sessionId, code)).rejects.toThrow()
+  })
+
+  it('locks and removes a session on the fifth wrong attempt', async () => {
+    const { sendOTP, consumeVerifiedOtp } = await import('@/lib/auth/otp')
+    const { sessionId } = await sendOTP(PHONE_LOCAL)
+    const code = lastOtp().otp
+    const wrong = code === '000000' ? '111111' : '000000'
+
+    for (let attempt = 1; attempt < 5; attempt++) {
+      await expect(consumeVerifiedOtp(sessionId, wrong)).rejects.toThrow('Invalid OTP code')
+    }
+    await expect(consumeVerifiedOtp(sessionId, wrong)).rejects.toThrow('Too many wrong attempts')
+    await expect(consumeVerifiedOtp(sessionId, code)).rejects.toThrow('Invalid or expired OTP session')
+    expect(h.db.otpSession.rows).toHaveLength(0)
+  })
+
+  it('does not allow concurrent wrong attempts to preserve a usable session', async () => {
+    const { sendOTP, consumeVerifiedOtp } = await import('@/lib/auth/otp')
+    const { sessionId } = await sendOTP(PHONE_LOCAL)
+    const code = lastOtp().otp
+    const wrong = code === '000000' ? '111111' : '000000'
+
+    await Promise.allSettled(Array.from({ length: 8 }, () => consumeVerifiedOtp(sessionId, wrong)))
+    await expect(consumeVerifiedOtp(sessionId, code)).rejects.toThrow('Invalid or expired OTP session')
+    expect(h.db.otpSession.rows).toHaveLength(0)
   })
 })
 
