@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { findCompetitorMatches, analyzePriceComparison } from '@/lib/market-intel/comparison'
+import { requireAdmin } from '@/lib/requireAdmin'
 
 export async function GET(req: NextRequest) {
+    const authResult = await requireAdmin()
+    if (!authResult.authorized) return authResult.response
+
     try {
         const searchParams = req.nextUrl.searchParams
         const status = searchParams.get('status') // CHEAPER | EXPENSIVE | COMPETITIVE

@@ -43,21 +43,33 @@ export async function getCheckoutPricingQuote(params: {
   const membershipItems = items.filter((item) => item.membershipPlanId)
   const regularItems = items.filter((item) => !item.membershipPlanId)
 
-  const medicineIds = regularItems
-    .filter((item) => item.medicineId)
-    .map((item) => item.medicineId!)
-  const productIds = regularItems
-    .filter((item) => item.productId)
-    .map((item) => item.productId!)
+  const medicineIds = [...new Set(
+    regularItems.filter((item) => item.medicineId).map((item) => item.medicineId!)
+  )]
+  const productIds = [...new Set(
+    regularItems.filter((item) => item.productId).map((item) => item.productId!)
+  )]
   const membershipPlanIds = membershipItems.map((item) => item.membershipPlanId!)
 
   const [medicines, products, membershipPlans, membership] = await Promise.all([
     medicineIds.length > 0
-      ? prisma.medicine.findMany({ where: { id: { in: medicineIds } } })
+      ? prisma.medicine.findMany({
+          where: {
+            id: { in: medicineIds },
+            isActive: true,
+            inStock: true,
+            stockQuantity: { gt: 0 },
+          },
+        })
       : Promise.resolve([]),
     productIds.length > 0
       ? prisma.product.findMany({
-          where: { id: { in: productIds } },
+          where: {
+            id: { in: productIds },
+            isActive: true,
+            inStock: true,
+            stockQuantity: { gt: 0 },
+          },
           include: { category: { select: { slug: true } } },
         })
       : Promise.resolve([]),
@@ -80,6 +92,20 @@ export async function getCheckoutPricingQuote(params: {
     return { ok: false, error: 'কিছু পণ্য পাওয়া যায়নি' }
   }
 
+  const insufficientStock = regularItems.some((item) => {
+    if (item.medicineId) {
+      const medicine = medicines.find((entry) => entry.id === item.medicineId)
+      return !medicine || medicine.stockQuantity < item.quantity
+    }
+    if (item.productId) {
+      const product = products.find((entry) => entry.id === item.productId)
+      return !product || product.stockQuantity < item.quantity
+    }
+    return false
+  })
+  if (insufficientStock) {
+    return { ok: false, error: 'এক বা একাধিক পণ্যের পর্যাপ্ত স্টক নেই', status: 409 }
+  }
   if (!isMedicineShopEnabled()) {
     if (medicineIds.length > 0) {
       return {

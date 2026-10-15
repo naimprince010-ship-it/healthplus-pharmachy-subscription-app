@@ -274,7 +274,7 @@ GET /dashboard 200 in 647ms
 ```env
 DATABASE_URL=postgresql://postgres.antgoexirugyssoddvun:PASSWORD@aws-1-ap-south-1.pooler.supabase.com:5432/postgres?pgbouncer=true&connection_limit=10
 NEXTAUTH_URL=https://healthplus-pharmachy-subscription-6bgczcbyq.vercel.app
-NEXTAUTH_SECRET=healthplus-secret-key-change-in-production-2024
+NEXTAUTH_SECRET=your-random-secret-change-in-production
 ```
 
 ### Preview Environment
@@ -282,7 +282,7 @@ NEXTAUTH_SECRET=healthplus-secret-key-change-in-production-2024
 ```env
 DATABASE_URL=postgresql://postgres.antgoexirugyssoddvun:PASSWORD@aws-1-ap-south-1.pooler.supabase.com:5432/postgres?pgbouncer=true&connection_limit=10
 AUTH_TRUST_HOST=true
-NEXTAUTH_SECRET=healthplus-secret-key-change-in-production-2024
+NEXTAUTH_SECRET=your-random-secret-change-in-production
 ```
 
 **Note:** Do NOT set `NEXTAUTH_URL` in Preview environment. Let NextAuth use the preview host automatically.
@@ -311,7 +311,7 @@ The authentication logs are safe:
 
 ⚠️ **CRITICAL:** Change the default secret in production!
 
-Current value: `healthplus-secret-key-change-in-production-2024`
+Previous weak example: `[REDACTED — rotate before deployment]`
 
 Generate a new secret:
 ```bash
@@ -320,7 +320,7 @@ openssl rand -base64 32
 
 ### 4. **Database Password**
 
-⚠️ **CRITICAL:** The database password `Naim180051800` was exposed in previous messages. 
+⚠️ **CRITICAL:** The database password `[REDACTED — rotate; see SECURITY_ROTATION_CHECKLIST.md]` was exposed in previous messages.
 
 **Action Required:**
 1. Go to Supabase Dashboard → Settings → Database

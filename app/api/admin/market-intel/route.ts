@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getRecentSyncLogs } from '@/lib/market-intel/sync'
+import { requireAdmin } from '@/lib/requireAdmin'
 
 /**
  * GET /api/admin/market-intel
@@ -16,6 +17,9 @@ import { getRecentSyncLogs } from '@/lib/market-intel/sync'
  * - syncLogs: Last 5 sync logs
  */
 export async function GET(req: NextRequest) {
+  const authResult = await requireAdmin()
+  if (!authResult.authorized) return authResult.response
+
   try {
     // Parse query parameters
     const searchParams = req.nextUrl.searchParams

@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
+import { requireAdmin } from '@/lib/requireAdmin'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
+  const authResult = await requireAdmin()
+  if (!authResult.authorized) return authResult.response
+
   try {
     const { prisma } = await import('@/lib/prisma')
     const settings = await prisma.membershipPageSettings.findFirst()
@@ -15,7 +19,7 @@ export async function GET() {
         testimonialsJson: [],
       },
     )
-  } catch (e) {
+  } catch {
     return NextResponse.json(
       {
         heroHeadlineBn: 'প্রতি মাসে ওষুধের খরচ ২০% কমান এবং ডাক্তারের পরামর্শ নিন একদম ফ্রি!',
@@ -41,7 +45,7 @@ export async function PUT(req: NextRequest) {
       ? await prisma.membershipPageSettings.update({ where: { id: existing.id }, data: body })
       : await prisma.membershipPageSettings.create({ data: body })
     return NextResponse.json(saved)
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: 'Failed to save' }, { status: 500 })
   }
 }

@@ -119,12 +119,28 @@ DATABASE_URL="postgresql://healthplus_user:your_password@localhost:5432/healthpl
 # Development (creates migration files)
 npm run db:migrate
 
-# Production (applies existing migrations)
-npm run db:migrate:deploy
-
 # View database in browser
 npm run db:studio
 ```
+
+#### Production migrations are a separate, gated release step
+
+`npm run build`, `vercel:build` and the Vercel `buildCommand` run **only** `next build`.
+They never apply database migrations (preview builds must not be able to migrate production).
+
+Release procedure:
+
+1. Take a database backup and confirm it can be restored.
+2. Confirm `DATABASE_URL` points at the intended database (never a shared preview/production value).
+3. Review the pending migrations: `npx prisma migrate status`.
+4. Apply with explicit approval:
+
+   ```bash
+   MIGRATION_RELEASE_APPROVED=true npm run db:migrate:release
+   ```
+
+   The script exits non-zero without `MIGRATION_RELEASE_APPROVED=true`.
+5. Deploy the application only after the migration succeeds.
 
 ### Seeding the Database
 

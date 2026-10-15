@@ -1213,7 +1213,7 @@ Bangladesh phone numbers can be provided in multiple formats, but are normalized
 ```javascript
 const phone = '+8801938264923';  // Normalized format
 const email = 'nrdurjoy@gmail.com';  // Real email
-const password = 'HealthPlus2024!Admin';  // Secure password
+const password = process.env.DEFAULT_ADMIN_PASSWORD!;  // Secure password
 const name = 'Real Admin';
 const role = 'ADMIN';
 ```
@@ -1230,7 +1230,7 @@ const { prisma } = require('../lib/prisma');
 async function createRealAdmin() {
   const phone = '+8801938264923';
   const email = 'nrdurjoy@gmail.com';
-  const password = 'HealthPlus2024!Admin';
+  const password = process.env.DEFAULT_ADMIN_PASSWORD!;
   const name = 'Real Admin';
   
   // Hash password with bcrypt (12 rounds)

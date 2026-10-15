@@ -26,9 +26,10 @@ export async function POST(request: NextRequest) {
     }
 
     const { sessionId, otp } = validationResult.data
-    const result = await verifyOTP(sessionId, otp)
+    const { isNewUser } = await verifyOTP(sessionId, otp)
 
-    return NextResponse.json(result)
+    // Minimal DTO: never expose the user record (password hash, email) from this endpoint.
+    return NextResponse.json({ verified: true, isNewUser })
   } catch (error) {
     console.error('Verify OTP error:', error)
     return NextResponse.json(

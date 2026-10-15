@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { useSession, signIn } from 'next-auth/react'
 import { useCart } from '@/contexts/CartContext'
 
+const MEMBERSHIP_PURCHASE_ENABLED = false
+
 interface PurchaseMembershipButtonProps {
   planId: string
   planName: string
@@ -37,21 +39,24 @@ export function PurchaseMembershipButton({
 
   // Determine button text
   let buttonText = ctaText
-  let actionType: 'purchase' | 'renew' | 'upgrade' | 'downgrade' = 'purchase'
   
   if (hasMembership) {
     if (isSamePlan) {
       buttonText = 'রিনিউ করুন'
-      actionType = 'renew'
     } else {
       // For simplicity, we'll call it "switch" - could be upgrade or downgrade
       buttonText = 'এই প্ল্যানে পরিবর্তন করুন'
-      actionType = 'upgrade' // or downgrade, handled the same way
     }
   }
 
   const handleClick = async () => {
     setError(null)
+
+    // Membership checkout is disabled until payment settlement exists; the orders API rejects it too.
+    if (!MEMBERSHIP_PURCHASE_ENABLED) {
+      setError('মেম্বারশিপ কেনা সাময়িকভাবে বন্ধ আছে। শীঘ্রই আবার চালু হবে।')
+      return
+    }
 
     if (status === 'unauthenticated') {
       await signIn(undefined, { callbackUrl: '/membership' })

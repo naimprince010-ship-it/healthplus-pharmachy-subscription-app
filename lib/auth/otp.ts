@@ -5,8 +5,15 @@ import { sendMIMSMS } from '@/lib/sms/mim-sms'
 
 const OTP_TTL_MS = 5 * 60 * 1000
 const RESEND_WINDOW_MS = 60 * 1000
+const HOURLY_WINDOW_MS = 60 * 60 * 1000
 const HOURLY_LIMIT = 5
 const MAX_ATTEMPTS = 5
+
+export class OtpRateLimitError extends Error {}
+
+export type OtpUser = { id: string; phone: string; name: string; email: string | null; role: string }
+
+const OTP_USER_SELECT = { id: true, phone: true, name: true, email: true, role: true } as const
 
 function getOtpSecret() {
   return process.env.OTP_HASH_SECRET || process.env.NEXTAUTH_SECRET || 'halalzi-otp-development-secret'
@@ -22,14 +29,10 @@ function hashesMatch(a: string, b: string) {
   return left.length === right.length && timingSafeEqual(left, right)
 }
 
+// Rows must outlive the hourly rate-limit window; verifyOTP rejects expired/verified rows itself.
 async function cleanupExpiredSessions() {
   await prisma.otpSession.deleteMany({
-    where: {
-      OR: [
-        { expiresAt: { lt: new Date() } },
-        { verifiedAt: { not: null } },
-      ],
-    },
+    where: { createdAt: { lt: new Date(Date.now() - HOURLY_WINDOW_MS) } },
   })
 }
 
@@ -46,17 +49,17 @@ async function enforceRateLimit(phone: string) {
   })
   if (recent) {
     const seconds = Math.max(1, Math.ceil((RESEND_WINDOW_MS - (now - recent.createdAt.getTime())) / 1000))
-    throw new Error(`Please wait ${seconds}s before requesting another OTP`)
+    throw new OtpRateLimitError(`Please wait ${seconds}s before requesting another OTP`)
   }
 
   const hourlyCount = await prisma.otpSession.count({
     where: {
       phone,
-      createdAt: { gt: new Date(now - 60 * 60 * 1000) },
+      createdAt: { gt: new Date(now - HOURLY_WINDOW_MS) },
     },
   })
   if (hourlyCount >= HOURLY_LIMIT) {
-    throw new Error('Too many OTP requests. Please try again later.')
+    throw new OtpRateLimitError('Too many OTP requests. Please try again later.')
   }
 }
 
@@ -99,10 +102,15 @@ export async function sendOTP(phone: string): Promise<{ sessionId: string; messa
   }
 }
 
-export async function verifyOTP(
+/**
+ * Checks the code and marks the session used exactly once. Returns the verified phone.
+ * When `expectedPhone` is given, a mismatch fails without consuming an attempt.
+ */
+export async function consumeVerifiedOtp(
   sessionId: string,
-  otp: string
-): Promise<{ user: { id: string; phone: string; name: string; email: string | null; role: string }; isNewUser: boolean }> {
+  otp: string,
+  options: { expectedPhone?: string } = {}
+): Promise<string> {
   const cleanOtp = otp.replace(/\D/g, '')
   if (!/^\d{6}$/.test(cleanOtp)) {
     throw new Error('Enter the 6-digit OTP code')
@@ -110,6 +118,10 @@ export async function verifyOTP(
 
   const session = await prisma.otpSession.findUnique({ where: { id: sessionId } })
   if (!session || session.verifiedAt) {
+    throw new Error('Invalid or expired OTP session')
+  }
+
+  if (options.expectedPhone && session.phone !== options.expectedPhone) {
     throw new Error('Invalid or expired OTP session')
   }
 
@@ -132,8 +144,27 @@ export async function verifyOTP(
     throw new Error('Invalid OTP code')
   }
 
-  let user = await prisma.user.findUnique({
-    where: { phone: session.phone },
+  // Conditional update makes concurrent replays of the same code lose the race.
+  const consumed = await prisma.otpSession.updateMany({
+    where: { id: session.id, verifiedAt: null },
+    data: { verifiedAt: new Date() },
+  })
+  if (consumed.count !== 1) {
+    throw new Error('Invalid or expired OTP session')
+  }
+
+  return session.phone
+}
+
+export async function verifyOTP(
+  sessionId: string,
+  otp: string
+): Promise<{ user: OtpUser; isNewUser: boolean }> {
+  const phone = await consumeVerifiedOtp(sessionId, otp)
+
+  let user: OtpUser | null = await prisma.user.findUnique({
+    where: { phone },
+    select: OTP_USER_SELECT,
   })
 
   let isNewUser = false
@@ -141,19 +172,15 @@ export async function verifyOTP(
   if (!user) {
     user = await prisma.user.create({
       data: {
-        phone: session.phone,
-        name: session.phone,
+        phone,
+        name: phone,
         password: '',
         role: 'USER',
       },
+      select: OTP_USER_SELECT,
     })
     isNewUser = true
   }
-
-  await prisma.otpSession.update({
-    where: { id: session.id },
-    data: { verifiedAt: new Date() },
-  })
 
   return { user, isNewUser }
 }
