@@ -12,9 +12,9 @@ function matchesCondition(value: unknown, condition: unknown): boolean {
   if (typeof condition === 'object' && condition !== null) {
     const c = condition as Record<string, unknown>
     if ('not' in c) return !matchesCondition(value, c.not)
-    if ('gt' in c) return value instanceof Date && value > (c.gt as Date)
-    if ('lt' in c) return value instanceof Date && value < (c.lt as Date)
-    if ('gte' in c) return value instanceof Date && value >= (c.gte as Date)
+    if ('gt' in c) return (value instanceof Date && value > (c.gt as Date)) || (typeof value === 'number' && value > (c.gt as number))
+    if ('lt' in c) return (value instanceof Date && value < (c.lt as Date)) || (typeof value === 'number' && value < (c.lt as number))
+    if ('gte' in c) return (value instanceof Date && value >= (c.gte as Date)) || (typeof value === 'number' && value >= (c.gte as number))
     if ('in' in c) return (c.in as unknown[]).includes(value)
   }
   return value === condition

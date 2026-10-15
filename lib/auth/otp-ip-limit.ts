@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto'
+import { isIP } from 'node:net'
 import { redis } from '@/lib/redis'
 
 const WINDOW_SECONDS = 10 * 60
@@ -13,10 +14,32 @@ interface RedisEvalStore {
   eval(script: string, keys: string[], args: Array<string | number>): Promise<unknown>
 }
 
-/** Best-effort client IP from proxy headers (Vercel sets x-forwarded-for). */
+function validIp(value: string | undefined): string | null {
+  if (!value) return null
+  const candidate = value.trim()
+  return isIP(candidate) ? candidate : null
+}
+
+/**
+ * Best-effort client IP from trusted proxy headers.
+ * Prefer Vercel's platform header. For generic XFF, use the right-most valid
+ * address so a client-controlled value prepended on the left cannot choose the
+ * rate-limit key.
+ */
 export function getClientIp(headers: Headers): string | null {
-  const forwarded = headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-  return forwarded || headers.get('x-real-ip')?.trim() || null
+  const vercelForwarded = headers.get('x-vercel-forwarded-for')
+    ?.split(',')
+    .map((value) => validIp(value))
+    .find((value): value is string => value !== null)
+  if (vercelForwarded) return vercelForwarded
+
+  const forwarded = headers.get('x-forwarded-for')
+    ?.split(',')
+    .map((value) => validIp(value))
+    .filter((value): value is string => value !== null)
+  if (forwarded?.length) return forwarded[forwarded.length - 1]
+
+  return validIp(headers.get('x-real-ip') || undefined)
 }
 
 function ipKey(ip: string): string {
