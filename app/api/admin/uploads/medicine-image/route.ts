@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
-import { uploadMedicineImage, validateMedicineImage, deleteMedicineImage } from '@/lib/supabase'
+import { uploadMedicineImage, deleteMedicineImage } from '@/lib/supabase'
+import { validateUploadedImage } from '@/lib/security/uploads'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
-    const validation = validateMedicineImage(file)
+    const validation = await validateUploadedImage(file, 1024 * 1024)
     if (!validation.valid) {
       return NextResponse.json({ error: validation.error }, { status: 400 })
     }

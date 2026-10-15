@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { imageExtensionForMime } from '@/lib/security/uploads'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
@@ -184,7 +185,7 @@ export async function uploadMedicineImage(
     true
   )
 
-  const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+  const fileExt = imageExtensionForMime(file.type)
   const uuid = `${Date.now()}-${Math.random().toString(36).substring(7)}`
   const fileName = `${uuid}.${fileExt}`
   const filePath = medicineId 
@@ -355,7 +356,7 @@ export async function uploadToSupabase(
       true
     )
 
-  const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+  const fileExt = imageExtensionForMime(file.type)
   const uuid = `${Date.now()}-${Math.random().toString(36).substring(7)}`
   const fileName = `${uuid}.${fileExt}`
   const filePath = itemId 

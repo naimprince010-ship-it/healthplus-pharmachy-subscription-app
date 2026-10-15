@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { parse } from 'csv-parse/sync'
 import { generateUniqueSlug } from '@/lib/slugify'
+import { validateCsvUpload } from '@/lib/security/uploads'
 
 const MAX_ROWS = 3000
 
@@ -80,8 +81,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
-    if (!file.name.endsWith('.csv')) {
-      return NextResponse.json({ error: 'File must be a CSV' }, { status: 400 })
+    const fileValidation = validateCsvUpload(file)
+    if (!fileValidation.valid) {
+      return NextResponse.json({ error: fileValidation.error }, { status: 400 })
     }
 
     const text = await file.text()

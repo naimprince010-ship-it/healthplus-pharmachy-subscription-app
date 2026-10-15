@@ -7,6 +7,11 @@ const MAX_WIDTH = 800
 const WATERMARK_OPACITY = 0.3
 const OUTPUT_FORMAT = 'webp'
 const OUTPUT_QUALITY = 85
+export const MAX_ZIP_ARCHIVE_BYTES = 25 * 1024 * 1024
+const MAX_ZIP_ENTRIES = 2000
+const MAX_ZIP_ENTRY_BYTES = 10 * 1024 * 1024
+const MAX_ZIP_UNCOMPRESSED_BYTES = 100 * 1024 * 1024
+const MAX_ZIP_COMPRESSION_RATIO = 100
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -38,13 +43,27 @@ export interface ZipIndexEntry {
 }
 
 export async function indexZipFile(zipBuffer: Buffer): Promise<ZipIndexEntry[]> {
+  if (zipBuffer.length > MAX_ZIP_ARCHIVE_BYTES) throw new Error('ZIP archive exceeds the 25MB limit')
   const zip = new AdmZip(zipBuffer)
   const entries = zip.getEntries()
+  if (entries.length > MAX_ZIP_ENTRIES) throw new Error('ZIP archive contains too many entries')
+
+  let totalUncompressedBytes = 0
   
   const imageEntries: ZipIndexEntry[] = []
   
   for (const entry of entries) {
     if (entry.isDirectory) continue
+    if ((entry.header.flags & 0x1) !== 0) throw new Error('Encrypted ZIP entries are not supported')
+
+    const size = entry.header.size
+    const compressedSize = entry.header.compressedSize
+    totalUncompressedBytes += size
+    if (size > MAX_ZIP_ENTRY_BYTES) throw new Error('ZIP entry exceeds the 10MB limit')
+    if (totalUncompressedBytes > MAX_ZIP_UNCOMPRESSED_BYTES) throw new Error('ZIP archive expands beyond the 100MB limit')
+    if (size > 0 && (compressedSize === 0 || size / compressedSize > MAX_ZIP_COMPRESSION_RATIO)) {
+      throw new Error('ZIP entry has an unsafe compression ratio')
+    }
     
     const ext = path.extname(entry.entryName).toLowerCase()
     if (!['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(ext)) continue
@@ -114,6 +133,7 @@ export async function extractImageFromZip(
   zipBuffer: Buffer,
   filename: string
 ): Promise<Buffer | null> {
+  await indexZipFile(zipBuffer)
   const zip = new AdmZip(zipBuffer)
   const entries = zip.getEntries()
   
