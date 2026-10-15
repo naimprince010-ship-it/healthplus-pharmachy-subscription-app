@@ -105,37 +105,37 @@ describe.skip('every /api/admin handler rejects non-admin callers (manual exhaus
   }
 })
 
-describe('middleware protects /api/admin', () => {
-  async function runMiddleware(pathname: string, session: unknown, headers: Record<string, string> = {}) {
-    const { default: middleware } = (await import('@/middleware')) as unknown as {
+describe('proxy protects /api/admin', () => {
+  async function runProxy(pathname: string, session: unknown, headers: Record<string, string> = {}) {
+    const { default: proxy } = (await import('@/proxy')) as unknown as {
       default: (req: unknown) => Response | undefined
     }
     const url = new URL(`http://localhost${pathname}`)
-    return middleware({ auth: session, nextUrl: url, url: url.toString(), headers: new Headers(headers) })
+    return proxy({ auth: session, nextUrl: url, url: url.toString(), headers: new Headers(headers) })
   }
 
   it('matcher covers /api/admin routes', async () => {
-    const { config } = await import('@/middleware')
+    const { config } = await import('@/proxy')
     expect(config.matcher).toEqual(expect.arrayContaining(['/api/admin/:path*']))
   })
 
   it('rejects anonymous API calls with 401 JSON (no redirect)', async () => {
-    const res = await runMiddleware('/api/admin/orders', null)
+    const res = await runProxy('/api/admin/orders', null)
     expect(res?.status).toBe(401)
   })
 
   it('rejects customers with 403', async () => {
-    const res = await runMiddleware('/api/admin/orders', { user: { id: 'c', role: 'USER' } })
+    const res = await runProxy('/api/admin/orders', { user: { id: 'c', role: 'USER' } })
     expect(res?.status).toBe(403)
   })
 
   it('lets admins through', async () => {
-    const res = await runMiddleware('/api/admin/orders', { user: { id: 'a', role: 'ADMIN' } })
+    const res = await runProxy('/api/admin/orders', { user: { id: 'a', role: 'ADMIN' } })
     expect(res?.headers.get('x-middleware-next')).toBe('1')
   })
 
   it('does not let a bearer header bypass the session check on ordinary admin APIs', async () => {
-    const res = await runMiddleware('/api/admin/orders', null, { authorization: 'Bearer anything' })
+    const res = await runProxy('/api/admin/orders', null, { authorization: 'Bearer anything' })
     expect(res?.status).toBe(401)
   })
 })
