@@ -555,6 +555,7 @@ model PrescriptionItem {
 model Order {
   id                       String        @id @default(cuid())
   orderNumber              String        @unique
+  checkoutRequestId        String?
   userId                   String
   user                     User          @relation(fields: [userId], references: [id])
   addressId                String
@@ -596,6 +597,8 @@ model Order {
   updatedAt                DateTime      @updatedAt
   items                    OrderItem[]
   statusHistory            OrderStatusHistory[]
+
+  @@unique([userId, checkoutRequestId])
 }
 
 model OrderItem {

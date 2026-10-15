@@ -8,6 +8,7 @@ const h = vi.hoisted(() => ({
   forwarded: [] as string[],
   stockClaims: [] as Record<string, unknown>[],
   stockAvailable: true,
+  existingOrder: null as null | Record<string, unknown>,
 }))
 
 vi.mock('@/lib/auth', () => ({ auth: vi.fn(async () => h.session) }))
@@ -31,6 +32,7 @@ vi.mock('@/lib/prisma', () => {
     coupon: { findUnique: vi.fn(), update: vi.fn() },
     couponUsage: { count: vi.fn(async () => 0), create: vi.fn() },
     order: {
+      findFirst: vi.fn(async () => h.existingOrder),
       create: vi.fn(async ({ data }: { data: Record<string, unknown> }) => {
         h.orderCreates.push(data)
         return {
@@ -45,6 +47,7 @@ vi.mock('@/lib/prisma', () => {
     },
   }
   const prisma = {
+    order: { findFirst: vi.fn(async () => h.existingOrder) },
     address: {
       findUnique: vi.fn(async () => ({
         id: 'addr_1',
@@ -99,7 +102,7 @@ const membershipLine = { membershipPlanId: 'plan_1', quantity: 1, price: 99 }
 
 async function postOrder(body: Record<string, unknown>) {
   const { POST } = await import('@/app/api/orders/route')
-  return POST(jsonRequest('/api/orders', 'POST', body))
+  return POST(jsonRequest('/api/orders', 'POST', body, { 'idempotency-key': 'checkout_request_1234567890' }))
 }
 
 beforeEach(() => {
@@ -109,6 +112,7 @@ beforeEach(() => {
   h.forwarded.length = 0
   h.stockClaims.length = 0
   h.stockAvailable = true
+  h.existingOrder = null
 })
 
 describe('membership cannot activate without settlement', () => {
@@ -160,6 +164,43 @@ describe('inventory is claimed atomically', () => {
       where: { id: 'prod_1', isActive: true, inStock: true, stockQuantity: { gte: 1 } },
       data: { stockQuantity: { decrement: 1 } },
     })
+  })
+})
+describe('checkout request integrity', () => {
+  it('requires an idempotency key before performing writes', async () => {
+    const { POST } = await import('@/app/api/orders/route')
+    const res = await POST(jsonRequest('/api/orders', 'POST', {
+      addressId: 'addr_1', paymentMethod: 'COD', items: [productLine],
+    }))
+    expect(res.status).toBe(400)
+    expect(h.orderCreates).toEqual([])
+  })
+
+  it('returns the previous order without claiming stock or creating another order', async () => {
+    h.existingOrder = {
+      id: 'order_existing',
+      orderNumber: 'ORD-EXISTING',
+      total: 160,
+      items: [],
+      user: { name: 'Customer', phone: '+8801711111111' },
+    }
+    const res = await postOrder({ addressId: 'addr_1', paymentMethod: 'COD', items: [productLine] })
+    const body = await res.json()
+    expect(res.status).toBe(200)
+    expect(body).toMatchObject({ success: true, idempotent: true, order: { id: 'order_existing' } })
+    expect(h.stockClaims).toEqual([])
+    expect(h.orderCreates).toEqual([])
+  })
+
+  it('rejects ambiguous lines containing more than one item identifier', async () => {
+    const res = await postOrder({
+      addressId: 'addr_1',
+      paymentMethod: 'COD',
+      items: [{ medicineId: 'med_1', productId: 'prod_1', quantity: 1, price: 100 }],
+    })
+    expect(res.status).toBe(400)
+    expect(h.stockClaims).toEqual([])
+    expect(h.orderCreates).toEqual([])
   })
 })
 describe('COD continues to work', () => {

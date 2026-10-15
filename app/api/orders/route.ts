@@ -30,8 +30,8 @@ const createOrderSchema = z.object({
       membershipPlanId: z.string().optional(),
       quantity: z.number().int().positive(),
       price: z.number().positive(),
-    }).refine((data) => data.medicineId || data.productId || data.membershipPlanId, {
-      message: 'Either medicineId, productId, or membershipPlanId must be provided',
+    }).refine((data) => [data.medicineId, data.productId, data.membershipPlanId].filter(Boolean).length === 1, {
+      message: 'Exactly one of medicineId, productId, or membershipPlanId must be provided',
     })
   ).min(1),
   paymentMethod: z.enum(['COD', 'ONLINE']),
@@ -46,6 +46,28 @@ export async function POST(request: NextRequest) {
     const session = await auth()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const checkoutRequestId = request.headers.get('idempotency-key')?.trim()
+    if (!checkoutRequestId || !/^[A-Za-z0-9_-]{20,100}$/.test(checkoutRequestId)) {
+      return NextResponse.json(
+        { error: 'A valid Idempotency-Key header is required' },
+        { status: 400 }
+      )
+    }
+
+    const previousOrder = await prisma.order.findFirst({
+      where: { userId: session.user.id, checkoutRequestId },
+      include: {
+        items: { include: { medicine: true, product: true } },
+        user: { select: { name: true, phone: true } },
+      },
+    })
+    if (previousOrder) {
+      return NextResponse.json(
+        { success: true, order: previousOrder, idempotent: true },
+        { status: 200 }
+      )
     }
 
     const body = await request.json()
@@ -204,6 +226,7 @@ export async function POST(request: NextRequest) {
     const membershipPlanName = activeMembership?.plan.name ?? null
 
     let order
+    let createdNow = true
 
     try {
       order = await prisma.$transaction(async (tx) => {
@@ -264,6 +287,7 @@ export async function POST(request: NextRequest) {
         const created = await tx.order.create({
           data: {
             orderNumber,
+            checkoutRequestId,
             userId: session.user.id,
             addressId: finalAddressId,
             zoneId: finalZoneId,
@@ -337,8 +361,19 @@ export async function POST(request: NextRequest) {
         return created
       })
     } catch (e) {
-      const err = e as Error & { message: string }
-      if (e instanceof InventoryUnavailableError || err.message === 'INVENTORY_UNAVAILABLE') {
+      const err = e as Error & { message: string; code?: string }
+      if (err.code === 'P2002') {
+        const existing = await prisma.order.findFirst({
+          where: { userId: session.user.id, checkoutRequestId },
+          include: {
+            items: { include: { medicine: true, product: true } },
+            user: { select: { name: true, phone: true } },
+          },
+        })
+        if (!existing) throw e
+        order = existing
+        createdNow = false
+      } else if (e instanceof InventoryUnavailableError || err.message === 'INVENTORY_UNAVAILABLE') {
         return NextResponse.json(
           { error: 'এক বা একাধিক পণ্যের পর্যাপ্ত স্টক নেই। কার্ট আপডেট করে আবার চেষ্টা করুন।' },
           { status: 409 }
@@ -368,7 +403,14 @@ export async function POST(request: NextRequest) {
           { status: 409 }
         )
       }
-      throw e
+      if (!order) throw e
+    }
+
+    if (!createdNow) {
+      return NextResponse.json(
+        { success: true, order, idempotent: true },
+        { status: 200 }
+      )
     }
 
     const deliveryDaysHint =
