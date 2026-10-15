@@ -7,7 +7,7 @@ const { auth } = NextAuth(authConfig)
 // Machine-to-machine admin endpoints; the route handler itself must verify the bearer secret.
 const BEARER_AUTHENTICATED_ADMIN_APIS = new Set(['/api/admin/market-intel/sync'])
 
-export default auth((req) => {
+export default auth(function proxy(req) {
   const session = req.auth
   const path = req.nextUrl.pathname
 
