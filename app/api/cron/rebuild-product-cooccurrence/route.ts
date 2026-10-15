@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { rebuildProductCooccurrence } from '@/lib/rebuild-product-cooccurrence'
+import { checkBearerSecret } from '@/lib/security/bearer'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -12,9 +13,12 @@ export const maxDuration = 300
  */
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization')
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const authCheck = checkBearerSecret(request.headers.get('authorization'), process.env.CRON_SECRET)
+    if (authCheck !== 'ok') {
+      return NextResponse.json(
+        { error: authCheck === 'missing-secret' ? 'Cron authentication is not configured' : 'Unauthorized' },
+        { status: authCheck === 'missing-secret' ? 503 : 401 }
+      )
     }
 
     const result = await rebuildProductCooccurrence()

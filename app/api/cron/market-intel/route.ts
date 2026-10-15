@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { runMarketIntelSync } from '@/lib/market-intel/sync'
+import { checkBearerSecret } from '@/lib/security/bearer'
 
 /**
  * Cron job endpoint for Market Intelligence sync
@@ -12,12 +13,13 @@ import { runMarketIntelSync } from '@/lib/market-intel/sync'
  */
 export async function GET(req: NextRequest) {
   // Verify cron secret (Vercel sends this automatically for cron jobs)
-  const authHeader = req.headers.get('authorization')
-  const cronSecret = process.env.CRON_SECRET
-
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  const authCheck = checkBearerSecret(req.headers.get('authorization'), process.env.CRON_SECRET)
+  if (authCheck !== 'ok') {
     console.error('Market intel cron: Unauthorized request')
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return NextResponse.json(
+      { error: authCheck === 'missing-secret' ? 'Cron authentication is not configured' : 'Unauthorized' },
+      { status: authCheck === 'missing-secret' ? 503 : 401 }
+    )
   }
 
   console.log('Market intel cron: Starting sync...')
