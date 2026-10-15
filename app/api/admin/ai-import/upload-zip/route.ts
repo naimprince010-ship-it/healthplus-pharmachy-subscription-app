@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
-import { indexZipFile } from '@/lib/imageProcessing'
+import { indexZipFile, MAX_ZIP_ARCHIVE_BYTES } from '@/lib/imageProcessing'
 import { createClient } from '@supabase/supabase-js'
 
 export const runtime = 'nodejs'
@@ -62,6 +62,10 @@ export async function POST(request: NextRequest) {
         { error: `Failed to download ZIP: ${downloadError?.message || 'Unknown error'}` },
         { status: 500 }
       )
+    }
+
+    if (zipData.size > MAX_ZIP_ARCHIVE_BYTES) {
+      return NextResponse.json({ error: 'ZIP archive exceeds the 25MB limit' }, { status: 413 })
     }
 
     const zipBuffer = Buffer.from(await zipData.arrayBuffer())
