@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { sendSMS, sendEmail } from '@/lib/notifications'
-import { PaymentStatus } from '@/lib/order-payment-status'
+import { canTransitionPaymentStatus, PaymentStatus } from '@/lib/order-payment-status'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -34,26 +34,57 @@ export async function PATCH(
 
     const nextStatus = body.data.paymentStatus
 
-    const before = await prisma.order.findUnique({
-      where: { id },
-      include: {
-        user: { select: { name: true, phone: true } },
-        address: { include: { zone: true } },
-      },
-    })
+    let transitionResult
+    try {
+      transitionResult = await prisma.$transaction(async (tx) => {
+        const before = await tx.order.findUnique({
+          where: { id },
+          include: {
+            user: { select: { name: true, phone: true } },
+            address: { include: { zone: true } },
+          },
+        })
 
-    if (!before) {
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+        if (!before) throw new Error('ORDER_NOT_FOUND')
+        if (!canTransitionPaymentStatus(before.paymentMethod, before.paymentStatus, nextStatus)) {
+          throw new Error('INVALID_PAYMENT_TRANSITION')
+        }
+
+        if (before.paymentStatus === nextStatus) {
+          return { before, order: before, transitioned: false }
+        }
+
+        const transition = await tx.order.updateMany({
+          where: { id, paymentStatus: before.paymentStatus },
+          data: { paymentStatus: nextStatus },
+        })
+        if (transition.count !== 1) throw new Error('ORDER_PAYMENT_CHANGED')
+
+        const order = await tx.order.findUniqueOrThrow({ where: { id } })
+        return { before, order, transitioned: true }
+      })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : ''
+      if (message === 'ORDER_NOT_FOUND') {
+        return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+      }
+      if (message === 'INVALID_PAYMENT_TRANSITION') {
+        return NextResponse.json({ error: 'This payment status transition is not allowed' }, { status: 409 })
+      }
+      if (message === 'ORDER_PAYMENT_CHANGED') {
+        return NextResponse.json(
+          { error: 'Payment status changed concurrently. Refresh and try again.' },
+          { status: 409 }
+        )
+      }
+      throw error
     }
 
+    const { before, order, transitioned } = transitionResult
     const wasAwaitingOnline =
+      transitioned &&
       before.paymentMethod === 'ONLINE' &&
       before.paymentStatus === PaymentStatus.AWAITING_PAYMENT
-
-    const order = await prisma.order.update({
-      where: { id },
-      data: { paymentStatus: nextStatus },
-    })
 
     const nowPaidOnline =
       order.paymentMethod === 'ONLINE' &&

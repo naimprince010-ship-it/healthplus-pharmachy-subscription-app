@@ -9,7 +9,7 @@
     "db:migrate:release": "node scripts/prisma-migrate-deploy.cjs",
     "start": "next start",
     "lint": "eslint",
-    "lint:ci": "eslint proxy.ts app/api/cron/**/*.ts lib/security/**/*.ts tests/security/admin-authorization.test.ts tests/security/cron-authorization.test.ts tests/security/upload-validation.test.ts scripts/production-smoke.mjs",
+    "lint:ci": "eslint proxy.ts app/api/cron/**/*.ts lib/security/**/*.ts lib/order-payment-status.ts tests/security/admin-authorization.test.ts tests/security/cron-authorization.test.ts tests/security/upload-validation.test.ts tests/security/payment-status-transition.test.ts scripts/production-smoke.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "smoke:production": "node scripts/production-smoke.mjs",
