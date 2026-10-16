@@ -1,8 +1,9 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { reserveOrderInventory } from '@/lib/order-inventory'
 import { generateOrderNumber } from '@/lib/utils'
+import { lockCouponUsageForUser } from '@/lib/coupon-usage-lock'
 
 describe('atomic inventory reservation', () => {
   it('allows exactly one of ten concurrent claims when stock is one', async () => {
@@ -43,6 +44,24 @@ describe('atomic inventory reservation', () => {
 })
 
 describe('coupon and order-number race guards', () => {
+  it('takes a transaction-scoped per-user lock before counting coupon usage', async () => {
+    const executeRaw = vi.fn(async () => 1)
+    await lockCouponUsageForUser(
+      { $executeRaw: executeRaw },
+      'coupon_1',
+      'user_1',
+    )
+    expect(executeRaw).toHaveBeenCalledOnce()
+
+    const source = fs.readFileSync(
+      path.resolve(__dirname, '..', '..', 'app', 'api', 'orders', 'route.ts'),
+      'utf8',
+    )
+    expect(source.indexOf('await lockCouponUsageForUser')).toBeLessThan(
+      source.indexOf('const userUses = await tx.couponUsage.count'),
+    )
+  })
+
   it('claims a limited coupon with guarded updateMany before recording usage', () => {
     const source = fs.readFileSync(
       path.resolve(__dirname, '..', '..', 'app', 'api', 'orders', 'route.ts'),
