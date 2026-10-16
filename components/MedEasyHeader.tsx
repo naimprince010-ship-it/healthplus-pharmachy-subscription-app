@@ -135,9 +135,9 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
 
   const searchPlaceholder =
     isMedicineShopEnabled() && isGroceryShopEnabled()
-      ? 'ওষুধ, স্বাস্থ্যপণ্য এবং আরো অনেক কিছু খুঁজুন...'
+      ? 'কসমেটিক্স বা গ্রোসারি খুঁজুন...'
       : isMedicineShopEnabled()
-        ? 'ওষুধ বা কসমেটিক্স খুঁজুন...'
+        ? 'কসমেটিক্স ও বিউটি পণ্য খুঁজুন...'
         : isGroceryShopEnabled()
           ? 'কসমেটিক্স বা গ্রোসারি খুঁজুন...'
           : 'কসমেটিক্স ও পণ্য খুঁজুন...'
@@ -165,7 +165,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                   <span style={{ color: '#a7f3d0', fontWeight: 400, fontSize: '0.75rem', marginLeft: '2px' }}>.com</span>
                 </span>
                 <span className="text-[10px] text-teal-100 font-medium tracking-wide" style={{ marginTop: '1px' }}>
-                  হালাল শপিং
+                  বিউটি ও দৈনন্দিন বাজার
                 </span>
               </div>
             </Link>
@@ -268,7 +268,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onClick={() => setMobileSearchOpen(true)}
-                  placeholder="ওষুধ ও পণ্য খুঁজুন..."
+                  placeholder="কসমেটিক্স, গ্রোসারি বা ব্র্যান্ড খুঁজুন"
                   className="w-full rounded-full border-0 bg-white/90 py-2 pl-4 pr-10 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/50"
                   readOnly
                 />
@@ -450,60 +450,8 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                 No products found
               </div>
             ) : (
-              <div className="p-4 mt-2">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">জনপ্রিয় ক্যাটাগরি</h3>
-                <div className="flex flex-wrap gap-2">
-                  <Link
-                    href="/category/medicine"
-                    onClick={() => {
-                      setMobileSearchOpen(false)
-                      setShowSuggestions(false)
-                    }}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition-colors"
-                  >
-                    <span>💊</span> ঔষধ
-                  </Link>
-                  <Link
-                    href="/category/baby-care"
-                    onClick={() => {
-                      setMobileSearchOpen(false)
-                      setShowSuggestions(false)
-                    }}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition-colors"
-                  >
-                    <span>🍼</span> বেবি কেয়ার
-                  </Link>
-                  <Link
-                    href="/category/beauty-care"
-                    onClick={() => {
-                      setMobileSearchOpen(false)
-                      setShowSuggestions(false)
-                    }}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition-colors"
-                  >
-                    <span>💄</span> কসমেটিক্স
-                  </Link>
-                  <Link
-                    href="/category/devices"
-                    onClick={() => {
-                      setMobileSearchOpen(false)
-                      setShowSuggestions(false)
-                    }}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition-colors"
-                  >
-                    <span>🩺</span> ডিভাইস
-                  </Link>
-                  <Link
-                    href="/category/personal-care"
-                    onClick={() => {
-                      setMobileSearchOpen(false)
-                      setShowSuggestions(false)
-                    }}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition-colors"
-                  >
-                    <span>🧴</span> পার্সোনাল কেয়ার
-                  </Link>
-                </div>
+              <div className="p-4">
+                <p className="text-sm text-gray-500">কসমেটিক্স, গ্রোসারি ও দৈনন্দিন পণ্য খুঁজুন...</p>
               </div>
             )}
           </div>

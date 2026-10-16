@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { Footer } from '@/components/Footer'
+import { isMedicineShopEnabled } from '@/lib/site-features'
 
 // Footer settings type
 interface FooterSettingsData {
@@ -32,15 +33,15 @@ interface FooterSettingsData {
 // Default footer settings (used when database table doesn't exist yet)
 const DEFAULT_SETTINGS: FooterSettingsData = {
   brandName: 'Halalzi',
-  brandDescription: 'আপনার পরিবারের সুস্বাস্থ্যের বিশ্বস্ত সঙ্গী। আমরা ১০০% অথেনটিক ঔষধ এবং স্বাস্থ্যপণ্য নিশ্চিত করি।',
+  brandDescription: 'অরিজিনাল কসমেটিক্স, নারীদের পণ্য ও দৈনন্দিন বাজারের বিশ্বস্ত ঠিকানা।',
   drugLicense: null,
   tradeLicense: null,
   quickLinks: [
     { label: 'হোম', href: '/' },
-    { label: 'সব ঔষধ', href: '/products' },
+    { label: 'সব পণ্য', href: '/products' },
     { label: 'আমাদের সম্পর্কে', href: '/about' },
     { label: 'মেম্বারশিপ প্ল্যান', href: '/membership' },
-    { label: 'প্রেসক্রিপশন আপলোড', href: '/prescription' },
+    { label: 'বিউটি ও গ্রোসারি', href: '/products' },
     { label: 'অফারসমূহ', href: '/offers' },
   ],
   quickLinksTitle: 'কুইক লিংকস',
@@ -121,6 +122,14 @@ export async function SiteFooter() {
       console.error('Failed to fetch footer settings:', err)
     }
     // Use default settings on error
+  }
+
+  if (!isMedicineShopEnabled()) {
+    settings = {
+      ...settings,
+      brandDescription: DEFAULT_SETTINGS.brandDescription,
+      quickLinks: settings.quickLinks.filter((link) => !/ঔষধ|ওষুধ|medicine|prescription|প্রেসক্রিপশন/i.test(`${link.label} ${link.href}`)),
+    }
   }
 
   return <Footer settings={settings} />

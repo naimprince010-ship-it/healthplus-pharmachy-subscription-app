@@ -2,14 +2,13 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Check, Copy, FileText, Phone } from 'lucide-react'
+import { Banknote, Check, Copy, Lock, MessageCircle, ShieldCheck, Wallet } from 'lucide-react'
 import { HeroBannerSlider, type HeroBanner } from '@/components/HeroBannerSlider'
-import { PrescriptionUploadModal } from '@/components/PrescriptionUploadModal'
 import { ProductCard, type ProductCardProps } from '@/components/ProductCard'
 import { CategoryIconByKey } from '@/components/icons/CategoryIcons'
 import type { CategoryIconKey } from '@/lib/category-icon-key'
 import { useCart } from '@/contexts/CartContext'
-import { isGroceryShopEnabled, isMedicineShopEnabled, isPrescriptionFlowEnabled } from '@/lib/site-features'
+import { trackWhatsAppClick } from '@/lib/trackEvent'
 import type { HomeOffer } from '@/components/DesktopHome'
 
 interface HomeSection {
@@ -21,16 +20,27 @@ interface MobileHomeProps {
   heroBanners?: HeroBanner[]
   offer: HomeOffer | null
   hotline: string
+  whatsappNumber: string
   freeDeliveryThreshold: number | null
 }
-const CATEGORY_LINKS: Array<{ label: string; iconKey: CategoryIconKey; href: string; kind: 'medicine' | 'grocery' | 'other' }> = [
-  { label: 'ঔষধ', iconKey: 'medicine', href: '/medicines', kind: 'medicine' },
-  { label: 'গ্রোসারি', iconKey: 'grocery', href: '/products?category=grocery', kind: 'grocery' },
-  { label: 'কসমেটিক', iconKey: 'cosmetics', href: '/products?category=cosmetics', kind: 'other' },
-  { label: 'বেবি', iconKey: 'baby', href: '/products?category=baby', kind: 'other' },
-  { label: 'সকল', iconKey: 'all', href: '/products', kind: 'other' },
+const CATEGORY_LINKS: Array<{ label: string; iconKey: CategoryIconKey; href: string }> = [
+  { label: 'মেকআপ', iconKey: 'makeup', href: '/search?q=makeup' },
+  { label: 'স্কিনকেয়ার', iconKey: 'skincare', href: '/search?q=skincare' },
+  { label: 'হেয়ার', iconKey: 'hair', href: '/search?q=hair' },
+  { label: 'ফ্র্যাগরেন্স', iconKey: 'fragrance', href: '/search?q=fragrance' },
+  { label: 'বডি কেয়ার', iconKey: 'body', href: '/search?q=body%20care' },
+  { label: 'নারী যত্ন', iconKey: 'feminine', href: '/search?q=sanitary' },
+  { label: 'গ্রোসারি', iconKey: 'grocery', href: '/products?category=grocery' },
+  { label: 'অফার', iconKey: 'deals', href: '/flash-sale' },
 ]
-const BENEFITS = ['ক্যাশ অন ডেলিভারি', 'বিকাশ', 'ঢাকায় একই দিনে', '১০০% অরিজিনাল']
+const BENEFITS = [
+  { label: 'ক্যাশ অন ডেলিভারি', icon: Banknote },
+  { label: 'বিকাশ পেমেন্ট', icon: Wallet },
+  { label: '১০০% অরিজিনাল (ইমপোর্টেড)', icon: ShieldCheck },
+  // TODO: Confirm the operational packaging policy before keeping this customer-facing claim.
+  { label: 'গোপনীয় প্যাকেজিং', icon: Lock },
+]
+const SKIN_TYPES = ['তৈলাক্ত', 'শুষ্ক', 'মিশ্র', 'সংবেদনশীল', 'ব্রণপ্রবণ']
 
 function MobileOfferHero({ offer }: { offer: HomeOffer | null }) {
   const [copied, setCopied] = useState(false)
@@ -41,10 +51,10 @@ function MobileOfferHero({ offer }: { offer: HomeOffer | null }) {
     window.setTimeout(() => setCopied(false), 1600)
   }
   return (
-    <section className="m-3 min-h-[280px] rounded-3xl bg-[#FFF1DF] px-5 py-7">
-      <span className="inline-flex rounded-full bg-white px-3 py-1.5 text-xs font-bold text-[#C2410C]">নতুন কাস্টমার অফার</span>
+    <section className="m-3 min-h-[280px] rounded-3xl bg-[#FCE8EC] px-5 py-7">
+      <span className="inline-flex rounded-full bg-white px-3 py-1.5 text-xs font-bold text-[#BE185D]">নতুন কাস্টমার অফার</span>
       <h1 className="mt-4 text-3xl font-extrabold leading-tight text-[#0B4F4A]">
-        {offer ? <>প্রথম অর্ডারে <span className="text-[#C2410C]">{offer.percentage}% ছাড়</span></> : '১০০% আসল ঔষধ ও কসমেটিক্স — এখন আপনার দরজায়'}
+        {offer ? <>প্রথম অর্ডারে <span className="text-[#BE185D]">{offer.percentage}% ছাড়</span></> : 'অরিজিনাল কসমেটিক্স আর দৈনন্দিন বাজার — এক জায়গায়'}
       </h1>
       {offer && <div className="mt-4 flex items-center justify-between rounded-xl border-2 border-dashed border-orange-300 bg-white/70 px-3 py-2">
         <span className="text-sm font-bold">কোড: {offer.code}</span>
@@ -52,8 +62,8 @@ function MobileOfferHero({ offer }: { offer: HomeOffer | null }) {
           {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}{copied ? 'হয়েছে' : 'কপি'}
         </button>
       </div>}
-      <Link href="/products" className="mt-5 flex min-h-11 w-full items-center justify-center rounded-xl bg-[#C2410C] px-4 font-bold text-white">এখনই অর্ডার করুন</Link>
-      <p className="mt-3 text-center text-xs font-medium text-[#0B4F4A]">ক্যাশ অন ডেলিভারি · ঢাকায় একই দিনে</p>
+      <Link href="/products" className="mt-5 flex min-h-11 w-full items-center justify-center rounded-xl bg-[#C2410C] px-4 font-bold text-white">এখনই কিনুন</Link>
+      <p className="mt-3 text-center text-xs font-medium text-[#0B4F4A]">ক্যাশ অন ডেলিভারি · অরিজিনাল পণ্য</p>
     </section>
   )
 }
@@ -68,23 +78,19 @@ function MobileFreeDeliveryProgress({ threshold }: { threshold: number | null })
   </div>
 }
 
-export function MobileHome({ homeSections, heroBanners = [], offer, hotline, freeDeliveryThreshold }: MobileHomeProps) {
-  const [isPrescriptionOpen, setIsPrescriptionOpen] = useState(false)
-  const categories = CATEGORY_LINKS.filter(c => (c.kind !== 'medicine' || isMedicineShopEnabled()) && (c.kind !== 'grocery' || isGroceryShopEnabled()))
+export function MobileHome({ homeSections, heroBanners = [], offer, whatsappNumber, freeDeliveryThreshold }: MobileHomeProps) {
+  const cleanWhatsApp = whatsappNumber.replace(/\D/g, '')
   return (
     <div className="min-h-screen bg-gray-50">
       {heroBanners.length > 0 ? <section className="bg-white p-3"><HeroBannerSlider banners={heroBanners} interval={4500} /></section> : <MobileOfferHero offer={offer} />}
       <div className="scrollbar-hide overflow-x-auto bg-white px-3 py-3">
-        <div className="flex min-w-max gap-2">{BENEFITS.map(label => <div key={label} className="flex min-h-11 items-center rounded-full border border-teal-100 bg-teal-50 px-4 text-xs font-bold text-[#0B4F4A]">{label}</div>)}</div>
+        <div className="flex min-w-max gap-2">{BENEFITS.map(({ label, icon: Icon }) => <div key={label} className="flex min-h-11 items-center gap-2 rounded-full border border-teal-100 bg-teal-50 px-4 text-xs font-bold text-[#0B4F4A]"><Icon className="h-4 w-4" />{label}</div>)}</div>
       </div>
       <section className="bg-white px-2 py-3 shadow-sm">
-        <div className="flex items-center justify-around gap-1">{categories.map(cat => <Link key={cat.href} href={cat.href} className="flex min-h-11 flex-col items-center gap-1 rounded-xl px-2 py-2 active:bg-teal-50"><span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 ring-1 ring-slate-100"><CategoryIconByKey iconKey={cat.iconKey} size={28} /></span><span className="text-[11px] font-semibold text-gray-700">{cat.label}</span></Link>)}</div>
+        <div className="grid grid-cols-4 gap-2">{CATEGORY_LINKS.map(cat => <Link key={cat.href} href={cat.href} className="flex min-h-20 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 active:bg-teal-50"><span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 ring-1 ring-slate-100"><CategoryIconByKey iconKey={cat.iconKey} size={28} /></span><span className="text-center text-[11px] font-semibold text-gray-700">{cat.label}</span></Link>)}</div>
       </section>
-      {(isPrescriptionFlowEnabled() || hotline) && <section className="px-4 pb-2 pt-4"><div className="flex gap-3">
-        {isPrescriptionFlowEnabled() && <button type="button" onClick={() => setIsPrescriptionOpen(true)} className="flex min-h-14 flex-1 items-center justify-center gap-2 rounded-2xl bg-[#0F766E] px-3 font-bold text-white"><FileText className="h-5 w-5" />প্রেসক্রিপশন</button>}
-        {hotline && <a href={`tel:${hotline}`} className="flex min-h-14 flex-1 items-center justify-center gap-2 rounded-2xl bg-[#C2410C] px-3 font-bold text-white"><Phone className="h-5 w-5" />কল করে অর্ডার</a>}
-      </div></section>}
-      <PrescriptionUploadModal isOpen={isPrescriptionOpen} onClose={() => setIsPrescriptionOpen(false)} />
+      {cleanWhatsApp && <section className="px-4 pb-2 pt-4"><a href={`https://api.whatsapp.com/send?phone=${cleanWhatsApp}`} target="_blank" rel="noreferrer" onClick={() => trackWhatsAppClick('home_mobile_header')} className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-[#0F766E] px-3 font-bold text-white"><MessageCircle className="h-5 w-5" />WhatsApp-এ অর্ডার করুন</a></section>}
+      <section className="py-4"><h2 className="mb-3 px-4 text-lg font-bold text-[#0B4F4A]">আপনার স্কিন টাইপ অনুযায়ী</h2><div className="scrollbar-hide flex gap-2 overflow-x-auto px-4">{SKIN_TYPES.map((type) => <Link key={type} href={`/search?q=${encodeURIComponent(type)}`} className="flex min-h-11 shrink-0 items-center rounded-full border border-pink-100 bg-[#FCE8EC] px-4 text-sm font-bold text-[#BE185D]">{type}</Link>)}</div></section>
       {homeSections.map(({ section, products }, sectionIndex) => <section key={section.id} className="py-4">
         <div className="mb-3 flex items-center justify-between px-4"><div><h2 className="text-lg font-bold text-gray-900">{section.title}</h2>{section.badgeText && <span className="mt-1 inline-block rounded-full bg-teal-100 px-2 py-0.5 text-xs font-medium text-teal-700">{section.badgeText}</span>}</div><Link prefetch href={`/products?section=${section.slug}`} className="text-sm font-medium text-teal-600">সবগুলো →</Link></div>
         <div className="scrollbar-hide flex gap-3 overflow-x-auto pb-2 pl-4 pr-8">{products.map((product, productIndex) => <div key={product.id} className="w-40 flex-shrink-0"><ProductCard imagePriority={sectionIndex === 0 && productIndex < 4} product={{ id: product.id, type: product.type || 'GENERAL', name: product.name, slug: product.slug, brandName: product.brandName || null, description: product.description || null, sellingPrice: product.sellingPrice, mrp: product.mrp || null, stockQuantity: product.stockQuantity || 100, imageUrl: product.imageUrl || null, discountPercentage: product.discountPercentage || null, flashSalePrice: product.flashSalePrice || null, flashSaleStart: product.flashSaleStart || null, flashSaleEnd: product.flashSaleEnd || null, isFlashSale: product.isFlashSale || null, sizeLabel: product.sizeLabel ?? null, packSize: product.packSize ?? null, category: product.category || { id: '', name: '', slug: '' } }} variant="compact" /></div>)}</div>

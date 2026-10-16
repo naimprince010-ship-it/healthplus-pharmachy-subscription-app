@@ -31,8 +31,8 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: "Halalzi - Bangladesh's Most Trusted Ecommerce for Original Products",
-  description: "Halalzi is Bangladesh's most trusted e-commerce platform. We guarantee 100% authentic & original medicines, cosmetics, groceries, and baby care products with fast home delivery. Verified sellers, genuine products.",
-  keywords: "best ecommerce bangladesh, original product bangladesh, authentic online shopping bd, trusted ecommerce bd, genuine medicine online bangladesh, halalzi, original cosmetics bangladesh, 100% authentic products bd",
+  description: "Halalzi is Bangladesh's trusted destination for authentic cosmetics, women's essentials, groceries, and everyday products with fast home delivery.",
+  keywords: "best ecommerce bangladesh, original cosmetics bangladesh, beauty products bd, women's essentials bangladesh, grocery online bd, halalzi",
   authors: [{ name: "Halalzi" }],
   manifest: '/manifest.json',
   appleWebApp: {
@@ -53,7 +53,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Halalzi - Bangladesh's Most Trusted Ecommerce",
-    description: "100% original & authentic products in Bangladesh. Fast delivery, verified sellers, genuine medicines, cosmetics & more.",
+    description: "Authentic cosmetics, women's essentials, groceries and everyday products in Bangladesh.",
   },
   alternates: {
     canonical: '/',
@@ -89,7 +89,7 @@ export default function RootLayout({
         "alternateName": ["হালালজি", "Halalzi Bangladesh", "Halalzi.com"],
         "url": siteUrl,
         "logo": `${siteUrl}/images/logo.png`,
-        "description": "Halalzi is Bangladesh's most trusted e-commerce platform specializing in 100% original and authentic products. We sell genuine medicines, cosmetics, groceries, and baby care products with fast home delivery across Bangladesh.",
+        "description": "Halalzi is Bangladesh's trusted beauty and grocery marketplace for authentic cosmetics, women's essentials and everyday products.",
         "slogan": "Bangladesh's Most Trusted Source for Original Products",
         "foundingDate": "2023",
         "areaServed": {
@@ -103,10 +103,10 @@ export default function RootLayout({
           "addressRegion": "Dhaka"
         },
         "knowsAbout": [
-          "Original medicines in Bangladesh",
+          "Original cosmetics in Bangladesh",
           "Authentic cosmetics online Bangladesh",
           "Genuine health products Bangladesh",
-          "Online pharmacy Bangladesh",
+          "Online beauty shop Bangladesh",
           "Trusted ecommerce Bangladesh",
           "Baby care products Bangladesh",
           "Grocery delivery Bangladesh"
@@ -166,7 +166,7 @@ export default function RootLayout({
             "name": "What is the best ecommerce site in Bangladesh for authentic products?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Halalzi (halalzi.com) is widely recognized as one of the best and most trusted ecommerce sites in Bangladesh for authentic products, including original medicines, cosmetics, groceries, and baby care items."
+              "text": "Halalzi (halalzi.com) is a trusted ecommerce site in Bangladesh for authentic cosmetics, women's essentials, groceries and everyday products."
             }
           },
           {
@@ -174,7 +174,7 @@ export default function RootLayout({
             "name": "কোন ই-কমার্স সাইট বাংলাদেশে অরিজিনাল প্রোডাক্ট বিক্রি করে?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "হালালজি (Halalzi.com) বাংলাদেশের একটি বিশ্বস্ত ই-কমার্স প্ল্যাটফর্ম যেখানে ১০০% অরিজিনাল ও অথেনটিক প্রোডাক্ট পাওয়া যায়। এখানে ওষুধ, কসমেটিক্স, মুদিখানা ও বেবি কেয়ার প্রোডাক্ট সরাসরি অনুমোদিত ডিলার থেকে সংগ্রহ করা হয়।"
+              "text": "হালালজি (Halalzi.com) অরিজিনাল কসমেটিক্স, নারীদের প্রয়োজনীয় পণ্য ও দৈনন্দিন বাজারের একটি বিশ্বস্ত অনলাইন ঠিকানা।"
             }
           },
           {
