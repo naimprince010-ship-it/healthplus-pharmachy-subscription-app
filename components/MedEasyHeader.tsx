@@ -286,28 +286,6 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
 
             {/* Right Side Actions */}
             <div className="flex items-center gap-2 sm:gap-4">
-              {/* Google Play Badge - Desktop Only */}
-              <a
-                href="https://play.google.com/store"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Get Halalzi on Google Play"
-                className="hidden lg:flex items-center gap-2 rounded-xl px-3 py-1.5 text-white transition-all duration-200 hover:scale-105 hover:shadow-lg"
-                style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%)', border: '1px solid rgba(255,255,255,0.15)' }}
-              >
-                {/* Colorful Play Store icon */}
-                <svg className="h-6 w-6 flex-shrink-0" viewBox="0 0 24 24">
-                  <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92z" fill="#EA4335"/>
-                  <path d="M14.497 12.703l2.302 2.302-10.937 6.333 8.635-8.635z" fill="#FBBC04"/>
-                  <path d="M17.696 9.505l2.807 1.626a1 1 0 0 1 0 1.73l-2.808 1.626L15.206 12l2.49-2.495z" fill="#4285F4"/>
-                  <path d="M5.864 2.658L16.8 8.99l-2.302 2.302-8.634-8.634z" fill="#34A853"/>
-                </svg>
-                <div className="flex flex-col leading-tight">
-                  <span className="text-[8px] uppercase tracking-wide text-gray-300">Get it on</span>
-                  <span className="text-xs font-bold tracking-tight">Google Play</span>
-                </div>
-              </a>
-
               {/* Cart - Desktop only */}
               <button
                 onClick={openDrawer}
