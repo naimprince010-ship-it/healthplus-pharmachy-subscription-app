@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { resolveDeliveryChargeForZone } from '@/lib/delivery-charge'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -25,7 +26,7 @@ export async function GET() {
 
     const rows = await prisma.address.findMany({
       where: { userId: session.user.id, hiddenFromCheckout: false },
-      include: { zone: { select: { id: true, name: true, deliveryCharge: true } } },
+      include: { zone: { select: { id: true, name: true, deliveryCharge: true, deliveryFee: true, isActive: true } } },
       orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
     })
 
@@ -38,7 +39,7 @@ export async function GET() {
       city: a.city,
       zoneId: a.zoneId,
       zoneName: a.zone.name,
-      deliveryCharge: a.zone.deliveryCharge,
+      deliveryCharge: resolveDeliveryChargeForZone(a.zone),
       isDefault: a.isDefault,
       fullAddress: [a.addressLine1, a.addressLine2, a.city]
         .filter(Boolean)
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
     const { isDefault, ...data } = parsed.data
 
     const zone = await prisma.zone.findUnique({ where: { id: data.zoneId } })
-    if (!zone) {
+    if (!zone?.isActive) {
       return NextResponse.json({ error: 'Invalid delivery zone' }, { status: 400 })
     }
 
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest) {
           ...data,
           isDefault: isDefault ?? false,
         },
-        include: { zone: { select: { id: true, name: true, deliveryCharge: true } } },
+        include: { zone: { select: { id: true, name: true, deliveryCharge: true, deliveryFee: true, isActive: true } } },
       })
     })
 
@@ -101,7 +102,7 @@ export async function POST(request: NextRequest) {
         city: addr.city,
         zoneId: addr.zoneId,
         zoneName: addr.zone.name,
-        deliveryCharge: addr.zone.deliveryCharge,
+        deliveryCharge: resolveDeliveryChargeForZone(addr.zone),
         isDefault: addr.isDefault,
         fullAddress: [addr.addressLine1, addr.addressLine2, addr.city]
           .filter(Boolean)

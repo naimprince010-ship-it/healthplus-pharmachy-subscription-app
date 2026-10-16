@@ -26,3 +26,17 @@ export function resolveDeliveryChargeByZoneName(zoneName: string): number {
   if (normalized.includes('dhaka')) return INSIDE_DHAKA_CHARGE
   return OUTSIDE_DHAKA_CHARGE
 }
+
+export function resolveDeliveryChargeForZone(zone: {
+  name: string
+  deliveryFee?: number | null
+  deliveryCharge?: number | null
+}): number {
+  if (typeof zone.deliveryFee === 'number' && Number.isFinite(zone.deliveryFee) && zone.deliveryFee >= 0) {
+    return zone.deliveryFee
+  }
+  if (typeof zone.deliveryCharge === 'number' && Number.isFinite(zone.deliveryCharge) && zone.deliveryCharge >= 0) {
+    return zone.deliveryCharge
+  }
+  return resolveDeliveryChargeByZoneName(zone.name)
+}
