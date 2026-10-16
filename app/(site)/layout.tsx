@@ -6,19 +6,27 @@ import { SiteWhatsAppButton } from "@/components/SiteWhatsAppButton";
 import { SiteMobileNav } from "@/components/SiteMobileNav";
 import TrackingProvider from "@/components/tracking/TrackingProvider";
 import { getBasicSettings } from "@/lib/settings-server";
+import { prisma } from "@/lib/prisma";
 
 export default async function SiteLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const basicSettings = await getBasicSettings();
+  const [basicSettings, cartSettings] = await Promise.all([
+    getBasicSettings(),
+    prisma.cartPageSettings.findFirst({ select: { freeDeliveryThreshold: true } }),
+  ]);
 
   return (
     <>
       <TrackingProvider />
       <NavigationPrefetch />
-      <MedEasyHeader storeName={basicSettings.storeName} />
+      <MedEasyHeader
+        storeName={basicSettings.storeName}
+        freeDeliveryThreshold={cartSettings?.freeDeliveryThreshold ?? null}
+        whatsappNumber={process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? ""}
+      />
       <main className="min-h-screen">{children}</main>
       <SiteFooterWrapper>
         <SiteFooter />

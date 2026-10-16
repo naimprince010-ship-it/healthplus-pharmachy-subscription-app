@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
-import { ShoppingCart, User, Search, X, ChevronDown, Loader2 } from 'lucide-react'
+import { ShoppingCart, User, Search, X, ChevronDown, Loader2, MapPin, MessageCircle } from 'lucide-react'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useCart } from '@/contexts/CartContext'
@@ -10,6 +10,7 @@ import { CartDrawer } from './CartDrawer'
 import { MAIN_CONTAINER } from '@/lib/layout'
 import { useAuthModal } from '@/contexts/AuthModalContext'
 import { isGroceryShopEnabled, isMedicineShopEnabled } from '@/lib/site-features'
+import { trackWhatsAppClick } from '@/lib/trackEvent'
 
 interface SearchSuggestion {
   id: string
@@ -24,9 +25,11 @@ interface SearchSuggestion {
 
 interface MedEasyHeaderProps {
   storeName?: string
+  freeDeliveryThreshold?: number | null
+  whatsappNumber?: string
 }
 
-export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) {
+export function MedEasyHeader({ storeName = 'HealthPlus', freeDeliveryThreshold = null, whatsappNumber = '' }: MedEasyHeaderProps) {
   const router = useRouter()
   const pathname = usePathname()
   const { data: session } = useSession()
@@ -141,15 +144,30 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
         : isGroceryShopEnabled()
           ? 'কসমেটিক্স বা গ্রোসারি খুঁজুন...'
           : 'কসমেটিক্স ও পণ্য খুঁজুন...'
+  const cleanWhatsApp = whatsappNumber.replace(/\D/g, '')
 
   return (
     <>
       <header className={`sticky top-0 z-50 w-full bg-teal-600 shadow-md ${hideOnMobile ? 'hidden lg:block' : ''}`}>
+        <div className="hidden bg-[#0B4F4A] text-[13px] text-white lg:block">
+          <div className={`${MAIN_CONTAINER} grid h-8 grid-cols-3 items-center`}>
+            <span>ডেলিভারি: ঢাকা</span>
+            <span className="text-center">{freeDeliveryThreshold ? `৳${freeDeliveryThreshold}+ অর্ডারে ফ্রি ডেলিভারি · ` : ''}ক্যাশ অন ডেলিভারি</span>
+            <Link href="/orders" className="text-right font-semibold hover:underline">অর্ডার ট্র্যাক করুন</Link>
+          </div>
+        </div>
         {/* Centered container - uses shared MAIN_CONTAINER for consistent layout */}
         <div className={MAIN_CONTAINER}>
+          <div className="flex min-h-14 items-center justify-between gap-3 border-b border-white/10 py-2 md:hidden">
+            <Link href="/" className="flex items-center gap-2" aria-label="Halalzi — home">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-lg font-bold text-teal-600">H</span>
+              <span><strong className="block text-base text-white">Halalzi.com</strong><span className="flex items-center gap-1 text-[11px] text-teal-50"><MapPin className="h-3 w-3" />ডেলিভারি: ঢাকা</span></span>
+            </Link>
+            {cleanWhatsApp && <a href={`https://api.whatsapp.com/send?phone=${cleanWhatsApp}`} target="_blank" rel="noreferrer" onClick={() => trackWhatsAppClick('header_mobile')} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/70 px-3 text-xs font-bold text-white"><MessageCircle className="h-4 w-4" />WhatsApp</a>}
+          </div>
           <div className="flex h-14 items-center justify-between gap-2 sm:h-16 sm:gap-4">
             {/* Logo */}
-            <Link prefetch href="/" className="flex items-center gap-2 flex-shrink-0 group" aria-label="Halalzi — home">
+            <Link prefetch href="/" className="hidden items-center gap-2 flex-shrink-0 group md:flex" aria-label="Halalzi — home">
               {/* Icon badge */}
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white transition-transform duration-200 group-hover:scale-105">
                 <span className="text-lg font-bold text-teal-600">H</span>
@@ -191,14 +209,6 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                   </Link>
                 </>
               )}
-              <span className="text-white/40 text-sm">|</span>
-              <Link
-                prefetch
-                href="/tools"
-                className="px-3 py-1.5 text-[14px] text-white hover:underline transition-all"
-              >
-                হেলথ টুলস
-              </Link>
             </div>
 
             {/* Desktop Search Bar */}
@@ -286,6 +296,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
 
             {/* Right Side Actions */}
             <div className="flex items-center gap-2 sm:gap-4">
+              {cleanWhatsApp && <a href={`https://api.whatsapp.com/send?phone=${cleanWhatsApp}`} target="_blank" rel="noreferrer" onClick={() => trackWhatsAppClick('header_desktop')} className="hidden min-h-11 items-center gap-2 rounded-xl border border-white/80 px-3 text-sm font-bold text-white hover:bg-white/10 md:inline-flex"><MessageCircle className="h-4 w-4" />WhatsApp-এ অর্ডার</a>}
               {/* Cart - Desktop only */}
               <button
                 onClick={openDrawer}
