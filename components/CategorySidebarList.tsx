@@ -2,18 +2,16 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ChevronRight, Baby, Cross, Droplets, Flame, Heart, Shield, Sparkles, Star } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
+import { CATEGORY_ICONS, CategoryIcon } from '@/components/icons/CategoryIcons'
+import { resolveCategoryIconKey } from '@/lib/category-icon-key'
 
-export function getCategoryIcon(name: string) {
-  const n = name.toLowerCase()
-  if (n.includes('face') || n.includes('skin') || n.includes('beauty')) return Sparkles
-  if (n.includes('hair')) return Droplets
-  if (n.includes('baby') || n.includes('kid') || n.includes('mom')) return Baby
-  if (n.includes('fragrance') || n.includes('perfume')) return Flame
-  if (n.includes('lip')) return Heart
-  if (n.includes('oral') || n.includes('দাঁত')) return Cross
-  if (n.includes('wellness') || n.includes('health') || n.includes('ঔষধ') || n.includes('medicine')) return Shield
-  return Star
+/**
+ * Kept for backwards compatibility with any caller that still does
+ * `const Icon = getCategoryIcon(name); <Icon className="…" />`.
+ */
+export function getCategoryIcon(name: string, slug?: string) {
+  return CATEGORY_ICONS[resolveCategoryIconKey(slug, name)]
 }
 
 interface Category {
@@ -31,7 +29,6 @@ export default function CategorySidebarList({ categories }: { categories: Catego
       {categories.map((category) => {
         const href = category.sidebarLinkUrl || `/category/${category.slug}`
         const isActive = pathname === href || pathname.startsWith(`${href}/`)
-        const Icon = getCategoryIcon(category.name)
 
         return (
           <Link
@@ -50,13 +47,13 @@ export default function CategorySidebarList({ categories }: { categories: Catego
             />
             <div className="flex items-center gap-3">
               <div
-                className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl transition-all duration-300 ${
+                className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl transition-all duration-300 ${
                   isActive
-                    ? 'bg-primary/20 text-primary-dark scale-110'
-                    : 'bg-primary/10 text-primary group-hover:bg-primary/20 group-hover:scale-110'
+                    ? 'bg-white ring-1 ring-primary/30 scale-105'
+                    : 'bg-slate-50 ring-1 ring-slate-100 group-hover:bg-white group-hover:ring-primary/20 group-hover:scale-105'
                 }`}
               >
-                <Icon className="h-4 w-4" />
+                <CategoryIcon slug={category.slug} name={category.name} size={22} />
               </div>
               <span
                 className={`text-[13.5px] font-medium transition-colors duration-300 ${
