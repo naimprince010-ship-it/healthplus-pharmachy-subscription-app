@@ -23,10 +23,19 @@ interface Category {
 
 export default function CategorySidebarList({ categories }: { categories: Category[] }) {
   const pathname = usePathname()
+  const groups = [
+    { label: 'বিউটি', keys: new Set(['makeup', 'skincare', 'hair', 'fragrance', 'body', 'feminine', 'cosmetics']) },
+    { label: 'বাজার', keys: new Set(['grocery', 'fresh']) },
+  ]
 
   return (
-    <div className="divide-y divide-gray-50/80">
-      {categories.map((category) => {
+    <div>
+      {groups.map((group) => {
+        const items = categories.filter((category) => group.keys.has(resolveCategoryIconKey(category.slug, category.name)))
+        if (!items.length) return null
+        return <div key={group.label}>
+          <div className="border-y border-gray-50 bg-gray-50/70 px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-gray-400">{group.label}</div>
+          <div className="divide-y divide-gray-50/80">{items.map((category) => {
         const href = category.sidebarLinkUrl || `/category/${category.slug}`
         const isActive = pathname === href || pathname.startsWith(`${href}/`)
 
@@ -69,7 +78,8 @@ export default function CategorySidebarList({ categories }: { categories: Catego
               }`}
             />
           </Link>
-        )
+        )})}</div>
+        </div>
       })}
     </div>
   )

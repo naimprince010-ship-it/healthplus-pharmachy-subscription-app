@@ -135,9 +135,9 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
 
   const searchPlaceholder =
     isMedicineShopEnabled() && isGroceryShopEnabled()
-      ? 'ওষুধ, কসমেটিক্স বা গ্রোসারি খুঁজুন...'
+      ? 'কসমেটিক্স বা গ্রোসারি খুঁজুন...'
       : isMedicineShopEnabled()
-        ? 'ওষুধ বা কসমেটিক্স খুঁজুন...'
+        ? 'কসমেটিক্স ও বিউটি পণ্য খুঁজুন...'
         : isGroceryShopEnabled()
           ? 'কসমেটিক্স বা গ্রোসারি খুঁজুন...'
           : 'কসমেটিক্স ও পণ্য খুঁজুন...'
@@ -165,7 +165,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                   <span style={{ color: '#a7f3d0', fontWeight: 400, fontSize: '0.75rem', marginLeft: '2px' }}>.com</span>
                 </span>
                 <span className="text-[10px] text-teal-100 font-medium tracking-wide" style={{ marginTop: '1px' }}>
-                  হালাল শপিং
+                  বিউটি ও দৈনন্দিন বাজার
                 </span>
               </div>
             </Link>
@@ -276,7 +276,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onClick={() => setMobileSearchOpen(true)}
-                  placeholder="ওষুধ, ব্র্যান্ড বা লক্ষণ খুঁজুন"
+                  placeholder="কসমেটিক্স, গ্রোসারি বা ব্র্যান্ড খুঁজুন"
                   className="w-full rounded-full border-0 bg-white/90 py-2 pl-4 pr-10 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/50"
                   readOnly
                 />
@@ -459,7 +459,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
               </div>
             ) : (
               <div className="p-4">
-                <p className="text-sm text-gray-500">Search for medicines, health products, and more...</p>
+                <p className="text-sm text-gray-500">কসমেটিক্স, গ্রোসারি ও দৈনন্দিন পণ্য খুঁজুন...</p>
               </div>
             )}
           </div>

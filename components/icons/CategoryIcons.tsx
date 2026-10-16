@@ -236,6 +236,22 @@ export function DealsIcon(props: CategoryIconProps) {
   )
 }
 
+export function MakeupIcon(props: CategoryIconProps) {
+  return <IconBase {...props}>{(f) => <><rect fill={f.rose} x="3" y="13" width="6" height="8" rx="1.3"/><rect x="3.8" y="10" width="4.4" height="3" rx=".6"/><path fill={f.rose} d="M4.6 10V6.6L7.4 4.6V10Z"/><circle fill={f.blue} cx="16.5" cy="15.5" r="5"/><circle fill={f.white} cx="16.5" cy="15.5" r="2.6"/><path d="M19.8 3.5v2.6M18.5 4.8h2.6"/></>}</IconBase>
+}
+export function HairCareIcon(props: CategoryIconProps) {
+  return <IconBase {...props}>{(f) => <><rect fill={f.teal} x="3.5" y="8" width="8" height="13" rx="2.4"/><rect fill={f.white} x="5.5" y="5" width="4" height="3" rx=".6"/><rect fill={f.rose} x="14" y="3.5" width="4.5" height="17" rx="1.5"/><path d="M7.5 5V3.5h2M6 13.5h3M18.5 6.5h2.5M18.5 9.5h2.5M18.5 12.5h2.5M18.5 15.5h2.5M18.5 18.5h2.5"/></>}</IconBase>
+}
+export function FragranceIcon(props: CategoryIconProps) {
+  return <IconBase {...props}>{(f) => <><rect fill={f.blue} x="5" y="10" width="14" height="11" rx="3"/><rect fill={f.rose} x="9" y="4" width="6" height="3.5" rx="1"/><rect x="10" y="7.5" width="4" height="2.5"/><path d="M15 5.75h3M20.5 4.5h.01M21.8 5.9h.01M20.5 7.2h.01M9 15.5h6"/></>}</IconBase>
+}
+export function BodyCareIcon(props: CategoryIconProps) {
+  return <IconBase {...props}>{(f) => <><rect fill={f.rose} x="7" y="10" width="10" height="11" rx="2.5"/><rect x="9.5" y="8" width="5" height="2" rx=".5"/><path d="M12 8V5.3"/><rect fill={f.white} x="9" y="3.5" width="8" height="1.8" rx=".9"/><path fill={f.white} d="M12 13.5s-1.6 1.9-1.6 3a1.6 1.6 0 0 0 3.2 0c0-1.1-1.6-3-1.6-3Z"/></>}</IconBase>
+}
+export function FeminineCareIcon(props: CategoryIconProps) {
+  return <IconBase {...props}>{(f) => <><path fill={f.rose} d="M12 3c3 0 4.5 2.5 4.5 5.5v7c0 3-1.5 5.5-4.5 5.5S7.5 18.5 7.5 15.5v-7C7.5 5.5 9 3 12 3Z"/><path fill={f.white} d="M12 7.5c1.4 0 2 1.2 2 2.6v3.8c0 1.4-.6 2.6-2 2.6s-2-1.2-2-2.6v-3.8c0-1.4.6-2.6 2-2.6Z"/><path d="M7.5 10.5H5a1.5 1.5 0 0 0 0 3h2.5M16.5 10.5H19a1.5 1.5 0 0 1 0 3h-2.5"/></>}</IconBase>
+}
+
 export const CATEGORY_ICONS: Record<CategoryIconKey, (props: CategoryIconProps) => ReactNode> = {
   all: AllCategoriesIcon,
   medicine: MedicineIcon,
@@ -246,6 +262,11 @@ export const CATEGORY_ICONS: Record<CategoryIconKey, (props: CategoryIconProps) 
   fresh: FreshFruitsIcon,
   grocery: GroceryIcon,
   deals: DealsIcon,
+  makeup: MakeupIcon,
+  hair: HairCareIcon,
+  fragrance: FragranceIcon,
+  body: BodyCareIcon,
+  feminine: FeminineCareIcon,
 }
 
 /** Render the icon for an explicit key. */

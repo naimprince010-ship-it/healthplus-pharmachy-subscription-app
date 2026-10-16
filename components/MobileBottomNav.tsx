@@ -4,9 +4,10 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { useCart } from '@/contexts/CartContext'
+import { Gift } from 'lucide-react'
 
 /** Eagerly prefetch RSC payload for all tab targets so navigation feels instant after first paint. */
-const BOTTOM_TAB_HREFS = ['/', '/products', '/subscriptions', '/cart', '/dashboard'] as const
+const BOTTOM_TAB_HREFS = ['/', '/products', '/flash-sale', '/cart', '/dashboard'] as const
 
 export function MobileBottomNav() {
   const pathname = usePathname()
@@ -22,7 +23,7 @@ export function MobileBottomNav() {
   const navItems = [
     { href: '/', label: 'Home', iconType: 'home' },
     { href: '/products', label: 'Shop', iconType: 'shop' },
-    { href: '/subscriptions', label: 'Plans', iconType: 'plans' },
+    { href: '/flash-sale', label: 'অফার', iconType: 'offers' },
     { href: '/cart', label: 'Cart', iconType: 'cart', badge: itemCount },
     { href: '/dashboard', label: 'Profile', iconType: 'profile' },
   ]
@@ -47,14 +48,9 @@ export function MobileBottomNav() {
             <rect x="3" y="14" width="7" height="7" rx="1" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         )
-      case 'plans':
+      case 'offers':
         return (
-          <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" strokeLinecap="round" strokeLinejoin="round" />
-            <line x1="16" y1="2" x2="16" y2="6" strokeLinecap="round" strokeLinejoin="round" />
-            <line x1="8" y1="2" x2="8" y2="6" strokeLinecap="round" strokeLinejoin="round" />
-            <line x1="3" y1="10" x2="21" y2="10" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <Gift className="h-6 w-6" />
         )
       case 'cart':
         return (

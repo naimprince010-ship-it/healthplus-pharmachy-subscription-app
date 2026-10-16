@@ -32,6 +32,7 @@ export async function HomePageDeferred() {
     homeSections,
     offer,
     hotline: basicSettings.storePhone.trim(),
+    whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.trim() ?? '',
     freeDeliveryThreshold: cartSettings?.freeDeliveryThreshold ?? 499,
   }
 
@@ -41,7 +42,6 @@ export async function HomePageDeferred() {
         <DesktopHome
           {...shared}
           heroBanners={desktopBanners}
-          whatsappNumber={process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.trim() ?? ''}
         />
       </div>
       <div className="block lg:hidden">

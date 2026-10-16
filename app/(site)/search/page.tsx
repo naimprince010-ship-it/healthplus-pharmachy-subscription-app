@@ -105,10 +105,10 @@ function SearchContent() {
           <div className="text-center py-12">
             <Search className="mx-auto h-12 w-12 text-gray-400" />
             <h1 className="mt-4 text-2xl font-bold text-gray-900">
-              Search medicines & products
+              Search beauty & grocery products
             </h1>
             <p className="mt-2 text-gray-600">
-              Use the search bar above to find medicines, health products, and more.
+              Use the search bar above to find cosmetics, groceries, and everyday products.
             </p>
           </div>
         )}
