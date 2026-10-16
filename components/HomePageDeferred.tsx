@@ -35,7 +35,7 @@ export async function HomePageDeferred() {
     offer,
     hotline: basicSettings.storePhone.trim(),
     whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.trim() ?? '',
-    freeDeliveryThreshold: cartSettings?.freeDeliveryThreshold ?? 499,
+    freeDeliveryThreshold: cartSettings?.freeDeliveryThreshold ?? null,
   }
 
   return (

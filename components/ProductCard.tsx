@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ImageOff } from 'lucide-react'
@@ -85,6 +86,7 @@ export function ProductCard({
 
   const isCompact = variant === 'compact'
   const displayImageUrl = getStorefrontImageUrl(product.imageUrl)
+  const [imageFailed, setImageFailed] = useState(false)
   const sizeDisplay = product.sizeLabel?.trim() || product.packSize?.trim() || null
 
   // Use pre-computed values from server if available (avoids hydration mismatch)
@@ -163,11 +165,12 @@ export function ProductCard({
       <div
         className="relative aspect-square shrink-0 overflow-hidden rounded-lg bg-gradient-to-b from-slate-100 to-slate-50 ring-1 ring-inset ring-slate-200/80"
       >
-        {displayImageUrl ? (
+        {displayImageUrl && !imageFailed ? (
           <Image
             src={displayImageUrl}
             alt={product.name}
             fill
+            onError={() => setImageFailed(true)}
             priority={imagePriority}
             sizes={
               isCompact

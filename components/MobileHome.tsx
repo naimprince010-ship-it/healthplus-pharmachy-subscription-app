@@ -7,6 +7,8 @@ import { HeroBannerSlider, type HeroBanner } from '@/components/HeroBannerSlider
 import { ProductCard, type ProductCardProps } from '@/components/ProductCard'
 import { useCart } from '@/contexts/CartContext'
 import type { HomeOffer } from '@/components/DesktopHome'
+import { CategoryIconByKey } from '@/components/icons/CategoryIcons'
+import type { CategoryIconKey } from '@/lib/category-icon-key'
 import { BestSellerHomeSection, FlashSaleHomeSection, GroceryHomeSection, PopularBrandsSection, type CuratedHomeData } from '@/components/HomeCuratedSections'
 
 interface HomeSection {
@@ -29,6 +31,33 @@ const BENEFITS = [
   { label: 'গোপনীয় প্যাকেজিং', icon: Lock },
 ]
 const SKIN_TYPES = ['তৈলাক্ত', 'শুষ্ক', 'মিশ্র', 'সংবেদনশীল', 'ব্রণপ্রবণ']
+const CATEGORY_GRID: Array<{ label: string; iconKey: CategoryIconKey; href: string }> = [
+  { label: 'মেকআপ', iconKey: 'makeup', href: '/category/makeup' },
+  { label: 'স্কিনকেয়ার', iconKey: 'skincare', href: '/category/skin-care' },
+  { label: 'হেয়ার', iconKey: 'hair', href: '/category/hair-care' },
+  { label: 'ফ্র্যাগরেন্স', iconKey: 'fragrance', href: '/category/fragrance' },
+  { label: 'বডি কেয়ার', iconKey: 'body', href: '/category/body-care' },
+  { label: 'নারী যত্ন', iconKey: 'feminine', href: '/category/women-s-choice' },
+  { label: 'গ্রোসারি', iconKey: 'grocery', href: '/products?category=grocery' },
+  { label: 'অফার', iconKey: 'deals', href: '/flash-sale' },
+]
+
+function MobileCategoryGrid() {
+  return (
+    <section aria-label="ক্যাটাগরি" className="mx-3 mt-3 rounded-2xl border border-gray-100 bg-white px-2 pb-2 pt-4 shadow-sm">
+      <div className="grid grid-cols-4 gap-1">
+        {CATEGORY_GRID.map((cat) => (
+          <Link key={cat.href} href={cat.href} className="flex min-h-11 flex-col items-center gap-1.5 rounded-xl px-1 pb-2 active:bg-teal-50">
+            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-50 ring-1 ring-slate-100">
+              <CategoryIconByKey iconKey={cat.iconKey} size={30} />
+            </span>
+            <span className="text-center text-xs font-semibold leading-tight text-gray-700">{cat.label}</span>
+          </Link>
+        ))}
+      </div>
+    </section>
+  )
+}
 
 function MobileOfferHero({ offer }: { offer: HomeOffer | null }) {
   const [copied, setCopied] = useState(false)
@@ -41,7 +70,7 @@ function MobileOfferHero({ offer }: { offer: HomeOffer | null }) {
   return (
     <section className="m-3 min-h-[280px] rounded-3xl bg-[#FCE8EC] px-5 py-7">
       <span className="inline-flex rounded-full bg-white px-3 py-1.5 text-xs font-bold text-[#BE185D]">নতুন কাস্টমার অফার</span>
-      <h1 className="mt-4 text-3xl font-extrabold leading-tight text-[#0B4F4A]">
+      <h1 className="mt-4 text-[26px] font-extrabold leading-snug text-[#0B4F4A]">
         {offer ? <>প্রথম অর্ডারে <span className="text-[#BE185D]">{offer.percentage}% ছাড়</span></> : 'অরিজিনাল কসমেটিক্স আর দৈনন্দিন বাজার — এক জায়গায়'}
       </h1>
       {offer && <div className="mt-4 flex items-center justify-between rounded-xl border-2 border-dashed border-orange-300 bg-white/70 px-3 py-2">
@@ -73,6 +102,7 @@ export function MobileHome({ homeSections, heroBanners = [], offer, freeDelivery
       <div className="scrollbar-hide overflow-x-auto bg-white px-3 py-3">
         <div className="flex min-w-max gap-2">{BENEFITS.map(({ label, icon: Icon }) => <div key={label} className="flex min-h-11 items-center gap-2 rounded-full border border-teal-100 bg-teal-50 px-4 text-xs font-bold text-[#0B4F4A]"><Icon className="h-4 w-4" />{label}</div>)}</div>
       </div>
+      <MobileCategoryGrid />
       <FlashSaleHomeSection products={curated.flashSale} />
       <section className="py-4"><h2 className="mb-3 px-4 text-lg font-bold text-[#0B4F4A]">আপনার স্কিন টাইপ অনুযায়ী</h2><div className="scrollbar-hide flex gap-2 overflow-x-auto px-4">{SKIN_TYPES.map((type) => <Link key={type} href={`/search?q=${encodeURIComponent(type)}`} className="flex min-h-11 shrink-0 items-center rounded-full border border-pink-100 bg-[#FCE8EC] px-4 text-sm font-bold text-[#BE185D]">{type}</Link>)}</div></section>
       <BestSellerHomeSection groups={curated.bestSellers} />
