@@ -1,24 +1,51 @@
 import { DesktopHome } from '@/components/DesktopHome'
 import { MobileHome } from '@/components/MobileHome'
-import { getHomeSections, getSubscriptionPlans } from '@/lib/home-page-data'
+import { getHomeSections } from '@/lib/home-page-data'
 import { getActiveBanners } from '@/lib/banners'
 import { BANNER_LOCATIONS } from '@/lib/banner-constants'
+import { getBasicSettings } from '@/lib/settings-server'
+import { prisma } from '@/lib/prisma'
 
 /** Loads home catalogue data inside Suspense so the route can paint a shell immediately. */
 export async function HomePageDeferred() {
-  const [subscriptionPlans, homeSections, heroBanners] = await Promise.all([
-    getSubscriptionPlans(),
+  const now = new Date()
+  const [homeSections, desktopBanners, mobileBanners, basicSettings, coupons, cartSettings] = await Promise.all([
     getHomeSections(),
     getActiveBanners(BANNER_LOCATIONS.HOME_HERO, 'desktop'),
+    getActiveBanners(BANNER_LOCATIONS.HOME_HERO, 'mobile'),
+    getBasicSettings(),
+    prisma.coupon.findMany({
+      where: {
+        isActive: true,
+        discountType: 'PERCENTAGE',
+        startDate: { lte: now },
+        endDate: { gte: now },
+      },
+      orderBy: [{ discountAmount: 'desc' }, { createdAt: 'asc' }],
+      select: { code: true, discountAmount: true, usageLimit: true, usageCount: true },
+    }),
+    prisma.cartPageSettings.findFirst({ select: { freeDeliveryThreshold: true } }),
   ])
+  const coupon = coupons.find((item) => item.usageLimit === null || item.usageCount < item.usageLimit)
+  const offer = coupon ? { code: coupon.code, percentage: Math.round(coupon.discountAmount) } : null
+  const shared = {
+    homeSections,
+    offer,
+    hotline: basicSettings.storePhone.trim(),
+    freeDeliveryThreshold: cartSettings?.freeDeliveryThreshold ?? 499,
+  }
 
   return (
     <>
       <div className="hidden lg:block">
-        <DesktopHome subscriptionPlans={subscriptionPlans} homeSections={homeSections} heroBanners={heroBanners} />
+        <DesktopHome
+          {...shared}
+          heroBanners={desktopBanners}
+          whatsappNumber={process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.trim() ?? ''}
+        />
       </div>
       <div className="block lg:hidden">
-        <MobileHome subscriptionPlans={subscriptionPlans} homeSections={homeSections} />
+        <MobileHome {...shared} heroBanners={mobileBanners} />
       </div>
     </>
   )
