@@ -53,6 +53,22 @@ describe('coupon and order-number race guards', () => {
     expect(source).toContain("throw new Error('COUPON_EXHAUSTED')")
   })
 
+  it('persists a unique checkout request id for retry-safe order creation', () => {
+    const schema = fs.readFileSync(
+      path.resolve(__dirname, '..', '..', 'prisma', 'schema.prisma'),
+      'utf8',
+    )
+    const route = fs.readFileSync(
+      path.resolve(__dirname, '..', '..', 'app', 'api', 'orders', 'route.ts'),
+      'utf8',
+    )
+    expect(schema).toContain('checkoutRequestId        String?')
+    expect(schema).toContain('@@unique([userId, checkoutRequestId])')
+    expect(route).toContain("request.headers.get('idempotency-key')")
+    expect(route).toContain('checkoutRequestId,')
+    expect(route).toContain("err.code === 'P2002'")
+  })
+
   it('generates unique opaque order numbers under a tight loop', () => {
     const numbers = Array.from({ length: 10_000 }, generateOrderNumber)
     expect(new Set(numbers).size).toBe(numbers.length)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Image from 'next/image'
@@ -68,6 +68,7 @@ export default function CheckoutPage() {
   const router = useRouter()
   const { data: session, status } = useSession()
   const { items, total, clearCart } = useCart()
+  const checkoutRequestId = useRef<string | null>(null)
   const [zones, setZones] = useState<Zone[]>([])
   const [divisions, setDivisions] = useState<LocationOption[]>([])
   const [districts, setDistricts] = useState<LocationOption[]>([])
@@ -423,10 +424,12 @@ export default function CheckoutPage() {
     }
 
     try {
+      checkoutRequestId.current ??= crypto.randomUUID()
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Idempotency-Key': checkoutRequestId.current,
         },
         body: JSON.stringify({
           ...(addresses.length > 0 && selectedSavedAddressId
@@ -444,6 +447,7 @@ export default function CheckoutPage() {
       const data = await response.json()
 
       if (!response.ok) {
+        checkoutRequestId.current = null
         setError(data.error || 'অর্ডার তৈরি করতে ব্যর্থ হয়েছে')
         setIsLoading(false)
         return
