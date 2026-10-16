@@ -7,6 +7,7 @@ import { HeroBannerSlider, type HeroBanner } from '@/components/HeroBannerSlider
 import { SectionSlider } from '@/components/SectionSlider'
 import { useCart } from '@/contexts/CartContext'
 import { trackWhatsAppClick } from '@/lib/trackEvent'
+import { BestSellerHomeSection, FlashSaleHomeSection, GroceryHomeSection, PopularBrandsSection, type CuratedHomeData } from '@/components/HomeCuratedSections'
 
 export interface HomeOffer { code: string; percentage: number }
 interface HomeSection {
@@ -20,6 +21,7 @@ interface DesktopHomeProps {
   hotline: string
   whatsappNumber: string
   freeDeliveryThreshold: number | null
+  curated: CuratedHomeData
 }
 const BENEFITS = [
   { label: 'ক্যাশ অন ডেলিভারি', icon: Banknote },
@@ -80,36 +82,39 @@ function OfferHero({ offer }: { offer: HomeOffer | null }) {
   )
 }
 
-export function DesktopHome({ homeSections, heroBanners = [], offer, hotline, whatsappNumber, freeDeliveryThreshold }: DesktopHomeProps) {
+export function DesktopHome({ homeSections, heroBanners = [], offer, hotline, whatsappNumber, freeDeliveryThreshold, curated }: DesktopHomeProps) {
   const cleanWhatsApp = whatsappNumber.replace(/\D/g, '')
+  const fallbackHero = <div className="grid grid-cols-[minmax(0,1fr)_320px] gap-5">
+    <OfferHero offer={offer} />
+    <div className="grid gap-5">
+      {(hotline || cleanWhatsApp) && (
+        <div className="flex min-h-[150px] flex-col justify-center rounded-3xl border border-orange-100 bg-orange-50 p-7">
+          <div className="mb-3 flex items-center gap-2 text-[#C2410C]"><MessageCircle className="h-7 w-7" /><span className="text-xl font-bold">WhatsApp-এ অর্ডার</span></div>
+          <div className="flex flex-wrap gap-2">
+            {hotline && <a href={`tel:${hotline}`} className="inline-flex min-h-11 items-center rounded-xl bg-[#C2410C] px-4 font-bold text-white">কল করুন</a>}
+            {cleanWhatsApp && <a href={`https://api.whatsapp.com/send?phone=${cleanWhatsApp}`} target="_blank" rel="noreferrer" onClick={() => trackWhatsAppClick('home_desktop_order_card')} className="inline-flex min-h-11 items-center rounded-xl border border-[#0F766E] bg-white px-4 font-bold text-[#0F766E]">WhatsApp</a>}
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
   return (
     <>
       <FreeDeliveryProgress threshold={freeDeliveryThreshold} />
       <section className="bg-white px-4 py-6">
-        {heroBanners.length > 0 ? <HeroBannerSlider banners={heroBanners} interval={4500} /> : (
-          <div className="grid grid-cols-[minmax(0,1fr)_320px] gap-5">
-            <OfferHero offer={offer} />
-            <div className="grid gap-5">
-              {(hotline || cleanWhatsApp) && (
-                <div className="flex min-h-[150px] flex-col justify-center rounded-3xl border border-orange-100 bg-orange-50 p-7">
-                  <div className="mb-3 flex items-center gap-2 text-[#C2410C]"><MessageCircle className="h-7 w-7" /><span className="text-xl font-bold">WhatsApp-এ অর্ডার</span></div>
-                  <div className="flex flex-wrap gap-2">
-                    {hotline && <a href={`tel:${hotline}`} className="inline-flex min-h-11 items-center rounded-xl bg-[#C2410C] px-4 font-bold text-white">কল করুন</a>}
-                    {cleanWhatsApp && <a href={`https://api.whatsapp.com/send?phone=${cleanWhatsApp}`} target="_blank" rel="noreferrer" onClick={() => trackWhatsAppClick('home_desktop_order_card')} className="inline-flex min-h-11 items-center rounded-xl border border-[#0F766E] bg-white px-4 font-bold text-[#0F766E]">WhatsApp</a>}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        {heroBanners.length > 0 ? <HeroBannerSlider banners={heroBanners} interval={4500} fallback={fallbackHero} /> : fallbackHero}
       </section>
       <section className="grid grid-cols-4 gap-3 bg-white px-4 pb-6">
         {BENEFITS.map(({ label, icon: Icon }) => <div key={label} className="flex min-h-14 items-center justify-center gap-2 rounded-2xl border border-teal-100 bg-teal-50 px-3 text-sm font-bold text-[#0B4F4A]"><Icon className="h-4 w-4" />{label}</div>)}
       </section>
-      <section className="bg-white px-4 pb-6"><h2 className="mb-3 text-xl font-bold text-[#0B4F4A]">আপনার স্কিন টাইপ অনুযায়ী</h2><div className="grid grid-cols-5 gap-3">{SKIN_TYPES.map((type) => <Link key={type} href={`/search?q=${encodeURIComponent(type)}`} className="flex min-h-16 items-center justify-center rounded-2xl border border-pink-100 bg-[#FCE8EC] px-3 font-bold text-[#BE185D]">{type}</Link>)}</div></section>
+      <FlashSaleHomeSection products={curated.flashSale} />
+      <section className="bg-white px-4 py-6"><h2 className="mb-3 text-xl font-bold text-[#0B4F4A]">আপনার স্কিন টাইপ অনুযায়ী</h2><div className="grid grid-cols-5 gap-3">{SKIN_TYPES.map((type) => <Link key={type} href={`/search?q=${encodeURIComponent(type)}`} className="flex min-h-16 items-center justify-center rounded-2xl border border-pink-100 bg-[#FCE8EC] px-3 font-bold text-[#BE185D]">{type}</Link>)}</div></section>
+      <BestSellerHomeSection groups={curated.bestSellers} />
+      <GroceryHomeSection products={curated.grocery} />
       <div className="space-y-2 py-2 lg:space-y-1 lg:py-1">
         {homeSections.map(({ section, products }) => <SectionSlider key={section.id} section={section} products={products} />)}
       </div>
+      <PopularBrandsSection brands={curated.brands} />
     </>
   )
 }

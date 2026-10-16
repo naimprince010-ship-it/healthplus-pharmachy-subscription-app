@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
@@ -23,6 +23,8 @@ interface HeroBannerSliderProps {
   banners: HeroBanner[]
   /** Auto-slide interval in ms (default 4500) */
   interval?: number
+  /** Rendered if a CMS banner image cannot load. */
+  fallback?: ReactNode
 }
 
 function getImageUrl(banner: HeroBanner): string {
@@ -33,10 +35,11 @@ function getCtaUrl(banner: HeroBanner): string | null {
   return banner.ctaUrl || banner.link || null
 }
 
-export function HeroBannerSlider({ banners, interval = 4500 }: HeroBannerSliderProps) {
+export function HeroBannerSlider({ banners, interval = 4500, fallback = null }: HeroBannerSliderProps) {
   const [current, setCurrent] = useState(0)
   const [isAnimating, setIsAnimating] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
+  const [imageFailed, setImageFailed] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const total = banners.length
 
@@ -62,7 +65,7 @@ export function HeroBannerSlider({ banners, interval = 4500 }: HeroBannerSliderP
     }
   }, [current, isPaused, next, interval, total])
 
-  if (total === 0) return null
+  if (total === 0 || imageFailed) return fallback
 
   const banner = banners[current]
   const imgUrl = getImageUrl(banner)
@@ -109,6 +112,7 @@ export function HeroBannerSlider({ banners, interval = 4500 }: HeroBannerSliderP
                     className="object-cover"
                     priority={i === 0}
                     draggable={false}
+                    onError={() => setImageFailed(true)}
                   />
                 )}
                 {/* Overlay gradient */}
