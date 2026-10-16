@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { sendSMS, sendEmail } from '@/lib/notifications'
 import { processOrderOtp } from '@/lib/settings/server'
-import { resolveDeliveryChargeByZoneName } from '@/lib/delivery-charge'
+import { resolveDeliveryChargeForZone } from '@/lib/delivery-charge'
 import { getCheckoutPricingQuote } from '@/lib/order-pricing-quote'
 import {
   deductionFromCouponRule,
@@ -119,6 +119,9 @@ export async function POST(request: NextRequest) {
       if (address.userId !== session.user.id) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
+      if (address.hiddenFromCheckout || !address.zone.isActive) {
+        return NextResponse.json({ error: 'Delivery address is unavailable' }, { status: 409 })
+      }
       finalAddressId = addressId
       finalZoneId = address.zoneId
     } else if (zoneId) {
@@ -126,7 +129,7 @@ export async function POST(request: NextRequest) {
         where: { id: zoneId },
       })
 
-      if (!zone) {
+      if (!zone?.isActive) {
         return NextResponse.json({ error: 'Invalid zone' }, { status: 400 })
       }
       finalZoneId = zoneId
@@ -184,7 +187,7 @@ export async function POST(request: NextRequest) {
     const qualifiesForFreeDelivery = subtotal >= freeDeliveryThreshold
     const deliveryCharge = qualifiesForFreeDelivery
       ? 0
-      : resolveDeliveryChargeByZoneName(address.zone.name)
+      : resolveDeliveryChargeForZone(address.zone)
 
     const normalizedCoupon = couponCode?.trim().toUpperCase() || ''
     let couponPreviewDiscount = 0
@@ -231,6 +234,25 @@ export async function POST(request: NextRequest) {
 
     try {
       order = await prisma.$transaction(async (tx) => {
+        const currentZone = await tx.zone.findUnique({
+          where: { id: finalZoneId },
+          select: {
+            name: true,
+            deliveryFee: true,
+            deliveryCharge: true,
+            isActive: true,
+          },
+        })
+        if (!currentZone?.isActive) {
+          throw new Error('DELIVERY_ZONE_UNAVAILABLE')
+        }
+        const currentDeliveryCharge = qualifiesForFreeDelivery
+          ? 0
+          : resolveDeliveryChargeForZone(currentZone)
+        if (Math.abs(currentDeliveryCharge - deliveryCharge) > 0.02) {
+          throw new Error('DELIVERY_ZONE_CHANGED')
+        }
+
         await reserveOrderInventory(tx, regularItems)
         let appliedCouponCode: string | null = null
         let couponDiscountAmount = 0
@@ -283,7 +305,7 @@ export async function POST(request: NextRequest) {
         }
 
         const expectedTotal =
-          subtotal - membershipDiscount - couponDiscountAmount + deliveryCharge
+          subtotal - membershipDiscount - couponDiscountAmount + currentDeliveryCharge
         if (Math.abs(expectedTotal - total) > 0.02) {
           throw Object.assign(new Error('TOTAL_MISMATCH'), { code: '409' })
         }
@@ -302,7 +324,7 @@ export async function POST(request: NextRequest) {
             membershipPlanName,
             appliedCouponCode,
             couponDiscountAmount,
-            deliveryCharge,
+            deliveryCharge: currentDeliveryCharge,
             total: expectedTotal,
             paymentMethod,
             paymentStatus: payStatus,
@@ -404,6 +426,12 @@ export async function POST(request: NextRequest) {
             error:
               'হিসাব মিলছে না। কার্ট রিফ্রেশ করে আবার চেষ্টা করুন।',
           },
+          { status: 409 }
+        )
+      }
+      if (err.message === 'DELIVERY_ZONE_UNAVAILABLE' || err.message === 'DELIVERY_ZONE_CHANGED') {
+        return NextResponse.json(
+          { error: 'ডেলিভারি জোন বা চার্জ পরিবর্তিত হয়েছে। পেজ রিফ্রেশ করে আবার চেষ্টা করুন।' },
           { status: 409 }
         )
       }

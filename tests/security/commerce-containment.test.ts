@@ -9,6 +9,8 @@ const h = vi.hoisted(() => ({
   stockClaims: [] as Record<string, unknown>[],
   stockAvailable: true,
   existingOrder: null as null | Record<string, unknown>,
+  addressZoneActive: true,
+  transactionZoneFee: 60,
 }))
 
 vi.mock('@/lib/auth', () => ({ auth: vi.fn(async () => h.session) }))
@@ -30,6 +32,14 @@ vi.mock('@/lib/prisma', () => {
     $executeRaw: vi.fn(async () => 1),
     medicine: stockDelegate,
     product: stockDelegate,
+    zone: {
+      findUnique: vi.fn(async () => ({
+        name: 'Dhaka',
+        deliveryFee: h.transactionZoneFee,
+        deliveryCharge: h.transactionZoneFee,
+        isActive: h.addressZoneActive,
+      })),
+    },
     coupon: { findUnique: vi.fn(), update: vi.fn() },
     couponUsage: { count: vi.fn(async () => 0), create: vi.fn() },
     order: {
@@ -55,7 +65,14 @@ vi.mock('@/lib/prisma', () => {
         userId: 'customer_1',
         zoneId: 'zone_1',
         phone: '+8801711111111',
-        zone: { name: 'Dhaka', deliveryDays: '1-2' },
+        hiddenFromCheckout: false,
+        zone: {
+          name: 'Dhaka',
+          deliveryDays: '1-2',
+          deliveryFee: 60,
+          deliveryCharge: 60,
+          isActive: true,
+        },
       })),
     },
     cartPageSettings: { findFirst: vi.fn(async () => ({ freeDeliveryThreshold: 499 })) },
@@ -88,7 +105,12 @@ vi.mock('@/lib/order-pricing-quote', () => ({
   })),
 }))
 
-vi.mock('@/lib/delivery-charge', () => ({ resolveDeliveryChargeByZoneName: vi.fn(() => 60) }))
+vi.mock('@/lib/delivery-charge', () => ({
+  resolveDeliveryChargeForZone: vi.fn(
+    (zone: { deliveryFee?: number | null; deliveryCharge?: number | null }) =>
+      zone.deliveryFee ?? zone.deliveryCharge ?? 60,
+  ),
+}))
 vi.mock('@/lib/notifications', () => ({ sendSMS: vi.fn(async () => true), sendEmail: vi.fn(async () => true) }))
 vi.mock('@/lib/settings/server', () => ({ processOrderOtp: vi.fn(async () => undefined) }))
 vi.mock('@/lib/integrations/forward-order-to-azan', () => ({
@@ -114,6 +136,8 @@ beforeEach(() => {
   h.stockClaims.length = 0
   h.stockAvailable = true
   h.existingOrder = null
+  h.addressZoneActive = true
+  h.transactionZoneFee = 60
 })
 
 describe('membership cannot activate without settlement', () => {
@@ -174,6 +198,22 @@ describe('checkout request integrity', () => {
       addressId: 'addr_1', paymentMethod: 'COD', items: [productLine],
     }))
     expect(res.status).toBe(400)
+    expect(h.orderCreates).toEqual([])
+  })
+
+  it('rejects a zone that becomes inactive before the order transaction', async () => {
+    h.addressZoneActive = false
+    const res = await postOrder({ addressId: 'addr_1', paymentMethod: 'COD', items: [productLine] })
+    expect(res.status).toBe(409)
+    expect(h.stockClaims).toEqual([])
+    expect(h.orderCreates).toEqual([])
+  })
+
+  it('rejects a delivery fee that changes before the order transaction', async () => {
+    h.transactionZoneFee = 120
+    const res = await postOrder({ addressId: 'addr_1', paymentMethod: 'COD', items: [productLine] })
+    expect(res.status).toBe(409)
+    expect(h.stockClaims).toEqual([])
     expect(h.orderCreates).toEqual([])
   })
 

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { resolveDeliveryChargeByZoneName } from '@/lib/delivery-charge'
+import { resolveDeliveryChargeForZone } from '@/lib/delivery-charge'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -14,8 +14,8 @@ export async function GET() {
 
     const normalizedZones = zones.map((zone) => ({
       ...zone,
-      deliveryCharge: resolveDeliveryChargeByZoneName(zone.name),
-      deliveryFee: resolveDeliveryChargeByZoneName(zone.name),
+      deliveryCharge: resolveDeliveryChargeForZone(zone),
+      deliveryFee: resolveDeliveryChargeForZone(zone),
     }))
 
     return NextResponse.json({ zones: normalizedZones })
