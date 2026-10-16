@@ -23,8 +23,13 @@ const EXACT_SLUGS: Record<string, CategoryIconKey> = {
   men: 'cosmetics',
 }
 
+/** Words removed before matching because they contain misleading keywords ("whole-sale" ≠ sale). */
+const IGNORED_WORDS = ['wholesale']
+
 const RULES: Array<[CategoryIconKey, string[]]> = [
   ['prescription', ['prescription', 'rx', 'প্রেসক্রিপশন']],
+  // Checked before "baby" because "kidney" contains "kid".
+  ['medicine', ['kidney', 'urolog']],
   [
     'deals',
     ['deal', 'offer', 'sale', 'discount', 'b1g1', 'free', 'gift', 'blast', 'ramadan', 'eid', 'campaign',
@@ -64,7 +69,8 @@ const RULES: Array<[CategoryIconKey, string[]]> = [
 export function resolveCategoryIconKey(slug?: string | null, name?: string | null): CategoryIconKey {
   const s = (slug ?? '').toLowerCase().trim()
   if (EXACT_SLUGS[s]) return EXACT_SLUGS[s]
-  const haystack = `${s} ${name ?? ''}`.toLowerCase()
+  let haystack = `${s} ${name ?? ''}`.toLowerCase()
+  for (const w of IGNORED_WORDS) haystack = haystack.split(w).join(' ')
   for (const [key, words] of RULES) {
     if (words.some((w) => haystack.includes(w))) return key
   }
