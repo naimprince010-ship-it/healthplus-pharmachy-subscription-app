@@ -3,6 +3,7 @@ import path from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { restoreOrderInventory } from '@/lib/order-inventory'
 import { canTransitionOrderStatus } from '@/lib/order-status-transition'
+import { canApplySupplierOrderStatus } from '@/lib/order-status-transition'
 
 describe('order status state machine', () => {
   it('allows forward fulfillment and pre-shipment cancellation only', () => {
@@ -20,6 +21,15 @@ describe('order status state machine', () => {
   it('treats a repeated status as idempotent', () => {
     expect(canTransitionOrderStatus('CANCELLED', 'CANCELLED')).toBe(true)
     expect(canTransitionOrderStatus('DELIVERED', 'DELIVERED')).toBe(true)
+  })
+
+  it('allows supplier forward jumps but blocks regressions and post-shipment cancellation', () => {
+    expect(canApplySupplierOrderStatus('PENDING', 'PROCESSING')).toBe(true)
+    expect(canApplySupplierOrderStatus('CONFIRMED', 'DELIVERED')).toBe(true)
+    expect(canApplySupplierOrderStatus('PROCESSING', 'CANCELLED')).toBe(true)
+    expect(canApplySupplierOrderStatus('SHIPPED', 'CANCELLED')).toBe(false)
+    expect(canApplySupplierOrderStatus('DELIVERED', 'PROCESSING')).toBe(false)
+    expect(canApplySupplierOrderStatus('CANCELLED', 'CONFIRMED')).toBe(false)
   })
 })
 
@@ -60,5 +70,18 @@ describe('cancellation stock restoration', () => {
     expect(restore).toBeGreaterThan(claim)
     expect(source).toContain('where: { id, status: current.status }')
     expect(source).toContain("if (transition.count !== 1) throw new Error('ORDER_CHANGED')")
+  })
+
+  it('supplier cancellation uses compare-and-set before restoring inventory', () => {
+    const source = fs.readFileSync(
+      path.resolve(__dirname, '..', '..', 'lib', 'integrations', 'azan-order-status.ts'),
+      'utf8',
+    )
+    const claim = source.indexOf('tx.order.updateMany')
+    const restore = source.indexOf('await restoreOrderInventory')
+    expect(claim).toBeGreaterThan(0)
+    expect(restore).toBeGreaterThan(claim)
+    expect(source).toContain('status: current.status')
+    expect(source).toContain("mappedStatus === 'CANCELLED'")
   })
 })

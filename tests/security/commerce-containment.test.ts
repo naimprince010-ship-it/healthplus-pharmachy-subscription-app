@@ -27,6 +27,7 @@ vi.mock('@/lib/prisma', () => {
     }),
   }
   const tx = {
+    $executeRaw: vi.fn(async () => 1),
     medicine: stockDelegate,
     product: stockDelegate,
     coupon: { findUnique: vi.fn(), update: vi.fn() },

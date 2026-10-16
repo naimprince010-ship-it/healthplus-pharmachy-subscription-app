@@ -16,6 +16,7 @@ import {
 } from '@/lib/order-payment-status'
 import { generateOrderNumber } from '@/lib/utils'
 import { InventoryUnavailableError, reserveOrderInventory } from '@/lib/order-inventory'
+import { lockCouponUsageForUser } from '@/lib/coupon-usage-lock'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -241,6 +242,9 @@ export async function POST(request: NextRequest) {
           })
           if (!c || !c.isActive) {
             throw new Error('COUPON_INVALID')
+          }
+          if (c.perUserLimit != null) {
+            await lockCouponUsageForUser(tx, c.id, session.user.id)
           }
           const userUses = await tx.couponUsage.count({
             where: { couponId: c.id, userId: session.user.id },

@@ -2,6 +2,8 @@ import { Prisma } from '@prisma/client'
 import type { OrderStatus } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { fetchAzanOrderStatusByPlatformOrderId } from '@/lib/integrations/azan-wholesale'
+import { restoreOrderInventory } from '@/lib/order-inventory'
+import { canApplySupplierOrderStatus } from '@/lib/order-status-transition'
 
 type AzanStatusMeta = {
   rawStatus: string | null
@@ -55,13 +57,35 @@ export async function syncAzanStatusForOrder(orderId: string) {
     azanStatusSyncedAt: now,
     azanPushError: null,
   }
-  if (mappedStatus && mappedStatus !== order.status) {
-    updates.status = mappedStatus
-  }
-
   await prisma.$transaction(async (tx) => {
+    const current = await tx.order.findUnique({
+      where: { id: order.id },
+      select: {
+        status: true,
+        items: {
+          select: { medicineId: true, productId: true, quantity: true },
+        },
+      },
+    })
+    if (!current) throw new Error('ORDER_NOT_FOUND')
+
     await tx.order.update({ where: { id: order.id }, data: updates })
-    if (mappedStatus && mappedStatus !== order.status) {
+
+    const shouldTransition = Boolean(
+      mappedStatus &&
+      mappedStatus !== current.status &&
+      canApplySupplierOrderStatus(current.status, mappedStatus)
+    )
+    if (mappedStatus && shouldTransition) {
+      const transition = await tx.order.updateMany({
+        where: { id: order.id, status: current.status },
+        data: { status: mappedStatus },
+      })
+      if (transition.count !== 1) return
+
+      if (mappedStatus === 'CANCELLED') {
+        await restoreOrderInventory(tx, current.items)
+      }
       await tx.orderStatusHistory.create({
         data: { orderId: order.id, status: mappedStatus, note: `Auto synced from Azan: ${meta.rawStatus ?? 'unknown'}` },
       })
