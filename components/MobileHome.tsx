@@ -6,6 +6,8 @@ import Image from 'next/image'
 import { Shield, Package, Heart, Baby, Activity, Users, ChevronRight, FileText, Zap } from 'lucide-react'
 import { PrescriptionUploadModal } from '@/components/PrescriptionUploadModal'
 import { ProductCard, type ProductCardProps } from '@/components/ProductCard'
+import { CategoryIconByKey } from '@/components/icons/CategoryIcons'
+import type { CategoryIconKey } from '@/lib/category-icon-key'
 import type { SubscriptionPlan } from '@prisma/client'
 import { isGroceryShopEnabled, isMedicineShopEnabled, isPrescriptionFlowEnabled } from '@/lib/site-features'
 
@@ -27,25 +29,15 @@ interface MobileHomeProps {
 
 const CATEGORY_LINKS: Array<{
   label: string
-  iconSrc: string
+  iconKey: CategoryIconKey
   href: string
   kind: 'medicine' | 'grocery' | 'other'
 }> = [
-  { label: 'ঔষধ', iconSrc: '/icons/categories/medicine.svg', href: '/medicines', kind: 'medicine' },
-  {
-    label: 'গ্রোসারি',
-    iconSrc: '/icons/categories/grocery.svg',
-    href: '/products?category=grocery',
-    kind: 'grocery',
-  },
-  {
-    label: 'কসমেটিক',
-    iconSrc: '/icons/categories/cosmetics.svg',
-    href: '/products?category=cosmetics',
-    kind: 'other',
-  },
-  { label: 'বেবি', iconSrc: '/icons/categories/baby.svg', href: '/products?category=baby', kind: 'other' },
-  { label: 'সকল', iconSrc: '/icons/categories/all.svg', href: '/products', kind: 'other' },
+  { label: 'ঔষধ', iconKey: 'medicine', href: '/medicines', kind: 'medicine' },
+  { label: 'গ্রোসারি', iconKey: 'grocery', href: '/products?category=grocery', kind: 'grocery' },
+  { label: 'কসমেটিক', iconKey: 'cosmetics', href: '/products?category=cosmetics', kind: 'other' },
+  { label: 'বেবি', iconKey: 'baby', href: '/products?category=baby', kind: 'other' },
+  { label: 'সকল', iconKey: 'all', href: '/products', kind: 'other' },
 ]
 
 export function MobileHome({ subscriptionPlans, homeSections }: MobileHomeProps) {
@@ -159,14 +151,8 @@ export function MobileHome({ subscriptionPlans, homeSections }: MobileHomeProps)
               href={cat.href}
               className="flex flex-col items-center gap-1 rounded-xl px-2 py-2 transition-all active:scale-95 active:bg-teal-50"
             >
-              <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl border border-white/70 bg-gradient-to-br from-slate-50 via-white to-teal-50 shadow-[0_8px_18px_rgba(13,148,136,0.18)]">
-                <Image
-                  src={cat.iconSrc}
-                  alt={cat.label}
-                  width={34}
-                  height={34}
-                  className="drop-shadow-[0_2px_2px_rgba(0,0,0,0.18)]"
-                />
+              <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 ring-1 ring-slate-100">
+                <CategoryIconByKey iconKey={cat.iconKey} size={28} />
               </span>
               <span className="text-[11px] font-semibold text-gray-700">{cat.label}</span>
             </Link>
