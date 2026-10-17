@@ -1,7 +1,7 @@
 'use client'
 
-import Link from 'next/link'
 import { ProductCard } from '@/components/ProductCard'
+import { SectionHeader } from '@/components/HomeCuratedSections'
 
 interface Product {
   id: string
@@ -61,25 +61,7 @@ export function SectionSlider({ section, products }: SectionSliderProps) {
     >
       {/* Full-width content - lg:px-0 to avoid double padding on desktop */}
       <div className="w-full px-2 sm:px-4 lg:px-0">
-        <div className="mb-3 flex items-center justify-between lg:px-4">
-          <div>
-            <h2 className="text-lg font-bold text-gray-900 sm:text-xl lg:text-2xl">
-              {section.title}
-              {section.badgeText && (
-                <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 lg:ml-3 lg:px-3 lg:py-1 lg:text-sm">
-                  {section.badgeText}
-                </span>
-              )}
-            </h2>
-          </div>
-          <Link
-            prefetch
-            href={`/sections/${section.slug}`}
-            className="text-sm font-medium text-teal-600 hover:text-teal-700"
-          >
-            সবগুলো দেখুন
-          </Link>
-        </div>
+        <div className="lg:px-4"><SectionHeader title={section.title} subtitle={section.badgeText} href={`/sections/${section.slug}`} /></div>
 
         {/* Mobile/Tablet: CSS Grid with auto-wrap */}
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:grid-cols-4 lg:hidden">
@@ -93,9 +75,9 @@ export function SectionSlider({ section, products }: SectionSliderProps) {
         {/* Desktop: Compact single row with horizontal scroll - like MedEasy */}
         {/* Container: flex row nowrap, overflow-x auto, px-4 (16px), gap-4 (16px) */}
         {/* Cards: flex 0 0 196px, min-width 190px - shows 5-6 cards + partial on ~1365px screen */}
-        <div className="hidden lg:flex lg:w-full lg:flex-nowrap lg:gap-4 lg:overflow-x-auto lg:px-4 lg:pb-2">
-          {products.slice(0, 8).map((product, idx) => (
-            <div key={product.id} className="shrink-0 flex-[0_0_196px] min-w-[190px]">
+        <div className="hidden lg:grid lg:grid-cols-5 lg:gap-4 lg:px-4 lg:pb-2">
+          {products.slice(0, 10).map((product, idx) => (
+            <div key={product.id}>
               <ProductCard product={product} variant="compact" className="h-full" imagePriority={idx < 5} />
             </div>
           ))}
