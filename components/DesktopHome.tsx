@@ -6,7 +6,7 @@ import { Banknote, Check, Copy, MessageCircle, ShieldCheck, Wallet } from 'lucid
 import { HeroBannerSlider, type HeroBanner } from '@/components/HeroBannerSlider'
 import { SectionSlider } from '@/components/SectionSlider'
 import { trackWhatsAppClick } from '@/lib/trackEvent'
-import { BestSellerHomeSection, FlashSaleHomeSection, GroceryHomeSection, PopularBrandsSection, type CuratedHomeData } from '@/components/HomeCuratedSections'
+import { BestSellerHomeSection, FlashSaleHomeSection, GroceryHomeSection, PopularBrandsSection, SkinTypeHomeSection, type CuratedHomeData } from '@/components/HomeCuratedSections'
 import { CategoryIconByKey } from '@/components/icons/CategoryIcons'
 
 export interface HomeOffer { code: string; percentage: number }
@@ -27,7 +27,6 @@ const BENEFITS = [
   { label: 'বিকাশ পেমেন্ট', icon: Wallet },
   { label: 'অরিজিনাল পণ্য', icon: ShieldCheck },
 ]
-const SKIN_TYPES = ['তৈলাক্ত', 'শুষ্ক', 'মিশ্র', 'সংবেদনশীল', 'ব্রণপ্রবণ']
 
 function OfferHero({ offer }: { offer: HomeOffer | null }) {
   const [copied, setCopied] = useState(false)
@@ -94,7 +93,7 @@ export function DesktopHome({ homeSections, heroBanners = [], offer, hotline, wh
         {BENEFITS.map(({ label, icon: Icon }) => <div key={label} className="flex h-[72px] items-center justify-center gap-2 rounded-2xl border border-teal-100 bg-teal-50 px-3 text-sm font-bold text-[#0B4F4A]"><Icon className="h-4 w-4" />{label}</div>)}
       </section>
       <FlashSaleHomeSection products={curated.flashSale} />
-      <section className="bg-white px-4 py-6"><h2 className="mb-3 text-xl font-bold text-[#0B4F4A]">আপনার স্কিন টাইপ অনুযায়ী</h2><div className="grid grid-cols-5 gap-3">{SKIN_TYPES.map((type) => <Link key={type} href={`/search?q=${encodeURIComponent(type)}`} className="flex min-h-16 items-center justify-center rounded-2xl border border-pink-100 bg-[#FCE8EC] px-3 font-bold text-[#BE185D]">{type}</Link>)}</div></section>
+      <SkinTypeHomeSection skinTypes={curated.skinTypes} />
       <BestSellerHomeSection groups={curated.bestSellers} />
       <GroceryHomeSection products={curated.grocery} />
       <div className="space-y-2 py-2 lg:space-y-1 lg:py-1">

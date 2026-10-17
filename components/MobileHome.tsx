@@ -9,7 +9,7 @@ import { useCart } from '@/contexts/CartContext'
 import type { HomeOffer } from '@/components/DesktopHome'
 import { CategoryIconByKey } from '@/components/icons/CategoryIcons'
 import type { CategoryIconKey } from '@/lib/category-icon-key'
-import { BestSellerHomeSection, FlashSaleHomeSection, GroceryHomeSection, PopularBrandsSection, type CuratedHomeData } from '@/components/HomeCuratedSections'
+import { BestSellerHomeSection, FlashSaleHomeSection, GroceryHomeSection, PopularBrandsSection, SectionHeader, SkinTypeHomeSection, type CuratedHomeData } from '@/components/HomeCuratedSections'
 
 interface HomeSection {
   section: { id: string; title: string; slug: string; badgeText: string | null; bgColor: string | null }
@@ -28,7 +28,6 @@ const BENEFITS = [
   { label: 'বিকাশ পেমেন্ট', icon: Wallet },
   { label: 'অরিজিনাল পণ্য', icon: ShieldCheck },
 ]
-const SKIN_TYPES = ['তৈলাক্ত', 'শুষ্ক', 'মিশ্র', 'সংবেদনশীল', 'ব্রণপ্রবণ']
 const CATEGORY_GRID: Array<{ label: string; iconKey: CategoryIconKey; href: string }> = [
   { label: 'মেকআপ', iconKey: 'makeup', href: '/category/makeup' },
   { label: 'স্কিনকেয়ার', iconKey: 'skincare', href: '/category/skin-care' },
@@ -107,12 +106,12 @@ export function MobileHome({ homeSections, heroBanners = [], offer, freeDelivery
       </div>
       <MobileCategoryGrid />
       <FlashSaleHomeSection products={curated.flashSale} />
-      <section className="py-4"><h2 className="mb-3 px-4 text-lg font-bold text-[#0B4F4A]">আপনার স্কিন টাইপ অনুযায়ী</h2><div className="scrollbar-hide flex gap-2 overflow-x-auto px-4">{SKIN_TYPES.map((type) => <Link key={type} href={`/search?q=${encodeURIComponent(type)}`} className="flex min-h-11 shrink-0 items-center rounded-full border border-pink-100 bg-[#FCE8EC] px-4 text-sm font-bold text-[#BE185D]">{type}</Link>)}</div></section>
+      <SkinTypeHomeSection skinTypes={curated.skinTypes} />
       <BestSellerHomeSection groups={curated.bestSellers} />
       <GroceryHomeSection products={curated.grocery} />
       {homeSections.map(({ section, products }, sectionIndex) => <section key={section.id} className="py-4">
-        <div className="mb-3 flex items-center justify-between px-4"><div><h2 className="text-lg font-bold text-gray-900">{section.title}</h2>{section.badgeText && <span className="mt-1 inline-block rounded-full bg-teal-100 px-2 py-0.5 text-xs font-medium text-teal-700">{section.badgeText}</span>}</div><Link prefetch href={`/products?section=${section.slug}`} className="text-sm font-medium text-teal-600">সবগুলো →</Link></div>
-        <div className="scrollbar-hide flex gap-3 overflow-x-auto pb-2 pl-4 pr-8">{products.map((product, productIndex) => <div key={product.id} className="w-40 flex-shrink-0"><ProductCard imagePriority={sectionIndex === 0 && productIndex < 4} product={{ id: product.id, type: product.type || 'GENERAL', name: product.name, slug: product.slug, brandName: product.brandName || null, description: product.description || null, sellingPrice: product.sellingPrice, mrp: product.mrp || null, stockQuantity: product.stockQuantity || 100, imageUrl: product.imageUrl || null, discountPercentage: product.discountPercentage || null, flashSalePrice: product.flashSalePrice || null, flashSaleStart: product.flashSaleStart || null, flashSaleEnd: product.flashSaleEnd || null, isFlashSale: product.isFlashSale || null, sizeLabel: product.sizeLabel ?? null, packSize: product.packSize ?? null, category: product.category || { id: '', name: '', slug: '' } }} variant="compact" /></div>)}</div>
+        <div className="px-4"><SectionHeader title={section.title} subtitle={section.badgeText} href={`/sections/${section.slug}`} /></div>
+        <div className="scrollbar-hide flex snap-x gap-2.5 overflow-x-auto pb-2 pl-4 pr-8">{products.slice(0, 10).map((product, productIndex) => <div key={product.id} className="w-[150px] flex-shrink-0 snap-start"><ProductCard imagePriority={sectionIndex === 0 && productIndex < 4} product={{ id: product.id, type: product.type || 'GENERAL', name: product.name, slug: product.slug, brandName: product.brandName || null, description: product.description || null, sellingPrice: product.sellingPrice, mrp: product.mrp || null, stockQuantity: product.stockQuantity || 100, imageUrl: product.imageUrl || null, discountPercentage: product.discountPercentage || null, flashSalePrice: product.flashSalePrice || null, flashSaleStart: product.flashSaleStart || null, flashSaleEnd: product.flashSaleEnd || null, isFlashSale: product.isFlashSale || null, sizeLabel: product.sizeLabel ?? null, packSize: product.packSize ?? null, category: product.category || { id: '', name: '', slug: '' } }} variant="compact" /></div>)}<Link href={`/sections/${section.slug}`} className="flex min-h-44 w-[120px] shrink-0 snap-start items-center justify-center rounded-2xl border border-teal-100 bg-white px-3 text-center text-sm font-bold text-[#0F766E]">সব দেখুন →</Link></div>
       </section>)}
       <PopularBrandsSection brands={curated.brands} />
       <MobileFreeDeliveryProgress threshold={freeDeliveryThreshold} />

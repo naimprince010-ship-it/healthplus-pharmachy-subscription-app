@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Clock3 } from 'lucide-react'
@@ -13,6 +13,7 @@ export interface CuratedProduct extends ProductCardProps {
 
 export interface CuratedHomeData {
   flashSale: CuratedProduct[]
+  skinTypes: Array<{ label: string; query: string; count: number }>
   bestSellers: Partial<Record<CategoryIconKey, CuratedProduct[]>>
   grocery: CuratedProduct[]
   brands: Array<{ id: string; name: string; slug: string; logoUrl: string | null }>
@@ -25,78 +26,93 @@ const TABS: Array<{ key: CategoryIconKey; label: string }> = [
   { key: 'fragrance', label: 'পারফিউম' },
 ]
 
-function ProductRow({ products, showSold = false }: { products: CuratedProduct[]; showSold?: boolean }) {
-  return <div className="scrollbar-hide flex gap-3 overflow-x-auto pb-2 pl-4 pr-8 lg:grid lg:grid-cols-6 lg:gap-4 lg:overflow-visible lg:px-4">
-    {products.map((product, index) => <div key={product.id} className="w-40 flex-shrink-0 lg:w-auto">
-      <ProductCard product={product} variant="compact" imagePriority={index < 4} />
+export function ProductRow({ products, href, showSold = false, limit = 10 }: { products: CuratedProduct[]; href: string; showSold?: boolean; limit?: number }) {
+  return <div className="scrollbar-hide -mx-4 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-4 pb-2 lg:mx-0 lg:grid lg:grid-cols-5 lg:gap-4 lg:overflow-visible lg:px-0">
+    {products.slice(0, limit).map((product, index) => <div key={product.id} className="w-[150px] flex-shrink-0 snap-start lg:w-auto">
+      <ProductCard product={product} variant="compact" className="h-full" imagePriority={index < 5} />
       {showSold && product.soldPercentage != null && <div className="mt-2 px-1">
         <div className="mb-1 text-[11px] font-semibold text-orange-700">{product.soldPercentage}% বিক্রি হয়ে গেছে</div>
         <div className="h-1.5 overflow-hidden rounded-full bg-orange-100"><div className="h-full rounded-full bg-[#C2410C]" style={{ width: `${product.soldPercentage}%` }} /></div>
       </div>}
     </div>)}
+    <Link href={href} className="flex min-h-44 w-[120px] shrink-0 snap-start items-center justify-center rounded-2xl border border-teal-100 bg-white px-3 text-center text-sm font-bold text-[#0F766E] lg:hidden">সব দেখুন →</Link>
   </div>
 }
 
-function SectionTitle({ title, href }: { title: string; href?: string }) {
-  return <div className="mb-3 flex items-center justify-between px-4">
-    <h2 className="text-lg font-extrabold text-[#0B4F4A] lg:text-2xl">{title}</h2>
-    {href && <Link href={href} className="text-sm font-bold text-[#0F766E]">সবগুলো →</Link>}
+export function SectionHeader({ title, subtitle, href }: { title: string; subtitle?: string | null; href?: string }) {
+  return <div className="mb-[14px] flex min-h-11 items-start justify-between gap-3">
+    <div className="min-w-0"><h2 className="font-display text-[22px] font-bold leading-tight text-[#0B4F4A]">{title}</h2>{subtitle && <p className="mt-1 text-[13px] text-slate-500">{subtitle}</p>}</div>
+    {href && <Link href={href} className="inline-flex min-h-11 shrink-0 items-center justify-center px-2 text-sm font-bold text-[#0F766E]">সব দেখুন →</Link>}
   </div>
 }
 
 function FlashCountdown({ endsAt }: { endsAt: Date | string }) {
   const target = useMemo(() => new Date(endsAt).getTime(), [endsAt])
-  const [remaining, setRemaining] = useState(() => Math.max(0, target - Date.now()))
+  const [remaining, setRemaining] = useState<number | null>(null)
   useEffect(() => {
-    const timer = window.setInterval(() => setRemaining(Math.max(0, target - Date.now())), 1000)
+    const tick = () => setRemaining(Math.max(0, target - Date.now()))
+    tick()
+    const timer = window.setInterval(tick, 1000)
     return () => window.clearInterval(timer)
   }, [target])
-  const hours = Math.floor(remaining / 3_600_000)
-  const minutes = Math.floor((remaining % 3_600_000) / 60_000)
-  const seconds = Math.floor((remaining % 60_000) / 1000)
-  const pad = (value: number) => String(value).padStart(2, '0')
-  return <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 px-3 py-1 text-xs font-bold text-[#C2410C]"><Clock3 className="h-3.5 w-3.5" />{pad(hours)}:{pad(minutes)}:{pad(seconds)}</span>
+  if (remaining === 0) return null
+  const formatted = remaining == null ? '--:--:--' : [Math.floor(remaining / 3_600_000), Math.floor((remaining % 3_600_000) / 60_000), Math.floor((remaining % 60_000) / 1000)].map((value) => String(value).padStart(2, '0')).join(':')
+  return <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-bold tabular-nums text-[#C2410C]"><Clock3 className="h-3.5 w-3.5" aria-hidden /><span className="sr-only">অফার শেষ হবে {new Date(endsAt).toLocaleString('bn-BD')}</span><span aria-hidden>{formatted}</span></span>
 }
 
 export function FlashSaleHomeSection({ products }: { products: CuratedProduct[] }) {
   if (!products.length) return null
   const endsAt = products.map((product) => product.flashSaleEnd).filter(Boolean).sort((a, b) => new Date(a!).getTime() - new Date(b!).getTime())[0]
-  return <section className="bg-white py-5">
-    <div className="mb-3 flex items-center justify-between px-4">
-      <div className="flex items-center gap-3"><h2 className="text-lg font-extrabold text-[#C2410C] lg:text-2xl">ফ্লাশ সেল</h2>{endsAt && <FlashCountdown endsAt={endsAt} />}</div>
-      <Link href="/flash-sale" className="text-sm font-bold text-[#0F766E]">সবগুলো →</Link>
-    </div>
-    <ProductRow products={products} showSold />
+  return <section className="mx-4 my-5 rounded-[20px] bg-orange-50 p-5 lg:mx-0">
+    <div className="flex items-start gap-3"><div className="min-w-0 flex-1"><SectionHeader title="ফ্লাশ সেল" href="/flash-sale" /></div>{endsAt && <FlashCountdown endsAt={endsAt} />}</div>
+    <ProductRow products={products} href="/flash-sale" showSold limit={5} />
   </section>
 }
 
+export function SkinTypeHomeSection({ skinTypes }: { skinTypes: CuratedHomeData['skinTypes'] }) {
+  if (skinTypes.length < 3) return null
+  return <section className="bg-white px-4 py-5 lg:px-0"><SectionHeader title="আপনার স্কিন টাইপ অনুযায়ী" subtitle="আপনার ত্বকের ধরন অনুযায়ী পণ্য খুঁজুন" /><div className="scrollbar-hide flex snap-x gap-2.5 overflow-x-auto pb-1 lg:grid lg:grid-cols-5 lg:gap-4 lg:overflow-visible">{skinTypes.map((skinType) => <Link key={skinType.label} href={`/search?q=${encodeURIComponent(skinType.query)}`} className="flex min-h-16 min-w-[150px] snap-start flex-col items-center justify-center rounded-2xl border border-pink-100 bg-[#FCE8EC] px-3 font-bold text-[#BE185D]"><span>{skinType.label}</span><span className="mt-1 text-xs font-medium text-slate-500">{skinType.count}টি পণ্য</span></Link>)}</div></section>
+}
+
 export function BestSellerHomeSection({ groups }: { groups: CuratedHomeData['bestSellers'] }) {
-  const firstAvailable = TABS.find((tab) => (groups[tab.key]?.length ?? 0) > 0)?.key ?? 'skincare'
-  const [active, setActive] = useState<CategoryIconKey>(firstAvailable)
-  const products = groups[active] ?? []
-  if (!TABS.some((tab) => (groups[tab.key]?.length ?? 0) > 0)) return null
-  return <section className="bg-white py-5">
-    <SectionTitle title="সবচেয়ে বেশি বিক্রি" />
-    <div className="scrollbar-hide mb-4 flex gap-2 overflow-x-auto px-4">
-      {TABS.map((tab) => <button key={tab.key} type="button" onClick={() => setActive(tab.key)} disabled={!groups[tab.key]?.length} className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-bold ${active === tab.key ? 'bg-[#0F766E] text-white' : 'border border-teal-100 bg-white text-[#0B4F4A] disabled:opacity-40'}`}>{tab.label}</button>)}
+  const availableTabs = TABS.filter((tab) => (groups[tab.key]?.length ?? 0) > 0)
+  const [active, setActive] = useState<CategoryIconKey>(availableTabs[0]?.key ?? 'skincare')
+  const buttonRefs = useRef<Array<HTMLButtonElement | null>>([])
+  if (!availableTabs.length) return null
+  const selectedIndex = Math.max(0, availableTabs.findIndex((tab) => tab.key === active))
+  const selected = availableTabs[selectedIndex]
+  const products = groups[selected.key] ?? []
+  const selectTab = (index: number) => {
+    const next = (index + availableTabs.length) % availableTabs.length
+    setActive(availableTabs[next].key)
+    buttonRefs.current[next]?.focus()
+  }
+  return <section className="bg-white px-4 py-5 lg:px-0">
+    <SectionHeader title="সবচেয়ে বেশি বিক্রি" href="/products" />
+    <div role="tablist" aria-label="সবচেয়ে বেশি বিক্রির ক্যাটাগরি" className="scrollbar-hide mb-[14px] flex gap-2 overflow-x-auto">
+      {availableTabs.map((tab, index) => <button ref={(node) => { buttonRefs.current[index] = node }} key={tab.key} id={`best-tab-${tab.key}`} type="button" role="tab" aria-selected={active === tab.key} aria-controls={`best-panel-${tab.key}`} tabIndex={active === tab.key ? 0 : -1} onClick={() => setActive(tab.key)} onKeyDown={(event) => {
+        if (event.key === 'ArrowRight') { event.preventDefault(); selectTab(index + 1) }
+        if (event.key === 'ArrowLeft') { event.preventDefault(); selectTab(index - 1) }
+        if (event.key === 'Home') { event.preventDefault(); selectTab(0) }
+        if (event.key === 'End') { event.preventDefault(); selectTab(availableTabs.length - 1) }
+      }} className={`h-11 shrink-0 rounded-full px-4 text-sm font-bold ${active === tab.key ? 'bg-[#0F766E] text-white' : 'border border-teal-100 bg-white text-[#0B4F4A]'}`}>{tab.label}</button>)}
     </div>
-    <ProductRow products={products} />
+    <div role="tabpanel" id={`best-panel-${selected.key}`} aria-labelledby={`best-tab-${selected.key}`}><ProductRow products={products} href="/products" /></div>
   </section>
 }
 
 export function GroceryHomeSection({ products }: { products: CuratedProduct[] }) {
   if (!products.length) return null
-  return <section className="bg-white py-5"><SectionTitle title="দৈনন্দিন বাজার" href="/products?category=grocery" /><ProductRow products={products} /></section>
+  return <section className="mx-4 my-5 rounded-[20px] bg-teal-50 p-5 lg:mx-0"><SectionHeader title="দৈনন্দিন বাজার" href="/products?category=grocery" /><ProductRow products={products} href="/products?category=grocery" /></section>
 }
 
 export function PopularBrandsSection({ brands }: { brands: CuratedHomeData['brands'] }) {
-  if (!brands.length) return null
-  return <section className="bg-white px-4 py-6">
-    <h2 className="mb-4 text-lg font-extrabold text-[#0B4F4A] lg:text-2xl">জনপ্রিয় ব্র্যান্ড</h2>
-    <div className="scrollbar-hide flex gap-3 overflow-x-auto lg:grid lg:grid-cols-8 lg:overflow-visible">
-      {brands.map((brand) => <Link key={brand.id} href={`/manufacturer/${brand.slug}`} className="flex min-h-24 w-32 shrink-0 flex-col items-center justify-center gap-2 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm lg:w-auto">
-        {brand.logoUrl && <span className="relative h-10 w-full"><Image src={brand.logoUrl} alt={brand.name} fill sizes="130px" className="object-contain" /></span>}
-        <span className="line-clamp-1 text-center text-xs font-bold text-gray-700">{brand.name}</span>
+  if (brands.length < 4) return null
+  return <section className="bg-white px-4 py-6 lg:px-0">
+    <SectionHeader title="জনপ্রিয় ব্র্যান্ড" />
+    <div className="scrollbar-hide flex snap-x gap-3 overflow-x-auto lg:grid lg:grid-cols-4 xl:grid-cols-8 lg:overflow-visible">
+      {brands.map((brand) => <Link key={brand.id} href={`/manufacturer/${brand.slug}`} className="flex h-[72px] w-40 shrink-0 snap-start items-center justify-center rounded-[14px] border border-slate-100 bg-white p-3 text-center shadow-sm lg:w-auto">
+        {brand.logoUrl ? <span className="relative h-10 w-full"><Image src={brand.logoUrl} alt={brand.name} fill sizes="160px" className="object-contain" /></span> : <span className="line-clamp-2 font-display text-base font-bold text-[#0B4F4A]">{brand.name}</span>}
       </Link>)}
     </div>
   </section>
