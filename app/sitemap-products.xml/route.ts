@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { isMedicineShopEnabled } from '@/lib/site-features'
 
 export async function GET() {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://halalzi.com'
@@ -8,6 +9,9 @@ export async function GET() {
     where: {
       isActive: true,
       deletedAt: null,
+      ...(!isMedicineShopEnabled()
+        ? { type: 'GENERAL' as const, NOT: { category: { isMedicineCategory: true } } }
+        : {}),
     },
     select: {
       slug: true,

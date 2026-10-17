@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { isMedicineShopEnabled } from '@/lib/site-features'
 
 export async function GET() {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://halalzi.com'
@@ -7,6 +8,7 @@ export async function GET() {
   const categories = await prisma.category.findMany({
     where: {
       isActive: true,
+      ...(!isMedicineShopEnabled() ? { isMedicineCategory: false } : {}),
     },
     select: {
       slug: true,
