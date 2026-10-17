@@ -25,6 +25,7 @@ const PRODUCT_SELECT = {
   campaignStart: true,
   campaignEnd: true,
   isFeatured: true,
+  createdAt: true,
   category: { select: { id: true, name: true, slug: true, isMedicineCategory: true } },
   medicine: { select: { discountPercentage: true, packSize: true } },
 } as const
@@ -67,7 +68,7 @@ const SKIN_TYPES = [
 
 /** Curated rows used by the beauty/grocery home. Every ranking is based on persisted data. */
 export async function getCuratedHomeData() {
-  const empty = { flashSale: [], skinTypes: [], bestSellers: {}, grocery: [], brands: [] }
+  const empty = { flashSale: [], skinTypes: [], bestSellers: {}, bestSellerTitle: 'জনপ্রিয় পণ্য' as const, grocery: [], brands: [] }
   try {
     const { prisma } = await import('@/lib/prisma')
     const now = new Date()
@@ -81,7 +82,7 @@ export async function getCuratedHomeData() {
       .map((category) => category.id)
     const rankedKeys: CategoryIconKey[] = [...BEST_SELLER_KEYS, 'grocery', 'fresh']
     const rankedQueries = rankedKeys.map((key) => prisma.product.findMany({
-      where: { isActive: true, deletedAt: null, type: 'GENERAL', category: { isMedicineCategory: false }, categoryId: { in: categoryIds([key]) } },
+      where: { isActive: true, deletedAt: null, type: 'GENERAL', stockQuantity: { gt: 0 }, category: { isMedicineCategory: false }, categoryId: { in: categoryIds([key]) } },
       select: {
         ...PRODUCT_SELECT,
         orderItems: {
@@ -140,11 +141,13 @@ export async function getCuratedHomeData() {
       key: resolveCategoryIconKey(product.category.slug, product.category.name),
       sold: product.orderItems.reduce((sum, item) => sum + item.quantity, 0),
     }))
-    const choose = (keys: CategoryIconKey[], featuredOnlyWhenNoSales = false) => {
+    const hasAnyBestSellerSales = candidateGroups.flat().some((product) => product.orderItems.some((item) => item.quantity > 0))
+    const choose = (keys: CategoryIconKey[], requireSales = false) => {
       const candidates = ranked.filter((item) => keys.includes(item.key))
-      const hasSales = candidates.some((item) => item.sold > 0)
-      return (featuredOnlyWhenNoSales && !hasSales ? candidates.filter((item) => item.product.isFeatured) : candidates)
-      .sort((a, b) => b.sold - a.sold || Number(b.product.isFeatured) - Number(a.product.isFeatured))
+      return (requireSales && hasAnyBestSellerSales ? candidates.filter((item) => item.sold > 0) : candidates)
+      .sort((a, b) => hasAnyBestSellerSales
+        ? b.sold - a.sold || Number(b.product.isFeatured) - Number(a.product.isFeatured)
+        : b.product.createdAt.getTime() - a.product.createdAt.getTime())
       .slice(0, 10)
       .map(({ product }) => mapHomeProduct(product))
     }
@@ -166,6 +169,7 @@ export async function getCuratedHomeData() {
         .filter((skinType) => skinType.count > 0)
         .map(({ label, query, count }) => ({ label, query, count })),
       bestSellers,
+      bestSellerTitle: hasAnyBestSellerSales ? 'সবচেয়ে বেশি বিক্রি' as const : 'জনপ্রিয় পণ্য' as const,
       grocery: isGroceryShopEnabled() ? choose(['grocery', 'fresh']) : [],
       brands,
     }

@@ -101,17 +101,17 @@ export function MobileHome({ homeSections, heroBanners = [], offer, freeDelivery
       <section className="bg-white p-4">
         {heroBanners.length > 0 ? <HeroBannerSlider banners={heroBanners} interval={4500} fallback={<MobileOfferHero offer={offer} />} /> : <MobileOfferHero offer={offer} />}
       </section>
-      <div className="scrollbar-hide overflow-x-auto bg-white px-3 py-3">
-        <div className="flex min-w-max gap-2">{BENEFITS.map(({ label, icon: Icon }) => <div key={label} className="flex h-11 items-center gap-2 rounded-full border border-teal-100 bg-teal-50 px-4 text-xs font-bold text-[#0B4F4A]"><Icon className="h-4 w-4" />{label}</div>)}</div>
+      <div className="scrollbar-hide snap-x snap-mandatory overflow-x-auto bg-white px-3 py-3">
+        <div className="flex min-w-max gap-2">{BENEFITS.map(({ label, icon: Icon }) => <div key={label} className="flex h-11 snap-start items-center gap-2 rounded-full border border-teal-100 bg-teal-50 px-4 text-xs font-bold text-[#0B4F4A]"><Icon className="h-4 w-4" />{label}</div>)}</div>
       </div>
       <MobileCategoryGrid />
       <FlashSaleHomeSection products={curated.flashSale} />
       <SkinTypeHomeSection skinTypes={curated.skinTypes} />
-      <BestSellerHomeSection groups={curated.bestSellers} />
+      <BestSellerHomeSection groups={curated.bestSellers} title={curated.bestSellerTitle} />
       <GroceryHomeSection products={curated.grocery} />
       {homeSections.map(({ section, products }, sectionIndex) => <section key={section.id} className="py-4">
         <div className="px-4"><SectionHeader title={section.title} subtitle={section.badgeText} href={`/sections/${section.slug}`} /></div>
-        <div className="scrollbar-hide flex snap-x gap-2.5 overflow-x-auto pb-2 pl-4 pr-8">{products.slice(0, 10).map((product, productIndex) => <div key={product.id} className="w-[150px] flex-shrink-0 snap-start"><ProductCard imagePriority={sectionIndex === 0 && productIndex < 4} product={{ id: product.id, type: product.type || 'GENERAL', name: product.name, slug: product.slug, brandName: product.brandName || null, description: product.description || null, sellingPrice: product.sellingPrice, mrp: product.mrp || null, stockQuantity: product.stockQuantity || 100, imageUrl: product.imageUrl || null, discountPercentage: product.discountPercentage || null, flashSalePrice: product.flashSalePrice || null, flashSaleStart: product.flashSaleStart || null, flashSaleEnd: product.flashSaleEnd || null, isFlashSale: product.isFlashSale || null, sizeLabel: product.sizeLabel ?? null, packSize: product.packSize ?? null, category: product.category || { id: '', name: '', slug: '' } }} variant="compact" /></div>)}<Link href={`/sections/${section.slug}`} className="flex min-h-44 w-[120px] shrink-0 snap-start items-center justify-center rounded-2xl border border-teal-100 bg-white px-3 text-center text-sm font-bold text-[#0F766E]">সব দেখুন →</Link></div>
+        <div className="scrollbar-hide flex snap-x snap-mandatory gap-2.5 overflow-x-auto pb-2 pl-4 pr-8">{products.slice(0, 10).map((product, productIndex) => <div key={product.id} className="w-[150px] flex-shrink-0 snap-start"><ProductCard imagePriority={sectionIndex === 0 && productIndex < 4} product={{ id: product.id, type: product.type || 'GENERAL', name: product.name, slug: product.slug, brandName: product.brandName || null, description: product.description || null, sellingPrice: product.sellingPrice, mrp: product.mrp || null, stockQuantity: product.stockQuantity || 100, imageUrl: product.imageUrl || null, discountPercentage: product.discountPercentage || null, flashSalePrice: product.flashSalePrice || null, flashSaleStart: product.flashSaleStart || null, flashSaleEnd: product.flashSaleEnd || null, isFlashSale: product.isFlashSale || null, sizeLabel: product.sizeLabel ?? null, packSize: product.packSize ?? null, category: product.category || { id: '', name: '', slug: '' } }} variant="compact" /></div>)}<Link href={`/sections/${section.slug}`} className="flex min-h-44 w-[120px] shrink-0 snap-start items-center justify-center rounded-2xl border border-teal-100 bg-white px-3 text-center text-sm font-bold text-[#0F766E]">সব দেখুন →</Link></div>
       </section>)}
       <PopularBrandsSection brands={curated.brands} />
       <MobileFreeDeliveryProgress threshold={freeDeliveryThreshold} />
