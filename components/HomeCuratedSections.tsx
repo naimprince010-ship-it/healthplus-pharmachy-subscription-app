@@ -13,6 +13,8 @@ export interface CuratedProduct extends ProductCardProps {
 
 export interface CuratedHomeData {
   flashSale: CuratedProduct[]
+  flashSaleEndsAt: string | null
+  serverNow: string
   skinTypes: Array<{ label: string; query: string; count: number }>
   bestSellers: Partial<Record<CategoryIconKey, CuratedProduct[]>>
   bestSellerTitle: 'সবচেয়ে বেশি বিক্রি' | 'নতুন এসেছে'
@@ -47,25 +49,40 @@ export function SectionHeader({ title, subtitle, href }: { title: string; subtit
   </div>
 }
 
-function FlashCountdown({ endsAt }: { endsAt: Date | string }) {
+function FlashCountdown({ endsAt, serverNow }: { endsAt: Date | string; serverNow: Date | string }) {
   const target = useMemo(() => new Date(endsAt).getTime(), [endsAt])
+  const serverTimestamp = useMemo(() => new Date(serverNow).getTime(), [serverNow])
   const [remaining, setRemaining] = useState<number | null>(null)
   useEffect(() => {
-    const tick = () => setRemaining(Math.max(0, target - Date.now()))
+    const storageKey = 'halalzi-flash-sale-end'
+    const storedTarget = Number(window.sessionStorage.getItem(storageKey))
+    const effectiveTarget = storedTarget > Date.now() ? Math.min(target, storedTarget) : target
+    window.sessionStorage.setItem(storageKey, String(effectiveTarget))
+    const serverRemaining = Math.max(0, target - serverTimestamp)
+    const clientRemaining = Math.max(0, effectiveTarget - Date.now())
+    const initialRemaining = Math.min(serverRemaining, clientRemaining)
+    const startedAt = performance.now()
+    const tick = () => {
+      const next = Math.max(0, initialRemaining - (performance.now() - startedAt))
+      setRemaining((previous) => previous == null ? next : Math.min(previous, next))
+    }
     tick()
     const timer = window.setInterval(tick, 1000)
     return () => window.clearInterval(timer)
-  }, [target])
+  }, [serverTimestamp, target])
   if (remaining === 0) return null
   const formatted = remaining == null ? '--:--:--' : [Math.floor(remaining / 3_600_000), Math.floor((remaining % 3_600_000) / 60_000), Math.floor((remaining % 60_000) / 1000)].map((value) => String(value).padStart(2, '0')).join(':')
   return <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-bold tabular-nums text-[#C2410C]"><Clock3 className="h-3.5 w-3.5" aria-hidden /><span className="sr-only">অফার শেষ হবে {new Date(endsAt).toLocaleString('bn-BD')}</span><span aria-hidden>{formatted}</span></span>
 }
 
-export function FlashSaleHomeSection({ products }: { products: CuratedProduct[] }) {
+export function FlashSaleHomeSection({ products, endsAt, serverNow }: { products: CuratedProduct[]; endsAt: string | null; serverNow: string }) {
   if (!products.length) return null
-  const endsAt = products.map((product) => product.flashSaleEnd).filter(Boolean).sort((a, b) => new Date(a!).getTime() - new Date(b!).getTime())[0]
   return <section className="mx-4 my-5 rounded-[20px] bg-orange-50 p-5 md:mx-0">
-    <div className="flex items-start gap-3"><div className="min-w-0 flex-1"><SectionHeader title="ফ্ল্যাশ সেল" href="/flash-sale" /></div>{endsAt && <FlashCountdown endsAt={endsAt} />}</div>
+    <div className="mb-[14px] grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 md:flex md:items-center">
+      <h2 className="font-display text-[22px] font-bold leading-tight text-[#0B4F4A]">ফ্ল্যাশ সেল</h2>
+      {endsAt && <FlashCountdown endsAt={endsAt} serverNow={serverNow} />}
+      <Link href="/flash-sale" className="col-span-2 inline-flex min-h-11 items-center justify-center justify-self-end px-2 text-sm font-bold text-[#0F766E] md:ml-auto">সব দেখুন →</Link>
+    </div>
     <ProductRow products={products} href="/flash-sale" showSold limit={5} />
   </section>
 }

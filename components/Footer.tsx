@@ -119,7 +119,7 @@ export function Footer({ settings }: FooterProps) {
                   href={social.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="transition-colors"
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-lg transition-colors"
                   style={{ color: settings.textColor }}
                   onMouseEnter={(e) => (e.currentTarget.style.color = settings.hoverColor)}
                   onMouseLeave={(e) => (e.currentTarget.style.color = settings.textColor)}
@@ -143,7 +143,7 @@ export function Footer({ settings }: FooterProps) {
                 <li key={index}>
                   <Link
                     href={link.href}
-                    className="text-sm transition-colors"
+                    className="inline-flex min-h-11 min-w-11 items-center text-sm transition-colors"
                     style={{ color: settings.textColor }}
                     onMouseEnter={(e) => (e.currentTarget.style.color = settings.hoverColor)}
                     onMouseLeave={(e) => (e.currentTarget.style.color = settings.textColor)}
@@ -168,7 +168,7 @@ export function Footer({ settings }: FooterProps) {
                 <li key={index}>
                   <Link
                     href={link.href}
-                    className="text-sm transition-colors"
+                    className="inline-flex min-h-11 min-w-11 items-center text-sm transition-colors"
                     style={{ color: settings.textColor }}
                     onMouseEnter={(e) => (e.currentTarget.style.color = settings.hoverColor)}
                     onMouseLeave={(e) => (e.currentTarget.style.color = settings.textColor)}
@@ -197,7 +197,7 @@ export function Footer({ settings }: FooterProps) {
                 <Phone className="h-4 w-4 flex-shrink-0" />
                 <a
                   href={`tel:${settings.phone}`}
-                  className="transition-colors font-semibold text-base"
+                  className="inline-flex min-h-11 min-w-11 items-center transition-colors font-semibold text-base"
                   style={{ color: settings.headingColor }}
                   onMouseEnter={(e) => (e.currentTarget.style.color = settings.hoverColor)}
                   onMouseLeave={(e) => (e.currentTarget.style.color = settings.headingColor)}
@@ -210,7 +210,7 @@ export function Footer({ settings }: FooterProps) {
                   <Mail className="h-4 w-4 flex-shrink-0" />
                   <a
                     href={`mailto:${settings.email}`}
-                    className="transition-colors"
+                    className="inline-flex min-h-11 min-w-11 items-center transition-colors"
                     style={{ color: settings.textColor }}
                     onMouseEnter={(e) => (e.currentTarget.style.color = settings.hoverColor)}
                     onMouseLeave={(e) => (e.currentTarget.style.color = settings.textColor)}

@@ -58,6 +58,11 @@ a,
   touch-action: manipulation;
 }
 
+:focus-visible {
+  outline: 3px solid #0f766e;
+  outline-offset: 2px;
+}
+
 /* Hide scrollbar for horizontal scroll sections like MedEasy */
 .scrollbar-hide {
   -ms-overflow-style: none;  /* IE and Edge */
@@ -135,6 +140,21 @@ a,
 /* Shimmer Animation for Flash Sale */
 @keyframes shimmer {
   100% { transform: translateX(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+
+  [class*="hover:scale-"],
+  [class*="group-hover:scale-"] {
+    transform: none !important;
+  }
 }
 
 /* PWA Standalone Mode Adjustments */
