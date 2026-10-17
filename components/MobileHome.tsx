@@ -97,7 +97,7 @@ export function MobileHome({ homeSections, heroBanners = [], offer, freeDelivery
   const { total, isInitialized } = useCart()
   const showFreeDeliveryBar = Boolean(isInitialized && freeDeliveryThreshold && freeDeliveryThreshold > 0 && total > 0)
   return (
-    <div className="min-h-screen bg-gray-50" style={{ paddingBottom: showFreeDeliveryBar ? 'calc(100px + env(safe-area-inset-bottom))' : 'calc(64px + env(safe-area-inset-bottom))' }}>
+    <div className="min-h-screen bg-white" style={{ paddingBottom: showFreeDeliveryBar ? 'calc(100px + env(safe-area-inset-bottom))' : 'calc(64px + env(safe-area-inset-bottom))' }}>
       <section className="bg-white p-4 md:p-0 md:pb-4">
         {heroBanners.length > 0 ? <HeroBannerSlider banners={heroBanners} interval={4500} fallback={<MobileOfferHero offer={offer} />} /> : <MobileOfferHero offer={offer} />}
       </section>

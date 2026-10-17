@@ -68,11 +68,9 @@ function OfferHero({ offer }: { offer: HomeOffer | null }) {
 export function DesktopHome({ homeSections, heroBanners = [], offer, hotline, whatsappNumber, curated }: DesktopHomeProps) {
   const cleanWhatsApp = whatsappNumber.replace(/\D/g, '')
   const hasOrderContact = Boolean(hotline || cleanWhatsApp)
-  const fallbackHero = <div className={hasOrderContact ? 'xl:grid xl:grid-cols-[minmax(0,1fr)_230px] xl:gap-5' : ''}>
-    <OfferHero offer={offer} />
-    {hasOrderContact && <div className="grid gap-5">
-      {(
-        <div className="hidden h-full flex-col justify-center rounded-3xl border border-orange-100 bg-orange-50 p-7 xl:flex">
+  const fallbackHero = <OfferHero offer={offer} />
+  const orderCard = hasOrderContact ? (
+    <div className="hidden h-full flex-col justify-center rounded-3xl border border-orange-100 bg-orange-50 p-7 xl:flex">
           <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#C2410C] text-white"><MessageCircle className="h-6 w-6" /></span>
           <span className="text-[19px] font-bold leading-snug text-[#0B4F4A]">কল বা <span className="whitespace-nowrap">WhatsApp-এ</span> অর্ডার</span>
           <span className="mt-1.5 text-sm leading-relaxed text-slate-600">অনলাইনে অর্ডার করতে অসুবিধা? প্রোডাক্টের নাম বা ছবি পাঠান, আমরা অর্ডার করে দেব।</span>
@@ -80,14 +78,15 @@ export function DesktopHome({ homeSections, heroBanners = [], offer, hotline, wh
             {hotline && <a href={`tel:${hotline}`} className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-[#C2410C] px-4 font-bold text-white">কল করুন</a>}
             {cleanWhatsApp && <a href={`https://api.whatsapp.com/send?phone=${cleanWhatsApp}`} target="_blank" rel="noreferrer" onClick={() => trackWhatsAppClick('home_desktop_order_card')} className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl border border-[#0F766E] bg-white px-4 font-bold text-[#0F766E]">WhatsApp</a>}
           </div>
-        </div>
-      )}
-    </div>}
-  </div>
+    </div>
+  ) : null
   return (
     <>
       <section className="bg-white px-4 py-6">
-        {heroBanners.length > 0 ? <HeroBannerSlider banners={heroBanners} interval={4500} fallback={fallbackHero} /> : fallbackHero}
+        <div className={hasOrderContact ? 'xl:grid xl:grid-cols-[minmax(0,1fr)_230px] xl:gap-5' : ''}>
+          {heroBanners.length > 0 ? <HeroBannerSlider banners={heroBanners} interval={4500} fallback={fallbackHero} /> : fallbackHero}
+          {orderCard}
+        </div>
       </section>
       <section className="grid grid-cols-3 gap-3 bg-white px-4 pb-6">
         {BENEFITS.map(({ label, icon: Icon }) => <div key={label} className="flex h-[72px] items-center justify-center gap-2 rounded-2xl border border-teal-100 bg-teal-50 px-3 text-sm font-bold text-[#0B4F4A]"><Icon className="h-4 w-4" />{label}</div>)}

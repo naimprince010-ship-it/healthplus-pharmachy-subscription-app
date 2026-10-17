@@ -387,17 +387,6 @@ async function main() {
   const banners = await Promise.all([
     prisma.banner.create({
       data: {
-        title: 'Welcome to HealthPlus',
-        description: 'Get 10% discount with membership',
-        imageUrl: '/images/hero-pharmacy.jpg',
-        link: '/membership',
-        location: 'HOME_HERO',
-        order: 1,
-        isActive: true,
-      },
-    }).catch(() => null),
-    prisma.banner.create({
-      data: {
         title: 'Subscribe to Monthly Packages',
         description: 'BP Care, Diabetes, Baby Care & Family Pack',
         imageUrl: '/banners/subscriptions.jpg',

@@ -35,14 +35,59 @@ function getCtaUrl(banner: HeroBanner): string | null {
   return banner.ctaUrl || banner.link || null
 }
 
+function BannerImage({ banner, priority, onReady, onFailure }: { banner: HeroBanner; priority: boolean; onReady: () => void; onFailure: () => void }) {
+  const imageRef = useRef<HTMLImageElement | null>(null)
+  const src = getImageUrl(banner)
+
+  useEffect(() => {
+    const image = imageRef.current
+    if (!src || (image?.complete && image.naturalWidth === 0)) onFailure()
+  }, [src, onFailure])
+
+  if (!src) return null
+
+  return <Image
+    ref={imageRef}
+    src={src}
+    alt={banner.title}
+    fill
+    sizes="(max-width: 1400px) 100vw, 1400px"
+    className="object-cover"
+    priority={priority}
+    loading={priority ? undefined : 'lazy'}
+    draggable={false}
+    onLoad={(event) => event.currentTarget.naturalWidth > 0 ? onReady() : onFailure()}
+    onError={onFailure}
+  />
+}
+
 export function HeroBannerSlider({ banners, interval = 4500, fallback = null }: HeroBannerSliderProps) {
   const [current, setCurrent] = useState(0)
   const [isAnimating, setIsAnimating] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
   const [failedBannerIds, setFailedBannerIds] = useState<Set<string>>(() => new Set())
+  const [loadedBannerIds, setLoadedBannerIds] = useState<Set<string>>(() => new Set())
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const availableBanners = banners.filter((banner) => !failedBannerIds.has(banner.id))
   const total = availableBanners.length
+
+  const markBannerFailed = useCallback((id: string) => {
+    setFailedBannerIds((ids) => {
+      if (ids.has(id)) return ids
+      const nextIds = new Set(ids)
+      nextIds.add(id)
+      return nextIds
+    })
+  }, [])
+
+  const markBannerReady = useCallback((id: string) => {
+    setLoadedBannerIds((ids) => {
+      if (ids.has(id)) return ids
+      const nextIds = new Set(ids)
+      nextIds.add(id)
+      return nextIds
+    })
+  }, [])
 
   useEffect(() => {
     setCurrent((index) => total > 0 ? Math.min(index, total - 1) : 0)
@@ -82,9 +127,9 @@ export function HeroBannerSlider({ banners, interval = 4500, fallback = null }: 
       {/* Slides */}
       <div className="relative w-full h-full" style={{ minHeight: '340px' }}>
         {availableBanners.map((b, i) => {
-          const bImg = getImageUrl(b)
           const bCta = getCtaUrl(b)
           const isActive = i === current
+          const isLoaded = loadedBannerIds.has(b.id)
           return (
             <div
               key={b.id}
@@ -100,32 +145,16 @@ export function HeroBannerSlider({ banners, interval = 4500, fallback = null }: 
               <div
                 className="absolute inset-0"
                 style={{
-                  backgroundColor: b.bgColor || '#0d4a3a',
+                  backgroundColor: isLoaded ? (b.bgColor || '#0d4a3a') : '#ffffff',
                 }}
               >
-                {bImg && (
-                  <Image
-                    src={bImg}
-                    alt={b.title}
-                    fill
-                    sizes="(max-width: 1400px) 100vw, 1400px"
-                    className="object-cover"
-                    priority={i === 0}
-                    loading={i === 0 ? undefined : 'lazy'}
-                    draggable={false}
-                    onError={() => setFailedBannerIds((ids) => {
-                      const nextIds = new Set(ids)
-                      nextIds.add(b.id)
-                      return nextIds
-                    })}
-                  />
-                )}
+                <BannerImage banner={b} priority={i === 0} onReady={() => markBannerReady(b.id)} onFailure={() => markBannerFailed(b.id)} />
                 {/* Overlay gradient */}
-                <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-black/10" />
+                {isLoaded && <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-black/10" />}
               </div>
 
               {/* Content */}
-              <div
+              {isLoaded && <div
                 className="relative z-10 flex h-full flex-col justify-center px-10 py-10"
                 style={{ minHeight: '340px', color: b.textColor || '#ffffff' }}
               >
@@ -156,7 +185,7 @@ export function HeroBannerSlider({ banners, interval = 4500, fallback = null }: 
                     </Link>
                   )}
                 </div>
-              </div>
+              </div>}
             </div>
           )
         })}

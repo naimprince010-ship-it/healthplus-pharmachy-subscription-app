@@ -29,7 +29,7 @@ export function isGroceryShopEnabled(): boolean {
   )
 }
 
-const HIDDEN_HOME_CATEGORY_SLUGS = new Set(['health-beauty', 'health-and-beauty', 'eye-care'])
+const HIDDEN_HOME_CATEGORY_SLUGS = new Set(['health-beauty', 'health-and-beauty', 'eye-care', 'sexual-wellness'])
 
 /** Business display policy for home navigation/sections only; category routes and DB flags are unchanged. */
 export function isHomeCategoryVisible(slug: string): boolean {
