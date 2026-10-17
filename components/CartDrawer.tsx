@@ -141,7 +141,7 @@ export function CartDrawer() {
           <button
             type="button"
             onClick={closeDrawer}
-            className="cursor-pointer rounded-full p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition-colors"
+            className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800"
             aria-label="কার্ট বন্ধ করুন"
           >
             <X className="h-4 w-4" />

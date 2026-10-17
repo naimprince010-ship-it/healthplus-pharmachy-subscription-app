@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Banknote, Check, Copy, Lock, ShieldCheck, Wallet } from 'lucide-react'
+import { Banknote, Check, Copy, ShieldCheck, Wallet } from 'lucide-react'
 import { HeroBannerSlider, type HeroBanner } from '@/components/HeroBannerSlider'
 import { ProductCard, type ProductCardProps } from '@/components/ProductCard'
 import { useCart } from '@/contexts/CartContext'
@@ -26,9 +26,7 @@ interface MobileHomeProps {
 const BENEFITS = [
   { label: 'ক্যাশ অন ডেলিভারি', icon: Banknote },
   { label: 'বিকাশ পেমেন্ট', icon: Wallet },
-  { label: '১০০% অরিজিনাল (ইমপোর্টেড)', icon: ShieldCheck },
-  // TODO: Confirm the operational packaging policy before keeping this customer-facing claim.
-  { label: 'গোপনীয় প্যাকেজিং', icon: Lock },
+  { label: 'অরিজিনাল পণ্য', icon: ShieldCheck },
 ]
 const SKIN_TYPES = ['তৈলাক্ত', 'শুষ্ক', 'মিশ্র', 'সংবেদনশীল', 'ব্রণপ্রবণ']
 const CATEGORY_GRID: Array<{ label: string; iconKey: CategoryIconKey; href: string }> = [
@@ -65,22 +63,27 @@ function MobileOfferHero({ offer }: { offer: HomeOffer | null }) {
     if (!offer) return
     await navigator.clipboard.writeText(offer.code)
     setCopied(true)
-    window.setTimeout(() => setCopied(false), 1600)
+    window.setTimeout(() => setCopied(false), 2000)
   }
   return (
-    <section className="m-3 min-h-[280px] rounded-3xl bg-[#FCE8EC] px-5 py-7">
-      <span className="inline-flex rounded-full bg-white px-3 py-1.5 text-xs font-bold text-[#BE185D]">নতুন কাস্টমার অফার</span>
-      <h1 className="mt-4 text-[26px] font-extrabold leading-snug text-[#0B4F4A]">
+    <section className="relative m-4 min-h-[280px] overflow-hidden rounded-[20px] bg-[#FCE8EC] p-[18px]">
+      <div className="relative z-10 max-w-[230px]">
+      {offer && <span className="inline-flex rounded-full bg-white px-3 py-1.5 text-xs font-bold text-[#BE185D]">নতুন কাস্টমার অফার</span>}
+      <h1 className={`${offer ? 'mt-4' : ''} line-clamp-3 text-[23px] font-bold leading-[1.25] text-[#0B4F4A]`}>
         {offer ? <>প্রথম অর্ডারে <span className="text-[#BE185D]">{offer.percentage}% ছাড়</span></> : 'অরিজিনাল কসমেটিক্স আর দৈনন্দিন বাজার — এক জায়গায়'}
       </h1>
       {offer && <div className="mt-4 flex items-center justify-between rounded-xl border-2 border-dashed border-orange-300 bg-white/70 px-3 py-2">
         <span className="text-sm font-bold">কোড: {offer.code}</span>
-        <button type="button" onClick={copy} className="flex min-h-11 items-center gap-1 rounded-lg bg-white px-3 text-xs font-bold text-[#C2410C]" aria-label="কুপন কোড কপি করুন">
-          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}{copied ? 'হয়েছে' : 'কপি'}
+        <button type="button" onClick={copy} className="flex min-h-11 min-w-[110px] items-center justify-center gap-1 rounded-lg bg-white px-3 text-xs font-bold text-[#C2410C]" aria-label="কুপন কোড কপি করুন" aria-live="polite">
+          {copied ? <>কপি হয়েছে <Check className="h-4 w-4" /></> : <><Copy className="h-4 w-4" />কপি</>}
         </button>
       </div>}
-      <Link href="/products" className="mt-5 flex min-h-11 w-full items-center justify-center rounded-xl bg-[#C2410C] px-4 font-bold text-white">এখনই কিনুন</Link>
+      <Link href="/products" className="mt-5 flex h-12 w-full items-center justify-center rounded-xl bg-[#C2410C] px-4 font-bold text-white">এখনই কিনুন</Link>
       <p className="mt-3 text-center text-xs font-medium text-[#0B4F4A]">ক্যাশ অন ডেলিভারি · অরিজিনাল পণ্য</p>
+      </div>
+      <span className="absolute bottom-[74px] right-3 flex h-24 w-24 items-center justify-center rounded-full bg-white/55" aria-hidden>
+        <CategoryIconByKey iconKey="cosmetics" size={58} />
+      </span>
     </section>
   )
 }
@@ -100,7 +103,7 @@ export function MobileHome({ homeSections, heroBanners = [], offer, freeDelivery
     <div className="min-h-screen bg-gray-50">
       {heroBanners.length > 0 ? <section className="bg-white p-3"><HeroBannerSlider banners={heroBanners} interval={4500} fallback={<MobileOfferHero offer={offer} />} /></section> : <MobileOfferHero offer={offer} />}
       <div className="scrollbar-hide overflow-x-auto bg-white px-3 py-3">
-        <div className="flex min-w-max gap-2">{BENEFITS.map(({ label, icon: Icon }) => <div key={label} className="flex min-h-11 items-center gap-2 rounded-full border border-teal-100 bg-teal-50 px-4 text-xs font-bold text-[#0B4F4A]"><Icon className="h-4 w-4" />{label}</div>)}</div>
+        <div className="flex min-w-max gap-2">{BENEFITS.map(({ label, icon: Icon }) => <div key={label} className="flex h-11 items-center gap-2 rounded-full border border-teal-100 bg-teal-50 px-4 text-xs font-bold text-[#0B4F4A]"><Icon className="h-4 w-4" />{label}</div>)}</div>
       </div>
       <MobileCategoryGrid />
       <FlashSaleHomeSection products={curated.flashSale} />
