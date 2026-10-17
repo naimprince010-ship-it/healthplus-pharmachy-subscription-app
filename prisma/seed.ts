@@ -387,17 +387,6 @@ async function main() {
   const banners = await Promise.all([
     prisma.banner.create({
       data: {
-        title: '১০০% আসল ঔষধ ও কসমেটিক্স - Halalzi',
-        description: 'Get 10% discount with membership',
-        imageUrl: '/banners/welcome.jpg',
-        link: '/membership',
-        location: 'HOME_HERO',
-        order: 1,
-        isActive: true,
-      },
-    }).catch(() => null),
-    prisma.banner.create({
-      data: {
         title: 'Subscribe to Monthly Packages',
         description: 'BP Care, Diabetes, Baby Care & Family Pack',
         imageUrl: '/banners/subscriptions.jpg',
