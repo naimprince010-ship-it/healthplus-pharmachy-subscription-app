@@ -94,7 +94,7 @@ export function DesktopHome({ homeSections, heroBanners = [], offer, hotline, wh
       </section>
       <FlashSaleHomeSection products={curated.flashSale} />
       <SkinTypeHomeSection skinTypes={curated.skinTypes} />
-      <BestSellerHomeSection groups={curated.bestSellers} />
+      <BestSellerHomeSection groups={curated.bestSellers} title={curated.bestSellerTitle} />
       <GroceryHomeSection products={curated.grocery} />
       <div className="space-y-2 py-2 lg:space-y-1 lg:py-1">
         {homeSections.map(({ section, products }) => <SectionSlider key={section.id} section={section} products={products} />)}
