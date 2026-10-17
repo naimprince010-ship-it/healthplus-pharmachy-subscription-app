@@ -66,11 +66,10 @@ function MobileOfferHero({ offer }: { offer: HomeOffer | null }) {
     window.setTimeout(() => setCopied(false), 2000)
   }
   return (
-    <section className="relative m-4 min-h-[280px] overflow-hidden rounded-[20px] bg-[#FCE8EC] p-[18px]">
-      <div className="relative z-10 max-w-[230px]">
+    <section className="relative min-h-[200px] overflow-hidden rounded-[20px] bg-[#FCE8EC] p-[18px]">
       {offer && <span className="inline-flex rounded-full bg-white px-3 py-1.5 text-xs font-bold text-[#BE185D]">নতুন কাস্টমার অফার</span>}
-      <h1 className={`${offer ? 'mt-4' : ''} line-clamp-3 text-[23px] font-bold leading-[1.25] text-[#0B4F4A]`}>
-        {offer ? <>প্রথম অর্ডারে <span className="text-[#BE185D]">{offer.percentage}% ছাড়</span></> : 'অরিজিনাল কসমেটিক্স আর দৈনন্দিন বাজার — এক জায়গায়'}
+      <h1 className={`${offer ? 'mt-4' : ''} max-w-full pr-[92px] text-[23px] font-bold leading-[1.25] text-[#0B4F4A]`}>
+        {offer ? <>প্রথম অর্ডারে <span className="text-[#BE185D]">{offer.percentage}% ছাড়</span></> : 'অরিজিনাল কসমেটিক্স আর দৈনন্দিন বাজার'}
       </h1>
       {offer && <div className="mt-4 flex items-center justify-between rounded-xl border-2 border-dashed border-orange-300 bg-white/70 px-3 py-2">
         <span className="text-sm font-bold">কোড: {offer.code}</span>
@@ -80,9 +79,8 @@ function MobileOfferHero({ offer }: { offer: HomeOffer | null }) {
       </div>}
       <Link href="/products" className="mt-5 flex h-12 w-full items-center justify-center rounded-xl bg-[#C2410C] px-4 font-bold text-white">এখনই কিনুন</Link>
       <p className="mt-3 text-center text-xs font-medium text-[#0B4F4A]">ক্যাশ অন ডেলিভারি · অরিজিনাল পণ্য</p>
-      </div>
-      <span className="absolute bottom-[74px] right-3 flex h-24 w-24 items-center justify-center rounded-full bg-white/55" aria-hidden>
-        <CategoryIconByKey iconKey="cosmetics" size={58} />
+      <span className="absolute right-3 top-3 flex h-24 w-24 items-center justify-center rounded-full bg-white/55" aria-hidden>
+        <CategoryIconByKey iconKey="cosmetics" size={62} />
       </span>
     </section>
   )
@@ -101,7 +99,9 @@ function MobileFreeDeliveryProgress({ threshold }: { threshold: number | null })
 export function MobileHome({ homeSections, heroBanners = [], offer, freeDeliveryThreshold, curated }: MobileHomeProps) {
   return (
     <div className="min-h-screen bg-gray-50">
-      {heroBanners.length > 0 ? <section className="bg-white p-3"><HeroBannerSlider banners={heroBanners} interval={4500} fallback={<MobileOfferHero offer={offer} />} /></section> : <MobileOfferHero offer={offer} />}
+      <section className="bg-white p-4">
+        {heroBanners.length > 0 ? <HeroBannerSlider banners={heroBanners} interval={4500} fallback={<MobileOfferHero offer={offer} />} /> : <MobileOfferHero offer={offer} />}
+      </section>
       <div className="scrollbar-hide overflow-x-auto bg-white px-3 py-3">
         <div className="flex min-w-max gap-2">{BENEFITS.map(({ label, icon: Icon }) => <div key={label} className="flex h-11 items-center gap-2 rounded-full border border-teal-100 bg-teal-50 px-4 text-xs font-bold text-[#0B4F4A]"><Icon className="h-4 w-4" />{label}</div>)}</div>
       </div>

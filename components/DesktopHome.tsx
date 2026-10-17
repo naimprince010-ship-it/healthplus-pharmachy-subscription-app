@@ -7,6 +7,7 @@ import { HeroBannerSlider, type HeroBanner } from '@/components/HeroBannerSlider
 import { SectionSlider } from '@/components/SectionSlider'
 import { trackWhatsAppClick } from '@/lib/trackEvent'
 import { BestSellerHomeSection, FlashSaleHomeSection, GroceryHomeSection, PopularBrandsSection, type CuratedHomeData } from '@/components/HomeCuratedSections'
+import { CategoryIconByKey } from '@/components/icons/CategoryIcons'
 
 export interface HomeOffer { code: string; percentage: number }
 interface HomeSection {
@@ -37,10 +38,11 @@ function OfferHero({ offer }: { offer: HomeOffer | null }) {
     window.setTimeout(() => setCopied(false), 2000)
   }
   return (
-    <div className="flex min-h-[340px] flex-col justify-center rounded-[22px] bg-[#FCE8EC] px-9 py-10">
+    <div className="flex min-h-[340px] items-center gap-4 overflow-hidden rounded-[22px] bg-[#FCE8EC] px-9 py-10">
+      <div className="flex min-w-0 flex-[1_1_300px] flex-col justify-center">
       {offer && <span className="w-fit rounded-full bg-white px-4 py-2 text-sm font-bold text-[#BE185D] shadow-sm">নতুন কাস্টমার অফার</span>}
-      <h1 className={`${offer ? 'mt-5' : ''} line-clamp-2 max-w-[440px] text-[38px] font-bold leading-[1.2] text-[#0B4F4A]`}>
-        {offer ? <>প্রথম অর্ডারে <span className="text-[#BE185D]">{offer.percentage}% ছাড়</span></> : 'অরিজিনাল কসমেটিক্স আর দৈনন্দিন বাজার — এক জায়গায়'}
+      <h1 className={`${offer ? 'mt-5' : ''} max-w-[460px] text-[38px] font-bold leading-[1.2] text-[#0B4F4A]`}>
+        {offer ? <>প্রথম অর্ডারে <span className="text-[#BE185D]">{offer.percentage}% ছাড়</span></> : 'অরিজিনাল কসমেটিক্স আর দৈনন্দিন বাজার'}
       </h1>
       {offer && (
         <div className="mt-6 flex w-fit items-center gap-3 rounded-xl border-2 border-dashed border-[#BE185D] bg-white/70 px-4 py-3">
@@ -53,6 +55,12 @@ function OfferHero({ offer }: { offer: HomeOffer | null }) {
       <div className="mt-6 flex items-center gap-5">
         <Link href="/products" className="inline-flex min-h-11 items-center rounded-xl bg-[#C2410C] px-6 py-3 font-bold text-white shadow-sm transition hover:bg-orange-800">এখনই কিনুন</Link>
         <span className="text-sm font-medium text-[#0B4F4A]">ক্যাশ অন ডেলিভারি · অরিজিনাল পণ্য</span>
+      </div>
+      </div>
+      <div className="relative flex h-[260px] flex-[1_1_220px] items-center justify-center" aria-hidden>
+        <span className="absolute h-60 w-60 rounded-full bg-[#F9D3DD]" />
+        <span className="relative -mr-8 mt-10 rotate-[-7deg]"><CategoryIconByKey iconKey="makeup" size={120} /></span>
+        <span className="relative -ml-5 -mt-8 rotate-[6deg]"><CategoryIconByKey iconKey="fragrance" size={140} /></span>
       </div>
     </div>
   )
@@ -67,7 +75,7 @@ export function DesktopHome({ homeSections, heroBanners = [], offer, hotline, wh
       {(
         <div className="flex h-full flex-col justify-center rounded-3xl border border-orange-100 bg-orange-50 p-7">
           <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#C2410C] text-white"><MessageCircle className="h-6 w-6" /></span>
-          <span className="text-xl font-bold text-[#0B4F4A]">কল বা WhatsApp-এ অর্ডার</span>
+          <span className="text-[19px] font-bold leading-snug text-[#0B4F4A]">কল বা <span className="whitespace-nowrap">WhatsApp-এ</span> অর্ডার</span>
           <span className="mt-1.5 text-sm leading-relaxed text-slate-600">অনলাইনে অর্ডার করতে অসুবিধা? প্রোডাক্টের নাম বা ছবি পাঠান, আমরা অর্ডার করে দেব।</span>
           <div className="mt-5 flex flex-wrap gap-2">
             {hotline && <a href={`tel:${hotline}`} className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-[#C2410C] px-4 font-bold text-white">কল করুন</a>}
