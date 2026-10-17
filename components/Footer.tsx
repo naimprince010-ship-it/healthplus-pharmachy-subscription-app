@@ -72,7 +72,7 @@ const PaymentIcon = ({ iconKey }: { iconKey: string }) => {
     case 'bkash':
       return <span className={iconStyles} style={{ backgroundColor: '#E2136E', color: 'white' }}>bKash</span>
     case 'nagad':
-      return <span className={iconStyles} style={{ backgroundColor: '#F6921E', color: 'white' }}>Nagad</span>
+      return <span className={iconStyles} style={{ backgroundColor: '#F6921E', color: '#3B2300', fontWeight: 700 }}>Nagad</span>
     case 'visa':
       return <span className={iconStyles} style={{ backgroundColor: '#1A1F71', color: 'white' }}>VISA</span>
     case 'mastercard':
@@ -117,6 +117,7 @@ export function Footer({ settings }: FooterProps) {
                 <a
                   key={index}
                   href={social.url}
+                  aria-label={`${social.platform} profile`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex h-11 w-11 items-center justify-center rounded-lg transition-colors"

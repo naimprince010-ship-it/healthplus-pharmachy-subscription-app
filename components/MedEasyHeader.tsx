@@ -175,7 +175,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus', freeDeliveryThreshold 
         <div className={headerContainer}>
           <div className="flex min-h-14 items-center justify-between gap-3 border-b border-white/10 py-2 md:hidden">
             <div className="flex min-h-11 items-center gap-2">
-              <Link href="/" className="flex min-h-11 items-center gap-2" aria-label="Halalzi — home">
+              <Link href="/" className="flex min-h-11 items-center gap-2">
               <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-lg font-bold text-teal-600">H</span>
               <strong className="block text-base text-white">Halalzi.com</strong>
               </Link>
@@ -185,7 +185,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus', freeDeliveryThreshold 
           </div>
           <div className="flex h-14 items-center justify-between gap-2 sm:h-16 sm:gap-4 lg:h-[72px]">
             {/* Logo */}
-            <Link prefetch href="/" className="hidden min-h-11 items-center gap-2 flex-shrink-0 group md:flex" aria-label="Halalzi — home">
+            <Link prefetch href="/" className="hidden min-h-11 items-center gap-2 flex-shrink-0 group md:flex">
               {/* Icon badge */}
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0F766E] transition-transform duration-200 group-hover:scale-105">
                 <span className="text-lg font-bold text-white">H</span>
