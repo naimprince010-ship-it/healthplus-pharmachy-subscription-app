@@ -7,7 +7,6 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useCart } from '@/contexts/CartContext'
 import { CartDrawer } from './CartDrawer'
-import { MAIN_CONTAINER } from '@/lib/layout'
 import { useAuthModal } from '@/contexts/AuthModalContext'
 import { isGroceryShopEnabled, isMedicineShopEnabled } from '@/lib/site-features'
 import { trackWhatsAppClick } from '@/lib/trackEvent'
@@ -33,7 +32,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus', freeDeliveryThreshold 
   const router = useRouter()
   const pathname = usePathname()
   const { data: session } = useSession()
-  const { itemCount, openDrawer } = useCart()
+  const { itemCount, total, isInitialized, openDrawer } = useCart()
   const { openModal } = useAuthModal()
 
   // Hide header on mobile for checkout, cart, order-success, and order tracking pages (they have their own headers)
@@ -145,19 +144,35 @@ export function MedEasyHeader({ storeName = 'HealthPlus', freeDeliveryThreshold 
           ? 'কসমেটিক্স বা গ্রোসারি খুঁজুন...'
           : 'কসমেটিক্স ও পণ্য খুঁজুন...'
   const cleanWhatsApp = whatsappNumber.replace(/\D/g, '')
+  const hasDeliveryProgress = mounted && isInitialized && Boolean(freeDeliveryThreshold && freeDeliveryThreshold > 0) && total > 0
+  const deliveryRemaining = freeDeliveryThreshold ? Math.max(0, freeDeliveryThreshold - total) : 0
+  const deliveryProgress = freeDeliveryThreshold ? Math.min(100, (total / freeDeliveryThreshold) * 100) : 0
+  const headerContainer = 'mx-auto w-full max-w-[1320px] px-3 sm:px-4 lg:px-6'
 
   return (
     <>
-      <header className={`sticky top-0 z-50 w-full bg-teal-600 shadow-md ${hideOnMobile ? 'hidden lg:block' : ''}`}>
+      <header className={`sticky top-0 z-50 w-full bg-[#0B4F4A] shadow-sm md:bg-white ${hideOnMobile ? 'hidden lg:block' : ''}`}>
         <div className="hidden bg-[#0B4F4A] text-[13px] text-white lg:block">
-          <div className={`${MAIN_CONTAINER} grid h-8 grid-cols-3 items-center`}>
+          <div className={`${headerContainer} grid h-9 grid-cols-3 items-center`}>
             <span>ডেলিভারি: ঢাকা</span>
-            <span className="text-center">{freeDeliveryThreshold ? `৳${freeDeliveryThreshold}+ অর্ডারে ফ্রি ডেলিভারি · ` : ''}ক্যাশ অন ডেলিভারি</span>
+            <div className="flex min-w-0 items-center justify-center gap-2 text-center" aria-live="polite">
+              <span className="truncate">
+                {hasDeliveryProgress
+                  ? deliveryRemaining > 0
+                    ? `আর ৳${Math.ceil(deliveryRemaining)} কিনলেই ফ্রি ডেলিভারি`
+                    : 'ফ্রি ডেলিভারি পেয়েছেন!'
+                  : `${freeDeliveryThreshold ? `৳${freeDeliveryThreshold}+ অর্ডারে ফ্রি ডেলিভারি · ` : ''}ক্যাশ অন ডেলিভারি`}
+              </span>
+              {hasDeliveryProgress && (
+                <span className="h-1.5 w-20 shrink-0 overflow-hidden rounded-full bg-white/25" aria-label="ফ্রি ডেলিভারি প্রগ্রেস">
+                  <span className="block h-full rounded-full bg-[#F59E0B] transition-[width] duration-300" style={{ width: `${deliveryProgress}%` }} />
+                </span>
+              )}
+            </div>
             <Link href="/orders" className="text-right font-semibold hover:underline">অর্ডার ট্র্যাক করুন</Link>
           </div>
         </div>
-        {/* Centered container - uses shared MAIN_CONTAINER for consistent layout */}
-        <div className={MAIN_CONTAINER}>
+        <div className={headerContainer}>
           <div className="flex min-h-14 items-center justify-between gap-3 border-b border-white/10 py-2 md:hidden">
             <Link href="/" className="flex items-center gap-2" aria-label="Halalzi — home">
               <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-lg font-bold text-teal-600">H</span>
@@ -165,54 +180,31 @@ export function MedEasyHeader({ storeName = 'HealthPlus', freeDeliveryThreshold 
             </Link>
             {cleanWhatsApp && <a href={`https://api.whatsapp.com/send?phone=${cleanWhatsApp}`} target="_blank" rel="noreferrer" onClick={() => trackWhatsAppClick('header_mobile')} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/70 px-3 text-xs font-bold text-white"><MessageCircle className="h-4 w-4" />WhatsApp</a>}
           </div>
-          <div className="flex h-14 items-center justify-between gap-2 sm:h-16 sm:gap-4">
+          <div className="flex h-14 items-center justify-between gap-2 sm:h-16 sm:gap-4 lg:h-[72px]">
             {/* Logo */}
             <Link prefetch href="/" className="hidden items-center gap-2 flex-shrink-0 group md:flex" aria-label="Halalzi — home">
               {/* Icon badge */}
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white transition-transform duration-200 group-hover:scale-105">
-                <span className="text-lg font-bold text-teal-600">H</span>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0F766E] transition-transform duration-200 group-hover:scale-105">
+                <span className="text-lg font-bold text-white">H</span>
               </div>
 
               {/* Brand name + tagline */}
               <div className="hidden sm:flex flex-col leading-none">
                 <span
                   className="font-extrabold tracking-tight transition-opacity group-hover:opacity-90"
-                  style={{ fontSize: '1.2rem', letterSpacing: '-0.02em', color: '#ffffff' }}
+                  style={{ fontSize: '1.2rem', letterSpacing: '-0.02em', color: '#173F3B' }}
                 >
                   Halalzi
-                  <span style={{ color: '#a7f3d0', fontWeight: 400, fontSize: '0.75rem', marginLeft: '2px' }}>.com</span>
+                  <span style={{ color: '#0F766E', fontWeight: 500, fontSize: '0.75rem', marginLeft: '2px' }}>.com</span>
                 </span>
-                <span className="text-[10px] text-teal-100 font-medium tracking-wide" style={{ marginTop: '1px' }}>
+                <span className="text-[10px] font-medium tracking-wide text-slate-500" style={{ marginTop: '1px' }}>
                   বিউটি ও দৈনন্দিন বাজার
                 </span>
               </div>
             </Link>
 
-            {/* Shortcut nav links - Desktop only */}
-            <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
-              {isMedicineShopEnabled() && (
-                <>
-                  <Link prefetch href="/medicines" className="px-3 py-1.5 text-[14px] text-white hover:underline transition-all">ঔষধ</Link>
-                  <span className="text-white/40 text-sm">|</span>
-                </>
-              )}
-              <Link prefetch href="/products?category=cosmetics" className="px-3 py-1.5 text-[14px] text-white hover:underline transition-all">কসমেটিক্স</Link>
-              {isGroceryShopEnabled() && (
-                <>
-                  <span className="text-white/40 text-sm">|</span>
-                  <Link
-                    prefetch
-                    href="/products?category=grocery"
-                    className="px-3 py-1.5 text-[14px] text-white hover:underline transition-all"
-                  >
-                    গ্রোসারি
-                  </Link>
-                </>
-              )}
-            </div>
-
             {/* Desktop Search Bar */}
-            <div className="hidden md:flex flex-1 max-w-xl mx-4" ref={searchContainerRef}>
+            <div className="mx-4 hidden max-w-[680px] flex-1 md:flex" ref={searchContainerRef}>
               <form onSubmit={handleSearch} className="relative w-full">
                 <input
                   type="text"
@@ -221,12 +213,12 @@ export function MedEasyHeader({ storeName = 'HealthPlus', freeDeliveryThreshold 
                   onKeyDown={handleKeyDown}
                   onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
                   placeholder={searchPlaceholder}
-                  className="w-full rounded-full border-0 bg-white py-2.5 pl-5 pr-12 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/50"
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-5 pr-12 text-gray-900 placeholder-gray-500 focus:border-[#0F766E] focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-100"
                 />
                 <button
                   type="submit"
                   aria-label="Search"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full bg-teal-600 p-2 text-white hover:bg-teal-700 transition-colors"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 rounded-lg bg-[#0F766E] p-2 text-white transition-colors hover:bg-[#0B4F4A]"
                 >
                   <Search className="h-4 w-4" />
                 </button>
@@ -296,11 +288,11 @@ export function MedEasyHeader({ storeName = 'HealthPlus', freeDeliveryThreshold 
 
             {/* Right Side Actions */}
             <div className="flex items-center gap-2 sm:gap-4">
-              {cleanWhatsApp && <a href={`https://api.whatsapp.com/send?phone=${cleanWhatsApp}`} target="_blank" rel="noreferrer" onClick={() => trackWhatsAppClick('header_desktop')} className="hidden min-h-11 items-center gap-2 rounded-xl border border-white/80 px-3 text-sm font-bold text-white hover:bg-white/10 md:inline-flex"><MessageCircle className="h-4 w-4" />WhatsApp-এ অর্ডার</a>}
+              {cleanWhatsApp && <a href={`https://api.whatsapp.com/send?phone=${cleanWhatsApp}`} target="_blank" rel="noreferrer" onClick={() => trackWhatsAppClick('header_desktop')} className="hidden min-h-11 items-center gap-2 rounded-xl border border-[#0F766E] px-3 text-sm font-bold text-[#0F766E] transition hover:bg-teal-50 md:inline-flex"><MessageCircle className="h-4 w-4" />WhatsApp-এ অর্ডার</a>}
               {/* Cart - Desktop only */}
               <button
                 onClick={openDrawer}
-                className="relative rounded-full p-2 text-white hover:bg-white/10 transition-colors hidden md:flex"
+                className="relative hidden rounded-full p-2 text-[#0B4F4A] transition-colors hover:bg-teal-50 md:flex"
                 aria-label={`Cart${mounted && itemCount > 0 ? ` (${itemCount} items)` : ''}`}
               >
                 <ShoppingCart className="h-5 w-5" />
@@ -318,7 +310,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus', freeDeliveryThreshold 
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   aria-expanded={userMenuOpen}
                   aria-haspopup="menu"
-                  className="flex items-center gap-1 rounded-full px-2 py-1.5 text-white hover:bg-white/10 transition-colors"
+                  className="flex items-center gap-1 rounded-full px-2 py-1.5 text-[#173F3B] transition-colors hover:bg-teal-50"
                 >
                   <User className="h-5 w-5" />
                   <span className="hidden sm:inline text-sm font-medium">

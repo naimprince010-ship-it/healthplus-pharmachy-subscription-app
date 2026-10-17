@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { Banknote, Check, Copy, Lock, MessageCircle, ShieldCheck, Wallet } from 'lucide-react'
 import { HeroBannerSlider, type HeroBanner } from '@/components/HeroBannerSlider'
 import { SectionSlider } from '@/components/SectionSlider'
-import { useCart } from '@/contexts/CartContext'
 import { trackWhatsAppClick } from '@/lib/trackEvent'
 import { BestSellerHomeSection, FlashSaleHomeSection, GroceryHomeSection, PopularBrandsSection, type CuratedHomeData } from '@/components/HomeCuratedSections'
 
@@ -20,7 +19,6 @@ interface DesktopHomeProps {
   offer: HomeOffer | null
   hotline: string
   whatsappNumber: string
-  freeDeliveryThreshold: number | null
   curated: CuratedHomeData
 }
 const BENEFITS = [
@@ -31,26 +29,6 @@ const BENEFITS = [
   { label: 'গোপনীয় প্যাকেজিং', icon: Lock },
 ]
 const SKIN_TYPES = ['তৈলাক্ত', 'শুষ্ক', 'মিশ্র', 'সংবেদনশীল', 'ব্রণপ্রবণ']
-
-function FreeDeliveryProgress({ threshold }: { threshold: number | null }) {
-  const { total, isInitialized } = useCart()
-  if (!isInitialized || !threshold || threshold <= 0 || total <= 0) return null
-  const remaining = Math.max(0, threshold - total)
-  const progress = Math.min(100, (total / threshold) * 100)
-  return (
-    <div className="border-b border-teal-100 bg-teal-50 px-4 py-3">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-1.5 flex items-center justify-between text-sm font-semibold text-[#0B4F4A]">
-          <span>{remaining > 0 ? `আর ৳${Math.ceil(remaining)} কিনলেই ফ্রি ডেলিভারি` : 'আপনি ফ্রি ডেলিভারি পেয়েছেন!'}</span>
-          <span>৳{threshold}</span>
-        </div>
-        <div className="h-2 overflow-hidden rounded-full bg-teal-100" aria-label="Free delivery progress">
-          <div className="h-full rounded-full bg-[#0F766E] transition-[width] duration-300" style={{ width: `${progress}%` }} />
-        </div>
-      </div>
-    </div>
-  )
-}
 
 function OfferHero({ offer }: { offer: HomeOffer | null }) {
   const [copied, setCopied] = useState(false)
@@ -82,7 +60,7 @@ function OfferHero({ offer }: { offer: HomeOffer | null }) {
   )
 }
 
-export function DesktopHome({ homeSections, heroBanners = [], offer, hotline, whatsappNumber, freeDeliveryThreshold, curated }: DesktopHomeProps) {
+export function DesktopHome({ homeSections, heroBanners = [], offer, hotline, whatsappNumber, curated }: DesktopHomeProps) {
   const cleanWhatsApp = whatsappNumber.replace(/\D/g, '')
   const fallbackHero = <div className="grid grid-cols-[minmax(0,1fr)_320px] gap-5">
     <OfferHero offer={offer} />
@@ -102,7 +80,6 @@ export function DesktopHome({ homeSections, heroBanners = [], offer, hotline, wh
   </div>
   return (
     <>
-      <FreeDeliveryProgress threshold={freeDeliveryThreshold} />
       <section className="bg-white px-4 py-6">
         {heroBanners.length > 0 ? <HeroBannerSlider banners={heroBanners} interval={4500} fallback={fallbackHero} /> : fallbackHero}
       </section>
