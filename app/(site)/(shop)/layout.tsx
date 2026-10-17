@@ -15,8 +15,8 @@ export default function ShopLayout({
       </Suspense>
       <div className="mx-auto w-full max-w-[1320px] px-3 sm:px-4 lg:grid lg:grid-cols-[248px_minmax(0,1fr)] lg:gap-6 lg:px-6">
         {/* Left Sidebar streams independently so main column is not blocked by sidebar DB work */}
-        <aside className="hidden lg:block flex-shrink-0 relative z-[30]">
-          <div className="scrollbar-hide sticky top-[112px] h-[calc(100vh-7rem)] w-[248px] overflow-y-auto py-4">
+        <aside className="scrollbar-hide relative z-[30] hidden max-h-[calc(100vh-140px)] self-start overflow-y-auto lg:sticky lg:top-[124px] lg:block">
+          <div className="w-[248px] py-4">
             <Suspense fallback={<LeftCategorySidebarSkeleton />}>
               <LeftCategorySidebar />
             </Suspense>

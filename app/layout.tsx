@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Anek_Bangla, Hind_Siliguri } from "next/font/google";
 import "./globals.css";
 import { Tracking } from "@/components/Tracking";
 import { CartProvider } from "@/contexts/CartContext";
@@ -12,9 +12,18 @@ import { LoginModal } from "@/components/auth/LoginModal";
 
 export const runtime = 'nodejs'
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
+const hindSiliguri = Hind_Siliguri({
+  subsets: ["bengali", "latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-hind-siliguri",
+  display: "swap",
+});
+
+const anekBangla = Anek_Bangla({
+  subsets: ["bengali", "latin"],
+  weight: ["600", "700"],
+  variable: "--font-anek-bangla",
+  display: "swap",
 });
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://halalzi.com';
@@ -203,7 +212,7 @@ export default function RootLayout({
           />
         ) : null}
       </head>
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body className={`${hindSiliguri.variable} ${anekBangla.variable} font-sans antialiased`}>
         <SessionProvider>
           <AuthModalProvider>
             <CartProvider>

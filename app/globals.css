@@ -9,7 +9,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-hind-siliguri);
+  --font-display: var(--font-anek-bangla);
   --font-mono: var(--font-geist-mono);
   
   /* Halalzi Brand Colors */
@@ -37,8 +38,17 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-hind-siliguri), Arial, Helvetica, sans-serif;
   -webkit-touch-callout: none;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-anek-bangla), var(--font-hind-siliguri), Arial, Helvetica, sans-serif;
 }
 
 /* Make interactive elements more touch responsive */
