@@ -15,7 +15,7 @@ export interface CuratedHomeData {
   flashSale: CuratedProduct[]
   skinTypes: Array<{ label: string; query: string; count: number }>
   bestSellers: Partial<Record<CategoryIconKey, CuratedProduct[]>>
-  bestSellerTitle: 'সবচেয়ে বেশি বিক্রি' | 'জনপ্রিয় পণ্য'
+  bestSellerTitle: 'সবচেয়ে বেশি বিক্রি' | 'নতুন এসেছে'
   grocery: CuratedProduct[]
   brands: Array<{ id: string; name: string; slug: string; logoUrl: string | null }>
 }
@@ -28,15 +28,15 @@ const TABS: Array<{ key: CategoryIconKey; label: string }> = [
 ]
 
 export function ProductRow({ products, href, showSold = false, limit = 10 }: { products: CuratedProduct[]; href: string; showSold?: boolean; limit?: number }) {
-  return <div className="scrollbar-hide -mx-4 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-4 pb-2 lg:mx-0 lg:grid lg:grid-cols-5 lg:gap-4 lg:overflow-visible lg:px-0">
-    {products.slice(0, limit).map((product, index) => <div key={product.id} className="w-[150px] flex-shrink-0 snap-start lg:w-auto">
+  return <div className="scrollbar-hide -mx-4 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-4 pb-2 md:mx-0 md:grid md:grid-cols-4 md:gap-4 md:overflow-visible md:px-0 lg:grid-cols-5">
+    {products.slice(0, limit).map((product, index) => <div key={product.id} className="w-[150px] flex-shrink-0 snap-start md:w-auto">
       <ProductCard product={product} variant="compact" className="h-full" imagePriority={index < 5} />
       {showSold && product.soldPercentage != null && <div className="mt-2 px-1">
         <div className="mb-1 text-[11px] font-semibold text-orange-700">{product.soldPercentage}% বিক্রি হয়ে গেছে</div>
         <div className="h-1.5 overflow-hidden rounded-full bg-orange-100"><div className="h-full rounded-full bg-[#C2410C]" style={{ width: `${product.soldPercentage}%` }} /></div>
       </div>}
     </div>)}
-    <Link href={href} className="flex min-h-44 w-[120px] shrink-0 snap-start items-center justify-center rounded-2xl border border-teal-100 bg-white px-3 text-center text-sm font-bold text-[#0F766E] lg:hidden">সব দেখুন →</Link>
+    <Link href={href} className="flex min-h-44 w-[120px] shrink-0 snap-start items-center justify-center rounded-2xl border border-teal-100 bg-white px-3 text-center text-sm font-bold text-[#0F766E] md:hidden">সব দেখুন →</Link>
   </div>
 }
 
@@ -64,7 +64,7 @@ function FlashCountdown({ endsAt }: { endsAt: Date | string }) {
 export function FlashSaleHomeSection({ products }: { products: CuratedProduct[] }) {
   if (!products.length) return null
   const endsAt = products.map((product) => product.flashSaleEnd).filter(Boolean).sort((a, b) => new Date(a!).getTime() - new Date(b!).getTime())[0]
-  return <section className="mx-4 my-5 rounded-[20px] bg-orange-50 p-5 lg:mx-0">
+  return <section className="mx-4 my-5 rounded-[20px] bg-orange-50 p-5 md:mx-0">
     <div className="flex items-start gap-3"><div className="min-w-0 flex-1"><SectionHeader title="ফ্ল্যাশ সেল" href="/flash-sale" /></div>{endsAt && <FlashCountdown endsAt={endsAt} />}</div>
     <ProductRow products={products} href="/flash-sale" showSold limit={5} />
   </section>
@@ -72,7 +72,7 @@ export function FlashSaleHomeSection({ products }: { products: CuratedProduct[] 
 
 export function SkinTypeHomeSection({ skinTypes }: { skinTypes: CuratedHomeData['skinTypes'] }) {
   if (skinTypes.length < 3) return null
-  return <section className="bg-white px-4 py-5 lg:px-0"><SectionHeader title="আপনার স্কিন টাইপ অনুযায়ী" subtitle="আপনার ত্বকের ধরন অনুযায়ী পণ্য খুঁজুন" /><div className="scrollbar-hide flex snap-x snap-mandatory gap-2.5 overflow-x-auto pb-1 lg:grid lg:grid-cols-5 lg:gap-4 lg:overflow-visible">{skinTypes.map((skinType) => <Link key={skinType.label} href={`/search?q=${encodeURIComponent(skinType.query)}`} className="flex min-h-16 min-w-[150px] snap-start flex-col items-center justify-center rounded-2xl border border-pink-100 bg-[#FCE8EC] px-3 font-bold text-[#BE185D]"><span>{skinType.label}</span><span className="mt-1 text-xs font-medium text-slate-500">{skinType.count}টি পণ্য</span></Link>)}</div></section>
+  return <section className="bg-white px-4 py-5 md:px-0"><SectionHeader title="আপনার স্কিন টাইপ অনুযায়ী" subtitle="আপনার ত্বকের ধরন অনুযায়ী পণ্য খুঁজুন" /><div className="scrollbar-hide flex snap-x snap-mandatory gap-2.5 overflow-x-auto pb-1 md:grid md:grid-cols-4 md:gap-4 md:overflow-visible lg:grid-cols-5">{skinTypes.map((skinType) => <Link key={skinType.label} href={`/search?q=${encodeURIComponent(skinType.query)}`} className="flex min-h-16 min-w-[150px] snap-start flex-col items-center justify-center rounded-2xl border border-pink-100 bg-[#FCE8EC] px-3 font-bold text-[#BE185D] md:min-w-0"><span>{skinType.label}</span><span className="mt-1 text-xs font-medium text-slate-500">{skinType.count}টি পণ্য</span></Link>)}</div></section>
 }
 
 export function BestSellerHomeSection({ groups, title }: { groups: CuratedHomeData['bestSellers']; title: CuratedHomeData['bestSellerTitle'] }) {
@@ -88,7 +88,7 @@ export function BestSellerHomeSection({ groups, title }: { groups: CuratedHomeDa
     setActive(availableTabs[next].key)
     buttonRefs.current[next]?.focus()
   }
-  return <section className="bg-white px-4 py-5 lg:px-0">
+  return <section className="bg-white px-4 py-5 md:px-0">
     <SectionHeader title={title} href="/products" />
     <div role="tablist" aria-label={`${title} ক্যাটাগরি`} className="scrollbar-hide mb-[14px] flex snap-x snap-mandatory gap-2 overflow-x-auto">
       {availableTabs.map((tab, index) => <button ref={(node) => { buttonRefs.current[index] = node }} key={tab.key} id={`best-tab-${tab.key}`} type="button" role="tab" aria-selected={active === tab.key} aria-controls={`best-panel-${tab.key}`} tabIndex={active === tab.key ? 0 : -1} onClick={() => setActive(tab.key)} onKeyDown={(event) => {
@@ -104,12 +104,12 @@ export function BestSellerHomeSection({ groups, title }: { groups: CuratedHomeDa
 
 export function GroceryHomeSection({ products }: { products: CuratedProduct[] }) {
   if (!products.length) return null
-  return <section className="mx-4 my-5 rounded-[20px] bg-teal-50 p-5 lg:mx-0"><SectionHeader title="দৈনন্দিন বাজার" href="/products?category=grocery" /><ProductRow products={products} href="/products?category=grocery" /></section>
+  return <section className="mx-4 my-5 rounded-[20px] bg-teal-50 p-5 md:mx-0"><SectionHeader title="দৈনন্দিন বাজার" href="/products?category=grocery" /><ProductRow products={products} href="/products?category=grocery" /></section>
 }
 
 export function PopularBrandsSection({ brands }: { brands: CuratedHomeData['brands'] }) {
   if (brands.length < 4) return null
-  return <section className="bg-white px-4 py-6 lg:px-0">
+  return <section className="bg-white px-4 py-6 md:px-0">
     <SectionHeader title="জনপ্রিয় ব্র্যান্ড" />
     <div className="scrollbar-hide flex snap-x snap-mandatory gap-3 overflow-x-auto lg:grid lg:grid-cols-4 xl:grid-cols-8 lg:overflow-visible">
       {brands.map((brand) => <Link key={brand.id} href={`/manufacturer/${brand.slug}`} className="flex h-[72px] w-40 shrink-0 snap-start items-center justify-center rounded-[14px] border border-slate-100 bg-white p-3 text-center shadow-sm lg:w-auto">

@@ -41,7 +41,7 @@ const CATEGORY_GRID: Array<{ label: string; iconKey: CategoryIconKey; href: stri
 
 function MobileCategoryGrid() {
   return (
-    <section aria-label="ক্যাটাগরি" className="mx-3 mt-3 rounded-2xl border border-gray-100 bg-white px-2 pb-2 pt-4 shadow-sm">
+    <section aria-label="ক্যাটাগরি" className="mx-4 mt-3 rounded-2xl bg-white p-3 md:mx-0">
       <div className="grid grid-cols-4 gap-1">
         {CATEGORY_GRID.map((cat) => (
           <Link key={cat.href} href={cat.href} className="flex min-h-11 flex-col items-center gap-1.5 rounded-xl px-1 pb-2 active:bg-teal-50">
@@ -85,23 +85,23 @@ function MobileOfferHero({ offer }: { offer: HomeOffer | null }) {
   )
 }
 
-function MobileFreeDeliveryProgress({ threshold }: { threshold: number | null }) {
-  const { total, isInitialized } = useCart()
-  if (!isInitialized || !threshold || threshold <= 0 || total <= 0) return null
+function MobileFreeDeliveryProgress({ threshold, total }: { threshold: number; total: number }) {
   const remaining = Math.max(0, threshold - total)
-  return <div className="fixed inset-x-0 bottom-16 z-30 border-y border-teal-100 bg-white px-4 py-2 shadow-sm">
-    <div className="mb-1 flex justify-between text-xs font-bold text-[#0B4F4A]"><span>{remaining ? `আর ৳${Math.ceil(remaining)} কিনলেই ফ্রি ডেলিভারি` : 'ফ্রি ডেলিভারি পেয়েছেন!'}</span><span>৳{threshold}</span></div>
-    <div className="h-1.5 overflow-hidden rounded-full bg-teal-100"><div className="h-full bg-[#0F766E]" style={{ width: `${Math.min(100, total / threshold * 100)}%` }} /></div>
+  return <div className="fixed inset-x-0 z-40 flex h-9 items-center justify-center bg-teal-50 px-4 text-center text-xs font-bold text-[#0B4F4A] shadow-sm lg:hidden" style={{ bottom: 'calc(64px + env(safe-area-inset-bottom))' }}>
+    <span>{remaining ? `আর ৳${Math.ceil(remaining)} কিনলেই ফ্রি ডেলিভারি` : 'ফ্রি ডেলিভারি পাচ্ছেন ✓'}</span>
+    <div className="absolute inset-x-0 bottom-0 h-1 overflow-hidden bg-teal-100"><div className="h-full bg-[#0F766E]" style={{ width: `${Math.min(100, total / threshold * 100)}%` }} /></div>
   </div>
 }
 
 export function MobileHome({ homeSections, heroBanners = [], offer, freeDeliveryThreshold, curated }: MobileHomeProps) {
+  const { total, isInitialized } = useCart()
+  const showFreeDeliveryBar = Boolean(isInitialized && freeDeliveryThreshold && freeDeliveryThreshold > 0 && total > 0)
   return (
-    <div className="min-h-screen bg-gray-50">
-      <section className="bg-white p-4">
+    <div className="min-h-screen bg-gray-50" style={{ paddingBottom: showFreeDeliveryBar ? 'calc(100px + env(safe-area-inset-bottom))' : 'calc(64px + env(safe-area-inset-bottom))' }}>
+      <section className="bg-white p-4 md:p-0 md:pb-4">
         {heroBanners.length > 0 ? <HeroBannerSlider banners={heroBanners} interval={4500} fallback={<MobileOfferHero offer={offer} />} /> : <MobileOfferHero offer={offer} />}
       </section>
-      <div className="scrollbar-hide snap-x snap-mandatory overflow-x-auto bg-white px-3 py-3">
+      <div className="scrollbar-hide snap-x snap-mandatory overflow-x-auto bg-white px-3 py-3 md:px-0">
         <div className="flex min-w-max gap-2">{BENEFITS.map(({ label, icon: Icon }) => <div key={label} className="flex h-11 snap-start items-center gap-2 rounded-full border border-teal-100 bg-teal-50 px-4 text-xs font-bold text-[#0B4F4A]"><Icon className="h-4 w-4" />{label}</div>)}</div>
       </div>
       <MobileCategoryGrid />
@@ -110,12 +110,11 @@ export function MobileHome({ homeSections, heroBanners = [], offer, freeDelivery
       <BestSellerHomeSection groups={curated.bestSellers} title={curated.bestSellerTitle} />
       <GroceryHomeSection products={curated.grocery} />
       {homeSections.map(({ section, products }, sectionIndex) => <section key={section.id} className="py-4">
-        <div className="px-4"><SectionHeader title={section.title} subtitle={section.badgeText} href={`/sections/${section.slug}`} /></div>
-        <div className="scrollbar-hide flex snap-x snap-mandatory gap-2.5 overflow-x-auto pb-2 pl-4 pr-8">{products.slice(0, 10).map((product, productIndex) => <div key={product.id} className="w-[150px] flex-shrink-0 snap-start"><ProductCard imagePriority={sectionIndex === 0 && productIndex < 4} product={{ id: product.id, type: product.type || 'GENERAL', name: product.name, slug: product.slug, brandName: product.brandName || null, description: product.description || null, sellingPrice: product.sellingPrice, mrp: product.mrp || null, stockQuantity: product.stockQuantity || 100, imageUrl: product.imageUrl || null, discountPercentage: product.discountPercentage || null, flashSalePrice: product.flashSalePrice || null, flashSaleStart: product.flashSaleStart || null, flashSaleEnd: product.flashSaleEnd || null, isFlashSale: product.isFlashSale || null, sizeLabel: product.sizeLabel ?? null, packSize: product.packSize ?? null, category: product.category || { id: '', name: '', slug: '' } }} variant="compact" /></div>)}<Link href={`/sections/${section.slug}`} className="flex min-h-44 w-[120px] shrink-0 snap-start items-center justify-center rounded-2xl border border-teal-100 bg-white px-3 text-center text-sm font-bold text-[#0F766E]">সব দেখুন →</Link></div>
+        <div className="px-4 md:px-0"><SectionHeader title={section.title} subtitle={section.badgeText} href={`/sections/${section.slug}`} /></div>
+        <div className="scrollbar-hide flex snap-x snap-mandatory gap-2.5 overflow-x-auto pb-2 pl-4 pr-8 md:grid md:grid-cols-4 md:gap-4 md:px-0">{products.slice(0, 10).map((product, productIndex) => <div key={product.id} className="w-[150px] flex-shrink-0 snap-start md:w-auto"><ProductCard imagePriority={sectionIndex === 0 && productIndex < 4} product={{ id: product.id, type: product.type || 'GENERAL', name: product.name, slug: product.slug, brandName: product.brandName || null, description: product.description || null, sellingPrice: product.sellingPrice, mrp: product.mrp || null, stockQuantity: product.stockQuantity || 100, imageUrl: product.imageUrl || null, discountPercentage: product.discountPercentage || null, flashSalePrice: product.flashSalePrice || null, flashSaleStart: product.flashSaleStart || null, flashSaleEnd: product.flashSaleEnd || null, isFlashSale: product.isFlashSale || null, sizeLabel: product.sizeLabel ?? null, packSize: product.packSize ?? null, category: product.category || { id: '', name: '', slug: '' } }} variant="compact" /></div>)}<Link href={`/sections/${section.slug}`} className="flex min-h-44 w-[120px] shrink-0 snap-start items-center justify-center rounded-2xl border border-teal-100 bg-white px-3 text-center text-sm font-bold text-[#0F766E] md:hidden">সব দেখুন →</Link></div>
       </section>)}
       <PopularBrandsSection brands={curated.brands} />
-      <MobileFreeDeliveryProgress threshold={freeDeliveryThreshold} />
-      <div className="h-24" />
+      {showFreeDeliveryBar && <MobileFreeDeliveryProgress threshold={freeDeliveryThreshold!} total={total} />}
     </div>
   )
 }

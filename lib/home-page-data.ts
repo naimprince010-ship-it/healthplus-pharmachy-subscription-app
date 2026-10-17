@@ -2,7 +2,7 @@ import { buildProductWhereClause } from '@/lib/homeSections'
 import { getEffectivePrices } from '@/lib/pricing'
 import { resolveCategoryIconKey, type CategoryIconKey } from '@/lib/category-icon-key'
 import type { SubscriptionPlan } from '@prisma/client'
-import { isGroceryShopEnabled } from '@/lib/site-features'
+import { isGroceryShopEnabled, isHomeCategoryVisible } from '@/lib/site-features'
 
 const PRODUCT_SELECT = {
   id: true,
@@ -68,7 +68,7 @@ const SKIN_TYPES = [
 
 /** Curated rows used by the beauty/grocery home. Every ranking is based on persisted data. */
 export async function getCuratedHomeData() {
-  const empty = { flashSale: [], skinTypes: [], bestSellers: {}, bestSellerTitle: 'জনপ্রিয় পণ্য' as const, grocery: [], brands: [] }
+  const empty = { flashSale: [], skinTypes: [], bestSellers: {}, bestSellerTitle: 'নতুন এসেছে' as const, grocery: [], brands: [] }
   try {
     const { prisma } = await import('@/lib/prisma')
     const now = new Date()
@@ -141,11 +141,12 @@ export async function getCuratedHomeData() {
       key: resolveCategoryIconKey(product.category.slug, product.category.name),
       sold: product.orderItems.reduce((sum, item) => sum + item.quantity, 0),
     }))
-    const hasAnyBestSellerSales = candidateGroups.flat().some((product) => product.orderItems.some((item) => item.quantity > 0))
+    const productsWithRecentSales = candidateGroups.flat().filter((product) => product.orderItems.some((item) => item.quantity > 0)).length
+    const hasReliableBestSellerRanking = productsWithRecentSales >= 10
     const choose = (keys: CategoryIconKey[], requireSales = false) => {
       const candidates = ranked.filter((item) => keys.includes(item.key))
-      return (requireSales && hasAnyBestSellerSales ? candidates.filter((item) => item.sold > 0) : candidates)
-      .sort((a, b) => hasAnyBestSellerSales
+      return (requireSales && hasReliableBestSellerRanking ? candidates.filter((item) => item.sold > 0) : candidates)
+      .sort((a, b) => hasReliableBestSellerRanking
         ? b.sold - a.sold || Number(b.product.isFeatured) - Number(a.product.isFeatured)
         : b.product.createdAt.getTime() - a.product.createdAt.getTime())
       .slice(0, 10)
@@ -169,7 +170,7 @@ export async function getCuratedHomeData() {
         .filter((skinType) => skinType.count > 0)
         .map(({ label, query, count }) => ({ label, query, count })),
       bestSellers,
-      bestSellerTitle: hasAnyBestSellerSales ? 'সবচেয়ে বেশি বিক্রি' as const : 'জনপ্রিয় পণ্য' as const,
+      bestSellerTitle: hasReliableBestSellerRanking ? 'সবচেয়ে বেশি বিক্রি' as const : 'নতুন এসেছে' as const,
       grocery: isGroceryShopEnabled() ? choose(['grocery', 'fresh']) : [],
       brands,
     }
@@ -198,10 +199,11 @@ export async function getHomeSections() {
     const sections = await prisma.homeSection.findMany({
       where: { isActive: true },
       orderBy: { sortOrder: 'asc' },
+      include: { category: { select: { slug: true } } },
     })
 
     const sectionsWithProducts = await Promise.all(
-      sections.map(async (section) => {
+      sections.filter((section) => !section.category || isHomeCategoryVisible(section.category.slug)).map(async (section) => {
         const whereClause = buildProductWhereClause(section)
         const products = await prisma.product.findMany({
           where: whereClause,

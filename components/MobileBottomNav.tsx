@@ -21,11 +21,11 @@ export function MobileBottomNav() {
   }, [router])
 
   const navItems = [
-    { href: '/', label: 'Home', iconType: 'home' },
-    { href: '/products', label: 'Shop', iconType: 'shop' },
+    { href: '/', label: 'হোম', iconType: 'home' },
+    { href: '/products', label: 'ক্যাটাগরি', iconType: 'shop' },
     { href: '/flash-sale', label: 'অফার', iconType: 'offers' },
-    { href: '/cart', label: 'Cart', iconType: 'cart', badge: itemCount },
-    { href: '/dashboard', label: 'Profile', iconType: 'profile' },
+    { href: '/cart', label: 'কার্ট', iconType: 'cart', badge: itemCount },
+    { href: '/dashboard', label: 'অ্যাকাউন্ট', iconType: 'profile' },
   ]
 
   const renderIcon = (iconType: string, isActive: boolean) => {
@@ -73,8 +73,8 @@ export function MobileBottomNav() {
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white shadow-lg lg:hidden safe-area-bottom">
-      <div className="flex items-center justify-around py-1">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white shadow-lg lg:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <div className="flex h-16 items-center justify-around">
         {navItems.map((item) => {
           const isActive = pathname === item.href || 
             (item.href !== '/' && pathname.startsWith(item.href))

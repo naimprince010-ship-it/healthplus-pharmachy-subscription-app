@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { CategoryIcon, CategoryIconByKey } from '@/components/icons/CategoryIcons'
 import { prisma } from '@/lib/prisma'
-import { isGroceryShopEnabled, isMedicineShopEnabled } from '@/lib/site-features'
+import { isGroceryShopEnabled, isHomeCategoryVisible, isMedicineShopEnabled } from '@/lib/site-features'
 import { displayCategoryName } from '@/lib/display-category-name'
 
 export default async function CategoryIconNav() {
@@ -13,6 +13,7 @@ export default async function CategoryIconNav() {
   })
 
   const visible = categories
+    .filter((category) => isHomeCategoryVisible(category.slug))
     .filter((category) => isMedicineShopEnabled() || !category.isMedicineCategory)
     .filter((category) => isGroceryShopEnabled() || !/grocery|fresh|bazaar|bazar/i.test(category.slug))
     .slice(0, 11)

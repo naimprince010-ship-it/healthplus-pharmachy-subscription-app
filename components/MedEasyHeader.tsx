@@ -174,10 +174,13 @@ export function MedEasyHeader({ storeName = 'HealthPlus', freeDeliveryThreshold 
         </div>
         <div className={headerContainer}>
           <div className="flex min-h-14 items-center justify-between gap-3 border-b border-white/10 py-2 md:hidden">
-            <Link href="/" className="flex min-h-11 items-center gap-2" aria-label="Halalzi — home">
+            <div className="flex min-h-11 items-center gap-2">
+              <Link href="/" className="flex min-h-11 items-center gap-2" aria-label="Halalzi — home">
               <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-lg font-bold text-teal-600">H</span>
-              <span><strong className="block text-base text-white">Halalzi.com</strong><span className="flex items-center gap-1 text-[11px] text-teal-50"><MapPin className="h-3 w-3" />ডেলিভারি: ঢাকা</span></span>
-            </Link>
+              <strong className="block text-base text-white">Halalzi.com</strong>
+              </Link>
+              <span className="flex items-center gap-1 text-[11px] text-teal-50"><MapPin className="h-3 w-3" />ডেলিভারি: ঢাকা</span>
+            </div>
             {cleanWhatsApp && <a href={`https://api.whatsapp.com/send?phone=${cleanWhatsApp}`} target="_blank" rel="noreferrer" onClick={() => trackWhatsAppClick('header_mobile')} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/70 px-3 text-xs font-bold text-white"><MessageCircle className="h-4 w-4" />WhatsApp</a>}
           </div>
           <div className="flex h-14 items-center justify-between gap-2 sm:h-16 sm:gap-4 lg:h-[72px]">
@@ -218,7 +221,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus', freeDeliveryThreshold 
                 <button
                   type="submit"
                   aria-label="Search"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 rounded-lg bg-[#0F766E] p-2 text-white transition-colors hover:bg-[#0B4F4A]"
+                  className="absolute right-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-lg bg-[#0F766E] text-white transition-colors hover:bg-[#0B4F4A]"
                 >
                   <Search className="h-4 w-4" />
                 </button>
@@ -292,7 +295,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus', freeDeliveryThreshold 
               {/* Cart - Desktop only */}
               <button
                 onClick={openDrawer}
-                className="relative hidden rounded-full p-2 text-[#0B4F4A] transition-colors hover:bg-teal-50 md:flex"
+                className="relative hidden h-11 w-11 items-center justify-center rounded-full text-[#0B4F4A] transition-colors hover:bg-teal-50 md:flex"
                 aria-label={`Cart${mounted && itemCount > 0 ? ` (${itemCount} items)` : ''}`}
               >
                 <ShoppingCart className="h-5 w-5" />
@@ -310,7 +313,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus', freeDeliveryThreshold 
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   aria-expanded={userMenuOpen}
                   aria-haspopup="menu"
-                  className="flex items-center gap-1 rounded-full px-2 py-1.5 text-[#173F3B] transition-colors hover:bg-teal-50"
+                  className="flex min-h-11 items-center gap-1 rounded-full px-2 py-1.5 text-[#173F3B] transition-colors hover:bg-teal-50"
                 >
                   <User className="h-5 w-5" />
                   <span className="hidden sm:inline text-sm font-medium">
@@ -395,7 +398,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus', freeDeliveryThreshold 
                 setShowSuggestions(false)
               }}
               aria-label="Close search"
-              className="rounded-full p-2 text-gray-600 hover:bg-gray-100"
+              className="flex h-11 w-11 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100"
             >
               <X className="h-5 w-5" />
             </button>
@@ -414,7 +417,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus', freeDeliveryThreshold 
               type="submit"
               onClick={handleSearch}
               aria-label="Submit search"
-              className="rounded-full bg-teal-600 p-2 text-white"
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-teal-600 text-white"
             >
               <Search className="h-4 w-4" />
             </button>

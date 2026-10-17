@@ -68,11 +68,11 @@ function OfferHero({ offer }: { offer: HomeOffer | null }) {
 export function DesktopHome({ homeSections, heroBanners = [], offer, hotline, whatsappNumber, curated }: DesktopHomeProps) {
   const cleanWhatsApp = whatsappNumber.replace(/\D/g, '')
   const hasOrderContact = Boolean(hotline || cleanWhatsApp)
-  const fallbackHero = <div className={hasOrderContact ? 'grid grid-cols-[minmax(0,1fr)_230px] gap-5' : ''}>
+  const fallbackHero = <div className={hasOrderContact ? 'xl:grid xl:grid-cols-[minmax(0,1fr)_230px] xl:gap-5' : ''}>
     <OfferHero offer={offer} />
     {hasOrderContact && <div className="grid gap-5">
       {(
-        <div className="flex h-full flex-col justify-center rounded-3xl border border-orange-100 bg-orange-50 p-7">
+        <div className="hidden h-full flex-col justify-center rounded-3xl border border-orange-100 bg-orange-50 p-7 xl:flex">
           <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#C2410C] text-white"><MessageCircle className="h-6 w-6" /></span>
           <span className="text-[19px] font-bold leading-snug text-[#0B4F4A]">কল বা <span className="whitespace-nowrap">WhatsApp-এ</span> অর্ডার</span>
           <span className="mt-1.5 text-sm leading-relaxed text-slate-600">অনলাইনে অর্ডার করতে অসুবিধা? প্রোডাক্টের নাম বা ছবি পাঠান, আমরা অর্ডার করে দেব।</span>

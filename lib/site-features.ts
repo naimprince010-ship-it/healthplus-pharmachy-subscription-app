@@ -29,6 +29,13 @@ export function isGroceryShopEnabled(): boolean {
   )
 }
 
+const HIDDEN_HOME_CATEGORY_SLUGS = new Set(['health-beauty', 'health-and-beauty', 'eye-care'])
+
+/** Business display policy for home navigation/sections only; category routes and DB flags are unchanged. */
+export function isHomeCategoryVisible(slug: string): boolean {
+  return !HIDDEN_HOME_CATEGORY_SLUGS.has(slug.trim().toLowerCase())
+}
+
 /** Prescription upload CTA — defaults to same as medicine shop unless overridden */
 export function isPrescriptionFlowEnabled(): boolean {
   const explicit = process.env.NEXT_PUBLIC_SITE_PRESCRIPTION_ENABLED ?? process.env.SITE_PRESCRIPTION_ENABLED
