@@ -3,6 +3,12 @@ import { CategoryIcon, CategoryIconByKey } from '@/components/icons/CategoryIcon
 import { prisma } from '@/lib/prisma'
 import { isGroceryShopEnabled, isMedicineShopEnabled } from '@/lib/site-features'
 
+function displayCategoryName(name: string) {
+  const hasLetters = /[A-Za-z]/.test(name)
+  if (!hasLetters || name !== name.toUpperCase()) return name
+  return name.toLowerCase().replace(/\b[a-z]/g, (letter) => letter.toUpperCase())
+}
+
 export default async function CategoryIconNav() {
   const categories = await prisma.category.findMany({
     where: { isActive: true, showInSidebar: true },
@@ -25,14 +31,14 @@ export default async function CategoryIconNav() {
           <span className="flex h-[58px] w-[58px] items-center justify-center rounded-full border-2 border-[#F9735B] bg-[#FFF7F5] transition group-hover:-translate-y-0.5 group-hover:shadow-sm">
             <CategoryIconByKey iconKey="all" size={30} />
           </span>
-          <span className="line-clamp-1 text-[12.5px] font-semibold text-[#314A47]">সব ক্যাটাগরি</span>
+          <span className="max-w-[88px] truncate text-[12.5px] font-semibold text-[#314A47]" title="সব ক্যাটাগরি">সব ক্যাটাগরি</span>
         </Link>
         {visible.map((category) => (
           <Link key={category.id} href={category.sidebarLinkUrl || `/category/${category.slug}`} className="group flex w-[84px] shrink-0 flex-col items-center gap-1.5 text-center">
             <span className="flex h-[58px] w-[58px] items-center justify-center rounded-full border border-[#DDD8D4] bg-[#FAF8F7] transition group-hover:-translate-y-0.5 group-hover:border-[#F9735B] group-hover:shadow-sm">
               <CategoryIcon slug={category.slug} name={category.name} size={30} />
             </span>
-            <span className="line-clamp-1 text-[12.5px] font-semibold text-[#314A47]">{category.name}</span>
+            <span className="max-w-[88px] truncate text-[12.5px] font-semibold text-[#314A47]" title={category.name}>{displayCategoryName(category.name)}</span>
           </Link>
         ))}
       </div>

@@ -174,7 +174,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus', freeDeliveryThreshold 
         </div>
         <div className={headerContainer}>
           <div className="flex min-h-14 items-center justify-between gap-3 border-b border-white/10 py-2 md:hidden">
-            <Link href="/" className="flex items-center gap-2" aria-label="Halalzi — home">
+            <Link href="/" className="flex min-h-11 items-center gap-2" aria-label="Halalzi — home">
               <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-lg font-bold text-teal-600">H</span>
               <span><strong className="block text-base text-white">Halalzi.com</strong><span className="flex items-center gap-1 text-[11px] text-teal-50"><MapPin className="h-3 w-3" />ডেলিভারি: ঢাকা</span></span>
             </Link>
@@ -279,7 +279,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus', freeDeliveryThreshold 
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onClick={() => setMobileSearchOpen(true)}
                   placeholder="কসমেটিক্স, গ্রোসারি বা ব্র্যান্ড খুঁজুন"
-                  className="w-full rounded-full border-0 bg-white/90 py-2 pl-4 pr-10 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/50"
+                  className="h-12 w-full rounded-full border-0 bg-white/90 px-4 pr-10 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/50"
                   readOnly
                 />
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />

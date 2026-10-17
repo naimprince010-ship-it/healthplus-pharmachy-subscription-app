@@ -17,6 +17,7 @@ export default async function SiteLayout({
     getBasicSettings(),
     prisma.cartPageSettings.findFirst({ select: { freeDeliveryThreshold: true } }),
   ]);
+  const whatsappNumber = (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || basicSettings.storePhone).trim();
 
   return (
     <>
@@ -25,13 +26,13 @@ export default async function SiteLayout({
       <MedEasyHeader
         storeName={basicSettings.storeName}
         freeDeliveryThreshold={cartSettings?.freeDeliveryThreshold ?? null}
-        whatsappNumber={process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? ""}
+        whatsappNumber={whatsappNumber}
       />
       <main className="min-h-screen">{children}</main>
       <SiteFooterWrapper>
         <SiteFooter />
       </SiteFooterWrapper>
-      <SiteWhatsAppButton phone={basicSettings.storePhone} />
+      <SiteWhatsAppButton phone={whatsappNumber} />
       <SiteMobileNav />
     </>
   );
