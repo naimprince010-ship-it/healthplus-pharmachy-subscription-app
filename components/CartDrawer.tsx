@@ -186,7 +186,7 @@ export function CartDrawer() {
               <button
                 type="button"
                 onClick={closeDrawer}
-                className="mt-6 rounded-lg px-6 py-2.5 text-[15px] font-medium text-white transition-colors"
+                className="mt-6 min-h-11 rounded-lg px-6 py-2.5 text-[15px] font-medium text-white transition-colors"
                 style={{ backgroundColor: CHECKOUT_GREEN }}
               >
                 কেনাকাটা করুন

@@ -2,7 +2,7 @@ import { buildProductWhereClause } from '@/lib/homeSections'
 import { getEffectivePrices } from '@/lib/pricing'
 import { resolveCategoryIconKey, type CategoryIconKey } from '@/lib/category-icon-key'
 import type { SubscriptionPlan } from '@prisma/client'
-import { isGroceryShopEnabled } from '@/lib/site-features'
+import { isGroceryShopEnabled, isHomeCategoryVisible } from '@/lib/site-features'
 
 const PRODUCT_SELECT = {
   id: true,
@@ -68,7 +68,7 @@ const SKIN_TYPES = [
 
 /** Curated rows used by the beauty/grocery home. Every ranking is based on persisted data. */
 export async function getCuratedHomeData() {
-  const empty = { flashSale: [], skinTypes: [], bestSellers: {}, bestSellerTitle: 'জনপ্রিয় পণ্য' as const, grocery: [], brands: [] }
+  const empty = { flashSale: [], skinTypes: [], bestSellers: {}, bestSellerTitle: 'নতুন এসেছে' as const, grocery: [], brands: [] }
   try {
     const { prisma } = await import('@/lib/prisma')
     const now = new Date()
@@ -141,11 +141,12 @@ export async function getCuratedHomeData() {
       key: resolveCategoryIconKey(product.category.slug, product.category.name),
       sold: product.orderItems.reduce((sum, item) => sum + item.quantity, 0),
     }))
-    const hasAnyBestSellerSales = candidateGroups.flat().some((product) => product.orderItems.some((item) => item.quantity > 0))
+    const productsWithRecentSales = candidateGroups.flat().filter((product) => product.orderItems.some((item) => item.quantity > 0)).length
+    const hasReliableBestSellerRanking = productsWithRecentSales >= 10
     const choose = (keys: CategoryIconKey[], requireSales = false) => {
       const candidates = ranked.filter((item) => keys.includes(item.key))
-      return (requireSales && hasAnyBestSellerSales ? candidates.filter((item) => item.sold > 0) : candidates)
-      .sort((a, b) => hasAnyBestSellerSales
+      return (requireSales && hasReliableBestSellerRanking ? candidates.filter((item) => item.sold > 0) : candidates)
+      .sort((a, b) => hasReliableBestSellerRanking
         ? b.sold - a.sold || Number(b.product.isFeatured) - Number(a.product.isFeatured)
         : b.product.createdAt.getTime() - a.product.createdAt.getTime())
       .slice(0, 10)
@@ -169,7 +170,7 @@ export async function getCuratedHomeData() {
         .filter((skinType) => skinType.count > 0)
         .map(({ label, query, count }) => ({ label, query, count })),
       bestSellers,
-      bestSellerTitle: hasAnyBestSellerSales ? 'সবচেয়ে বেশি বিক্রি' as const : 'জনপ্রিয় পণ্য' as const,
+      bestSellerTitle: hasReliableBestSellerRanking ? 'সবচেয়ে বেশি বিক্রি' as const : 'নতুন এসেছে' as const,
       grocery: isGroceryShopEnabled() ? choose(['grocery', 'fresh']) : [],
       brands,
     }
@@ -229,13 +230,16 @@ export async function getHomeSections() {
     const sections = await prisma.homeSection.findMany({
       where: { isActive: true },
       orderBy: { sortOrder: 'asc' },
+      include: { category: { select: { slug: true } } },
     })
 
     const sectionsWithProducts = []
     const usedProductIds = new Set<string>()
     const rotationBucket = Math.floor(Date.now() / (60 * 60 * 1000))
 
-    for (const section of sections) {
+    for (const section of sections.filter(
+      (candidate) => !candidate.category || isHomeCategoryVisible(candidate.category.slug),
+    )) {
       const whereClause = buildProductWhereClause(section)
       const maxProducts = Math.max(1, section.maxProducts)
       const poolSize =
@@ -297,31 +301,31 @@ export async function getHomeSections() {
       const mappedProducts = visibleProducts
         .filter((product) => product.type !== 'MEDICINE' && !product.category.isMedicineCategory)
         .map((product) => {
-        const rawDiscount = product.discountPercentage ?? product.medicine?.discountPercentage
-        const discountPercentage = rawDiscount ? Number(rawDiscount) : null
+          const rawDiscount = product.discountPercentage ?? product.medicine?.discountPercentage
+          const discountPercentage = rawDiscount ? Number(rawDiscount) : null
 
-        const effectivePrices = getEffectivePrices({
-          sellingPrice: Number(product.sellingPrice),
-          mrp: product.mrp ? Number(product.mrp) : null,
-          discountPercentage,
-          flashSalePrice: product.flashSalePrice ? Number(product.flashSalePrice) : null,
-          flashSaleStart: product.flashSaleStart,
-          flashSaleEnd: product.flashSaleEnd,
-          isFlashSale: product.isFlashSale,
-          campaignPrice: product.campaignPrice ? Number(product.campaignPrice) : null,
-          campaignStart: product.campaignStart,
-          campaignEnd: product.campaignEnd,
-        })
-        return {
-          ...product,
-          discountPercentage,
-          packSize: product.medicine?.packSize ?? null,
-          effectivePrice: effectivePrices.price,
-          effectiveMrp: effectivePrices.mrp,
-          effectiveDiscountPercent: effectivePrices.discountPercent,
-          isFlashSaleActive: effectivePrices.isFlashSale,
-          isCampaignActive: effectivePrices.isCampaign,
-        }
+          const effectivePrices = getEffectivePrices({
+            sellingPrice: Number(product.sellingPrice),
+            mrp: product.mrp ? Number(product.mrp) : null,
+            discountPercentage,
+            flashSalePrice: product.flashSalePrice ? Number(product.flashSalePrice) : null,
+            flashSaleStart: product.flashSaleStart,
+            flashSaleEnd: product.flashSaleEnd,
+            isFlashSale: product.isFlashSale,
+            campaignPrice: product.campaignPrice ? Number(product.campaignPrice) : null,
+            campaignStart: product.campaignStart,
+            campaignEnd: product.campaignEnd,
+          })
+          return {
+            ...product,
+            discountPercentage,
+            packSize: product.medicine?.packSize ?? null,
+            effectivePrice: effectivePrices.price,
+            effectiveMrp: effectivePrices.mrp,
+            effectiveDiscountPercent: effectivePrices.discountPercent,
+            isFlashSaleActive: effectivePrices.isFlashSale,
+            isCampaignActive: effectivePrices.isCampaign,
+          }
         })
 
       sectionsWithProducts.push({

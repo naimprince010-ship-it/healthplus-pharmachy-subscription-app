@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { ChevronRight, Gift, MessageCircle, ShoppingBag } from 'lucide-react'
 import { prisma } from '@/lib/prisma'
 import CategorySidebarList from './CategorySidebarList'
-import { GROCERY_CATEGORY_SLUG, isGroceryShopEnabled, isMedicineShopEnabled } from '@/lib/site-features'
+import { GROCERY_CATEGORY_SLUG, isGroceryShopEnabled, isHomeCategoryVisible, isMedicineShopEnabled } from '@/lib/site-features'
 
 export default async function LeftCategorySidebar() {
   const categories = await prisma.category.findMany({
@@ -11,6 +11,7 @@ export default async function LeftCategorySidebar() {
     select: { id: true, name: true, slug: true, sidebarLinkUrl: true, isMedicineCategory: true },
   })
   const navCategories = categories.filter((category) => {
+    if (!isHomeCategoryVisible(category.slug)) return false
     if (!isMedicineShopEnabled() && category.isMedicineCategory) return false
     if (!isGroceryShopEnabled() && category.slug === GROCERY_CATEGORY_SLUG) return false
     return true
