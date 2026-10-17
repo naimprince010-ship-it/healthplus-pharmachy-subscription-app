@@ -128,22 +128,22 @@ export function AddToCartButton({
   if (cartQty > 0) {
     return (
       <div
-        className={`flex items-center justify-between gap-1 overflow-hidden rounded-lg border-2 ${
-          outlineTone ? 'border-gray-200 bg-slate-50' : 'border-cta-light bg-orange-50'
+        className={`flex items-center justify-between gap-1 overflow-hidden rounded-[10px] border ${
+          outlineTone ? 'border-gray-200 bg-slate-50' : 'border-teal-200 bg-teal-50'
         } ${className}`}
       >
         <button
           type="button"
           onClick={handleDecrease}
-          className={`flex h-9 w-9 flex-shrink-0 items-center justify-center transition-colors ${
-            outlineTone ? 'text-slate-700 hover:bg-slate-100' : 'text-cta-dark hover:bg-orange-100'
+          className={`flex h-full w-10 flex-shrink-0 items-center justify-center transition-colors ${
+            outlineTone ? 'text-slate-700 hover:bg-slate-100' : 'text-teal-800 hover:bg-teal-100'
           }`}
           aria-label="Remove one"
         >
           <Minus className="h-3.5 w-3.5" />
         </button>
 
-        <span className="flex-1 text-center text-sm font-bold text-cta-dark tabular-nums">
+        <span className="flex-1 text-center text-sm font-bold text-teal-900 tabular-nums">
           {cartQty}
         </span>
 
@@ -151,8 +151,8 @@ export function AddToCartButton({
           type="button"
           onClick={handleIncrease}
           disabled={stockQuantity > 0 && cartQty >= stockQuantity}
-          className={`flex h-9 w-9 flex-shrink-0 items-center justify-center transition-colors disabled:opacity-40 ${
-            outlineTone ? 'text-slate-700 hover:bg-slate-100' : 'text-cta-dark hover:bg-orange-100'
+          className={`flex h-full w-10 flex-shrink-0 items-center justify-center transition-colors disabled:opacity-40 ${
+            outlineTone ? 'text-slate-700 hover:bg-slate-100' : 'text-teal-800 hover:bg-teal-100'
           }`}
           aria-label="Add one more"
         >
@@ -164,7 +164,7 @@ export function AddToCartButton({
 
   // ── Not in cart yet ──
   const solidEnabled =
-    'bg-cta text-white hover:bg-cta-dark hover:shadow-[0_4px_12px_rgba(249,115,22,0.25)] hover:-translate-y-0.5 active:translate-y-0 active:scale-95'
+    'bg-teal-700 text-white hover:bg-teal-800 hover:shadow-sm active:bg-teal-900'
   const outlineEnabled =
     'border border-emerald-600/85 bg-white text-emerald-800 hover:bg-emerald-50/90 active:scale-[0.98] shadow-sm'
 
@@ -175,15 +175,17 @@ export function AddToCartButton({
       disabled={isDisabled}
       className={`flex items-center justify-center gap-1.5 rounded-lg whitespace-nowrap transition-all duration-300 ${
         isDisabled
-          ? 'cursor-not-allowed bg-gray-200 text-gray-400 px-3 py-2 text-sm font-semibold'
+          ? 'cursor-not-allowed bg-slate-100 text-slate-500 px-3 text-sm font-semibold'
           : justAdded
             ? 'bg-green-600 text-white px-3 py-2 text-sm font-semibold scale-95'
             : outlineTone
               ? `px-2.5 py-1.5 text-xs font-semibold ${outlineEnabled}`
-              : `px-3 py-2 text-sm font-semibold ${solidEnabled}`
+              : `px-3 text-sm font-semibold ${solidEnabled}`
       } ${className}`}
     >
-      {justAdded ? (
+      {stockQuantity === 0 ? (
+        <span>স্টক শেষ</span>
+      ) : justAdded ? (
         <>
           <Check className="h-4 w-4 flex-shrink-0" />
           <span>যোগ হয়েছে!</span>
