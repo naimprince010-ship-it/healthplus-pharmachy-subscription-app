@@ -68,7 +68,7 @@ const SKIN_TYPES = [
 
 /** Curated rows used by the beauty/grocery home. Every ranking is based on persisted data. */
 export async function getCuratedHomeData() {
-  const empty = { flashSale: [], skinTypes: [], bestSellers: {}, bestSellerTitle: 'নতুন এসেছে' as const, grocery: [], brands: [] }
+  const empty = { flashSale: [], flashSaleEndsAt: null, serverNow: new Date().toISOString(), skinTypes: [], bestSellers: {}, bestSellerTitle: 'নতুন এসেছে' as const, grocery: [], brands: [] }
   try {
     const { prisma } = await import('@/lib/prisma')
     const now = new Date()
@@ -166,6 +166,8 @@ export async function getCuratedHomeData() {
     })
     return {
       flashSale,
+      flashSaleEndsAt: flashRaw[0]?.flashSaleEnd?.toISOString() ?? null,
+      serverNow: now.toISOString(),
       skinTypes: SKIN_TYPES.map((skinType, index) => ({ ...skinType, count: skinTypeCounts[index] }))
         .filter((skinType) => skinType.count > 0)
         .map(({ label, query, count }) => ({ label, query, count })),

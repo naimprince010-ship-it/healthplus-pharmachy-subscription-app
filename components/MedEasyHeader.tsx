@@ -169,7 +169,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus', freeDeliveryThreshold 
                 </span>
               )}
             </div>
-            <Link href="/orders" className="text-right font-semibold hover:underline">অর্ডার ট্র্যাক করুন</Link>
+            <Link href="/orders" className="inline-flex min-h-11 items-center justify-end text-right font-semibold hover:underline">অর্ডার ট্র্যাক করুন</Link>
           </div>
         </div>
         <div className={headerContainer}>
@@ -185,7 +185,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus', freeDeliveryThreshold 
           </div>
           <div className="flex h-14 items-center justify-between gap-2 sm:h-16 sm:gap-4 lg:h-[72px]">
             {/* Logo */}
-            <Link prefetch href="/" className="hidden items-center gap-2 flex-shrink-0 group md:flex" aria-label="Halalzi — home">
+            <Link prefetch href="/" className="hidden min-h-11 items-center gap-2 flex-shrink-0 group md:flex" aria-label="Halalzi — home">
               {/* Icon badge */}
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0F766E] transition-transform duration-200 group-hover:scale-105">
                 <span className="text-lg font-bold text-white">H</span>

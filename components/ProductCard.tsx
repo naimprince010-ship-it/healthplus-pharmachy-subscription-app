@@ -209,7 +209,7 @@ export function ProductCard({
               slug={product.slug}
               type={product.type === 'MEDICINE' ? 'MEDICINE' : 'PRODUCT'}
               variant="solid"
-              className="h-11 w-full rounded-[10px] lg:h-10"
+              className="h-11 w-full rounded-[10px]"
             />
           </div>
         </div>

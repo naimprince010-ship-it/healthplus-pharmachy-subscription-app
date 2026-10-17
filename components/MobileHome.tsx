@@ -97,7 +97,7 @@ export function MobileHome({ homeSections, heroBanners = [], offer, freeDelivery
   const { total, isInitialized } = useCart()
   const showFreeDeliveryBar = Boolean(isInitialized && freeDeliveryThreshold && freeDeliveryThreshold > 0 && total > 0)
   return (
-    <div className="min-h-screen bg-white" style={{ paddingBottom: showFreeDeliveryBar ? 'calc(100px + env(safe-area-inset-bottom))' : 'calc(64px + env(safe-area-inset-bottom))' }}>
+    <div className="min-h-screen bg-white" style={{ paddingBottom: showFreeDeliveryBar ? 'calc(172px + env(safe-area-inset-bottom))' : 'calc(136px + env(safe-area-inset-bottom))' }}>
       <section className="bg-white p-4 md:p-0 md:pb-4">
         {heroBanners.length > 0 ? <HeroBannerSlider banners={heroBanners} interval={4500} fallback={<MobileOfferHero offer={offer} />} /> : <MobileOfferHero offer={offer} />}
       </section>
@@ -105,7 +105,7 @@ export function MobileHome({ homeSections, heroBanners = [], offer, freeDelivery
         <div className="flex min-w-max gap-2">{BENEFITS.map(({ label, icon: Icon }) => <div key={label} className="flex h-11 snap-start items-center gap-2 rounded-full border border-teal-100 bg-teal-50 px-4 text-xs font-bold text-[#0B4F4A]"><Icon className="h-4 w-4" />{label}</div>)}</div>
       </div>
       <MobileCategoryGrid />
-      <FlashSaleHomeSection products={curated.flashSale} />
+      <FlashSaleHomeSection products={curated.flashSale} endsAt={curated.flashSaleEndsAt} serverNow={curated.serverNow} />
       <SkinTypeHomeSection skinTypes={curated.skinTypes} />
       <BestSellerHomeSection groups={curated.bestSellers} title={curated.bestSellerTitle} />
       <GroceryHomeSection products={curated.grocery} />

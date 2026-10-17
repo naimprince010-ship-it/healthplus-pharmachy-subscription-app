@@ -91,7 +91,7 @@ export function DesktopHome({ homeSections, heroBanners = [], offer, hotline, wh
       <section className="grid grid-cols-3 gap-3 bg-white px-4 pb-6">
         {BENEFITS.map(({ label, icon: Icon }) => <div key={label} className="flex h-[72px] items-center justify-center gap-2 rounded-2xl border border-teal-100 bg-teal-50 px-3 text-sm font-bold text-[#0B4F4A]"><Icon className="h-4 w-4" />{label}</div>)}
       </section>
-      <FlashSaleHomeSection products={curated.flashSale} />
+      <FlashSaleHomeSection products={curated.flashSale} endsAt={curated.flashSaleEndsAt} serverNow={curated.serverNow} />
       <SkinTypeHomeSection skinTypes={curated.skinTypes} />
       <BestSellerHomeSection groups={curated.bestSellers} title={curated.bestSellerTitle} />
       <GroceryHomeSection products={curated.grocery} />

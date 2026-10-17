@@ -67,9 +67,18 @@ export function HeroBannerSlider({ banners, interval = 4500, fallback = null }: 
   const [isPaused, setIsPaused] = useState(false)
   const [failedBannerIds, setFailedBannerIds] = useState<Set<string>>(() => new Set())
   const [loadedBannerIds, setLoadedBannerIds] = useState<Set<string>>(() => new Set())
+  const [reduceMotion, setReduceMotion] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const availableBanners = banners.filter((banner) => !failedBannerIds.has(banner.id))
   const total = availableBanners.length
+
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const update = () => setReduceMotion(media.matches)
+    update()
+    media.addEventListener('change', update)
+    return () => media.removeEventListener('change', update)
+  }, [])
 
   const markBannerFailed = useCallback((id: string) => {
     setFailedBannerIds((ids) => {
@@ -108,12 +117,12 @@ export function HeroBannerSlider({ banners, interval = 4500, fallback = null }: 
 
   // Auto-play
   useEffect(() => {
-    if (total <= 1 || isPaused) return
+    if (total <= 1 || isPaused || reduceMotion) return
     timerRef.current = setTimeout(next, interval)
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current)
     }
-  }, [current, isPaused, next, interval, total])
+  }, [current, isPaused, next, interval, reduceMotion, total])
 
   if (total === 0) return fallback
 
@@ -197,14 +206,14 @@ export function HeroBannerSlider({ banners, interval = 4500, fallback = null }: 
           <button
             onClick={prev}
             aria-label="Previous banner"
-            className="absolute left-3 top-1/2 z-20 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-sm transition-all hover:bg-black/50 hover:scale-110"
+            className="absolute left-3 top-1/2 z-20 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-sm transition-all hover:bg-black/50 hover:scale-110"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
           <button
             onClick={next}
             aria-label="Next banner"
-            className="absolute right-3 top-1/2 z-20 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-sm transition-all hover:bg-black/50 hover:scale-110"
+            className="absolute right-3 top-1/2 z-20 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-sm transition-all hover:bg-black/50 hover:scale-110"
           >
             <ChevronRight className="h-5 w-5" />
           </button>
@@ -219,23 +228,16 @@ export function HeroBannerSlider({ banners, interval = 4500, fallback = null }: 
               key={i}
               onClick={() => goTo(i)}
               aria-label={`Go to slide ${i + 1}`}
-              className="transition-all duration-300"
-              style={{
-                width: i === current ? '24px' : '8px',
-                height: '8px',
-                borderRadius: '999px',
-                backgroundColor: i === current ? '#ffffff' : 'rgba(255,255,255,0.45)',
-                border: 'none',
-                cursor: 'pointer',
-                padding: 0,
-              }}
-            />
+              className="flex h-11 w-11 items-center justify-center rounded-full"
+            >
+              <span className="h-2 rounded-full transition-all duration-300" style={{ width: i === current ? '24px' : '8px', backgroundColor: i === current ? '#ffffff' : 'rgba(255,255,255,0.45)' }} />
+            </button>
           ))}
         </div>
       )}
 
       {/* Progress bar */}
-      {total > 1 && !isPaused && (
+      {total > 1 && !isPaused && !reduceMotion && (
         <div className="absolute bottom-0 left-0 right-0 z-20 h-0.5 bg-white/20">
           <div
             key={current}
