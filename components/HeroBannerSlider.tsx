@@ -39,9 +39,14 @@ export function HeroBannerSlider({ banners, interval = 4500, fallback = null }: 
   const [current, setCurrent] = useState(0)
   const [isAnimating, setIsAnimating] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
-  const [imageFailed, setImageFailed] = useState(false)
+  const [failedBannerIds, setFailedBannerIds] = useState<Set<string>>(() => new Set())
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const total = banners.length
+  const availableBanners = banners.filter((banner) => !failedBannerIds.has(banner.id))
+  const total = availableBanners.length
+
+  useEffect(() => {
+    setCurrent((index) => total > 0 ? Math.min(index, total - 1) : 0)
+  }, [total])
 
   const goTo = useCallback(
     (index: number) => {
@@ -65,23 +70,18 @@ export function HeroBannerSlider({ banners, interval = 4500, fallback = null }: 
     }
   }, [current, isPaused, next, interval, total])
 
-  if (total === 0 || imageFailed) return fallback
-
-  const banner = banners[current]
-  const imgUrl = getImageUrl(banner)
-  const ctaUrl = getCtaUrl(banner)
-  const hasImage = imgUrl && imgUrl !== ''
+  if (total === 0) return fallback
 
   return (
     <div
-      className="relative w-full overflow-hidden rounded-2xl"
+      className="relative min-h-[340px] w-full overflow-hidden rounded-[20px] lg:rounded-[22px]"
       style={{ minHeight: '340px' }}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
       {/* Slides */}
       <div className="relative w-full h-full" style={{ minHeight: '340px' }}>
-        {banners.map((b, i) => {
+        {availableBanners.map((b, i) => {
           const bImg = getImageUrl(b)
           const bCta = getCtaUrl(b)
           const isActive = i === current
@@ -111,8 +111,13 @@ export function HeroBannerSlider({ banners, interval = 4500, fallback = null }: 
                     sizes="(max-width: 1400px) 100vw, 1400px"
                     className="object-cover"
                     priority={i === 0}
+                    loading={i === 0 ? undefined : 'lazy'}
                     draggable={false}
-                    onError={() => setImageFailed(true)}
+                    onError={() => setFailedBannerIds((ids) => {
+                      const nextIds = new Set(ids)
+                      nextIds.add(b.id)
+                      return nextIds
+                    })}
                   />
                 )}
                 {/* Overlay gradient */}
@@ -180,7 +185,7 @@ export function HeroBannerSlider({ banners, interval = 4500, fallback = null }: 
       {/* Dot indicators */}
       {total > 1 && (
         <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2">
-          {banners.map((_, i) => (
+          {availableBanners.map((_, i) => (
             <button
               key={i}
               onClick={() => goTo(i)}

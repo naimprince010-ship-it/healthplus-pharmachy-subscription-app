@@ -2,12 +2,7 @@ import Link from 'next/link'
 import { CategoryIcon, CategoryIconByKey } from '@/components/icons/CategoryIcons'
 import { prisma } from '@/lib/prisma'
 import { isGroceryShopEnabled, isMedicineShopEnabled } from '@/lib/site-features'
-
-function displayCategoryName(name: string) {
-  const hasLetters = /[A-Za-z]/.test(name)
-  if (!hasLetters || name !== name.toUpperCase()) return name
-  return name.toLowerCase().replace(/\b[a-z]/g, (letter) => letter.toUpperCase())
-}
+import { displayCategoryName } from '@/lib/display-category-name'
 
 export default async function CategoryIconNav() {
   const categories = await prisma.category.findMany({

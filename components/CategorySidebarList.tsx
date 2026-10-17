@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { ChevronRight } from 'lucide-react'
 import { CATEGORY_ICONS, CategoryIcon } from '@/components/icons/CategoryIcons'
 import { resolveCategoryIconKey } from '@/lib/category-icon-key'
+import { displayCategoryName } from '@/lib/display-category-name'
 
 /**
  * Kept for backwards compatibility with any caller that still does
@@ -69,7 +70,7 @@ export default function CategorySidebarList({ categories }: { categories: Catego
                   isActive ? 'text-primary-dark' : 'text-gray-700 group-hover:text-primary-dark'
                 }`}
               >
-                {category.name}
+                {displayCategoryName(category.name)}
               </span>
             </div>
             <ChevronRight
