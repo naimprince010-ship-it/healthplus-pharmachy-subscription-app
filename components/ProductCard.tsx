@@ -133,7 +133,6 @@ export function ProductCard({
   }
 
   const hasDiscount = discountPercent > 0
-
   const formatPrice = (value: number) => Number.isInteger(value)
     ? value.toFixed(0)
     : value.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')
@@ -142,7 +141,8 @@ export function ProductCard({
     <article
       className={`group relative flex h-full min-h-0 w-full min-w-0 flex-col rounded-2xl border border-slate-100 bg-white p-2.5 transition-[border-color,box-shadow] duration-300 hover:border-teal-200 hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] sm:p-3 ${className}`}
     >
-      <Link href={href} prefetch className={`relative aspect-square shrink-0 overflow-hidden rounded-xl p-2 ${imageTone}`} aria-label={product.name}>
+      <Link href={href} prefetch className={`relative aspect-square shrink-0 overflow-hidden rounded-xl p-2 ${imageTone}`}>
+        <span className="sr-only">{product.name}</span>
         <div className="absolute left-2 top-2 z-10 flex max-w-[calc(100%-1rem)] flex-wrap gap-1">
           {hasDiscount && <span className="rounded-md bg-[#C2410C] px-1.5 py-0.5 text-[11px] font-bold text-white">-{Math.round(discountPercent)}%</span>}
           {isFlashActive && <span className="rounded-md bg-orange-100 px-1.5 py-0.5 text-[11px] font-bold text-[#C2410C]">ফ্ল্যাশ</span>}
@@ -150,7 +150,7 @@ export function ProductCard({
         {displayImageUrl && !imageFailed ? (
           <Image
             src={displayImageUrl}
-            alt={product.name}
+            alt=""
             fill
             onError={() => setImageFailed(true)}
             priority={imagePriority}
