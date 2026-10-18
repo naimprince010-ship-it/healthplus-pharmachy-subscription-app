@@ -3,6 +3,16 @@ import { NextRequest, NextResponse } from 'next/server'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
+const UPSTREAM_TIMEOUT_MS = 4_000
+const FAILURE_CACHE_CONTROL = 'public, max-age=30, s-maxage=300, stale-if-error=600'
+
+function failedResponse(error: string, status: number) {
+  return NextResponse.json(
+    { error },
+    { status, headers: { 'Cache-Control': FAILURE_CACHE_CONTROL } },
+  )
+}
+
 const DEFAULT_ALLOWED_HOSTS = [
   'api.azanwholesale.com',
   'staging.azanwholesale.com',
@@ -50,21 +60,22 @@ function isAllowedImageUrl(rawUrl: string): boolean {
 export async function GET(request: NextRequest) {
   const rawUrl = request.nextUrl.searchParams.get('url') || ''
   if (!rawUrl || !isAllowedImageUrl(rawUrl)) {
-    return NextResponse.json({ error: 'Invalid or disallowed image URL' }, { status: 400 })
+    return failedResponse('Invalid or disallowed image URL', 400)
   }
 
   try {
     const upstream = await fetch(rawUrl, {
       headers: { Accept: 'image/*,*/*;q=0.8' },
       cache: 'force-cache',
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     })
     if (!upstream.ok) {
-      return NextResponse.json({ error: 'Image fetch failed' }, { status: upstream.status })
+      return failedResponse('Image fetch failed', upstream.status)
     }
 
     const contentType = upstream.headers.get('content-type') || ''
     if (!contentType.startsWith('image/')) {
-      return NextResponse.json({ error: 'Unsupported content type' }, { status: 415 })
+      return failedResponse('Unsupported content type', 415)
     }
 
     const buffer = await upstream.arrayBuffer()
@@ -78,6 +89,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('image-proxy failed:', error)
-    return NextResponse.json({ error: 'Image proxy failed' }, { status: 500 })
+    const timedOut = error instanceof DOMException && error.name === 'TimeoutError'
+    return failedResponse(timedOut ? 'Image upstream timed out' : 'Image proxy failed', timedOut ? 504 : 500)
   }
 }

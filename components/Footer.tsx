@@ -46,6 +46,7 @@ interface FooterSettings {
 
 interface FooterProps {
   settings: FooterSettings
+  medicineShopEnabled: boolean
 }
 
 const SocialIcon = ({ platform, className }: { platform: string; className?: string }) => {
@@ -86,7 +87,14 @@ const PaymentIcon = ({ iconKey }: { iconKey: string }) => {
   }
 }
 
-export function Footer({ settings }: FooterProps) {
+export function Footer({ settings, medicineShopEnabled }: FooterProps) {
+  const brandDescription = !medicineShopEnabled && /ঔষধ|ওষুধ|medicine|prescription|প্রেসক্রিপশন/i.test(settings.brandDescription)
+    ? ''
+    : settings.brandDescription
+  const quickLinks = medicineShopEnabled
+    ? settings.quickLinks
+    : settings.quickLinks.filter((link) => !/ঔষধ|ওষুধ|medicine|prescription|প্রেসক্রিপশন/i.test(`${link.label} ${link.href}`))
+
   return (
     <footer style={{ backgroundColor: settings.bgColor, color: settings.textColor }}>
       {/* Main Footer Content */}
@@ -102,9 +110,9 @@ export function Footer({ settings }: FooterProps) {
                 {settings.brandName}
               </span>
             </div>
-            <p className="text-sm leading-relaxed mb-4" style={{ color: settings.textColor }}>
-              {settings.brandDescription}
-            </p>
+            {brandDescription && <p className="text-sm leading-relaxed mb-4" style={{ color: settings.textColor }}>
+              {brandDescription}
+            </p>}
             {(settings.drugLicense || settings.tradeLicense) && (
               <div className="text-xs space-y-1 opacity-80">
                 {settings.drugLicense && <p>Drug License: {settings.drugLicense}</p>}
@@ -140,7 +148,7 @@ export function Footer({ settings }: FooterProps) {
               {settings.quickLinksTitle}
             </h3>
             <ul className="space-y-2">
-              {settings.quickLinks.map((link, index) => (
+              {quickLinks.map((link, index) => (
                 <li key={index}>
                   <Link
                     href={link.href}
