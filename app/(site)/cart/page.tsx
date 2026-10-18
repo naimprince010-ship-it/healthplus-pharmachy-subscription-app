@@ -48,7 +48,7 @@ function mapCatalogRowToSuggestion(p: {
 }
 
 interface CartSettings {
-  freeDeliveryThreshold: number
+  freeDeliveryThreshold: number | null
   freeDeliveryTextBn: string
   freeDeliverySuccessTextBn: string
   promoLabelBn: string
@@ -66,7 +66,7 @@ interface CartSettings {
 }
 
 const DEFAULT_SETTINGS: CartSettings = {
-  freeDeliveryThreshold: 499,
+  freeDeliveryThreshold: null,
   freeDeliveryTextBn: 'আর মাত্র ৳{remaining} টাকার পণ্য কিনলে ফ্রি ডেলিভারি পাবেন!',
   freeDeliverySuccessTextBn: 'অভিনন্দন! আপনি ফ্রি ডেলিভারি পেয়েছেন 🎉',
   promoLabelBn: 'প্রোমো কোড ব্যবহার করুন',
@@ -253,9 +253,9 @@ export default function CartPage() {
   const totalSavings = mrpTotal - total
 
   // Free delivery progress (using admin-configured threshold)
-  const remaining = Math.max(0, settings.freeDeliveryThreshold - total)
-  const progressPercent = Math.min(100, (total / settings.freeDeliveryThreshold) * 100)
-  const hasFreeDelivery = total >= settings.freeDeliveryThreshold
+  const remaining = settings.freeDeliveryThreshold ? Math.max(0, settings.freeDeliveryThreshold - total) : 0
+  const progressPercent = settings.freeDeliveryThreshold ? Math.min(100, (total / settings.freeDeliveryThreshold) * 100) : 0
+  const hasFreeDelivery = Boolean(settings.freeDeliveryThreshold && total >= settings.freeDeliveryThreshold)
 
   // Handle promo code apply
   const handleApplyPromo = async () => {
@@ -471,7 +471,7 @@ export default function CartPage() {
       {/* Main content */}
       <div className="px-4 py-4 lg:mx-auto lg:max-w-7xl lg:px-8">
         {/* Free Delivery Progress Bar */}
-        <div className="mb-3 rounded-xl bg-white p-3 shadow-sm lg:hidden">
+        {settings.freeDeliveryThreshold && settings.freeDeliveryThreshold > 0 && <div className="mb-3 rounded-xl bg-white p-3 shadow-sm lg:hidden">
           {hasFreeDelivery ? (
             <div className="flex items-center gap-2">
               <span className="text-lg">🎉</span>
@@ -495,7 +495,7 @@ export default function CartPage() {
               </div>
             </>
           )}
-        </div>
+        </div>}
 
         {/* Cart Items */}
         <div className="space-y-3 lg:grid lg:grid-cols-3 lg:gap-6 lg:space-y-0">

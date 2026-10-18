@@ -182,9 +182,9 @@ export async function POST(request: NextRequest) {
     } = quote
 
     const cartSettings = await prisma.cartPageSettings.findFirst()
-    const freeDeliveryThreshold =
-      cartSettings?.freeDeliveryThreshold ?? 499
-    const qualifiesForFreeDelivery = subtotal >= freeDeliveryThreshold
+    const freeDeliveryThreshold = cartSettings?.freeDeliveryThreshold ?? null
+    const qualifiesForFreeDelivery =
+      freeDeliveryThreshold !== null && freeDeliveryThreshold > 0 && subtotal >= freeDeliveryThreshold
     const deliveryCharge = qualifiesForFreeDelivery
       ? 0
       : resolveDeliveryChargeForZone(address.zone)

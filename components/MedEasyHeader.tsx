@@ -473,7 +473,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus', freeDeliveryThreshold 
       )}
 
       {/* Cart Drawer */}
-      <CartDrawer />
+      <CartDrawer freeDeliveryThreshold={freeDeliveryThreshold} />
     </>
   )
 }

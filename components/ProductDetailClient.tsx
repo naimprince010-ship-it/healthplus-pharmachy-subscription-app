@@ -7,8 +7,6 @@ import { trackAddToCart } from '@/lib/trackEvent'
 import { logProductInteraction } from '@/lib/logProductInteraction'
 import { getEffectivePrices } from '@/lib/pricing'
 
-const FREE_DELIVERY_THRESHOLD = 1000
-
 interface ProductVariant {
   id: string
   variantName: string
@@ -45,6 +43,7 @@ interface ProductDetailClientProps {
   unitPrice?: number | null
   stripPrice?: number | null
   tabletsPerStrip?: number | null
+  freeDeliveryThreshold?: number | null
 }
 
 export function ProductDetailClient({
@@ -70,6 +69,7 @@ export function ProductDetailClient({
   unitPrice,
   stripPrice,
   tabletsPerStrip,
+  freeDeliveryThreshold = null,
 }: ProductDetailClientProps) {
   const { addItem } = useCart()
 
@@ -198,9 +198,9 @@ export function ProductDetailClient({
 
   // Free delivery progress based on cart total
   const { total: cartTotal } = useCart()
-  const freeDeliveryRemaining = Math.max(0, FREE_DELIVERY_THRESHOLD - cartTotal)
-  const freeDeliveryProgress = Math.min(100, (cartTotal / FREE_DELIVERY_THRESHOLD) * 100)
-  const hasFreeDelivery = cartTotal >= FREE_DELIVERY_THRESHOLD
+  const freeDeliveryRemaining = freeDeliveryThreshold ? Math.max(0, freeDeliveryThreshold - cartTotal) : 0
+  const freeDeliveryProgress = freeDeliveryThreshold ? Math.min(100, (cartTotal / freeDeliveryThreshold) * 100) : 0
+  const hasFreeDelivery = Boolean(freeDeliveryThreshold && cartTotal >= freeDeliveryThreshold)
 
   return (
     <div className="space-y-4">
@@ -349,7 +349,7 @@ export function ProductDetailClient({
           </div>
 
           {/* Free Delivery Progress */}
-          <div className={`rounded-xl px-4 py-3 ${hasFreeDelivery ? 'bg-green-50 border border-green-100' : 'bg-orange-50 border border-orange-100'}`}>
+          {freeDeliveryThreshold && freeDeliveryThreshold > 0 && <div className={`rounded-xl px-4 py-3 ${hasFreeDelivery ? 'bg-green-50 border border-green-100' : 'bg-orange-50 border border-orange-100'}`}>
             <div className="flex items-center justify-between mb-1.5">
               <div className="flex items-center gap-1.5">
                 <Truck className="h-3.5 w-3.5 shrink-0" style={{ color: hasFreeDelivery ? '#0F6E56' : '#ea580c' }} />
@@ -361,7 +361,7 @@ export function ProductDetailClient({
                   </span>
                 )}
               </div>
-              <span className="text-[10px] text-gray-500">৳{FREE_DELIVERY_THRESHOLD}-এ ফ্রি</span>
+              <span className="text-[10px] text-gray-500">৳{freeDeliveryThreshold}-এ ফ্রি</span>
             </div>
             <div className="h-1.5 w-full rounded-full bg-gray-200 overflow-hidden">
               <div
@@ -372,7 +372,7 @@ export function ProductDetailClient({
                 }}
               />
             </div>
-          </div>
+          </div>}
 
           <button
             ref={addToCartRef}
