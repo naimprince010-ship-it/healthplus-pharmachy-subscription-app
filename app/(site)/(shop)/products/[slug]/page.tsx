@@ -17,6 +17,7 @@ import { ProductSpecsTable } from '@/components/product-detail/ProductSpecsTable
 import { ProductKeyFeaturesGrid } from '@/components/product-detail/ProductKeyFeaturesGrid'
 import { ProductIngredientsSection } from '@/components/product-detail/ProductIngredientsSection'
 import { getVolumeSizeDisplay, productTypeLabelBn } from '@/lib/product-detail-display'
+import { prisma } from '@/lib/prisma'
 
 export const runtime = 'nodejs'
 export const revalidate = 60 // Revalidate page every 60 seconds (ISR)
@@ -94,6 +95,9 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params
   const product = await getCachedProductBySlug(slug)
+  const cartSettings = await prisma.cartPageSettings.findFirst({
+    select: { freeDeliveryThreshold: true },
+  }).catch(() => null)
 
   if (!product || !product.isActive) {
     notFound()
@@ -442,6 +446,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 unitPrice={product.medicine?.unitPrice ? Number(product.medicine.unitPrice) : null}
                 stripPrice={product.medicine?.stripPrice ? Number(product.medicine.stripPrice) : null}
                 tabletsPerStrip={product.medicine?.tabletsPerStrip || null}
+                freeDeliveryThreshold={cartSettings?.freeDeliveryThreshold ?? null}
               />
 
               {product.description && (

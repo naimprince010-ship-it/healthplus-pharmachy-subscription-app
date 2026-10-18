@@ -8,7 +8,6 @@ import { useCart, type CartItem } from '@/contexts/CartContext'
 import { AddToCartButton } from '@/components/AddToCartButton'
 
 const CHECKOUT_GREEN = '#0F6E56'
-const FREE_DELIVERY_THRESHOLD = 1000
 
 function formatBnInteger(n: number) {
   return Math.round(n).toLocaleString('bn-BD')
@@ -45,7 +44,11 @@ interface BestSellerProduct {
   category: { id: string; name: string; slug: string }
 }
 
-export function CartDrawer() {
+interface CartDrawerProps {
+  freeDeliveryThreshold?: number | null
+}
+
+export function CartDrawer({ freeDeliveryThreshold = null }: CartDrawerProps) {
   const {
     items,
     removeItem,
@@ -60,9 +63,10 @@ export function CartDrawer() {
   const [bestSellers, setBestSellers] = useState<BestSellerProduct[]>([])
 
   // Free delivery progress
-  const remaining = Math.max(0, FREE_DELIVERY_THRESHOLD - total)
-  const progress = Math.min(100, (total / FREE_DELIVERY_THRESHOLD) * 100)
-  const hasFreeDelivery = total >= FREE_DELIVERY_THRESHOLD
+  const hasFreeDeliveryOffer = Boolean(freeDeliveryThreshold && freeDeliveryThreshold > 0)
+  const remaining = freeDeliveryThreshold ? Math.max(0, freeDeliveryThreshold - total) : 0
+  const progress = freeDeliveryThreshold ? Math.min(100, (total / freeDeliveryThreshold) * 100) : 0
+  const hasFreeDelivery = Boolean(freeDeliveryThreshold && total >= freeDeliveryThreshold)
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -149,7 +153,7 @@ export function CartDrawer() {
         </div>
 
         {/* Free Delivery Progress Bar */}
-        {items.length > 0 && (
+        {items.length > 0 && hasFreeDeliveryOffer && (
           <div className={`px-5 py-3 ${hasFreeDelivery ? 'bg-green-50' : 'bg-orange-50'}`}>
             <div className="flex items-center justify-between mb-1.5">
               <div className="flex items-center gap-1.5">
@@ -162,7 +166,7 @@ export function CartDrawer() {
                   </span>
                 )}
               </div>
-              <span className="text-[10px] text-gray-500">৳{FREE_DELIVERY_THRESHOLD} এ ফ্রি</span>
+              <span className="text-[10px] text-gray-500">৳{freeDeliveryThreshold} এ ফ্রি</span>
             </div>
             <div className="h-1.5 w-full rounded-full bg-gray-200 overflow-hidden">
               <div
