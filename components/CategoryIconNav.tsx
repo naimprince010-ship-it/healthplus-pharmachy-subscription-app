@@ -5,12 +5,19 @@ import { isGroceryShopEnabled, isHomeCategoryVisible, isMedicineShopEnabled } fr
 import { displayCategoryName } from '@/lib/display-category-name'
 
 export default async function CategoryIconNav() {
-  const categories = await prisma.category.findMany({
-    where: { isActive: true, showInSidebar: true },
-    orderBy: [{ sidebarOrder: 'asc' }, { name: 'asc' }],
-    select: { id: true, name: true, slug: true, sidebarLinkUrl: true, isMedicineCategory: true },
-    take: 16,
-  })
+  let categories
+
+  try {
+    categories = await prisma.category.findMany({
+      where: { isActive: true, showInSidebar: true },
+      orderBy: [{ sidebarOrder: 'asc' }, { name: 'asc' }],
+      select: { id: true, name: true, slug: true, sidebarLinkUrl: true, isMedicineCategory: true },
+      take: 16,
+    })
+  } catch (error) {
+    console.error('[CategoryIconNav] Unable to load categories:', error)
+    return null
+  }
 
   const visible = categories
     .filter((category) => isHomeCategoryVisible(category.slug))

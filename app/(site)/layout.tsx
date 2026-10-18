@@ -8,14 +8,27 @@ import TrackingProvider from "@/components/tracking/TrackingProvider";
 import { getBasicSettings } from "@/lib/settings-server";
 import { prisma } from "@/lib/prisma";
 
+async function getFreeDeliveryThreshold() {
+  try {
+    const cartSettings = await prisma.cartPageSettings.findFirst({
+      select: { freeDeliveryThreshold: true },
+    });
+
+    return cartSettings?.freeDeliveryThreshold ?? null;
+  } catch (error) {
+    console.error("[SiteLayout] Unable to load cart settings:", error);
+    return null;
+  }
+}
+
 export default async function SiteLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [basicSettings, cartSettings] = await Promise.all([
+  const [basicSettings, freeDeliveryThreshold] = await Promise.all([
     getBasicSettings(),
-    prisma.cartPageSettings.findFirst({ select: { freeDeliveryThreshold: true } }),
+    getFreeDeliveryThreshold(),
   ]);
   const whatsappNumber = (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || basicSettings.storePhone).trim();
 
@@ -25,7 +38,7 @@ export default async function SiteLayout({
       <NavigationPrefetch />
       <MedEasyHeader
         storeName={basicSettings.storeName}
-        freeDeliveryThreshold={cartSettings?.freeDeliveryThreshold ?? null}
+        freeDeliveryThreshold={freeDeliveryThreshold}
         whatsappNumber={whatsappNumber}
       />
       <main className="min-h-screen">{children}</main>
