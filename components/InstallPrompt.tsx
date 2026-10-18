@@ -47,7 +47,7 @@ export function InstallPrompt() {
         </button>
         
         <div className="flex items-start gap-3 pr-6">
-          <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-teal-600 flex items-center justify-center">
+          <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-teal-700 flex items-center justify-center">
             <span className="text-white font-bold text-lg">H+</span>
           </div>
           
@@ -98,7 +98,7 @@ export function InstallPrompt() {
       </button>
       
       <div className="flex items-start gap-3 pr-6">
-        <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-teal-600 flex items-center justify-center">
+        <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-teal-700 flex items-center justify-center">
           <span className="text-white font-bold text-lg">H+</span>
         </div>
         
@@ -113,7 +113,7 @@ export function InstallPrompt() {
       <div className="mt-4 flex gap-2">
         <button
           onClick={promptInstall}
-          className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-teal-700 text-white text-sm font-medium rounded-lg hover:bg-teal-800 transition-colors"
         >
           <Download className="w-4 h-4" />
           Install App

@@ -4,9 +4,10 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { useCart } from '@/contexts/CartContext'
+import { Gift } from 'lucide-react'
 
 /** Eagerly prefetch RSC payload for all tab targets so navigation feels instant after first paint. */
-const BOTTOM_TAB_HREFS = ['/', '/products', '/subscriptions', '/cart', '/dashboard'] as const
+const BOTTOM_TAB_HREFS = ['/', '/products', '/flash-sale', '/cart', '/dashboard'] as const
 
 export function MobileBottomNav() {
   const pathname = usePathname()
@@ -20,11 +21,11 @@ export function MobileBottomNav() {
   }, [router])
 
   const navItems = [
-    { href: '/', label: 'Home', iconType: 'home' },
-    { href: '/products', label: 'Shop', iconType: 'shop' },
-    { href: '/subscriptions', label: 'Plans', iconType: 'plans' },
-    { href: '/cart', label: 'Cart', iconType: 'cart', badge: itemCount },
-    { href: '/dashboard', label: 'Profile', iconType: 'profile' },
+    { href: '/', label: 'হোম', iconType: 'home' },
+    { href: '/products', label: 'ক্যাটাগরি', iconType: 'shop' },
+    { href: '/flash-sale', label: 'অফার', iconType: 'offers' },
+    { href: '/cart', label: 'কার্ট', iconType: 'cart', badge: itemCount },
+    { href: '/dashboard', label: 'অ্যাকাউন্ট', iconType: 'profile' },
   ]
 
   const renderIcon = (iconType: string, isActive: boolean) => {
@@ -47,14 +48,9 @@ export function MobileBottomNav() {
             <rect x="3" y="14" width="7" height="7" rx="1" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         )
-      case 'plans':
+      case 'offers':
         return (
-          <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" strokeLinecap="round" strokeLinejoin="round" />
-            <line x1="16" y1="2" x2="16" y2="6" strokeLinecap="round" strokeLinejoin="round" />
-            <line x1="8" y1="2" x2="8" y2="6" strokeLinecap="round" strokeLinejoin="round" />
-            <line x1="3" y1="10" x2="21" y2="10" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <Gift className="h-6 w-6" />
         )
       case 'cart':
         return (
@@ -77,8 +73,8 @@ export function MobileBottomNav() {
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white shadow-lg lg:hidden safe-area-bottom">
-      <div className="flex items-center justify-around py-1">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white shadow-lg lg:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <div className="flex h-16 items-center justify-around">
         {navItems.map((item) => {
           const isActive = pathname === item.href || 
             (item.href !== '/' && pathname.startsWith(item.href))

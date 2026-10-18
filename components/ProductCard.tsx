@@ -1,11 +1,14 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ImageOff } from 'lucide-react'
 import { AddToCartButton } from '@/components/AddToCartButton'
+import { CategoryIcon } from '@/components/icons/CategoryIcons'
 import { getEffectivePrices } from '@/lib/pricing'
 import { getStorefrontImageUrl } from '@/lib/image-url'
+import { resolveCategoryIconKey } from '@/lib/category-icon-key'
+import { isMedicineShopEnabled } from '@/lib/site-features'
 
 export interface ProductCardProps {
   id: string
@@ -65,7 +68,6 @@ export function ProductCard({
   variant = 'default',
   className = '',
   imagePriority = false,
-  cartButtonVariant,
 }: ProductCardComponentProps) {
   const href =
     product.href ||
@@ -85,21 +87,31 @@ export function ProductCard({
 
   const isCompact = variant === 'compact'
   const displayImageUrl = getStorefrontImageUrl(product.imageUrl)
+  const [imageFailed, setImageFailed] = useState(false)
   const sizeDisplay = product.sizeLabel?.trim() || product.packSize?.trim() || null
+  const metadata = [sizeDisplay, product.brandName?.trim()].filter(Boolean).join(' · ')
+  const iconKey = resolveCategoryIconKey(product.category.slug, product.category.name)
+  const imageTone = ['makeup', 'fragrance', 'body', 'feminine', 'cosmetics'].includes(iconKey)
+    ? 'bg-[#FDF2F4]'
+    : ['skincare', 'hair'].includes(iconKey)
+      ? 'bg-[#F0FDFA]'
+      : ['grocery', 'fresh', 'deals'].includes(iconKey)
+        ? 'bg-[#FFF7ED]'
+        : 'bg-[#F8FAFC]'
 
   // Use pre-computed values from server if available (avoids hydration mismatch)
   // Fall back to computing on client for pages that don't pre-compute
   let price: number
   let mrp: number
   let discountPercent: number
-  let showOrangeOffBadge: boolean
+  let isFlashActive: boolean
 
   if (product.effectivePrice !== undefined) {
     // Use pre-computed values from server
     price = product.effectivePrice
     mrp = product.effectiveMrp ?? product.mrp ?? product.sellingPrice
     discountPercent = product.effectiveDiscountPercent ?? 0
-    showOrangeOffBadge = product.isFlashSaleActive ?? false
+    isFlashActive = product.isFlashSaleActive ?? false
   } else {
     // Fall back to computing on client (for pages that don't pre-compute)
     const computed = getEffectivePrices({
@@ -117,123 +129,72 @@ export function ProductCard({
     price = computed.price
     mrp = computed.mrp
     discountPercent = computed.discountPercent
-    showOrangeOffBadge = computed.isFlashSale || computed.isCampaign
+    isFlashActive = computed.isFlashSale
   }
 
   const hasDiscount = discountPercent > 0
-
-  const isHygieneProduct = 
-    product.category.name.toLowerCase().includes('women') || 
-    product.category.name.toLowerCase().includes('hygiene') ||
-    product.name.toLowerCase().includes('pad') ||
-    product.name.toLowerCase().includes('napkin') ||
-    product.name.toLowerCase().includes('senora') ||
-    product.name.toLowerCase().includes('joya') ||
-    product.name.toLowerCase().includes('freedom')
+  const formatPrice = (value: number) => Number.isInteger(value)
+    ? value.toFixed(0)
+    : value.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')
 
   return (
-    <Link
-      href={href}
-      prefetch
-      className={`group relative flex min-h-0 h-full w-full min-w-0 flex-col rounded-xl border border-gray-100 bg-white transition-[transform,box-shadow] duration-300 ease-out hover:border-emerald-200/80 hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-0.5 ${
-        isCompact ? 'p-3 lg:p-[14px]' : 'p-4'
-      } ${className}`}
+    <article
+      className={`group relative flex h-full min-h-0 w-full min-w-0 flex-col rounded-2xl border border-slate-100 bg-white p-2.5 transition-[border-color,box-shadow] duration-300 hover:border-teal-200 hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] sm:p-3 ${className}`}
     >
-      {/* Discount badge */}
-      {hasDiscount && (
-        <div className={`absolute left-3 top-3 z-10 rounded bg-cta px-2 py-0.5 text-[11px] font-bold tracking-wide text-white shadow-sm`}>
-          {discountPercent}% {showOrangeOffBadge ? 'OFF' : 'ডিস্কাউন্ট'}
+      <Link href={href} prefetch className={`relative aspect-square shrink-0 overflow-hidden rounded-xl p-2 ${imageTone}`}>
+        <span className="sr-only">{product.name}</span>
+        <div className="absolute left-2 top-2 z-10 flex max-w-[calc(100%-1rem)] flex-wrap gap-1">
+          {hasDiscount && <span className="rounded-md bg-[#C2410C] px-1.5 py-0.5 text-[11px] font-bold text-white">-{Math.round(discountPercent)}%</span>}
+          {isFlashActive && <span className="rounded-md bg-orange-100 px-1.5 py-0.5 text-[11px] font-bold text-[#C2410C]">ফ্ল্যাশ</span>}
         </div>
-      )}
-
-      {/* Discreet Packaging badge */}
-      {isHygieneProduct && (
-        <div className={`absolute ${hasDiscount ? 'top-10' : 'top-3'} left-3 z-10 rounded-full bg-pink-500/90 px-2 py-0.5 text-[10px] font-bold tracking-wide text-white shadow-sm flex items-center gap-1 backdrop-blur-sm`}>
-          <span aria-hidden="true">🔒</span> Privacy
-        </div>
-      )}
-
-      {/* Low stock urgency badge */}
-      {product.stockQuantity > 0 && product.stockQuantity <= 5 && (
-        <div className="absolute right-2 top-2 z-10 flex items-center gap-0.5 rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm animate-pulse">
-          ⚠️ মাত্র {product.stockQuantity}টি বাকি
-        </div>
-      )}
-
-      <div
-        className="relative aspect-square shrink-0 overflow-hidden rounded-lg bg-gradient-to-b from-slate-100 to-slate-50 ring-1 ring-inset ring-slate-200/80"
-      >
-        {displayImageUrl ? (
+        {displayImageUrl && !imageFailed ? (
           <Image
             src={displayImageUrl}
-            alt={product.name}
+            alt=""
             fill
+            onError={() => setImageFailed(true)}
             priority={imagePriority}
             sizes={
               isCompact
                 ? '(max-width: 768px) 50vw, 190px'
                 : '(max-width: 768px) 50vw, (max-width: 1280px) 25vw, 320px'
             }
-            className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+            className="object-contain p-2 transition-transform duration-300 group-hover:scale-[1.02]"
           />
         ) : (
-          <div className="flex h-full flex-col items-center justify-center gap-1 p-3 text-slate-400" aria-hidden>
-            <ImageOff className="h-8 w-8 opacity-50" strokeWidth={1.25} />
-            <span className="text-center text-[10px] font-medium uppercase tracking-wide text-slate-500">
-              ছবি নেই
-            </span>
+          <div className="flex h-full items-center justify-center opacity-40" aria-hidden>
+            <CategoryIcon slug={product.category.slug} name={product.category.name} size={48} />
           </div>
         )}
-        {product.requiresPrescription && (
-          <span className="absolute right-2 top-2 z-10 rounded-full bg-red-500 px-2 py-0.5 text-xs font-semibold text-white">
+        {product.requiresPrescription && isMedicineShopEnabled() && (
+          <span className="absolute right-2 top-2 z-10 rounded-md bg-red-600 px-2 py-0.5 text-xs font-semibold text-white">
             Rx
           </span>
         )}
-      </div>
+        {product.stockQuantity > 0 && product.stockQuantity <= 5 && (
+          <span className="absolute bottom-2 right-2 z-10 rounded-md bg-red-50 px-2 py-1 text-[10px] font-bold text-red-700">
+            মাত্র {product.stockQuantity}টি বাকি
+          </span>
+        )}
+      </Link>
 
-      {/* Title: truncated; size on its own line (sizeLabel / packSize) */}
       <div className={`flex min-h-0 flex-1 flex-col ${isCompact ? 'mt-2.5' : 'mt-3'}`}>
-        <h3
-          className={`shrink-0 font-semibold leading-snug text-slate-900 ${
-            isCompact ? 'line-clamp-3 text-[13px] sm:text-sm' : 'line-clamp-2 text-[13.5px]'
-          } ${isCompact ? 'min-h-[3.75rem] sm:min-h-[2.625rem]' : 'min-h-[2.75rem]'}`}
-        >
-          {product.name}
+        <h3 className="min-h-[2.5rem] shrink-0 text-[13.5px] font-semibold leading-5 text-slate-900">
+          <Link href={href} prefetch className="line-clamp-2 hover:text-teal-800">{product.name}</Link>
         </h3>
-        {sizeDisplay && (
-          <p
-            className={`shrink-0 font-medium text-gray-600 line-clamp-1 ${
-              isCompact ? 'mt-0.5 text-[11px]' : 'mt-0.5 text-xs'
-            }`}
-            title={sizeDisplay}
-          >
-            {sizeDisplay}
-          </p>
-        )}
-        {/* Brand: 1 line only */}
-        {product.brandName && (
-          <p className={`line-clamp-1 text-gray-400 shrink-0 ${isCompact ? 'mt-0.5 text-[11px]' : 'mt-0.5 text-xs'}`}>
-            {product.brandName}
-          </p>
-        )}
+        <div className="mt-0.5 min-h-[18px]">
+          {metadata && <p className="truncate text-xs font-normal text-slate-500" title={metadata}>{metadata}</p>}
+        </div>
 
-        {/* Price — pushed to bottom via mt-auto */}
         <div className="mt-auto pt-1">
-          <div className={`flex flex-wrap items-baseline gap-1.5 ${isCompact ? 'mt-2' : 'mt-2'}`}>
-            <span
-              className={`font-bold tabular-nums text-emerald-800 ${isCompact ? 'text-base' : 'text-[17px]'}`}
-            >
-              ৳{price.toFixed(2)}
-            </span>
+          <div className="mt-2 flex flex-wrap items-baseline gap-1.5">
+            <span className="text-[17px] font-bold tabular-nums text-teal-900">৳{formatPrice(price)}</span>
             {hasDiscount && (
-              <span className={`font-medium text-gray-400 line-through ${isCompact ? 'text-[11px]' : 'text-xs'}`}>
-                ৳{mrp.toFixed(2)}
-              </span>
+              <span className="text-xs font-medium text-slate-500 line-through">৳{formatPrice(mrp)}</span>
             )}
           </div>
 
-          {/* Button */}
-          <div className={`${isCompact ? 'pt-2 pb-1.5' : 'pt-2 pb-1'}`} onClick={(e) => e.preventDefault()}>
+          <div className="pt-2">
             <AddToCartButton
               medicineId={medicineId}
               productId={productId}
@@ -247,12 +208,12 @@ export function ProductCard({
               mrp={mrp}
               slug={product.slug}
               type={product.type === 'MEDICINE' ? 'MEDICINE' : 'PRODUCT'}
-              variant={cartButtonVariant}
-              className={`w-full ${isCompact ? '' : 'py-2'} ${cartButtonVariant === 'outline' && isCompact ? 'min-h-[2.25rem]' : ''}`}
+              variant="solid"
+              className="h-11 w-full rounded-[10px]"
             />
           </div>
         </div>
       </div>
-    </Link>
+    </article>
   )
 }

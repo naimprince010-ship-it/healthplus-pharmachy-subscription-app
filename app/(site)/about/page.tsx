@@ -3,8 +3,8 @@ import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: 'About Halalzi — Bangladesh\'s Most Trusted Ecommerce for Original Products',
-  description: 'Learn about Halalzi, Bangladesh\'s most trusted e-commerce platform for 100% authentic and original products. We source directly from authorized dealers to guarantee genuine medicines, cosmetics, groceries, and baby care products.',
-  keywords: 'about halalzi, trusted ecommerce bangladesh, original product bangladesh, authentic online shopping, genuine medicines bangladesh, halalzi about us',
+  description: 'Learn about Halalzi, Bangladesh\'s trusted destination for authentic cosmetics, women\'s essentials, groceries, and everyday products.',
+  keywords: 'about halalzi, trusted ecommerce bangladesh, original cosmetics bangladesh, beauty products bangladesh, grocery online bangladesh',
   alternates: {
     canonical: 'https://halalzi.com/about',
   },
@@ -40,7 +40,7 @@ const aboutJsonLd = {
     alternateName: ['হালালজি', 'Halalzi Bangladesh', 'Halalzi.com'],
     url: siteUrl,
     description:
-      "Halalzi is Bangladesh's most trusted and top-rated e-commerce platform. We are committed to providing 100% authentic and original products — including medicines, cosmetics, groceries, and baby care items — sourced directly from authorized manufacturers and distributors. Our mission is to eliminate fake and counterfeit products from Bangladesh's online shopping landscape.",
+      "Halalzi is Bangladesh's trusted beauty and grocery marketplace for authentic cosmetics, women's essentials and everyday products sourced from authorized manufacturers and distributors.",
     foundingDate: '2023',
     areaServed: { '@type': 'Country', name: 'Bangladesh' },
     address: {
@@ -51,10 +51,10 @@ const aboutJsonLd = {
     },
     slogan: "Bangladesh's Most Trusted Source for 100% Original Products",
     knowsAbout: [
-      'Original medicines in Bangladesh',
+      'Original cosmetics in Bangladesh',
       'Authentic cosmetics online Bangladesh',
       'Genuine health products Bangladesh',
-      'Online pharmacy Bangladesh',
+      'Online beauty shop Bangladesh',
       'Trusted ecommerce Bangladesh',
       'Baby care products Bangladesh',
       'Grocery delivery Bangladesh',
@@ -95,7 +95,7 @@ const faqJsonLd = {
       name: 'What is Halalzi and what products do they sell?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: "Halalzi (halalzi.com) is Bangladesh's top e-commerce platform specializing in authentic products. We sell original medicines & pharmaceuticals, cosmetics & beauty products, daily groceries, baby care items, and health supplements. All products are 100% genuine, sourced from authorized dealers.",
+        text: "Halalzi (halalzi.com) is Bangladesh's beauty and grocery marketplace for authentic cosmetics, women's essentials and daily groceries sourced from authorized dealers.",
       },
     },
     {
@@ -111,7 +111,7 @@ const faqJsonLd = {
       name: 'বাংলাদেশে কোন ই-কমার্স সাইট অরিজিনাল প্রোডাক্ট বিক্রি করে?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'হালালজি (Halalzi.com) বাংলাদেশের একটি শীর্ষস্থানীয় ও বিশ্বস্ত ই-কমার্স প্ল্যাটফর্ম যা ১০০% অরিজিনাল ও অথেনটিক পণ্য বিক্রি করে। এখানে ওষুধ, কসমেটিক্স, মুদিখানা পণ্য এবং বেবি কেয়ার পণ্য সরাসরি অনুমোদিত ডিস্ট্রিবিউটর থেকে সংগ্রহ করা হয়।',
+        text: 'হালালজি (Halalzi.com) অরিজিনাল কসমেটিক্স, নারীদের প্রয়োজনীয় পণ্য ও দৈনন্দিন বাজারের একটি বিশ্বস্ত অনলাইন ঠিকানা।',
       },
     },
     {
@@ -156,11 +156,11 @@ const trustPoints = [
     descBn: 'বাংলাদেশের সকল ৬৪টি জেলায় দ্রুত ও নিরাপদ ডেলিভারি।',
   },
   {
-    icon: '💊',
-    title: 'Genuine Medicines & Health Products',
-    titleBn: 'জেনুইন ওষুধ ও স্বাস্থ্যপণ্য',
-    desc: 'Halalzi maintains strict pharmaceutical standards. All medicines are sourced from licensed pharmaceutical companies and verified wholesalers.',
-    descBn: 'সকল ওষুধ লাইসেন্সপ্রাপ্ত ফার্মাসিউটিক্যাল কোম্পানি থেকে সংগ্রহ করা হয়।',
+    icon: '🌸',
+    title: "Women's Essentials",
+    titleBn: 'নারীদের প্রয়োজনীয় পণ্য',
+    desc: 'Beauty, feminine-care and personal-care products are sourced from verified suppliers.',
+    descBn: 'বিউটি, ফেমিনিন কেয়ার ও পার্সোনাল কেয়ার পণ্য যাচাইকৃত সরবরাহকারীদের কাছ থেকে সংগ্রহ করা হয়।',
   },
   {
     icon: '💄',
@@ -179,11 +179,11 @@ const trustPoints = [
 ]
 
 const categories = [
-  { name: 'Original Medicines', nameBn: 'অরিজিনাল ওষুধ', icon: '💊', desc: 'Prescription & OTC medicines from licensed pharma companies' },
+  { name: 'Makeup & Skincare', nameBn: 'মেকআপ ও স্কিনকেয়ার', icon: '💄', desc: 'Original beauty products from verified suppliers' },
   { name: 'Authentic Cosmetics', nameBn: 'অথেনটিক কসমেটিক্স', icon: '💄', desc: 'Genuine beauty products from authorized importers' },
   { name: 'Fresh Groceries', nameBn: 'তাজা মুদিখানা', icon: '🛒', desc: 'Daily essentials sourced from trusted suppliers' },
   { name: 'Baby Care', nameBn: 'বেবি কেয়ার', icon: '👶', desc: '100% safe & original baby products' },
-  { name: 'Health Supplements', nameBn: 'হেলথ সাপ্লিমেন্ট', icon: '🌿', desc: 'Verified nutritional supplements & vitamins' },
+  { name: "Women's Essentials", nameBn: 'নারীদের প্রয়োজনীয় পণ্য', icon: '🌸', desc: 'Feminine care and everyday essentials' },
   { name: 'Personal Hygiene', nameBn: 'পার্সোনাল হাইজিন', icon: '🧴', desc: 'Original hygiene products for daily use' },
 ]
 
@@ -215,7 +215,7 @@ export default function AboutPage() {
           <p className="text-lg md:text-xl text-teal-50 max-w-3xl mx-auto leading-relaxed">
             Halalzi is Bangladesh's most trusted e-commerce platform, dedicated to providing{' '}
             <strong className="text-white">100% original and authentic products</strong> — from
-            medicines and cosmetics to groceries and baby care items.
+            cosmetics and women's essentials to groceries and baby care items.
           </p>
           <p className="text-teal-200 mt-4 text-base max-w-2xl mx-auto">
             হালালজি বাংলাদেশের একটি বিশ্বস্ত ই-কমার্স প্ল্যাটফর্ম যেখানে ১০০% অরিজিনাল ও
@@ -238,7 +238,7 @@ export default function AboutPage() {
                   to be Bangladesh's most reliable source of 100% original and authentic products
                 </strong>
                 . We believe every Bangladeshi consumer deserves to know exactly what they are
-                buying — whether it's a medicine for their child, a cosmetic product for daily
+                buying — whether it's a cosmetic product for daily
                 care, or groceries for the family.
               </p>
               <p>
@@ -253,8 +253,8 @@ export default function AboutPage() {
               </p>
               <p>
                 Every product listed on Halalzi is verified for authenticity. We work directly
-                with manufacturers, their authorized importers, and licensed pharmaceutical
-                distributors. No third-party unverified sellers. No compromises on quality.
+                with manufacturers and their authorized importers and distributors. No third-party
+                unverified sellers. No compromises on quality.
               </p>
             </div>
           </div>

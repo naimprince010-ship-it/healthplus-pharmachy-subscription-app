@@ -40,7 +40,7 @@ export function WhatsAppButton({
       <button
         onClick={handleClick}
         aria-label="Contact us on WhatsApp"
-        className="wa-btn fixed bottom-24 right-4 z-50 scale-[0.85] opacity-90 transition-all hover:scale-[0.95] hover:opacity-100 lg:bottom-6 lg:right-6 lg:scale-100 lg:opacity-100"
+        className="wa-btn fixed bottom-[calc(80px+env(safe-area-inset-bottom))] right-4 z-50 lg:bottom-6"
         style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
       >
         {/* Ping ring */}
@@ -51,14 +51,14 @@ export function WhatsAppButton({
 
         {/* Main button */}
         <span
-          className="relative flex h-14 w-14 items-center justify-center rounded-full shadow-xl"
+          className="relative flex h-12 w-12 items-center justify-center rounded-full shadow-xl"
           style={{
             background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
           }}
         >
           {/* WhatsApp SVG icon */}
           <span className="wa-icon">
-            <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+            <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
               <path
                 d="M16 2C8.268 2 2 8.268 2 16c0 2.494.65 4.836 1.79 6.862L2 30l7.338-1.762A13.93 13.93 0 0016 30c7.732 0 14-6.268 14-14S23.732 2 16 2z"
                 fill="white"

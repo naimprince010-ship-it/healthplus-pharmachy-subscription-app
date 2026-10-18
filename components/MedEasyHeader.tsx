@@ -2,14 +2,14 @@
 
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
-import { ShoppingCart, User, Search, X, ChevronDown, Loader2 } from 'lucide-react'
+import { ShoppingCart, User, Search, X, ChevronDown, Loader2, MapPin, MessageCircle } from 'lucide-react'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useCart } from '@/contexts/CartContext'
 import { CartDrawer } from './CartDrawer'
-import { MAIN_CONTAINER } from '@/lib/layout'
 import { useAuthModal } from '@/contexts/AuthModalContext'
 import { isGroceryShopEnabled, isMedicineShopEnabled } from '@/lib/site-features'
+import { trackWhatsAppClick } from '@/lib/trackEvent'
 
 interface SearchSuggestion {
   id: string
@@ -24,13 +24,15 @@ interface SearchSuggestion {
 
 interface MedEasyHeaderProps {
   storeName?: string
+  freeDeliveryThreshold?: number | null
+  whatsappNumber?: string
 }
 
-export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) {
+export function MedEasyHeader({ storeName = 'HealthPlus', freeDeliveryThreshold = null, whatsappNumber = '' }: MedEasyHeaderProps) {
   const router = useRouter()
   const pathname = usePathname()
   const { data: session } = useSession()
-  const { itemCount, openDrawer } = useCart()
+  const { itemCount, total, isInitialized, openDrawer } = useCart()
   const { openModal } = useAuthModal()
 
   // Hide header on mobile for checkout, cart, order-success, and order tracking pages (they have their own headers)
@@ -135,66 +137,77 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
 
   const searchPlaceholder =
     isMedicineShopEnabled() && isGroceryShopEnabled()
-      ? 'ওষুধ, স্বাস্থ্যপণ্য এবং আরো অনেক কিছু খুঁজুন...'
+      ? 'কসমেটিক্স বা গ্রোসারি খুঁজুন...'
       : isMedicineShopEnabled()
-        ? 'ওষুধ বা কসমেটিক্স খুঁজুন...'
+        ? 'কসমেটিক্স ও বিউটি পণ্য খুঁজুন...'
         : isGroceryShopEnabled()
           ? 'কসমেটিক্স বা গ্রোসারি খুঁজুন...'
           : 'কসমেটিক্স ও পণ্য খুঁজুন...'
+  const cleanWhatsApp = whatsappNumber.replace(/\D/g, '')
+  const hasDeliveryProgress = mounted && isInitialized && Boolean(freeDeliveryThreshold && freeDeliveryThreshold > 0) && total > 0
+  const deliveryRemaining = freeDeliveryThreshold ? Math.max(0, freeDeliveryThreshold - total) : 0
+  const deliveryProgress = freeDeliveryThreshold ? Math.min(100, (total / freeDeliveryThreshold) * 100) : 0
+  const headerContainer = 'mx-auto w-full max-w-[1320px] px-3 sm:px-4 lg:px-6'
 
   return (
     <>
-      <header className={`sticky top-0 z-50 w-full bg-teal-600 shadow-md ${hideOnMobile ? 'hidden lg:block' : ''}`}>
-        {/* Centered container - uses shared MAIN_CONTAINER for consistent layout */}
-        <div className={MAIN_CONTAINER}>
-          <div className="flex h-14 items-center justify-between gap-2 sm:h-16 sm:gap-4">
+      <header className={`sticky top-0 z-50 w-full bg-[#0B4F4A] shadow-sm md:bg-white ${hideOnMobile ? 'hidden lg:block' : ''}`}>
+        <div className="hidden bg-[#0B4F4A] text-[13px] text-white lg:block">
+          <div className={`${headerContainer} grid h-9 grid-cols-3 items-center`}>
+            <span>ডেলিভারি: ঢাকা</span>
+            <div className="flex min-w-0 items-center justify-center gap-2 text-center" aria-live="polite">
+              <span className="truncate">
+                {hasDeliveryProgress
+                  ? deliveryRemaining > 0
+                    ? `আর ৳${Math.ceil(deliveryRemaining)} কিনলেই ফ্রি ডেলিভারি`
+                    : 'ফ্রি ডেলিভারি পেয়েছেন!'
+                  : `${freeDeliveryThreshold ? `৳${freeDeliveryThreshold}+ অর্ডারে ফ্রি ডেলিভারি · ` : ''}ক্যাশ অন ডেলিভারি`}
+              </span>
+              {hasDeliveryProgress && (
+                <span className="h-1.5 w-20 shrink-0 overflow-hidden rounded-full bg-white/25" aria-label="ফ্রি ডেলিভারি প্রগ্রেস">
+                  <span className="block h-full rounded-full bg-[#F59E0B] transition-[width] duration-300" style={{ width: `${deliveryProgress}%` }} />
+                </span>
+              )}
+            </div>
+            <Link href="/orders" className="inline-flex min-h-11 items-center justify-end text-right font-semibold hover:underline">অর্ডার ট্র্যাক করুন</Link>
+          </div>
+        </div>
+        <div className={headerContainer}>
+          <div className="flex min-h-14 items-center justify-between gap-3 border-b border-white/10 py-2 md:hidden">
+            <div className="flex min-h-11 items-center gap-2">
+              <Link href="/" className="flex min-h-11 items-center gap-2">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-lg font-bold text-teal-600">H</span>
+              <strong className="block text-base text-white">Halalzi.com</strong>
+              </Link>
+              <span className="flex items-center gap-1 text-[11px] text-teal-50"><MapPin className="h-3 w-3" />ডেলিভারি: ঢাকা</span>
+            </div>
+            {cleanWhatsApp && <a href={`https://api.whatsapp.com/send?phone=${cleanWhatsApp}`} target="_blank" rel="noreferrer" onClick={() => trackWhatsAppClick('header_mobile')} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/70 px-3 text-xs font-bold text-white"><MessageCircle className="h-4 w-4" />WhatsApp</a>}
+          </div>
+          <div className="flex h-14 items-center justify-between gap-2 sm:h-16 sm:gap-4 lg:h-[72px]">
             {/* Logo */}
-            <Link prefetch href="/" className="flex items-center gap-2 flex-shrink-0 group" aria-label="Halalzi — home">
+            <Link prefetch href="/" className="hidden min-h-11 items-center gap-2 flex-shrink-0 group md:flex">
               {/* Icon badge */}
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white transition-transform duration-200 group-hover:scale-105">
-                <span className="text-lg font-bold text-teal-600">H</span>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0F766E] transition-transform duration-200 group-hover:scale-105">
+                <span className="text-lg font-bold text-white">H</span>
               </div>
 
               {/* Brand name + tagline */}
               <div className="hidden sm:flex flex-col leading-none">
                 <span
                   className="font-extrabold tracking-tight transition-opacity group-hover:opacity-90"
-                  style={{ fontSize: '1.2rem', letterSpacing: '-0.02em', color: '#ffffff' }}
+                  style={{ fontSize: '1.2rem', letterSpacing: '-0.02em', color: '#173F3B' }}
                 >
                   Halalzi
-                  <span style={{ color: '#a7f3d0', fontWeight: 400, fontSize: '0.75rem', marginLeft: '2px' }}>.com</span>
+                  <span style={{ color: '#0F766E', fontWeight: 500, fontSize: '0.75rem', marginLeft: '2px' }}>.com</span>
                 </span>
-                <span className="text-[10px] text-teal-100 font-medium tracking-wide" style={{ marginTop: '1px' }}>
-                  হালাল শপিং
+                <span className="text-[10px] font-medium tracking-wide text-slate-500" style={{ marginTop: '1px' }}>
+                  বিউটি ও দৈনন্দিন বাজার
                 </span>
               </div>
             </Link>
 
-            {/* Shortcut nav links - Desktop only */}
-            <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
-              {isMedicineShopEnabled() && (
-                <>
-                  <Link prefetch href="/medicines" className="px-3 py-1.5 text-[14px] text-white hover:underline transition-all">ঔষধ</Link>
-                  <span className="text-white/40 text-sm">|</span>
-                </>
-              )}
-              <Link prefetch href="/products?category=cosmetics" className="px-3 py-1.5 text-[14px] text-white hover:underline transition-all">কসমেটিক্স</Link>
-              {isGroceryShopEnabled() && (
-                <>
-                  <span className="text-white/40 text-sm">|</span>
-                  <Link
-                    prefetch
-                    href="/products?category=grocery"
-                    className="px-3 py-1.5 text-[14px] text-white hover:underline transition-all"
-                  >
-                    গ্রোসারি
-                  </Link>
-                </>
-              )}
-            </div>
-
             {/* Desktop Search Bar */}
-            <div className="hidden md:flex flex-1 max-w-xl mx-4" ref={searchContainerRef}>
+            <div className="mx-4 hidden max-w-[680px] flex-1 md:flex" ref={searchContainerRef}>
               <form onSubmit={handleSearch} className="relative w-full">
                 <input
                   type="text"
@@ -203,12 +216,12 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                   onKeyDown={handleKeyDown}
                   onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
                   placeholder={searchPlaceholder}
-                  className="w-full rounded-full border-0 bg-white py-2.5 pl-5 pr-12 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/50"
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-5 pr-12 text-gray-900 placeholder-gray-500 focus:border-[#0F766E] focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-100"
                 />
                 <button
                   type="submit"
                   aria-label="Search"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full bg-teal-600 p-2 text-white hover:bg-teal-700 transition-colors"
+                  className="absolute right-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-lg bg-[#0F766E] text-white transition-colors hover:bg-[#0B4F4A]"
                 >
                   <Search className="h-4 w-4" />
                 </button>
@@ -268,8 +281,8 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onClick={() => setMobileSearchOpen(true)}
-                  placeholder="ওষুধ ও পণ্য খুঁজুন..."
-                  className="w-full rounded-full border-0 bg-white/90 py-2 pl-4 pr-10 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/50"
+                  placeholder="কসমেটিক্স, গ্রোসারি বা ব্র্যান্ড খুঁজুন"
+                  className="h-12 w-full rounded-full border-0 bg-white/90 px-4 pr-10 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/50"
                   readOnly
                 />
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -278,10 +291,11 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
 
             {/* Right Side Actions */}
             <div className="flex items-center gap-2 sm:gap-4">
+              {cleanWhatsApp && <a href={`https://api.whatsapp.com/send?phone=${cleanWhatsApp}`} target="_blank" rel="noreferrer" onClick={() => trackWhatsAppClick('header_desktop')} className="hidden min-h-11 items-center gap-2 rounded-xl border border-[#0F766E] px-3 text-sm font-bold text-[#0F766E] transition hover:bg-teal-50 md:inline-flex"><MessageCircle className="h-4 w-4" />WhatsApp-এ অর্ডার</a>}
               {/* Cart - Desktop only */}
               <button
                 onClick={openDrawer}
-                className="relative rounded-full p-2 text-white hover:bg-white/10 transition-colors hidden md:flex"
+                className="relative hidden h-11 w-11 items-center justify-center rounded-full text-[#0B4F4A] transition-colors hover:bg-teal-50 md:flex"
                 aria-label={`Cart${mounted && itemCount > 0 ? ` (${itemCount} items)` : ''}`}
               >
                 <ShoppingCart className="h-5 w-5" />
@@ -299,7 +313,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   aria-expanded={userMenuOpen}
                   aria-haspopup="menu"
-                  className="flex items-center gap-1 rounded-full px-2 py-1.5 text-white hover:bg-white/10 transition-colors"
+                  className="flex min-h-11 items-center gap-1 rounded-full px-2 py-1.5 text-[#173F3B] transition-colors hover:bg-teal-50"
                 >
                   <User className="h-5 w-5" />
                   <span className="hidden sm:inline text-sm font-medium">
@@ -384,7 +398,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                 setShowSuggestions(false)
               }}
               aria-label="Close search"
-              className="rounded-full p-3 -ml-1 text-gray-600 hover:bg-gray-100"
+              className="flex h-11 w-11 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100"
             >
               <X className="h-6 w-6" />
             </button>
@@ -403,7 +417,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
               type="submit"
               onClick={handleSearch}
               aria-label="Submit search"
-              className="rounded-full bg-teal-600 p-2 text-white"
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-teal-600 text-white"
             >
               <Search className="h-4 w-4" />
             </button>
@@ -450,60 +464,8 @@ export function MedEasyHeader({ storeName = 'HealthPlus' }: MedEasyHeaderProps) 
                 No products found
               </div>
             ) : (
-              <div className="p-4 mt-2">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">জনপ্রিয় ক্যাটাগরি</h3>
-                <div className="flex flex-wrap gap-2">
-                  <Link
-                    href="/category/medicine"
-                    onClick={() => {
-                      setMobileSearchOpen(false)
-                      setShowSuggestions(false)
-                    }}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition-colors"
-                  >
-                    <span>💊</span> ঔষধ
-                  </Link>
-                  <Link
-                    href="/category/baby-care"
-                    onClick={() => {
-                      setMobileSearchOpen(false)
-                      setShowSuggestions(false)
-                    }}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition-colors"
-                  >
-                    <span>🍼</span> বেবি কেয়ার
-                  </Link>
-                  <Link
-                    href="/category/beauty-care"
-                    onClick={() => {
-                      setMobileSearchOpen(false)
-                      setShowSuggestions(false)
-                    }}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition-colors"
-                  >
-                    <span>💄</span> কসমেটিক্স
-                  </Link>
-                  <Link
-                    href="/category/devices"
-                    onClick={() => {
-                      setMobileSearchOpen(false)
-                      setShowSuggestions(false)
-                    }}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition-colors"
-                  >
-                    <span>🩺</span> ডিভাইস
-                  </Link>
-                  <Link
-                    href="/category/personal-care"
-                    onClick={() => {
-                      setMobileSearchOpen(false)
-                      setShowSuggestions(false)
-                    }}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition-colors"
-                  >
-                    <span>🧴</span> পার্সোনাল কেয়ার
-                  </Link>
-                </div>
+              <div className="p-4">
+                <p className="text-sm text-gray-500">কসমেটিক্স, গ্রোসারি ও দৈনন্দিন পণ্য খুঁজুন...</p>
               </div>
             )}
           </div>

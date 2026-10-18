@@ -46,6 +46,7 @@ interface FooterSettings {
 
 interface FooterProps {
   settings: FooterSettings
+  medicineShopEnabled: boolean
 }
 
 const SocialIcon = ({ platform, className }: { platform: string; className?: string }) => {
@@ -72,7 +73,7 @@ const PaymentIcon = ({ iconKey }: { iconKey: string }) => {
     case 'bkash':
       return <span className={iconStyles} style={{ backgroundColor: '#E2136E', color: 'white' }}>bKash</span>
     case 'nagad':
-      return <span className={iconStyles} style={{ backgroundColor: '#F6921E', color: 'white' }}>Nagad</span>
+      return <span className={iconStyles} style={{ backgroundColor: '#F6921E', color: '#3B2300', fontWeight: 700 }}>Nagad</span>
     case 'visa':
       return <span className={iconStyles} style={{ backgroundColor: '#1A1F71', color: 'white' }}>VISA</span>
     case 'mastercard':
@@ -86,7 +87,14 @@ const PaymentIcon = ({ iconKey }: { iconKey: string }) => {
   }
 }
 
-export function Footer({ settings }: FooterProps) {
+export function Footer({ settings, medicineShopEnabled }: FooterProps) {
+  const brandDescription = !medicineShopEnabled && /ঔষধ|ওষুধ|medicine|prescription|প্রেসক্রিপশন/i.test(settings.brandDescription)
+    ? ''
+    : settings.brandDescription
+  const quickLinks = medicineShopEnabled
+    ? settings.quickLinks
+    : settings.quickLinks.filter((link) => !/ঔষধ|ওষুধ|medicine|prescription|প্রেসক্রিপশন/i.test(`${link.label} ${link.href}`))
+
   return (
     <footer style={{ backgroundColor: settings.bgColor, color: settings.textColor }}>
       {/* Main Footer Content */}
@@ -102,9 +110,9 @@ export function Footer({ settings }: FooterProps) {
                 {settings.brandName}
               </span>
             </div>
-            <p className="text-sm leading-relaxed mb-4" style={{ color: settings.textColor }}>
-              {settings.brandDescription}
-            </p>
+            {brandDescription && <p className="text-sm leading-relaxed mb-4" style={{ color: settings.textColor }}>
+              {brandDescription}
+            </p>}
             {(settings.drugLicense || settings.tradeLicense) && (
               <div className="text-xs space-y-1 opacity-80">
                 {settings.drugLicense && <p>Drug License: {settings.drugLicense}</p>}
@@ -117,9 +125,10 @@ export function Footer({ settings }: FooterProps) {
                 <a
                   key={index}
                   href={social.url}
+                  aria-label={`${social.platform} profile`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="transition-colors"
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-lg transition-colors"
                   style={{ color: settings.textColor }}
                   onMouseEnter={(e) => (e.currentTarget.style.color = settings.hoverColor)}
                   onMouseLeave={(e) => (e.currentTarget.style.color = settings.textColor)}
@@ -139,11 +148,11 @@ export function Footer({ settings }: FooterProps) {
               {settings.quickLinksTitle}
             </h3>
             <ul className="space-y-2">
-              {settings.quickLinks.map((link, index) => (
+              {quickLinks.map((link, index) => (
                 <li key={index}>
                   <Link
                     href={link.href}
-                    className="text-sm transition-colors"
+                    className="inline-flex min-h-11 min-w-11 items-center text-sm transition-colors"
                     style={{ color: settings.textColor }}
                     onMouseEnter={(e) => (e.currentTarget.style.color = settings.hoverColor)}
                     onMouseLeave={(e) => (e.currentTarget.style.color = settings.textColor)}
@@ -168,7 +177,7 @@ export function Footer({ settings }: FooterProps) {
                 <li key={index}>
                   <Link
                     href={link.href}
-                    className="text-sm transition-colors"
+                    className="inline-flex min-h-11 min-w-11 items-center text-sm transition-colors"
                     style={{ color: settings.textColor }}
                     onMouseEnter={(e) => (e.currentTarget.style.color = settings.hoverColor)}
                     onMouseLeave={(e) => (e.currentTarget.style.color = settings.textColor)}
@@ -197,7 +206,7 @@ export function Footer({ settings }: FooterProps) {
                 <Phone className="h-4 w-4 flex-shrink-0" />
                 <a
                   href={`tel:${settings.phone}`}
-                  className="transition-colors font-semibold text-base"
+                  className="inline-flex min-h-11 min-w-11 items-center transition-colors font-semibold text-base"
                   style={{ color: settings.headingColor }}
                   onMouseEnter={(e) => (e.currentTarget.style.color = settings.hoverColor)}
                   onMouseLeave={(e) => (e.currentTarget.style.color = settings.headingColor)}
@@ -210,7 +219,7 @@ export function Footer({ settings }: FooterProps) {
                   <Mail className="h-4 w-4 flex-shrink-0" />
                   <a
                     href={`mailto:${settings.email}`}
-                    className="transition-colors"
+                    className="inline-flex min-h-11 min-w-11 items-center transition-colors"
                     style={{ color: settings.textColor }}
                     onMouseEnter={(e) => (e.currentTarget.style.color = settings.hoverColor)}
                     onMouseLeave={(e) => (e.currentTarget.style.color = settings.textColor)}

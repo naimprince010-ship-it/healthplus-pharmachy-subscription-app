@@ -1,6 +1,6 @@
 import { DesktopHome } from '@/components/DesktopHome'
 import { MobileHome } from '@/components/MobileHome'
-import { getHomeSections } from '@/lib/home-page-data'
+import { getCuratedHomeData, getHomeSections } from '@/lib/home-page-data'
 import { getActiveBanners } from '@/lib/banners'
 import { BANNER_LOCATIONS } from '@/lib/banner-constants'
 import { getBasicSettings } from '@/lib/settings-server'
@@ -9,8 +9,9 @@ import { prisma } from '@/lib/prisma'
 /** Loads home catalogue data inside Suspense so the route can paint a shell immediately. */
 export async function HomePageDeferred() {
   const now = new Date()
-  const [homeSections, desktopBanners, mobileBanners, basicSettings, coupons, cartSettings] = await Promise.all([
+  const [homeSections, curated, desktopBanners, mobileBanners, basicSettings, coupons, cartSettings] = await Promise.all([
     getHomeSections(),
+    getCuratedHomeData(),
     getActiveBanners(BANNER_LOCATIONS.HOME_HERO, 'desktop'),
     getActiveBanners(BANNER_LOCATIONS.HOME_HERO, 'mobile'),
     getBasicSettings(),
@@ -30,9 +31,11 @@ export async function HomePageDeferred() {
   const offer = coupon ? { code: coupon.code, percentage: Math.round(coupon.discountAmount) } : null
   const shared = {
     homeSections,
+    curated,
     offer,
     hotline: basicSettings.storePhone.trim(),
-    freeDeliveryThreshold: cartSettings?.freeDeliveryThreshold ?? 499,
+    whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.trim() ?? '',
+    freeDeliveryThreshold: cartSettings?.freeDeliveryThreshold ?? null,
   }
 
   return (
@@ -41,7 +44,6 @@ export async function HomePageDeferred() {
         <DesktopHome
           {...shared}
           heroBanners={desktopBanners}
-          whatsappNumber={process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.trim() ?? ''}
         />
       </div>
       <div className="block lg:hidden">

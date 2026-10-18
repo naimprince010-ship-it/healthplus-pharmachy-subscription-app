@@ -140,7 +140,7 @@ export function ProductsContentClient() {
   const getPageDescription = () => {
     const label = sectionTitle || currentCategory?.name || categoryFromSlug?.name
     if (label) return `Browse ${label}`
-    return 'Browse our complete catalog of medicines and general products'
+    return 'Browse our complete catalog of beauty, grocery, and everyday products'
   }
 
   return (

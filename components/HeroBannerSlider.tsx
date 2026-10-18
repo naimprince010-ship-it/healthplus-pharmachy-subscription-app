@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
@@ -23,6 +23,8 @@ interface HeroBannerSliderProps {
   banners: HeroBanner[]
   /** Auto-slide interval in ms (default 4500) */
   interval?: number
+  /** Rendered if a CMS banner image cannot load. */
+  fallback?: ReactNode
 }
 
 function getImageUrl(banner: HeroBanner): string {
@@ -33,12 +35,72 @@ function getCtaUrl(banner: HeroBanner): string | null {
   return banner.ctaUrl || banner.link || null
 }
 
-export function HeroBannerSlider({ banners, interval = 4500 }: HeroBannerSliderProps) {
+function BannerImage({ banner, priority, onReady, onFailure }: { banner: HeroBanner; priority: boolean; onReady: () => void; onFailure: () => void }) {
+  const imageRef = useRef<HTMLImageElement | null>(null)
+  const src = getImageUrl(banner)
+
+  useEffect(() => {
+    const image = imageRef.current
+    if (!src || (image?.complete && image.naturalWidth === 0)) onFailure()
+  }, [src, onFailure])
+
+  if (!src) return null
+
+  return <Image
+    ref={imageRef}
+    src={src}
+    alt={banner.title}
+    fill
+    sizes="(max-width: 1400px) 100vw, 1400px"
+    className="object-cover"
+    priority={priority}
+    loading={priority ? undefined : 'lazy'}
+    draggable={false}
+    onLoad={(event) => event.currentTarget.naturalWidth > 0 ? onReady() : onFailure()}
+    onError={onFailure}
+  />
+}
+
+export function HeroBannerSlider({ banners, interval = 4500, fallback = null }: HeroBannerSliderProps) {
   const [current, setCurrent] = useState(0)
   const [isAnimating, setIsAnimating] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
+  const [failedBannerIds, setFailedBannerIds] = useState<Set<string>>(() => new Set())
+  const [loadedBannerIds, setLoadedBannerIds] = useState<Set<string>>(() => new Set())
+  const [reduceMotion, setReduceMotion] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const total = banners.length
+  const availableBanners = banners.filter((banner) => !failedBannerIds.has(banner.id))
+  const total = availableBanners.length
+
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const update = () => setReduceMotion(media.matches)
+    update()
+    media.addEventListener('change', update)
+    return () => media.removeEventListener('change', update)
+  }, [])
+
+  const markBannerFailed = useCallback((id: string) => {
+    setFailedBannerIds((ids) => {
+      if (ids.has(id)) return ids
+      const nextIds = new Set(ids)
+      nextIds.add(id)
+      return nextIds
+    })
+  }, [])
+
+  const markBannerReady = useCallback((id: string) => {
+    setLoadedBannerIds((ids) => {
+      if (ids.has(id)) return ids
+      const nextIds = new Set(ids)
+      nextIds.add(id)
+      return nextIds
+    })
+  }, [])
+
+  useEffect(() => {
+    setCurrent((index) => total > 0 ? Math.min(index, total - 1) : 0)
+  }, [total])
 
   const goTo = useCallback(
     (index: number) => {
@@ -55,33 +117,28 @@ export function HeroBannerSlider({ banners, interval = 4500 }: HeroBannerSliderP
 
   // Auto-play
   useEffect(() => {
-    if (total <= 1 || isPaused) return
+    if (total <= 1 || isPaused || reduceMotion) return
     timerRef.current = setTimeout(next, interval)
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current)
     }
-  }, [current, isPaused, next, interval, total])
+  }, [current, isPaused, next, interval, reduceMotion, total])
 
-  if (total === 0) return null
-
-  const banner = banners[current]
-  const imgUrl = getImageUrl(banner)
-  const ctaUrl = getCtaUrl(banner)
-  const hasImage = imgUrl && imgUrl !== ''
+  if (total === 0) return fallback
 
   return (
     <div
-      className="relative w-full overflow-hidden rounded-2xl"
+      className="relative min-h-[340px] w-full overflow-hidden rounded-[20px] lg:rounded-[22px]"
       style={{ minHeight: '340px' }}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
       {/* Slides */}
       <div className="relative w-full h-full" style={{ minHeight: '340px' }}>
-        {banners.map((b, i) => {
-          const bImg = getImageUrl(b)
+        {availableBanners.map((b, i) => {
           const bCta = getCtaUrl(b)
           const isActive = i === current
+          const isLoaded = loadedBannerIds.has(b.id)
           return (
             <div
               key={b.id}
@@ -97,26 +154,16 @@ export function HeroBannerSlider({ banners, interval = 4500 }: HeroBannerSliderP
               <div
                 className="absolute inset-0"
                 style={{
-                  backgroundColor: b.bgColor || '#0d4a3a',
+                  backgroundColor: isLoaded ? (b.bgColor || '#0d4a3a') : '#ffffff',
                 }}
               >
-                {bImg && (
-                  <Image
-                    src={bImg}
-                    alt={b.title}
-                    fill
-                    sizes="(max-width: 1400px) 100vw, 1400px"
-                    className="object-cover"
-                    priority={i === 0}
-                    draggable={false}
-                  />
-                )}
+                <BannerImage banner={b} priority={i === 0} onReady={() => markBannerReady(b.id)} onFailure={() => markBannerFailed(b.id)} />
                 {/* Overlay gradient */}
-                <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-black/10" />
+                {isLoaded && <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-black/10" />}
               </div>
 
               {/* Content */}
-              <div
+              {isLoaded && <div
                 className="relative z-10 flex h-full flex-col justify-center px-10 py-10"
                 style={{ minHeight: '340px', color: b.textColor || '#ffffff' }}
               >
@@ -147,7 +194,7 @@ export function HeroBannerSlider({ banners, interval = 4500 }: HeroBannerSliderP
                     </Link>
                   )}
                 </div>
-              </div>
+              </div>}
             </div>
           )
         })}
@@ -159,14 +206,14 @@ export function HeroBannerSlider({ banners, interval = 4500 }: HeroBannerSliderP
           <button
             onClick={prev}
             aria-label="Previous banner"
-            className="absolute left-3 top-1/2 z-20 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-sm transition-all hover:bg-black/50 hover:scale-110"
+            className="absolute left-3 top-1/2 z-20 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-sm transition-all hover:bg-black/50 hover:scale-110"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
           <button
             onClick={next}
             aria-label="Next banner"
-            className="absolute right-3 top-1/2 z-20 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-sm transition-all hover:bg-black/50 hover:scale-110"
+            className="absolute right-3 top-1/2 z-20 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-sm transition-all hover:bg-black/50 hover:scale-110"
           >
             <ChevronRight className="h-5 w-5" />
           </button>
@@ -176,28 +223,21 @@ export function HeroBannerSlider({ banners, interval = 4500 }: HeroBannerSliderP
       {/* Dot indicators */}
       {total > 1 && (
         <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2">
-          {banners.map((_, i) => (
+          {availableBanners.map((_, i) => (
             <button
               key={i}
               onClick={() => goTo(i)}
               aria-label={`Go to slide ${i + 1}`}
-              className="transition-all duration-300"
-              style={{
-                width: i === current ? '24px' : '8px',
-                height: '8px',
-                borderRadius: '999px',
-                backgroundColor: i === current ? '#ffffff' : 'rgba(255,255,255,0.45)',
-                border: 'none',
-                cursor: 'pointer',
-                padding: 0,
-              }}
-            />
+              className="flex h-11 w-11 items-center justify-center rounded-full"
+            >
+              <span className="h-2 rounded-full transition-all duration-300" style={{ width: i === current ? '24px' : '8px', backgroundColor: i === current ? '#ffffff' : 'rgba(255,255,255,0.45)' }} />
+            </button>
           ))}
         </div>
       )}
 
       {/* Progress bar */}
-      {total > 1 && !isPaused && (
+      {total > 1 && !isPaused && !reduceMotion && (
         <div className="absolute bottom-0 left-0 right-0 z-20 h-0.5 bg-white/20">
           <div
             key={current}

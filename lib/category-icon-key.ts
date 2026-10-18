@@ -17,6 +17,11 @@ export type CategoryIconKey =
   | 'fresh'
   | 'grocery'
   | 'deals'
+  | 'makeup'
+  | 'hair'
+  | 'fragrance'
+  | 'body'
+  | 'feminine'
 
 /** Exact slug matches for slugs too short/ambiguous for substring rules. */
 const EXACT_SLUGS: Record<string, CategoryIconKey> = {
@@ -36,6 +41,11 @@ const RULES: Array<[CategoryIconKey, string[]]> = [
       'অফার', 'ছাড়', 'ডিল', 'উপহার'],
   ],
   ['baby', ['baby', 'kid', 'mom', 'mother', 'diaper', 'বেবি', 'শিশু', 'মা ও', 'ডায়াপার']],
+  ['makeup', ['makeup', 'make-up', 'lipstick', 'lip', 'nail', 'foundation', 'kajal']],
+  ['hair', ['hair', 'shampoo', 'conditioner']],
+  ['fragrance', ['perfume', 'fragrance', 'body mist', 'body-mist', 'body spray', 'body-spray', 'deodorant', 'after shave']],
+  ['body', ['body care', 'body-care', 'lotion', 'body wash', 'body-wash']],
+  ['feminine', ['sanitary', 'feminine', "women's choice"]],
   [
     'medicine',
     ['medicine', 'medic', 'pharma', 'drug', 'otc', 'wellness', 'health',
@@ -47,13 +57,12 @@ const RULES: Array<[CategoryIconKey, string[]]> = [
   ],
   [
     'skincare',
-    ['skin', 'face', 'serum', 'sunscreen', 'personal', 'body care', 'body-care', 'cleanser', 'moisturiz', 'toner',
-      'scrub', 'dental', 'oral care', 'sanitary', 'স্কিন', 'ত্বক', 'ফেস', 'পার্সোনাল'],
+    ['skin', 'face', 'serum', 'sunscreen', 'personal', 'cleanser', 'moisturiz', 'toner',
+      'scrub', 'dental', 'oral care', 'স্কিন', 'ত্বক', 'ফেস', 'পার্সোনাল'],
   ],
   [
     'cosmetics',
-    ['cosmetic', 'makeup', 'make-up', 'beauty', 'lip', 'perfume', 'fragrance', 'hair', 'body spray', 'body-spray',
-      'body mist', 'body-mist', 'deodorant', 'roll-on', 'nail', 'shave', 'groom', 'groming', 'women',
+    ['cosmetic', 'beauty', 'roll-on', 'shave', 'groom', 'groming', 'women',
       'কসমেটিক', 'মেকআপ', 'সৌন্দর্য', 'পারফিউম'],
   ],
   ['fresh', ['fresh', 'fruit', 'vegetable', 'veg', 'organic', 'garden', 'ফল', 'সবজি', 'তাজা']],
