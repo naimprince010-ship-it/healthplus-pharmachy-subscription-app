@@ -79,6 +79,7 @@ const DEFAULT_SETTINGS: FooterSettingsData = {
 
 export async function SiteFooter() {
   let settings = DEFAULT_SETTINGS
+  const medicineShopEnabled = isMedicineShopEnabled()
 
   try {
     const footerSettings = await prisma.footerSettings.findFirst()
@@ -124,7 +125,7 @@ export async function SiteFooter() {
     // Use default settings on error
   }
 
-  if (!isMedicineShopEnabled()) {
+  if (!medicineShopEnabled) {
     settings = {
       ...settings,
       brandDescription: DEFAULT_SETTINGS.brandDescription,
@@ -132,5 +133,5 @@ export async function SiteFooter() {
     }
   }
 
-  return <Footer settings={settings} />
+  return <Footer settings={settings} medicineShopEnabled={medicineShopEnabled} />
 }

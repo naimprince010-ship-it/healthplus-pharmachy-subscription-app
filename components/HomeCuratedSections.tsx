@@ -72,7 +72,12 @@ function FlashCountdown({ endsAt, serverNow }: { endsAt: Date | string; serverNo
   }, [serverTimestamp, target])
   if (remaining === 0) return null
   const formatted = remaining == null ? '--:--:--' : [Math.floor(remaining / 3_600_000), Math.floor((remaining % 3_600_000) / 60_000), Math.floor((remaining % 60_000) / 1000)].map((value) => String(value).padStart(2, '0')).join(':')
-  return <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-bold tabular-nums text-[#C2410C]"><Clock3 className="h-3.5 w-3.5" aria-hidden /><span className="sr-only">অফার শেষ হবে {new Date(endsAt).toLocaleString('bn-BD')}</span><span aria-hidden>{formatted}</span></span>
+  const accessibleEndTime = new Intl.DateTimeFormat('bn-BD', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: 'Asia/Dhaka',
+  }).format(new Date(endsAt))
+  return <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-bold tabular-nums text-[#C2410C]"><Clock3 className="h-3.5 w-3.5" aria-hidden /><span className="sr-only">অফার শেষ হবে {accessibleEndTime}</span><span aria-hidden>{formatted}</span></span>
 }
 
 export function FlashSaleHomeSection({ products, endsAt, serverNow }: { products: CuratedProduct[]; endsAt: string | null; serverNow: string }) {
