@@ -26,6 +26,7 @@ export const getCachedProductBySlug = cache(async (slug: string) => {
       unit: true,
       type: true,
       isActive: true,
+      deletedAt: true,
       discountPercentage: true,
       flashSalePrice: true,
       flashSaleStart: true,
@@ -44,6 +45,7 @@ export const getCachedProductBySlug = cache(async (slug: string) => {
           id: true,
           name: true,
           slug: true,
+          isMedicineCategory: true,
           parentCategory: {
             select: {
               id: true,

@@ -36,7 +36,7 @@ export function MedEasyHeader({ storeName = 'HealthPlus', freeDeliveryThreshold 
   const { openModal } = useAuthModal()
 
   // Hide header on mobile for checkout, cart, order-success, and order tracking pages (they have their own headers)
-  const hideOnMobile = pathname === '/checkout' || pathname === '/cart' || pathname === '/order-success' || pathname.startsWith('/orders/')
+  const hideOnMobile = pathname === '/checkout' || pathname === '/cart' || pathname === '/order-success' || pathname.startsWith('/orders/') || pathname.startsWith('/products/')
   const [mounted, setMounted] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
