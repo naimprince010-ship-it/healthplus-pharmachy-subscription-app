@@ -1,11 +1,11 @@
-import { cache } from 'react'
+import { cache } from "react";
 
 /**
  * Single Prisma read per request: generateMetadata and the page both call this.
  * React cache() deduplicates so we avoid the duplicate findUnique the route used to run.
  */
 export const getCachedProductBySlug = cache(async (slug: string) => {
-  const { prisma } = await import('@/lib/prisma')
+  const { prisma } = await import("@/lib/prisma");
   return prisma.product.findUnique({
     where: { slug },
     select: {
@@ -26,6 +26,7 @@ export const getCachedProductBySlug = cache(async (slug: string) => {
       unit: true,
       type: true,
       isActive: true,
+      deletedAt: true,
       discountPercentage: true,
       flashSalePrice: true,
       flashSaleStart: true,
@@ -44,6 +45,7 @@ export const getCachedProductBySlug = cache(async (slug: string) => {
           id: true,
           name: true,
           slug: true,
+          isMedicineCategory: true,
           parentCategory: {
             select: {
               id: true,
@@ -74,7 +76,7 @@ export const getCachedProductBySlug = cache(async (slug: string) => {
       },
       variants: {
         where: { isActive: true },
-        orderBy: { sortOrder: 'asc' },
+        orderBy: { sortOrder: "asc" },
         select: {
           id: true,
           variantName: true,
@@ -88,5 +90,5 @@ export const getCachedProductBySlug = cache(async (slug: string) => {
         },
       },
     },
-  })
-})
+  });
+});

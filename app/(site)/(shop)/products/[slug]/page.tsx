@@ -1,525 +1,438 @@
-import { Suspense } from 'react'
-import { notFound } from 'next/navigation'
-import { ProductDetailClient } from '@/components/ProductDetailClient'
-import { ProductReviews } from '@/components/ProductReviews'
-import { GenericAlternatives } from '@/components/GenericAlternatives'
-import Link from 'next/link'
-import { ArrowLeft, ShieldCheck } from 'lucide-react'
-import { Metadata } from 'next'
-import { isProductLinkedToAzanCatalog } from '@/lib/integrations/azan-catalog'
-import { getStorefrontImageUrl } from '@/lib/image-url'
-import { buildProductShareMeta } from '@/lib/product-og'
-import { serializeJsonLd } from '@/lib/serialize-json-ld'
-import { getCachedProductBySlug } from './get-product-by-slug'
-import { GROCERY_CATEGORY_SLUG, isGroceryShopEnabled, isMedicineShopEnabled } from '@/lib/site-features'
-import { SimilarProductsSection } from './SimilarProductsSection'
-import { ProductSpecsTable } from '@/components/product-detail/ProductSpecsTable'
-import { ProductKeyFeaturesGrid } from '@/components/product-detail/ProductKeyFeaturesGrid'
-import { ProductIngredientsSection } from '@/components/product-detail/ProductIngredientsSection'
-import { getVolumeSizeDisplay, productTypeLabelBn } from '@/lib/product-detail-display'
-import { prisma } from '@/lib/prisma'
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import { getCachedProductBySlug } from "./get-product-by-slug";
+import { isMedicineShopEnabled } from "@/lib/site-features";
+import { getStorefrontImageUrl } from "@/lib/image-url";
+import { resolveCategoryIconKey } from "@/lib/category-icon-key";
+import { serializeJsonLd } from "@/lib/serialize-json-ld";
+import { getEffectivePrices } from "@/lib/pricing";
+import { getBasicSettings } from "@/lib/settings-server";
+import { ProductImagePanel } from "@/components/product-detail/ProductImagePanel";
+import { ProductPurchasePanel } from "@/components/product-detail/ProductPurchasePanel";
+import { ProductMobileHeader } from "@/components/product-detail/ProductMobileHeader";
+import { FrequentlyBoughtTogether } from "@/components/product-detail/FrequentlyBoughtTogether";
+import { RecentlyViewed } from "@/components/product-detail/RecentlyViewed";
+import { ProductReviews } from "@/components/ProductReviews";
+import { ProductRecommendationSections } from "./ProductRecommendationSections";
 
-export const runtime = 'nodejs'
-export const revalidate = 60 // Revalidate page every 60 seconds (ISR)
+export const runtime = "nodejs";
+export const revalidate = 300;
+type Props = { params: Promise<{ slug: string }> };
+const SITE = "https://halalzi.com";
+const money = (n: number) =>
+  `৳${Number.isInteger(n) ? n : n.toFixed(2).replace(/0+$/, "").replace(/\.$/, "")}`;
 
-interface ProductPageProps {
-  params: Promise<{ slug: string }>
+function summary(p: {
+  name: string;
+  brandName: string | null;
+  sellingPrice: number;
+  description: string | null;
+}) {
+  const base =
+    `${p.name}${p.brandName ? ` — ${p.brandName}` : ""}, দাম ${money(p.sellingPrice)}। ${p.description || "Halalzi-তে অরিজিনাল পণ্যের দাম, বিস্তারিত ও সহজ অর্ডারের তথ্য দেখুন।"}`
+      .replace(/\s+/g, " ")
+      .trim();
+  if (base.length > 160) return `${base.slice(0, 157).trimEnd()}…`;
+  return base.length >= 150
+    ? base
+    : `${base} Halalzi থেকে অনলাইনে অর্ডার করুন।`.slice(0, 160);
 }
 
-function normalizeSizeForTitle(value: string) {
-  return value.toLowerCase().replace(/\s+/g, '')
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const p = await getCachedProductBySlug(slug).catch(() => null);
+  if (!p || !p.isActive || p.deletedAt)
+    return { robots: { index: false, follow: false } };
+  const title = p.seoTitle || `${p.name} — দাম ও বিস্তারিত | Halalzi`;
+  const description = p.seoDescription || summary(p);
+  const canonical = `${SITE}/products/${p.slug}`;
+  const image = getStorefrontImageUrl(p.imageUrl);
+  return {
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      title,
+      description,
+      url: canonical,
+      type: "website",
+      siteName: "Halalzi",
+      ...(image ? { images: [{ url: image }] } : {}),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      ...(image ? { images: [image] } : {}),
+    },
+  };
 }
 
-export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
-  try {
-    const { slug } = await params
-    const product = await getCachedProductBySlug(slug)
+export default async function ProductPage({ params }: Props) {
+  const { slug } = await params;
+  const p = await getCachedProductBySlug(slug).catch(() => null);
+  if (!p || !p.isActive || p.deletedAt) notFound();
+  if (
+    !isMedicineShopEnabled() &&
+    (p.type === "MEDICINE" || p.category.isMedicineCategory)
+  )
+    redirect("/products");
 
-    if (!product) {
-      return {}
-    }
-
-    const meta = buildProductShareMeta({
-      name: product.name,
-      slug: product.slug,
-      seoTitle: product.seoTitle,
-      seoDescription: product.seoDescription,
-      description: product.description,
-      seoKeywords: product.seoKeywords,
-      imageUrl: product.imageUrl,
-      category: product.category ?? null,
-    })
-
-    const isHygieneProduct = 
-      product.category?.name.toLowerCase().includes('women') || 
-      product.category?.name.toLowerCase().includes('hygiene') ||
-      product.name.toLowerCase().includes('pad') ||
-      product.name.toLowerCase().includes('napkin') ||
-      product.name.toLowerCase().includes('senora') ||
-      product.name.toLowerCase().includes('joya') ||
-      product.name.toLowerCase().includes('freedom')
-
-    let customKeywords = meta.keywords
-    if (isHygieneProduct) {
-      customKeywords = `${customKeywords ? customKeywords + ', ' : ''}সেনোরা হোম ডেলিভারি, গোপন প্যাকেজিং, Joya Pad Online, স্যানিটারি ন্যাপকিন হোম ডেলিভারি, discreet packaging delivery`
-    }
+  const image = getStorefrontImageUrl(p.imageUrl);
+  const prices = getEffectivePrices({
+    sellingPrice: p.sellingPrice,
+    mrp: p.mrp,
+    discountPercentage: p.discountPercentage,
+    flashSalePrice: p.flashSalePrice,
+    flashSaleStart: p.flashSaleStart,
+    flashSaleEnd: p.flashSaleEnd,
+    isFlashSale: p.isFlashSale,
+    campaignPrice: p.campaignPrice,
+    campaignStart: p.campaignStart,
+    campaignEnd: p.campaignEnd,
+  });
+  const [cartSettings, basic, co, reviewStats] = await Promise.all([
+    prisma.cartPageSettings
+      .findFirst({ select: { freeDeliveryThreshold: true } })
+      .catch(() => null),
+    getBasicSettings(),
+    prisma.productCooccurrence
+      .findMany({
+        where: {
+          anchorProductId: p.id,
+          relatedProduct: {
+            type: "GENERAL",
+            isActive: true,
+            deletedAt: null,
+            stockQuantity: { gt: 0 },
+            medicine: { is: null },
+            category: { isMedicineCategory: false },
+          },
+        },
+        orderBy: { coOrderCount: "desc" },
+        take: 2,
+        select: {
+          relatedProduct: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              sellingPrice: true,
+              mrp: true,
+              discountPercentage: true,
+              flashSalePrice: true,
+              flashSaleStart: true,
+              flashSaleEnd: true,
+              isFlashSale: true,
+              campaignPrice: true,
+              campaignStart: true,
+              campaignEnd: true,
+              imageUrl: true,
+              category: { select: { name: true } },
+            },
+          },
+        },
+      })
+      .catch(() => []),
+    prisma.review
+      .aggregate({
+        where: { productId: p.id, isApproved: true },
+        _avg: { rating: true },
+        _count: { rating: true },
+      })
+      .catch(() => null),
+  ]);
+  const variants = p.variants.map((v) => ({
+    ...v,
+    mrp: v.mrp == null ? null : Number(v.mrp),
+    sellingPrice: Number(v.sellingPrice),
+    discountPercentage:
+      v.discountPercentage == null ? null : Number(v.discountPercentage),
+    unitLabel: v.unitLabel || `/${v.variantName}`,
+  }));
+  const canonical = `${SITE}/products/${p.slug}`;
+  const aggregate =
+    reviewStats && reviewStats._count.rating > 0
+      ? {
+          "@type": "AggregateRating",
+          ratingValue: Number(reviewStats._avg.rating || 0).toFixed(1),
+          reviewCount: reviewStats._count.rating,
+        }
+      : undefined;
+  const brandName = p.brandName || p.manufacturer?.name;
+  const productLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: p.name,
+    ...(image ? { image: [image] } : {}),
+    description: p.description || `${p.name} — Halalzi-তে দাম ও বিস্তারিত।`,
+    ...(brandName ? { brand: { "@type": "Brand", name: brandName } } : {}),
+    sku: p.supplierSku || p.id,
+    offers: {
+      "@type": "Offer",
+      price: prices.price,
+      priceCurrency: "BDT",
+      availability:
+        p.stockQuantity > 0
+          ? "https://schema.org/InStock"
+          : "https://schema.org/OutOfStock",
+      url: canonical,
+    },
+    url: canonical,
+    ...(aggregate ? { aggregateRating: aggregate } : {}),
+  };
+  const crumbs = [
+    { name: "হোম", url: SITE },
+    { name: p.category.name, url: `${SITE}/category/${p.category.slug}` },
+    { name: p.name, url: canonical },
+  ];
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: crumbs.map((b, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: b.name,
+      item: b.url,
+    })),
+  };
+  const info = [
+    ["ব্র্যান্ড", p.brandName],
+    ["ক্যাটাগরি", p.category.name],
+    ["সাইজ", p.sizeLabel],
+    ["ভেরিয়েন্ট", p.variantLabel],
+    ["প্রস্তুতকারক", p.manufacturer?.name],
+  ].filter((r): r is [string, string] => Boolean(r[1]));
+  const features =
+    p.keyFeatures
+      ?.split(/\r?\n/)
+      .map((s) => s.replace(/^[-•]\s*/, "").trim())
+      .filter(Boolean) || [];
+  const related = co.map(({ relatedProduct }) => {
+    const relatedPrices = getEffectivePrices({
+      sellingPrice: Number(relatedProduct.sellingPrice),
+      mrp: relatedProduct.mrp == null ? null : Number(relatedProduct.mrp),
+      discountPercentage:
+        relatedProduct.discountPercentage == null
+          ? null
+          : Number(relatedProduct.discountPercentage),
+      flashSalePrice:
+        relatedProduct.flashSalePrice == null
+          ? null
+          : Number(relatedProduct.flashSalePrice),
+      flashSaleStart: relatedProduct.flashSaleStart,
+      flashSaleEnd: relatedProduct.flashSaleEnd,
+      isFlashSale: relatedProduct.isFlashSale,
+      campaignPrice:
+        relatedProduct.campaignPrice == null
+          ? null
+          : Number(relatedProduct.campaignPrice),
+      campaignStart: relatedProduct.campaignStart,
+      campaignEnd: relatedProduct.campaignEnd,
+    });
 
     return {
-      title: meta.title,
-      description: meta.description,
-      keywords: customKeywords,
-      alternates: {
-        canonical: meta.canonicalPath,
-      },
-      openGraph: {
-        title: meta.title,
-        description: meta.description,
-        url: meta.canonicalUrl,
-        siteName: 'Halalzi',
-        type: 'website',
-        images: [{ url: meta.ogImageAbs }],
-      },
-      twitter: {
-        card: 'summary_large_image',
-        title: meta.title,
-        description: meta.description,
-        images: [meta.ogImageAbs],
-      },
-    }
-  } catch (error) {
-    console.error('Error generating metadata:', error)
-    return {}
-  }
-}
-
-export default async function ProductPage({ params }: ProductPageProps) {
-  const { slug } = await params
-  const product = await getCachedProductBySlug(slug)
-  const cartSettings = await prisma.cartPageSettings.findFirst({
-    select: { freeDeliveryThreshold: true },
-  }).catch(() => null)
-
-  if (!product || !product.isActive) {
-    notFound()
-  }
-
-  if (!isMedicineShopEnabled() && product.type === 'MEDICINE') {
-    notFound()
-  }
-  if (!isGroceryShopEnabled() && product.category?.slug === GROCERY_CATEGORY_SLUG) {
-    notFound()
-  }
-
-  const sellingPrice = Number(product.sellingPrice)
-  const mrp = product.mrp ? Number(product.mrp) : null
-  const stockQuantity = Number(product.stockQuantity)
-  // Use product's discountPercentage, or fall back to linked medicine's discountPercentage
-  const rawDiscount = product.discountPercentage || product.medicine?.discountPercentage
-  const discountPercentage = rawDiscount ? Number(rawDiscount) : null
-
-  // Map variants for client component (convert Prisma types to plain numbers)
-  const variants = (product.variants || []).map((v: any) => ({
-    id: v.id,
-    variantName: v.variantName,
-    unitLabel: v.unitLabel || `/${v.variantName}`,
-    sizeLabel: v.sizeLabel,
-    mrp: v.mrp != null ? Number(v.mrp) : null,
-    sellingPrice: Number(v.sellingPrice),
-    discountPercentage: v.discountPercentage != null ? Number(v.discountPercentage) : null,
-    stockQuantity: Number(v.stockQuantity),
-    isDefault: v.isDefault,
-  }))
-
-  // Get medicine-specific info for MedEasy-style display
-  const isMedicine = product.type === 'MEDICINE'
-  const genericName = product.medicine?.genericName || null
-  const dosageForm = product.medicine?.dosageForm || null
-  const strength = product.medicine?.strength || product.sizeLabel || null
-  // Use Manufacturer relation first, then fall back to medicine.manufacturer or brandName
-  const manufacturerName = product.manufacturer?.name || product.medicine?.manufacturer || product.brandName || null
-  const manufacturerSlug = product.manufacturer?.slug || null
-
-  const volumeDisplay = getVolumeSizeDisplay({
-    name: product.name,
-    sizeLabel: product.sizeLabel,
-    variantLabel: product.variantLabel,
-    unit: product.unit,
-    variants: (product.variants || []).map((v: { isDefault: boolean; sizeLabel: string | null; variantName: string }) => ({
-      isDefault: v.isDefault,
-      sizeLabel: v.sizeLabel,
-      variantName: v.variantName,
-    })),
-  })
-  const strengthNorm = strength?.trim().toLowerCase() ?? ''
-  const volumeNorm = volumeDisplay?.trim().toLowerCase() ?? ''
-  const volumeSameAsStrength = Boolean(strengthNorm && volumeNorm && strengthNorm === volumeNorm)
-  const titleContainsVolume = volumeDisplay
-    ? normalizeSizeForTitle(product.name).includes(normalizeSizeForTitle(volumeDisplay))
-    : false
-  const titleVolumeDisplay = titleContainsVolume ? null : volumeDisplay
-  const showStrengthBesideTitle =
-    !!strength &&
-    !normalizeSizeForTitle(product.name).includes(normalizeSizeForTitle(strength)) &&
-    !volumeSameAsStrength
-
-  // Parent/Leaf category for MedEasy-style display
-  // Line 1 (grey): Parent category/department (e.g., "Women's Choice") OR dosage form for medicines
-  // Line 2 (green link): Leaf category (e.g., "Sanitary Napkin") OR generic name for medicines
-  const parentCategoryName = product.category?.parentCategory?.name || null
-  const leafCategoryName = product.category?.name || null
-  const leafCategorySlug = product.category?.slug || null
-  const isAzanCatalogProduct = isProductLinkedToAzanCatalog({
-    supplierSku: product.supplierSku,
-    sourceCategoryName: product.sourceCategoryName,
-    category: { name: product.category?.name ?? '' },
-  })
-  const customerFacingLeafLabel = isAzanCatalogProduct ? 'Verified by Halalzi' : leafCategoryName
-  const displayImageUrl = getStorefrontImageUrl(product.imageUrl)
-  const siteBase = (process.env.NEXT_PUBLIC_SITE_URL || 'https://halalzi.com').replace(/\/$/, '')
-  const shortShareUrl = `${siteBase}/p/${product.id}`
-
-  // Top line text: dosage form (for medicines) OR parent department (for general products with hierarchy)
-  const topLineText = isMedicine ? dosageForm : parentCategoryName
-
-  // Normalize for comparison to avoid duplicates from whitespace/casing differences
-  const normalizedTop = topLineText?.trim().toLowerCase() || ''
-  const normalizedLeaf = leafCategoryName?.trim().toLowerCase() || ''
-  const showTopLine = !!topLineText && normalizedTop !== normalizedLeaf
-
-  // Generate JSON-LD structured data for SEO
-  let jsonLdImageUrl = displayImageUrl || 'https://halalzi.com/images/default-product.png'
-  if (jsonLdImageUrl.startsWith('/')) {
-    jsonLdImageUrl = `${siteBase}${jsonLdImageUrl}`
-  }
-
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Product',
-    name: product.name,
-    description: product.description || `${product.name} — বাংলাদেশে অনলাইনে কিনুন সেরা দামে। Halalzi-তে ১০০% অরিজিনাল পণ্য, দ্রুত ডেলিভারি।`,
-    image: jsonLdImageUrl,
-    sku: product.id,
-    // 'brand' — always provided; fixes "No global identifier" warning
-    brand: {
-      '@type': 'Brand',
-      name: product.manufacturer?.name || product.brandName || 'Halalzi',
-    },
-    category: product.category?.name,
-    offers: {
-      '@type': 'Offer',
-      url: `${siteBase}/products/${slug}`,
-      priceCurrency: 'BDT',
-      price: sellingPrice,
-      priceValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      availability: stockQuantity > 0
-        ? 'https://schema.org/InStock'
-        : 'https://schema.org/OutOfStock',
-      seller: {
-        '@type': 'Organization',
-        name: 'Halalzi',
-        url: 'https://halalzi.com',
-      },
-      // Fixes: "Missing field 'hasMerchantReturnPolicy' (in 'offers')"
-      hasMerchantReturnPolicy: {
-        '@type': 'MerchantReturnPolicy',
-        applicableCountry: 'BD',
-        returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
-        merchantReturnDays: 3,
-        returnMethod: 'https://schema.org/ReturnByMail',
-        returnFees: 'https://schema.org/FreeReturn',
-        refundType: 'https://schema.org/FullRefund',
-      },
-      // Fixes: "Missing field 'shippingDetails' (in 'offers')"
-      shippingDetails: {
-        '@type': 'OfferShippingDetails',
-        shippingRate: {
-          '@type': 'MonetaryAmount',
-          value: 60,
-          currency: 'BDT',
-        },
-        shippingDestination: {
-          '@type': 'DefinedRegion',
-          addressCountry: 'BD',
-        },
-        deliveryTime: {
-          '@type': 'ShippingDeliveryTime',
-          handlingTime: {
-            '@type': 'QuantitativeValue',
-            minValue: 0,
-            maxValue: 1,
-            unitCode: 'DAY',
-          },
-          transitTime: {
-            '@type': 'QuantitativeValue',
-            minValue: 1,
-            maxValue: 3,
-            unitCode: 'DAY',
-          },
-        },
-      },
-    },
-  }
-
-  const breadcrumbJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      {
-        '@type': 'ListItem',
-        position: 1,
-        name: 'Home',
-        item: 'https://halalzi.com',
-      },
-      ...(leafCategoryName && leafCategorySlug ? [{
-        '@type': 'ListItem',
-        position: 2,
-        name: customerFacingLeafLabel || leafCategoryName,
-        item: `https://halalzi.com/category/${leafCategorySlug}`,
-      }] : []),
-      {
-        '@type': 'ListItem',
-        position: (leafCategoryName && leafCategorySlug) ? 3 : 2,
-        name: product.name,
-        item: `https://halalzi.com/products/${slug}`,
-      },
-    ],
-  }
+      id: relatedProduct.id,
+      name: relatedProduct.name,
+      slug: relatedProduct.slug,
+      price: relatedPrices.price,
+      imageUrl: getStorefrontImageUrl(relatedProduct.imageUrl),
+      category: relatedProduct.category.name,
+    };
+  });
 
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(productLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbLd) }}
       />
-      <div className="bg-gray-50 pt-8 pb-32 md:pb-4">
-        {/* MedEasy-style layout: centered container matching home page */}
-        <div className="w-full max-w-[1480px] mx-auto px-4">
-          <Link
-            href={product.category?.slug ? `/category/${product.category.slug}` : '/products'}
-            className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
+      <ProductMobileHeader
+        category={p.category.name}
+        name={p.name}
+        url={canonical}
+      />
+      <div className="bg-slate-50 pb-28 lg:pb-16">
+        <div className="mx-auto max-w-[1320px] px-4 py-4 sm:px-6 lg:py-8">
+          <nav
+            aria-label="Breadcrumb"
+            className="mb-5 hidden text-sm text-slate-600 lg:block"
           >
-            <ArrowLeft className="h-4 w-4" />
-            {customerFacingLeafLabel ? `${customerFacingLeafLabel} — ফিরে যান` : 'পণ্যসমূহে ফিরে যান'}
-          </Link>
-
-          {/* lg:flex + items-start: two columns without stretching image column height to match long details */}
-          <div className="mt-8 flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
-            {/* Image container: subtle gradient frame + badges (no hover zoom — stable layout) */}
-            <div className="relative h-[360px] lg:h-[460px] w-full max-w-[560px] shrink-0 mx-auto rounded-xl bg-gradient-to-br from-white to-gray-50/50 flex items-center justify-center overflow-hidden border border-gray-100 shadow-md lg:mx-0">
-              <div className="absolute top-4 left-4 z-10">
-                <span className="inline-flex items-center gap-1 rounded-full border border-teal-100 bg-teal-50/95 px-2.5 py-1 text-xs font-semibold text-teal-700 backdrop-blur-sm">
-                  <ShieldCheck className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                  100% Authentic
-                </span>
-              </div>
-              {discountPercentage ? (
-                <div className="absolute top-4 right-4 z-10">
-                  <span className="inline-flex items-center rounded-full bg-red-500 px-2.5 py-1 text-xs font-bold text-white shadow-sm">
-                    {Math.round(discountPercentage)}% OFF
-                  </span>
-                </div>
-              ) : null}
-              {displayImageUrl ? (
-                <img
-                  src={displayImageUrl}
-                  alt={product.name}
-                  className="h-full w-full object-contain p-3 sm:p-4"
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center text-gray-400">
-                  ছবি নেই
-                </div>
-              )}
+            <ol className="flex min-w-0 items-center gap-2">
+              <li>
+                <Link href="/">হোম</Link>
+              </li>
+              <li aria-hidden>›</li>
+              <li>
+                <Link href={`/category/${p.category.slug}`}>
+                  {p.category.name}
+                </Link>
+              </li>
+              <li aria-hidden>›</li>
+              <li className="truncate text-slate-900">{p.name}</li>
+            </ol>
+          </nav>
+          <div className="grid items-start gap-6 lg:grid-cols-2 lg:gap-10">
+            <div className="lg:sticky lg:top-32">
+              <ProductImagePanel
+                name={p.name}
+                imageUrl={image}
+                iconKey={resolveCategoryIconKey(
+                  p.category.slug,
+                  p.category.name,
+                )}
+              />
             </div>
-
-            {/* Details container - MedEasy style with white background card */}
-            <div className="min-w-0 w-full flex-1 bg-white rounded-xl p-6 shadow-sm">
-              {/* Product Name */}
-              <div className="mb-2">
-                <h1 className="text-xl font-bold text-gray-900 sm:text-2xl lg:text-3xl">
-                  {product.name}
-                  {showStrengthBesideTitle ? (
-                    <span className="ml-2 text-lg font-normal text-gray-500">{strength}</span>
-                  ) : null}
-                  {titleVolumeDisplay ? (
-                    <span className="ml-2 inline-flex items-center align-middle rounded-full bg-teal-100 px-3 py-1 text-base font-semibold text-teal-800 lg:text-lg">
-                      {titleVolumeDisplay}
-                    </span>
-                  ) : null}
-                </h1>
-                
-                {(() => {
-                  const isHygieneProduct = 
-                    product.category?.name.toLowerCase().includes('women') || 
-                    product.category?.name.toLowerCase().includes('hygiene') ||
-                    product.name.toLowerCase().includes('pad') ||
-                    product.name.toLowerCase().includes('napkin') ||
-                    product.name.toLowerCase().includes('senora') ||
-                    product.name.toLowerCase().includes('joya') ||
-                    product.name.toLowerCase().includes('freedom');
-                  
-                  if (!isHygieneProduct) return null;
-                  
-                  return (
-                    <div className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-pink-50 px-3 py-1.5 text-sm font-semibold text-pink-700 border border-pink-100">
-                      <span aria-hidden="true">🔒</span> ১০০% গোপন প্যাকেজিং ও প্রাইভেসির গ্যারান্টি
-                    </div>
-                  );
-                })()}
-              </div>
-
-              {/* Line 1 (grey): Parent Category/Department (for general products) OR Dosage Form (for medicines) */}
-              {/* Only show if different from leaf category to avoid duplicates */}
-              {showTopLine && (
-                <div className="text-gray-600 mb-1">
-                  {topLineText}
-                </div>
+            <article className="rounded-2xl bg-white p-5 shadow-sm sm:p-7">
+              <p className="mb-2 text-sm font-semibold text-teal-700">
+                {p.category.name}
+              </p>
+              <h1 className="text-2xl font-bold leading-tight text-slate-950 sm:text-3xl">
+                {p.name}
+              </h1>
+              {p.brandName && (
+                <p className="mt-2 text-sm text-slate-600">
+                  ব্র্যান্ড: {p.brandName}
+                </p>
               )}
-
-              {/* Line 2 (green link): Generic Name (for medicines) OR Leaf Category (for general products) */}
-              {genericName && (
-                <div className="mb-4">
-                  <span className="text-teal-600 font-medium hover:text-teal-700 cursor-pointer">
-                    {genericName}
-                  </span>
-                </div>
-              )}
-
-              {/* Leaf category link for non-medicine products */}
-              {!genericName && leafCategoryName && leafCategorySlug && (
-                <div className="mb-4">
-                  <Link
-                    href={`/category/${leafCategorySlug}`}
-                    className="text-teal-600 font-medium hover:text-teal-700"
-                  >
-                    {customerFacingLeafLabel}
-                  </Link>
-                </div>
-              )}
-
-              {/* Divider */}
-              <hr className="my-4 border-gray-200" />
-
-              {/* Manufacturer (MedEasy style: "Manufacturer: Square Pharmaceuticals PLC.") */}
-              {manufacturerName && (
-                <div className="mb-4">
-                  <span className="text-gray-500 text-sm">প্রস্তুতকারক:</span>
-                  {manufacturerSlug ? (
-                    <Link
-                      href={`/manufacturer/${manufacturerSlug}`}
-                      className="ml-2 text-teal-600 font-medium hover:text-teal-700"
-                    >
-                      {manufacturerName}
-                    </Link>
-                  ) : (
-                    <span className="ml-2 text-teal-600 font-medium">
-                      {manufacturerName}
-                    </span>
+              <div className="my-5 border-t" />
+              <ProductPurchasePanel
+                productId={p.id}
+                name={p.name}
+                slug={p.slug}
+                imageUrl={image}
+                category={p.category.name}
+                sellingPrice={Number(p.sellingPrice)}
+                mrp={p.mrp == null ? null : Number(p.mrp)}
+                stockQuantity={p.stockQuantity}
+                discountPercentage={
+                  p.discountPercentage == null
+                    ? null
+                    : Number(p.discountPercentage)
+                }
+                flashSalePrice={
+                  p.flashSalePrice == null ? null : Number(p.flashSalePrice)
+                }
+                flashSaleStart={p.flashSaleStart?.toISOString() || null}
+                flashSaleEnd={p.flashSaleEnd?.toISOString() || null}
+                isFlashSale={p.isFlashSale}
+                campaignPrice={
+                  p.campaignPrice == null ? null : Number(p.campaignPrice)
+                }
+                campaignStart={p.campaignStart?.toISOString() || null}
+                campaignEnd={p.campaignEnd?.toISOString() || null}
+                variants={variants}
+                freeDeliveryThreshold={
+                  cartSettings?.freeDeliveryThreshold ?? null
+                }
+                whatsappNumber={(
+                  process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || basic.storePhone
+                ).trim()}
+              />
+            </article>
+          </div>
+          <div className="mt-8 space-y-8">
+            {related.length > 0 && (
+              <FrequentlyBoughtTogether
+                anchor={{
+                  id: p.id,
+                  name: p.name,
+                  slug: p.slug,
+                  price: prices.price,
+                  imageUrl: image,
+                  category: p.category.name,
+                }}
+                items={related}
+              />
+            )}
+            {(p.description ||
+              features.length ||
+              p.ingredients ||
+              info.length > 0) && (
+              <section className="rounded-2xl bg-white p-5 sm:p-7">
+                <h2 className="text-2xl font-bold">পণ্যের বিস্তারিত</h2>
+                <div className="mt-4 divide-y">
+                  {p.description && (
+                    <details open className="py-4">
+                      <summary className="min-h-11 cursor-pointer font-bold">
+                        বিবরণ
+                      </summary>
+                      <p className="whitespace-pre-line text-slate-700">
+                        {p.description}
+                      </p>
+                    </details>
+                  )}
+                  {features.length > 0 && (
+                    <details className="py-4">
+                      <summary className="min-h-11 cursor-pointer font-bold">
+                        মূল বৈশিষ্ট্য
+                      </summary>
+                      <ul className="list-disc space-y-2 pl-5 text-slate-700">
+                        {features.map((x, i) => (
+                          <li key={i}>{x}</li>
+                        ))}
+                      </ul>
+                    </details>
+                  )}
+                  {p.ingredients && (
+                    <details className="py-4">
+                      <summary className="min-h-11 cursor-pointer font-bold">
+                        উপাদান
+                      </summary>
+                      <p className="whitespace-pre-line text-slate-700">
+                        {p.ingredients}
+                      </p>
+                    </details>
+                  )}
+                  {info.length > 0 && (
+                    <details className="py-4">
+                      <summary className="min-h-11 cursor-pointer font-bold">
+                        পণ্যের তথ্য
+                      </summary>
+                      <table className="mt-2 w-full text-sm">
+                        <tbody>
+                          {info.map(([k, v]) => (
+                            <tr key={k} className="border-b last:border-0">
+                              <th className="py-3 text-left font-medium text-slate-500">
+                                {k}
+                              </th>
+                              <td className="py-3 text-right font-semibold">
+                                {v}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </details>
                   )}
                 </div>
-              )}
-
-              <ProductDetailClient
-                productId={product.id}
-                shortShareUrl={shortShareUrl}
-                name={product.name}
-                sellingPrice={sellingPrice}
-                mrp={mrp}
-                stockQuantity={stockQuantity}
-                imageUrl={displayImageUrl}
-                category={product.category?.name ?? 'General'}
-                unit={isMedicine && product.unit === 'pcs' ? 'strip' : product.unit}
-                discountPercentage={discountPercentage}
-                flashSalePrice={product.flashSalePrice}
-                flashSaleStart={product.flashSaleStart}
-                flashSaleEnd={product.flashSaleEnd}
-                isFlashSale={product.isFlashSale}
-                campaignPrice={product.campaignPrice}
-                campaignStart={product.campaignStart}
-                campaignEnd={product.campaignEnd}
-                slug={slug}
-                variants={variants}
-                unitPrice={product.medicine?.unitPrice ? Number(product.medicine.unitPrice) : null}
-                stripPrice={product.medicine?.stripPrice ? Number(product.medicine.stripPrice) : null}
-                tabletsPerStrip={product.medicine?.tabletsPerStrip || null}
-                freeDeliveryThreshold={cartSettings?.freeDeliveryThreshold ?? null}
-              />
-
-              {product.description && (
-                <div className="mt-8">
-                  <h2 className="text-xl font-bold text-gray-900">বিবরণ</h2>
-                  <p className="mt-4 text-gray-600 whitespace-pre-line">
-                    {product.description}
-                  </p>
-                </div>
-              )}
-
-              <ProductIngredientsSection ingredientsRaw={product.ingredients} />
-
-              <ProductKeyFeaturesGrid keyFeaturesRaw={product.keyFeatures} />
-
-              <div className="mt-8">
-                <h2 className="text-xl font-bold text-gray-900">বিস্তারিত স্পেসিফিকেশন</h2>
-                <ProductSpecsTable
-                  category={customerFacingLeafLabel ?? 'শ্রেণীবিহীন'}
-                  brand={product.brandName}
-                  volumeSize={volumeDisplay}
-                  productTypeLabel={productTypeLabelBn(product.type)}
-                  manufacturer={
-                    manufacturerName ? (
-                      manufacturerSlug ? (
-                        <Link
-                          href={`/manufacturer/${manufacturerSlug}`}
-                          className="font-medium text-teal-600 hover:text-teal-700"
-                        >
-                          {manufacturerName}
-                        </Link>
-                      ) : (
-                        <span className="font-medium">{manufacturerName}</span>
-                      )
-                    ) : (
-                      '—'
-                    )
-                  }
-                  stockLabel={stockQuantity > 0 ? 'স্টকে আছে' : 'স্টক নেই'}
-                  stockClassName={stockQuantity > 0 ? 'font-medium text-green-600' : 'font-medium text-red-600'}
-                />
-              </div>
-
-              {product.specSummary && (
-                <div className="mt-6 rounded-xl border border-gray-200 bg-gray-50/80 p-5">
-                  <h3 className="font-semibold text-gray-900">অতিরিক্ত তথ্য</h3>
-                  <p className="mt-3 text-sm text-gray-600 whitespace-pre-line">{product.specSummary}</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Generic Alternatives + Similar — streamed so first paint is not blocked by extra DB work */}
-          {genericName && (
-            <Suspense fallback={<div className="mt-10 h-24 animate-pulse rounded-lg bg-gray-100" aria-hidden />}>
-              <GenericAlternatives genericName={genericName} currentProductId={product.id} />
-            </Suspense>
-          )}
-
-          <Suspense fallback={<div className="mt-6 h-40 animate-pulse rounded-lg bg-gray-100" aria-hidden />}>
-            <SimilarProductsSection
-              productId={product.id}
-              categoryId={product.category?.id ?? null}
-              brandName={product.brandName}
+              </section>
+            )}
+            <ProductRecommendationSections
+              productId={p.id}
+              categoryId={p.category.id}
+              brandName={p.brandName}
             />
-          </Suspense>
-
-          {/* Reviews Section */}
-          <section className="mt-6 bg-white rounded-xl p-6 shadow-sm">
-            <ProductReviews productId={product.id} />
-          </section>
+            <RecentlyViewed
+              current={{
+                id: p.id,
+                name: p.name,
+                slug: p.slug,
+                price: prices.price,
+              }}
+            />
+            <section className="rounded-2xl bg-white p-5 sm:p-7">
+              <ProductReviews productId={p.id} />
+            </section>
+          </div>
         </div>
       </div>
     </>
-  )
+  );
 }
