@@ -6,6 +6,7 @@ import { useCart, buildUnitLabelBn } from '@/contexts/CartContext'
 import { trackAddToCart } from '@/lib/trackEvent'
 import { logProductInteraction } from '@/lib/logProductInteraction'
 import { getEffectivePrices } from '@/lib/pricing'
+import { getStorefrontImageUrl } from '@/lib/image-url'
 
 interface ProductVariant {
   id: string
@@ -72,6 +73,7 @@ export function ProductDetailClient({
   freeDeliveryThreshold = null,
 }: ProductDetailClientProps) {
   const { addItem } = useCart()
+  const resolvedImageUrl = getStorefrontImageUrl(imageUrl)
 
   useEffect(() => {
     logProductInteraction({ kind: 'VIEW_ITEM', productId })
@@ -155,7 +157,7 @@ export function ProductDetailClient({
       variantLabel: currentVariant?.variantName,
       name: currentVariant ? `${name} - ${currentVariant.variantName}` : name,
       price,
-      image: imageUrl || undefined,
+      image: resolvedImageUrl || undefined,
       type: 'PRODUCT',
       quantity,
       category,
@@ -451,9 +453,9 @@ export function ProductDetailClient({
       {!isOutOfStock && (
         <div className="fixed bottom-[60px] left-0 right-0 z-40 flex items-center justify-between gap-3 border-t border-gray-200 bg-white px-4 py-2.5 shadow-[0_-4px_10px_-1px_rgba(0,0,0,0.1)] md:hidden pb-safe">
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
-            {imageUrl && (
+            {resolvedImageUrl && (
               <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md border border-gray-100 bg-gray-50">
-                <img src={imageUrl} alt={name} className="h-full w-full object-cover" />
+                <img src={resolvedImageUrl} alt={name} className="h-full w-full object-cover" />
               </div>
             )}
             <div className="flex flex-col min-w-0 justify-center">

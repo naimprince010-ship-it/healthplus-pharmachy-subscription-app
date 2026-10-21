@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
-import { uploadToSupabase, deleteFromSupabase } from '@/lib/supabase'
+import { deletePublicImage, uploadPublicImage } from '@/lib/r2-media'
 import { validateUploadedImage } from '@/lib/security/uploads'
 
 export const runtime = 'nodejs'
@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 
 /**
  * POST /api/admin/uploads/banner-image
- * Upload a banner image to Supabase Storage
+ * Upload a public banner image to Cloudflare R2.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -25,16 +25,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
-    const validation = await validateUploadedImage(file, 10 * 1024 * 1024)
+    const validation = await validateUploadedImage(file, 2 * 1024 * 1024)
     if (!validation.valid) {
       return NextResponse.json({ error: validation.error }, { status: 400 })
     }
 
-    const result = await uploadToSupabase(file, 'banners', bannerId)
+    const result = await uploadPublicImage(file, 'banners', bannerId)
 
     return NextResponse.json({
       success: true,
-      url: result.url,
+      url: result.path,
       path: result.path,
       mimeType: result.mimeType,
       size: result.size,
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
 /**
  * DELETE /api/admin/uploads/banner-image
- * Delete a banner image from Supabase Storage
+ * Delete a public banner image from Cloudflare R2.
  */
 export async function DELETE(request: NextRequest) {
   try {
@@ -66,7 +66,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'No path provided' }, { status: 400 })
     }
 
-    await deleteFromSupabase(path)
+    await deletePublicImage(path)
 
     return NextResponse.json({ success: true, message: 'Image deleted successfully' })
   } catch (error) {

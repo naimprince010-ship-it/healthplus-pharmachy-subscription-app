@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSearchProvider } from '@/lib/search/providers'
+import { resolveMediaUrlAbsolute } from '@/lib/media-url'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -20,8 +21,8 @@ export async function GET(request: NextRequest) {
       const { products } = await searchProvider.getTopProducts(limit)
       const topProducts = products.slice(0, limit)
       return NextResponse.json({
-        products: topProducts.map(formatProduct),
-        items: topProducts.slice(0, 10).map(formatSuggestion),
+        products: topProducts.map((item) => formatProduct(item, request.url)),
+        items: topProducts.slice(0, 10).map((item) => formatSuggestion(item, request.url)),
         query: q,
         count: topProducts.length,
       })
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest) {
     if (q.length === 1) {
       const prefixResults = await searchProvider.searchProductsByPrefix(q, limit)
       if (mode === 'suggestions') {
-        const items = prefixResults.slice(0, Math.min(limit, 10)).map((r) => formatSuggestion(r.item))
+        const items = prefixResults.slice(0, Math.min(limit, 10)).map((r) => formatSuggestion(r.item, request.url))
         return NextResponse.json({
           items,
           query: q,
@@ -38,8 +39,8 @@ export async function GET(request: NextRequest) {
         })
       }
 
-      const products = prefixResults.map((r) => formatProduct(r.item))
-      const items = prefixResults.slice(0, 10).map((r) => formatSuggestion(r.item))
+      const products = prefixResults.map((r) => formatProduct(r.item, request.url))
+      const items = prefixResults.slice(0, 10).map((r) => formatSuggestion(r.item, request.url))
       return NextResponse.json({
         products,
         items,
@@ -51,7 +52,7 @@ export async function GET(request: NextRequest) {
     const results = await searchProvider.searchProducts(q, limit)
 
     if (mode === 'suggestions') {
-      const items = results.slice(0, Math.min(limit, 10)).map((r) => formatSuggestion(r.item))
+      const items = results.slice(0, Math.min(limit, 10)).map((r) => formatSuggestion(r.item, request.url))
       return NextResponse.json({
         items,
         query: q,
@@ -59,8 +60,8 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const products = results.map((r) => formatProduct(r.item))
-    const items = results.slice(0, 10).map((r) => formatSuggestion(r.item))
+    const products = results.map((r) => formatProduct(r.item, request.url))
+    const items = results.slice(0, 10).map((r) => formatSuggestion(r.item, request.url))
 
     // Check if the results come from a fuzzy match
     const isFuzzy = results.some(r => r.isFuzzyMatch)
@@ -104,7 +105,7 @@ interface SearchableItem {
   packSize: string | null
 }
 
-function formatProduct(p: SearchableItem) {
+function formatProduct(p: SearchableItem, siteOrigin: string) {
   return {
     id: p.id,
     type: p.type,
@@ -115,7 +116,7 @@ function formatProduct(p: SearchableItem) {
     sellingPrice: p.sellingPrice,
     mrp: p.mrp,
     stockQuantity: p.stockQuantity,
-    imageUrl: p.imageUrl,
+    imageUrl: resolveMediaUrlAbsolute(p.imageUrl, siteOrigin),
     discountPercentage: p.discountPercentage,
     sizeLabel: p.sizeLabel ?? null,
     packSize: p.packSize ?? null,
@@ -133,11 +134,11 @@ function formatProduct(p: SearchableItem) {
   }
 }
 
-function formatSuggestion(p: SearchableItem) {
+function formatSuggestion(p: SearchableItem, siteOrigin: string) {
   return {
     id: p.id,
     name: p.name,
-    imageUrl: p.imageUrl,
+    imageUrl: resolveMediaUrlAbsolute(p.imageUrl, siteOrigin),
     price: p.sellingPrice,
     manufacturer: p.brandName,
     slug: p.slug,

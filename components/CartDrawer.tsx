@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { X, ShoppingBag, Truck, Gift, Zap } from 'lucide-react'
 import { useCart, type CartItem } from '@/contexts/CartContext'
 import { AddToCartButton } from '@/components/AddToCartButton'
+import { getStorefrontImageUrl } from '@/lib/image-url'
 
 const CHECKOUT_GREEN = '#0F6E56'
 
@@ -309,7 +310,14 @@ export function CartDrawer({ freeDeliveryThreshold = null }: CartDrawerProps) {
                             className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-white border border-gray-100 flex items-center justify-center"
                           >
                             {p.imageUrl ? (
-                              <Image src={p.imageUrl} alt={p.name} fill sizes="40px" className="object-contain" unoptimized />
+                              <Image
+                                src={getStorefrontImageUrl(p.imageUrl) || '/placeholder-medicine.png'}
+                                alt={p.name}
+                                fill
+                                sizes="40px"
+                                className="object-contain"
+                                unoptimized
+                              />
                             ) : (
                               <span className="text-[10px] font-bold text-gray-400">{p.name.charAt(0)}</span>
                             )}

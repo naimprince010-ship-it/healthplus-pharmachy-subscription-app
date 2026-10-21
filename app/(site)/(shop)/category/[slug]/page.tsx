@@ -7,6 +7,7 @@ import { getStorefrontImageUrl } from '@/lib/image-url'
 import type { Metadata } from 'next'
 import { GROCERY_CATEGORY_SLUG, isGroceryShopEnabled, isMedicineShopEnabled } from '@/lib/site-features'
 import { serializeJsonLd } from '@/lib/serialize-json-ld'
+import { resolveMediaUrlAbsolute } from '@/lib/media-url'
 
 import { CategorySortBar } from '@/components/CategorySortBar'
 
@@ -273,7 +274,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
         '@type': 'Product',
         name: item.name,
         url: `https://halalzi.com/${category.isMedicineCategory ? 'medicines' : 'products'}/${item.slug}`,
-        image: item.imageUrl || 'https://halalzi.com/images/default-product.png',
+        image: resolveMediaUrlAbsolute(item.imageUrl, 'https://halalzi.com') || 'https://halalzi.com/images/default-product.png',
         offers: {
           '@type': 'Offer',
           priceCurrency: 'BDT',

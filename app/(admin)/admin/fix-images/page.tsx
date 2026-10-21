@@ -1,5 +1,7 @@
 'use client'
 
+import { getStorefrontImageUrl } from '@/lib/image-url'
+
 import { useState, useEffect } from 'react'
 import { AlertCircle, CheckCircle, Loader2, Image as ImageIcon, RefreshCw, Search } from 'lucide-react'
 
@@ -347,7 +349,7 @@ export default function FixImagesPage() {
                       <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
                         {product.imageUrl ? (
                           <img
-                            src={product.imageUrl}
+                            src={getStorefrontImageUrl(product.imageUrl) || product.imageUrl}
                             alt={product.name}
                             className="h-full w-full object-cover"
                             onError={(e) => {

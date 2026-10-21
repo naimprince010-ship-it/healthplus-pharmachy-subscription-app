@@ -1,5 +1,7 @@
 'use client'
 
+import { getStorefrontImageUrl } from '@/lib/image-url'
+
 import React, { useState, useEffect, useMemo, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -1287,7 +1289,7 @@ function ProductImportPageInner() {
                       />
                       {product.imageUrl && (
                         <img
-                          src={product.imageUrl}
+                          src={getStorefrontImageUrl(product.imageUrl) || product.imageUrl}
                           alt={product.name}
                           className="h-12 w-12 rounded object-cover bg-gray-100"
                         />
@@ -1500,7 +1502,7 @@ function ProductImportPageInner() {
                       >
                         {draft.data.imageUrl ? (
                           <img
-                            src={draft.data.imageUrl}
+                            src={getStorefrontImageUrl(draft.data.imageUrl) || draft.data.imageUrl}
                             alt={draft.editedData.name}
                             className="h-12 w-12 rounded object-cover bg-gray-100"
                           />
@@ -2172,7 +2174,7 @@ function ProductImportPageInner() {
                     <div className="mt-2 overflow-hidden rounded-lg border border-gray-200">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={importedProduct.imageUrl}
+                        src={getStorefrontImageUrl(importedProduct.imageUrl) || importedProduct.imageUrl}
                         alt={importedProduct.name}
                         className="h-48 w-full object-contain bg-gray-50"
                       />

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Save, Loader2, Plus, Trash2, Eye, EyeOff, Truck, Percent, Stethoscope, Check, Upload } from 'lucide-react'
+import { resolveMediaUrl } from '@/lib/media-url'
 
 interface Feature {
   iconKey: string
@@ -537,7 +538,7 @@ export default function MembershipBannerSettingsPage() {
                     <div className="relative h-32 w-48 overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={settings.imageUrl}
+                        src={resolveMediaUrl(settings.imageUrl) || settings.imageUrl}
                         alt="Banner preview"
                         className="h-full w-full object-contain"
                       />
@@ -653,7 +654,7 @@ export default function MembershipBannerSettingsPage() {
                         }`}>
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={settings.imageUrl}
+                            src={resolveMediaUrl(settings.imageUrl) || settings.imageUrl}
                             alt={settings.imageAlt || 'Membership banner'}
                             className="h-auto w-full object-contain"
                           />

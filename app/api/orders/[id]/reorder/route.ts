@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
+import { resolveMediaUrlAbsolute } from '@/lib/media-url'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -138,7 +139,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         name: itemData.name,
         price: itemData.sellingPrice,
         quantity: quantityToAdd,
-        image: itemData.imageUrl || undefined,
+        image: resolveMediaUrlAbsolute(itemData.imageUrl, request.url) || undefined,
         type: medicine ? 'MEDICINE' : 'PRODUCT',
         category: itemData.category?.name,
         slug: itemData.slug || undefined,

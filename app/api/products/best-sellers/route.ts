@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { resolveMediaUrlAbsolute } from '@/lib/media-url'
 
 export const dynamic = 'force-dynamic'
 
@@ -48,6 +49,7 @@ export async function GET(request: Request) {
       .slice(0, limit)
       .map(p => ({
         ...p,
+        imageUrl: resolveMediaUrlAbsolute(p.imageUrl, request.url),
         sellingPrice: Number(p.sellingPrice),
         mrp: p.mrp ? Number(p.mrp) : null,
         discountPercentage: p.discountPercentage ? Number(p.discountPercentage) : null,

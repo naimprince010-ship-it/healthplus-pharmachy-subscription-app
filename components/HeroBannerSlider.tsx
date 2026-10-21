@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { resolveMediaUrl } from '@/lib/media-url'
 
 export interface HeroBanner {
   id: string
@@ -28,7 +29,7 @@ interface HeroBannerSliderProps {
 }
 
 function getImageUrl(banner: HeroBanner): string {
-  return banner.imageDesktopUrl || banner.imageUrl
+  return resolveMediaUrl(banner.imageDesktopUrl || banner.imageUrl) || ''
 }
 
 function getCtaUrl(banner: HeroBanner): string | null {

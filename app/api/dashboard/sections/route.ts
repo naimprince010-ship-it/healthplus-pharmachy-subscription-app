@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { resolveMediaUrlAbsolute } from '@/lib/media-url'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -10,7 +11,7 @@ export const dynamic = 'force-dynamic'
  * Returns active HomeSections with their products
  * Only returns sections where displayLocations includes 'dashboard'
  */
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const allSections = await prisma.homeSection.findMany({
       where: {
@@ -102,7 +103,10 @@ export async function GET() {
           slug: section.slug,
           bgColor: section.bgColor,
           badgeText: section.badgeText,
-          products,
+          products: products.map((product) => ({
+            ...product,
+            imageUrl: resolveMediaUrlAbsolute(product.imageUrl, request.url),
+          })),
         }
       })
     )

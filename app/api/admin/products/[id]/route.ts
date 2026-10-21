@@ -22,7 +22,7 @@ const updateProductSchema = z.object({
   stockQuantity: z.number().int().min(0).optional(),
   minStockAlert: z.number().int().min(0).optional(),
   unit: z.string().optional(),
-  imageUrl: z.string().url().optional(),
+  imageUrl: z.string().trim().min(1).optional(),
   imagePath: z.string().optional(),
   seoTitle: z.string().optional(),
   seoDescription: z.string().optional(),

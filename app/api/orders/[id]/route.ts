@@ -2,9 +2,21 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { syncAzanStatusForOrder } from '@/lib/integrations/azan-order-status'
+import { resolveMediaUrlAbsolute } from '@/lib/media-url'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+
+function resolveOrderMedia<T extends { items: Array<{ medicine: { imageUrl: string | null } | null; product: { imageUrl: string | null } | null }> }>(order: T, siteOrigin: string): T {
+  return {
+    ...order,
+    items: order.items.map((item) => ({
+      ...item,
+      medicine: item.medicine ? { ...item.medicine, imageUrl: resolveMediaUrlAbsolute(item.medicine.imageUrl, siteOrigin) } : null,
+      product: item.product ? { ...item.product, imageUrl: resolveMediaUrlAbsolute(item.product.imageUrl, siteOrigin) } : null,
+    })),
+  }
+}
 
 export async function GET(
   request: NextRequest,
@@ -73,10 +85,10 @@ export async function GET(
           statusHistory: { orderBy: { changedAt: 'asc' } },
         },
       })
-      return NextResponse.json({ order: refreshed })
+      return NextResponse.json({ order: refreshed ? resolveOrderMedia(refreshed, request.url) : null })
     }
 
-    return NextResponse.json({ order })
+    return NextResponse.json({ order: resolveOrderMedia(order, request.url) })
   } catch (error) {
     console.error('Fetch order error:', error)
     return NextResponse.json(

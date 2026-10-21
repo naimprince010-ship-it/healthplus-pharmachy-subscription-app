@@ -2,6 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { format } from 'date-fns'
 import { BlogType } from '@prisma/client'
+import { resolveMediaUrl } from '@/lib/media-url'
 
 interface BlogCardProps {
     blog: {
@@ -40,7 +41,7 @@ export function BlogCard({ blog }: BlogCardProps) {
             <Link href={`/blog/${blog.slug}`} className="block relative aspect-[16/9] w-full overflow-hidden bg-gray-100">
                 {blog.imageUrl ? (
                     <Image
-                        src={blog.imageUrl}
+                        src={resolveMediaUrl(blog.imageUrl) || blog.imageUrl}
                         alt={blog.title}
                         fill
                         unoptimized

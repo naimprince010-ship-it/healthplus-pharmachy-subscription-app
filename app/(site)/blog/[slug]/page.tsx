@@ -9,6 +9,8 @@ import { getActiveBlogSponsorAd } from '@/lib/blog-sponsor-ads'
 import { BlogMarkdown } from '@/components/blog/BlogMarkdown'
 import { linkProductMentionsInMarkdown } from '@/lib/blog-engine/linkProductMentionsInMarkdown'
 import { serializeJsonLd } from '@/lib/serialize-json-ld'
+import { getStorefrontImageUrl } from '@/lib/image-url'
+import { resolveMediaUrlAbsolute } from '@/lib/media-url'
 
 interface BlogDetailPageProps {
     params: Promise<{ slug: string }>
@@ -28,7 +30,7 @@ export async function generateMetadata({ params }: BlogDetailPageProps): Promise
         const seoTitle = blog.seoTitle || blog.title
         const seoDesc = blog.seoDescription || blog.summary || `Read ${blog.title} on Halalzi Blog.`
         const canonicalUrl = `https://halalzi.com/blog/${slug}`
-        const ogImage = blog.imageUrl || 'https://halalzi.com/images/default-product.png'
+        const ogImage = resolveMediaUrlAbsolute(blog.imageUrl, 'https://halalzi.com') || 'https://halalzi.com/images/default-product.png'
 
         return {
             title: `${seoTitle} | Halalzi Blog`,
@@ -199,7 +201,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
     const readingTime = Math.max(1, Math.ceil(wordCount / 200))
     const displayDate = blog.publishedAt || blog.createdAt
     const canonicalUrl = `https://halalzi.com/blog/${blog.slug}`
-    const ogImage = blog.imageUrl || 'https://halalzi.com/images/default-product.png'
+    const ogImage = resolveMediaUrlAbsolute(blog.imageUrl, 'https://halalzi.com') || 'https://halalzi.com/images/default-product.png'
 
     // Article JSON-LD for Google rich results
     const articleJsonLd = {
@@ -312,7 +314,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                 {blog.imageUrl && (
                     <div className="relative aspect-[21/9] w-full mb-12 rounded-2xl overflow-hidden shadow-md">
                         <img
-                            src={blog.imageUrl}
+                            src={getStorefrontImageUrl(blog.imageUrl) || blog.imageUrl}
                             alt={blog.title}
                             className="w-full h-full object-cover"
                         />
@@ -370,7 +372,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                                                     <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border border-gray-100 bg-white">
                                                         {bp.product.imageUrl ? (
                                                             <img
-                                                                src={bp.product.imageUrl}
+                                                                src={getStorefrontImageUrl(bp.product.imageUrl) || bp.product.imageUrl}
                                                                 alt={bp.product.name}
                                                                 className="h-full w-full object-contain p-1"
                                                             />
@@ -428,7 +430,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                                     <div className="relative aspect-[16/9] bg-slate-100 overflow-hidden">
                                         {rBlog.imageUrl ? (
                                             <img
-                                                src={rBlog.imageUrl}
+                                                src={getStorefrontImageUrl(rBlog.imageUrl) || rBlog.imageUrl}
                                                 alt={rBlog.title}
                                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                             />

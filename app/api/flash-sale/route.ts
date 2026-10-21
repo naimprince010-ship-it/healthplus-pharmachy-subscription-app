@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { resolveMediaUrlAbsolute } from '@/lib/media-url'
 
 export async function GET(request: NextRequest) {
   try {
@@ -49,6 +50,7 @@ export async function GET(request: NextRequest) {
         
         return {
           ...product,
+          imageUrl: resolveMediaUrlAbsolute(product.imageUrl, request.url),
           discountAmount,
           discountPercentage,
         }

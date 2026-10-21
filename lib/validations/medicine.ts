@@ -46,7 +46,7 @@ export const createMedicineSchema = z.object({
   seoKeywords: z.string().max(500).optional(),
   canonicalUrl: z.string().url().optional().or(z.literal('')),
   
-  imageUrl: z.string().url().optional().or(z.literal('')),
+  imageUrl: z.string().trim().optional().or(z.literal('')),
   imagePath: z.string().optional(),
   
   uses: z.string().max(2000).optional(),

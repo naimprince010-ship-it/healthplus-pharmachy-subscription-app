@@ -5,6 +5,7 @@ import { Search, Eye, Check, X, Edit, Send, Clock, FileText, AlertCircle, Trash2
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 import { BlogMarkdown } from '@/components/blog/BlogMarkdown'
+import { getStorefrontImageUrl } from '@/lib/image-url'
 
 interface Blog {
   id: string
@@ -564,7 +565,7 @@ export default function BlogQueuePage() {
               {selectedBlog.imageUrl && (
                 <div className="mb-4">
                   <h3 className="text-sm font-medium text-gray-500 mb-2">Cover Image</h3>
-                  <img src={selectedBlog.imageUrl} alt="Blog Cover" className="w-full max-w-md rounded-lg object-cover shadow-sm" />
+                  <img src={getStorefrontImageUrl(selectedBlog.imageUrl) || selectedBlog.imageUrl} alt="Blog Cover" className="w-full max-w-md rounded-lg object-cover shadow-sm" />
                 </div>
               )}
               {selectedBlog.seoTitle && (
