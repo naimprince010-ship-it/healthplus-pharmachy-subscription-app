@@ -2,7 +2,6 @@ import sharp from 'sharp'
 import AdmZip from 'adm-zip'
 import path from 'path'
 import { createClient } from '@supabase/supabase-js'
-import { uploadPublicWebp } from '@/lib/r2-media'
 
 const MAX_WIDTH = 800
 const WATERMARK_OPACITY = 0.3
@@ -193,6 +192,7 @@ export async function uploadProcessedImage(
   imageBuffer: Buffer,
   storagePath: string
 ): Promise<string> {
+  const { uploadPublicWebp } = await import('@/lib/r2-media')
   const uploaded = await uploadPublicWebp(imageBuffer, storagePath.replace(/\.webp$/i, ''))
   return uploaded.path
 }
