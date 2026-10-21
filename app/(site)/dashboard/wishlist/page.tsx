@@ -9,6 +9,7 @@ import { Heart, ShoppingCart, ArrowLeft, Trash2 } from 'lucide-react'
 import { useWishlist } from '@/contexts/WishlistContext'
 import { useCart, buildUnitLabelBn } from '@/contexts/CartContext'
 import { MAIN_CONTAINER } from '@/lib/layout'
+import { getStorefrontImageUrl } from '@/lib/image-url'
 
 export default function WishlistPage() {
   const { data: session, status } = useSession()
@@ -133,7 +134,7 @@ export default function WishlistPage() {
                     <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-gray-100">
                       {item.imageUrl ? (
                         <Image
-                          src={item.imageUrl}
+                          src={getStorefrontImageUrl(item.imageUrl) || '/placeholder-medicine.png'}
                           alt={item.name}
                           fill
                           className="object-cover transition-transform group-hover:scale-105"

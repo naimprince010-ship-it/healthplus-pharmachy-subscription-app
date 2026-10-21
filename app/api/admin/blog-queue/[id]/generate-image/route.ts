@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getOpenAIClient } from '@/lib/blog-engine/openaiClient'
-import { uploadToSupabase } from '@/lib/supabase'
+import { uploadPublicImage } from '@/lib/r2-media'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -66,18 +66,16 @@ Style: Photorealistic, bright lighting, premium aesthetic.`
     const arrayBuffer = await imageResponse.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
     
-    // Create a File object-like structure for the uploadToSupabase function
-    const file = new File([buffer], `blog-cover-${id}.png`, { type: 'image/png' })
+    const file = new File([new Uint8Array(buffer)], `blog-cover-${id}.png`, { type: 'image/png' })
 
-    // 4. Upload to Supabase Storage
-    // We use the existing 'uploadToSupabase' function which uses the medicine-images or banners bucket
-    const uploadResult = await uploadToSupabase(file, 'blogs', id)
+    // 4. Upload to R2; only the object key is stored in the database.
+    const uploadResult = await uploadPublicImage(file, 'blogs', id)
 
     // 5. Update Blog record with the permanent URL
     const updatedBlog = await prisma.blog.update({
       where: { id },
       data: {
-        imageUrl: uploadResult.url,
+        imageUrl: uploadResult.path,
       },
     })
 

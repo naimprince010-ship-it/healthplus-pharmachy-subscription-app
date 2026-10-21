@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { resolveMediaUrl } from '@/lib/media-url'
 
 interface ImageUploadProps {
   value?: string
@@ -19,9 +20,9 @@ export function ImageUpload({ value, path, onChange, medicineId, bannerId, folde
     const file = e.target.files?.[0]
     if (!file) return
 
-    const maxSize = folder === 'banners' ? 2 * 1024 * 1024 : 1024 * 1024
+    const maxSize = 2 * 1024 * 1024
     if (file.size > maxSize) {
-      setError(`Image size must be less than ${folder === 'banners' ? '2MB' : '1MB'}`)
+      setError('Image size must be less than 2MB')
       return
     }
 
@@ -89,7 +90,7 @@ export function ImageUpload({ value, path, onChange, medicineId, bannerId, folde
         <div className="relative inline-block">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={value}
+            src={resolveMediaUrl(value) || value}
             alt="Medicine"
             className="w-48 h-48 object-cover rounded-lg border border-gray-300"
           />
@@ -123,7 +124,7 @@ export function ImageUpload({ value, path, onChange, medicineId, bannerId, folde
             disabled:opacity-50 disabled:cursor-not-allowed"
         />
         <p className="mt-1 text-xs text-gray-500">
-          JPG, PNG, or WebP, max 1MB
+          JPG, PNG, or WebP, max 2MB
         </p>
       </div>
 

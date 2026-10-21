@@ -22,6 +22,7 @@ import {
   isMedicineShopEnabled,
 } from "@/lib/site-features";
 import { trackWhatsAppClick } from "@/lib/trackEvent";
+import { getStorefrontImageUrl } from "@/lib/image-url";
 
 interface SearchSuggestion {
   id: string;
@@ -349,7 +350,10 @@ export function MedEasyHeader({
                             <div className="h-12 w-12 flex-shrink-0 rounded-lg bg-gray-100 overflow-hidden">
                               {item.imageUrl ? (
                                 <img
-                                  src={item.imageUrl}
+                                  src={
+                                    getStorefrontImageUrl(item.imageUrl) ||
+                                    "/placeholder-medicine.png"
+                                  }
                                   alt={item.name}
                                   className="h-full w-full object-cover"
                                 />
@@ -573,7 +577,10 @@ export function MedEasyHeader({
                     <div className="h-14 w-14 flex-shrink-0 rounded-lg bg-gray-100 overflow-hidden">
                       {item.imageUrl ? (
                         <img
-                          src={item.imageUrl}
+                          src={
+                            getStorefrontImageUrl(item.imageUrl) ||
+                            "/placeholder-medicine.png"
+                          }
                           alt={item.name}
                           className="h-full w-full object-cover"
                         />

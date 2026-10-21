@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { Shield, Truck, Percent, Stethoscope, Check } from 'lucide-react'
+import { resolveMediaUrl } from '@/lib/media-url'
 
 interface Feature {
   iconKey: string
@@ -153,7 +154,7 @@ export function MembershipBanner({ settings, variant = 'desktop' }: MembershipBa
                 }`}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={settings.imageUrl}
+                    src={resolveMediaUrl(settings.imageUrl) || settings.imageUrl}
                     alt={settings.imageAlt || 'Membership banner'}
                     className="h-auto w-full object-contain"
                   />

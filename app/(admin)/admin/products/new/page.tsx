@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Upload, X, Sparkles } from 'lucide-react'
+import { resolveMediaUrl } from '@/lib/media-url'
 
 interface Category {
   id: string
@@ -507,7 +508,7 @@ export default function NewProductPage() {
             {formData.imageUrl ? (
               <div className="relative inline-block">
                 <img
-                  src={formData.imageUrl}
+                  src={resolveMediaUrl(formData.imageUrl) || formData.imageUrl}
                   alt="Product"
                   className="h-48 w-48 rounded-lg object-cover"
                 />

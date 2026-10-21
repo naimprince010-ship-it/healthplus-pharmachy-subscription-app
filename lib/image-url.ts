@@ -1,3 +1,5 @@
+import { isConfiguredMediaUrl, resolveMediaUrl } from '@/lib/media-url'
+
 const IMAGE_PROXY_PATH = '/api/image-proxy'
 
 export function getStorefrontImageUrl(imageUrl: string | null | undefined): string | null {
@@ -9,7 +11,9 @@ export function getStorefrontImageUrl(imageUrl: string | null | undefined): stri
   if (trimmed.startsWith('/') && !trimmed.startsWith('//')) return trimmed
 
   // Only proxy absolute http(s) URLs.
-  if (!/^https?:\/\//i.test(trimmed)) return trimmed
+  if (!/^https?:\/\//i.test(trimmed)) return resolveMediaUrl(trimmed)
+
+  if (isConfiguredMediaUrl(trimmed)) return trimmed
 
   return `${IMAGE_PROXY_PATH}?url=${encodeURIComponent(trimmed)}`
 }

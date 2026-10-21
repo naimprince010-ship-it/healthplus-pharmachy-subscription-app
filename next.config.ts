@@ -1,6 +1,16 @@
 import type { NextConfig } from "next";
 import { isMedicineShopEnabled } from "./lib/site-features";
 
+const mediaRemotePattern = (() => {
+  try {
+    const url = new URL(process.env.NEXT_PUBLIC_MEDIA_BASE_URL || '')
+    if (url.protocol !== 'https:') return []
+    return [{ protocol: 'https' as const, hostname: url.hostname, pathname: '/**' }]
+  } catch {
+    return []
+  }
+})()
+
 const nextConfig: NextConfig = {
   serverExternalPackages: ['@prisma/client', 'bcryptjs'],
   turbopack: {},
@@ -35,6 +45,12 @@ const nextConfig: NextConfig = {
       { pathname: "/banners/**" },
     ],
     remotePatterns: [
+      ...mediaRemotePattern,
+      {
+        protocol: 'https',
+        hostname: 'pub-a682143b371545479b3f06ae550cbc6c.r2.dev',
+        pathname: '/**',
+      },
       {
         protocol: 'https',
         hostname: 'antgoexirugyssoddvun.supabase.co',

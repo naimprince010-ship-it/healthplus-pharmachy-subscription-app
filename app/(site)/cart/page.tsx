@@ -9,6 +9,7 @@ import { ArrowLeft, X, Heart, Minus, Plus, Clock, Lock, ChevronRight, Truck, Sho
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-hot-toast'
+import { getStorefrontImageUrl } from '@/lib/image-url'
 
 interface SuggestionProduct {
   id: string
@@ -376,7 +377,7 @@ export default function CartPage() {
                       <div className="relative mb-2 h-20 w-full overflow-hidden rounded-lg bg-gray-100 lg:h-28">
                         {product.imageUrl ? (
                           <Image
-                            src={product.imageUrl}
+                            src={getStorefrontImageUrl(product.imageUrl) || '/placeholder-medicine.png'}
                             alt={product.name}
                             fill
                             className="object-cover"

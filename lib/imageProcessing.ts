@@ -2,6 +2,7 @@ import sharp from 'sharp'
 import AdmZip from 'adm-zip'
 import path from 'path'
 import { createClient } from '@supabase/supabase-js'
+import { uploadPublicWebp } from '@/lib/r2-media'
 
 const MAX_WIDTH = 800
 const WATERMARK_OPACITY = 0.3
@@ -192,24 +193,8 @@ export async function uploadProcessedImage(
   imageBuffer: Buffer,
   storagePath: string
 ): Promise<string> {
-  const supabase = getSupabaseClient()
-  
-  const { error } = await supabase.storage
-    .from('products')
-    .upload(storagePath, imageBuffer, {
-      contentType: 'image/webp',
-      upsert: true,
-    })
-  
-  if (error) {
-    throw new Error(`Failed to upload image: ${error.message}`)
-  }
-  
-  const { data: urlData } = supabase.storage
-    .from('products')
-    .getPublicUrl(storagePath)
-  
-  return urlData.publicUrl
+  const uploaded = await uploadPublicWebp(imageBuffer, storagePath.replace(/\.webp$/i, ''))
+  return uploaded.path
 }
 
 export async function downloadZipFromStorage(zipPath: string): Promise<Buffer> {

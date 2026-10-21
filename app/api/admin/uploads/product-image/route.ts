@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
-import { uploadMedicineImage, deleteMedicineImage } from '@/lib/supabase'
+import { deletePublicImage, uploadPublicImage } from '@/lib/r2-media'
 import { validateUploadedImage } from '@/lib/security/uploads'
 
 export const runtime = 'nodejs'
@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 
 /**
  * POST /api/admin/uploads/product-image
- * Upload product image to Supabase Storage (reuses medicine image upload)
+ * Upload a public product image to Cloudflare R2.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -25,16 +25,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
-    const validation = await validateUploadedImage(file, 1024 * 1024)
+    const validation = await validateUploadedImage(file, 2 * 1024 * 1024)
     if (!validation.valid) {
       return NextResponse.json({ error: validation.error }, { status: 400 })
     }
 
-    const result = await uploadMedicineImage(file, productId)
+    const result = await uploadPublicImage(file, 'products', productId)
 
     return NextResponse.json({
       success: true,
-      imageUrl: result.url,
+      imageUrl: result.path,
       imagePath: result.path,
     })
   } catch (error) {
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
 /**
  * DELETE /api/admin/uploads/product-image
- * Delete product image from Supabase Storage
+ * Delete a public product image from Cloudflare R2.
  */
 export async function DELETE(request: NextRequest) {
   try {
@@ -64,7 +64,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'No path provided' }, { status: 400 })
     }
 
-    await deleteMedicineImage(path)
+    await deletePublicImage(path)
 
     return NextResponse.json({ success: true, message: 'Image deleted successfully' })
   } catch (error) {
