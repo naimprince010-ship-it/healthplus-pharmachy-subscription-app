@@ -18,19 +18,47 @@ function classify(value: string): Source {
 async function main() {
   const products = await prisma.product.findMany({
     where: { imageUrl: { not: null } },
-    select: { imageUrl: true },
+    select: { imageUrl: true, isActive: true, deletedAt: true },
   })
-  const bySource: Record<Source, number> = {
+  const emptyCounts = (): Record<Source, number> => ({
     supabase: 0,
     eurasiasupplies: 0,
     chaldal: 0,
     arogga: 0,
     other: 0,
-  }
+  })
+  const active = emptyCounts()
+  const inactive = emptyCounts()
+  const deleted = emptyCounts()
+
   for (const product of products) {
-    if (product.imageUrl?.trim()) bySource[classify(product.imageUrl)] += 1
+    if (!product.imageUrl?.trim()) continue
+    const source = classify(product.imageUrl)
+    if (product.deletedAt) {
+      deleted[source] += 1
+    } else if (!product.isActive) {
+      inactive[source] += 1
+    } else {
+      active[source] += 1
+    }
   }
-  console.log(JSON.stringify({ dryRun: true, databaseWrites: 0, total: products.length, bySource }, null, 2))
+
+  const total = (counts: Record<Source, number>) =>
+    Object.values(counts).reduce((sum, count) => sum + count, 0)
+
+  console.log(
+    JSON.stringify(
+      {
+        dryRun: true,
+        databaseWrites: 0,
+        active: { total: total(active), bySource: active },
+        inactive: { total: total(inactive), bySource: inactive },
+        deleted: { total: total(deleted), bySource: deleted },
+      },
+      null,
+      2,
+    ),
+  )
 }
 
 main().finally(() => prisma.$disconnect())
