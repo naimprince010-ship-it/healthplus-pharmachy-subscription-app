@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { getEngineCartSuggestions } from '@/lib/cart-suggestions-engine'
+import { resolveMediaUrlAbsolute } from '@/lib/media-url'
 
 export const dynamic = 'force-dynamic'
 
@@ -51,7 +52,7 @@ export async function GET(request: NextRequest) {
       id: row.id,
       name: row.name,
       slug: row.slug,
-      imageUrl: row.imageUrl,
+      imageUrl: resolveMediaUrlAbsolute(row.imageUrl, request.url),
       price: row.sellingPrice,
       mrp: row.mrp,
     })
@@ -79,7 +80,7 @@ export async function GET(request: NextRequest) {
         id: p.id,
         name: p.name,
         slug: p.slug,
-        imageUrl: p.imageUrl,
+        imageUrl: resolveMediaUrlAbsolute(p.imageUrl, request.url),
         price: p.price,
         mrp: p.mrp,
       })),

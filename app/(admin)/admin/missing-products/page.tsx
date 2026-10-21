@@ -1,5 +1,7 @@
 'use client'
 
+import { getStorefrontImageUrl } from '@/lib/image-url'
+
 import { useState, useEffect } from 'react'
 import { Search, Check, Plus, ExternalLink, AlertCircle, Link2, X } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -380,7 +382,7 @@ export default function MissingProductsPage() {
                       >
                         {product.imageUrl ? (
                           <img
-                            src={product.imageUrl}
+                            src={getStorefrontImageUrl(product.imageUrl) || product.imageUrl}
                             alt={product.name}
                             className="h-12 w-12 rounded object-cover"
                           />

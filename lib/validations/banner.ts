@@ -34,9 +34,9 @@ export const createBannerSchema = z.object({
   order: z.coerce.number().int().nonnegative('Order must be non-negative').default(0),
   isActive: z.boolean().default(true),
 
-  imageUrl: z.string().url('Invalid image URL').min(1, 'Image URL is required'), // Legacy field
-  imageDesktopUrl: z.string().url('Invalid desktop image URL').optional().or(z.literal('')),
-  imageMobileUrl: z.string().url('Invalid mobile image URL').optional().or(z.literal('')),
+  imageUrl: z.string().trim().min(1, 'Image is required'), // URL or R2 object key
+  imageDesktopUrl: z.string().trim().optional().or(z.literal('')),
+  imageMobileUrl: z.string().trim().optional().or(z.literal('')),
 
   link: z.string().url('Invalid link URL').optional().or(z.literal('')), // Legacy field
   ctaLabel: z.string().max(50).optional(),

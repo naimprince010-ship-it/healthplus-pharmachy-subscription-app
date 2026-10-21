@@ -19,6 +19,22 @@ export function resolveMediaUrl(value: string | null | undefined): string | null
   return base ? `${base}/${trimmed.replace(/^\/+/, '')}` : trimmed
 }
 
+/** Resolve stored media for public API/feed consumers that require a full URL. */
+export function resolveMediaUrlAbsolute(
+  value: string | null | undefined,
+  siteOrigin: string
+): string | null {
+  const resolved = resolveMediaUrl(value)
+  if (!resolved) return null
+  if (isAbsoluteMediaUrl(resolved)) return resolved
+
+  try {
+    return new URL(resolved, siteOrigin).toString()
+  } catch {
+    return resolved
+  }
+}
+
 export function isConfiguredMediaUrl(value: string): boolean {
   const base = mediaBaseUrl()
   if (!base) return false

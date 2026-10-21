@@ -3,6 +3,7 @@
  */
 
 import { prisma } from '@/lib/prisma'
+import { resolveMediaUrl } from '@/lib/media-url'
 import { BannerLocation, DeviceType } from '@/lib/banner-constants'
 
 /**
@@ -73,14 +74,14 @@ export function getBannerImageUrl(
   deviceType: 'desktop' | 'mobile' = 'desktop'
 ): string {
   if (deviceType === 'mobile' && banner.imageMobileUrl) {
-    return banner.imageMobileUrl
+    return resolveMediaUrl(banner.imageMobileUrl) || banner.imageMobileUrl
   }
   
   if (deviceType === 'desktop' && banner.imageDesktopUrl) {
-    return banner.imageDesktopUrl
+    return resolveMediaUrl(banner.imageDesktopUrl) || banner.imageDesktopUrl
   }
 
-  return banner.imageUrl
+  return resolveMediaUrl(banner.imageUrl) || banner.imageUrl
 }
 
 /**

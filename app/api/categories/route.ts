@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { GROCERY_CATEGORY_SLUG, isGroceryShopEnabled, isMedicineShopEnabled } from '@/lib/site-features'
+import { resolveMediaUrlAbsolute } from '@/lib/media-url'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -35,7 +36,12 @@ export async function GET(request: NextRequest) {
       return true
     })
 
-    return NextResponse.json({ categories })
+    return NextResponse.json({
+      categories: categories.map((category) => ({
+        ...category,
+        imageUrl: resolveMediaUrlAbsolute(category.imageUrl, request.url),
+      })),
+    })
   } catch (error) {
     console.error('Fetch categories error:', error)
     return NextResponse.json(

@@ -40,7 +40,7 @@ const createProductSchema = z.object({
   stockQuantity: z.number().int().min(0).default(0),
   minStockAlert: z.number().int().min(0).optional(),
   unit: z.string().default('pcs'),
-  imageUrl: z.string().url().optional().nullable(),
+  imageUrl: z.string().trim().min(1).optional().nullable(),
   imagePath: z.string().optional().nullable(),
   seoTitle: z.string().optional(),
   seoDescription: z.string().optional(),

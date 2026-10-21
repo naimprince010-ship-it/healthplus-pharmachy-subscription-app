@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Plus, Trash2, Loader2, GripVertical, Search } from 'lucide-react'
+import { getStorefrontImageUrl } from '@/lib/image-url'
 
 interface Product {
   id: string
@@ -265,7 +266,7 @@ export default function CartSuggestionsPage() {
                       <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
                         {suggestion.product.imageUrl ? (
                           <Image
-                            src={suggestion.product.imageUrl}
+                            src={getStorefrontImageUrl(suggestion.product.imageUrl) || suggestion.product.imageUrl}
                             alt={suggestion.product.name}
                             fill
                             className="object-cover"
@@ -356,7 +357,7 @@ export default function CartSuggestionsPage() {
                       <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
                         {product.imageUrl ? (
                           <Image
-                            src={product.imageUrl}
+                            src={getStorefrontImageUrl(product.imageUrl) || product.imageUrl}
                             alt={product.name}
                             fill
                             className="object-cover"

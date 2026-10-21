@@ -1,3 +1,5 @@
+import { getStorefrontImageUrl } from '@/lib/image-url'
+
 interface BlogSponsorBlockProps {
   variant: 'list' | 'sidebar'
   sponsorLabel: string
@@ -16,7 +18,7 @@ export function BlogSponsorBlock({
   const body =
     imageUrl ? (
       <img
-        src={imageUrl}
+        src={getStorefrontImageUrl(imageUrl) || imageUrl}
         alt={sponsorLabel}
         className={`w-full rounded-lg object-contain ${variant === 'list' ? 'max-h-[100px]' : 'max-h-[140px]'}`}
         referrerPolicy="no-referrer-when-downgrade"

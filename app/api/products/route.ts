@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { GROCERY_CATEGORY_SLUG, isGroceryShopEnabled, isMedicineShopEnabled } from '@/lib/site-features'
 import { buildProductWhereClause } from '@/lib/homeSections'
+import { resolveMediaUrlAbsolute } from '@/lib/media-url'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -334,6 +335,7 @@ export async function GET(request: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const products = paginatedItems.map(({ _source, medicine, ...item }: any) => ({
       ...item,
+      imageUrl: resolveMediaUrlAbsolute(item.imageUrl, request.url),
       packSize: item.packSize ?? medicine?.packSize ?? null,
       href: _source === 'medicine' ? `/medicines/${item.slug}` : `/products/${item.slug}`,
       cartInfo: _source === 'medicine' 

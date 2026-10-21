@@ -5,7 +5,7 @@ export const categorySchema = z.object({
   slug: z.string().min(1, 'Slug is required').max(100, 'Slug must be less than 100 characters')
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug must be lowercase letters, numbers, and hyphens only'),
   description: z.string().optional().nullable(),
-  imageUrl: z.string().url('Invalid image URL').optional().nullable(),
+  imageUrl: z.string().trim().optional().nullable(),
   parentCategoryId: z.string().optional().nullable(),
   isActive: z.boolean().default(true),
   isMedicineCategory: z.boolean().default(false),

@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { resolveMediaUrlAbsolute } from '@/lib/media-url'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await auth()
     if (!session) {
@@ -31,7 +32,7 @@ export async function GET() {
       slug: item.product.slug,
       price: item.product.sellingPrice,
       mrp: item.product.mrp,
-      imageUrl: item.product.imageUrl,
+      imageUrl: resolveMediaUrlAbsolute(item.product.imageUrl, request.url),
       stockQuantity: item.product.stockQuantity,
       discountPercentage: item.product.discountPercentage,
       category: item.product.category,

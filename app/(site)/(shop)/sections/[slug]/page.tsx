@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { buildProductWhereClause } from '@/lib/homeSections'
+import { getStorefrontImageUrl } from '@/lib/image-url'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -98,7 +99,7 @@ export default async function SectionDetailsPage({ params, searchParams }: PageP
                     <div className="aspect-square overflow-hidden rounded-lg bg-gray-100">
                       {product.imageUrl ? (
                         <img
-                          src={product.imageUrl}
+                          src={getStorefrontImageUrl(product.imageUrl) || product.imageUrl}
                           alt={product.name}
                           className="h-full w-full object-cover transition-transform group-hover:scale-105"
                         />

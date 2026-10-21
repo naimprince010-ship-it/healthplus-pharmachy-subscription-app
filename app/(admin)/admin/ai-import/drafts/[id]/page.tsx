@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import { getStorefrontImageUrl } from '@/lib/image-url'
 import { 
   ArrowLeft, 
   Check, 
@@ -579,7 +580,7 @@ export default function DraftReviewPage() {
                 {draft.imageUrl ? (
                   <div className="relative h-48 w-48 overflow-hidden rounded-lg border border-teal-200 bg-white">
                     <Image
-                      src={draft.imageUrl}
+                      src={getStorefrontImageUrl(draft.imageUrl) || draft.imageUrl}
                       alt="Product"
                       fill
                       className="object-contain"
