@@ -12,15 +12,30 @@ import { LoginModal } from "@/components/auth/LoginModal";
 
 export const runtime = 'nodejs'
 
-const hindSiliguriBengali = localFont({
+const hindSiliguriBengali400 = localFont({
+  src: "./fonts/hind-siliguri-400-bengali.woff2",
+  weight: "400",
+  variable: "--font-hind-siliguri-bengali-400",
+  display: "swap",
+  preload: true,
+});
+
+const hindSiliguriBengali600 = localFont({
+  src: "./fonts/hind-siliguri-600-bengali.woff2",
+  weight: "600",
+  variable: "--font-hind-siliguri-bengali-600",
+  display: "swap",
+  preload: true,
+});
+
+const hindSiliguriBengaliRest = localFont({
   src: [
-    { path: "./fonts/hind-siliguri-400-bengali.woff2", weight: "400", style: "normal" },
     { path: "./fonts/hind-siliguri-500-bengali.woff2", weight: "500", style: "normal" },
-    { path: "./fonts/hind-siliguri-600-bengali.woff2", weight: "600", style: "normal" },
     { path: "./fonts/hind-siliguri-700-bengali.woff2", weight: "700", style: "normal" },
   ],
-  variable: "--font-hind-siliguri-bengali",
+  variable: "--font-hind-siliguri-bengali-rest",
   display: "swap",
+  preload: false,
 });
 
 const hindSiliguriLatin = localFont({
@@ -32,6 +47,7 @@ const hindSiliguriLatin = localFont({
   ],
   variable: "--font-hind-siliguri-latin",
   display: "swap",
+  preload: false,
 });
 
 const anekBanglaBengali = localFont({
@@ -39,6 +55,7 @@ const anekBanglaBengali = localFont({
   weight: "600 700",
   variable: "--font-anek-bangla-bengali",
   display: "swap",
+  preload: true,
 });
 
 const anekBanglaLatin = localFont({
@@ -46,6 +63,7 @@ const anekBanglaLatin = localFont({
   weight: "600 700",
   variable: "--font-anek-bangla-latin",
   display: "swap",
+  preload: false,
 });
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://halalzi.com';
@@ -233,7 +251,7 @@ export default function RootLayout({
         ) : null}
       </head>
       <body
-        className={`${hindSiliguriBengali.variable} ${hindSiliguriLatin.variable} ${anekBanglaBengali.variable} ${anekBanglaLatin.variable} font-sans antialiased`}
+        className={`${hindSiliguriBengali400.variable} ${hindSiliguriBengali600.variable} ${hindSiliguriBengaliRest.variable} ${hindSiliguriLatin.variable} ${anekBanglaBengali.variable} ${anekBanglaLatin.variable} font-sans antialiased`}
       >
         <SessionProvider>
           <AuthModalProvider>
