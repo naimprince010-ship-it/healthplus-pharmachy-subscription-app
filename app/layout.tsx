@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Anek_Bangla, Hind_Siliguri } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { Tracking } from "@/components/Tracking";
 import { CartProvider } from "@/contexts/CartContext";
@@ -12,18 +12,58 @@ import { LoginModal } from "@/components/auth/LoginModal";
 
 export const runtime = 'nodejs'
 
-const hindSiliguri = Hind_Siliguri({
-  subsets: ["bengali", "latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-hind-siliguri",
+const hindSiliguriBengali400 = localFont({
+  src: "./fonts/hind-siliguri-400-bengali.woff2",
+  weight: "400",
+  variable: "--font-hind-siliguri-bengali-400",
   display: "swap",
+  preload: true,
 });
 
-const anekBangla = Anek_Bangla({
-  subsets: ["bengali", "latin"],
-  weight: ["600", "700"],
-  variable: "--font-anek-bangla",
+const hindSiliguriBengali600 = localFont({
+  src: "./fonts/hind-siliguri-600-bengali.woff2",
+  weight: "600",
+  variable: "--font-hind-siliguri-bengali-600",
   display: "swap",
+  preload: true,
+});
+
+const hindSiliguriBengaliRest = localFont({
+  src: [
+    { path: "./fonts/hind-siliguri-500-bengali.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/hind-siliguri-700-bengali.woff2", weight: "700", style: "normal" },
+  ],
+  variable: "--font-hind-siliguri-bengali-rest",
+  display: "swap",
+  preload: false,
+});
+
+const hindSiliguriLatin = localFont({
+  src: [
+    { path: "./fonts/hind-siliguri-400-latin.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/hind-siliguri-500-latin.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/hind-siliguri-600-latin.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/hind-siliguri-700-latin.woff2", weight: "700", style: "normal" },
+  ],
+  variable: "--font-hind-siliguri-latin",
+  display: "swap",
+  preload: false,
+});
+
+const anekBanglaBengali = localFont({
+  src: "./fonts/anek-bangla-bengali.woff2",
+  weight: "600 700",
+  variable: "--font-anek-bangla-bengali",
+  display: "swap",
+  preload: true,
+});
+
+const anekBanglaLatin = localFont({
+  src: "./fonts/anek-bangla-latin.woff2",
+  weight: "600 700",
+  variable: "--font-anek-bangla-latin",
+  display: "swap",
+  preload: false,
 });
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://halalzi.com';
@@ -210,7 +250,9 @@ export default function RootLayout({
           />
         ) : null}
       </head>
-      <body className={`${hindSiliguri.variable} ${anekBangla.variable} font-sans antialiased`}>
+      <body
+        className={`${hindSiliguriBengali400.variable} ${hindSiliguriBengali600.variable} ${hindSiliguriBengaliRest.variable} ${hindSiliguriLatin.variable} ${anekBanglaBengali.variable} ${anekBanglaLatin.variable} font-sans antialiased`}
+      >
         <SessionProvider>
           <AuthModalProvider>
             <CartProvider>
