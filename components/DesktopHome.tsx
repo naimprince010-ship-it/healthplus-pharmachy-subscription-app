@@ -84,7 +84,7 @@ export function DesktopHome({ homeSections, heroBanners = [], offer, hotline, wh
     <>
       <section className="bg-white px-4 py-6">
         <div className={hasOrderContact ? 'xl:grid xl:grid-cols-[minmax(0,1fr)_230px] xl:gap-5' : ''}>
-          {heroBanners.length > 0 ? <HeroBannerSlider banners={heroBanners} interval={4500} fallback={fallbackHero} /> : fallbackHero}
+          {heroBanners.length > 0 ? <HeroBannerSlider banners={heroBanners} interval={4500} fallback={fallbackHero} device="desktop" /> : fallbackHero}
           {orderCard}
         </div>
       </section>

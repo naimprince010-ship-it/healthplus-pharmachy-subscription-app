@@ -3,9 +3,10 @@ import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import { unstable_noStore as noStore } from 'next/cache'
 import Link from 'next/link'
-import { Plus, Edit } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { BANNER_LOCATION_LABELS, DEVICE_LABELS } from '@/lib/banner-constants'
 import { BannerFilters } from '@/components/admin/BannerFilters'
+import { BannerActions } from '@/components/admin/BannerActions'
 
 export const dynamic = 'force-dynamic'
 
@@ -160,13 +161,11 @@ export default async function BannersPage({
                     {new Date(banner.createdAt).toLocaleDateString()}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
-                    <Link
-                      href={`/admin/banners/${banner.id}/edit`}
-                      className="inline-flex items-center gap-1 text-teal-600 hover:text-teal-900"
-                    >
-                      <Edit className="h-4 w-4" />
-                      Edit
-                    </Link>
+                    <BannerActions
+                      id={banner.id}
+                      title={banner.title}
+                      isActive={banner.isActive}
+                    />
                   </td>
                 </tr>
               ))}

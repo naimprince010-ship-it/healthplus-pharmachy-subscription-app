@@ -31,6 +31,6 @@ export const DEVICE_LABELS: Record<DeviceType, string> = {
 }
 
 export const RECOMMENDED_IMAGE_SIZES = {
-  desktop: '1920x600px',
-  mobile: '768x400px',
+  desktop: '1508x680px (about 2.2:1)',
+  mobile: '716x400px (about 1.8:1)',
 }

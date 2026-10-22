@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { updateBannerSchema } from '@/lib/validations/banner'
+import { revalidatePath } from 'next/cache'
 
 /**
  * GET /api/admin/banners/[id]
@@ -99,6 +100,8 @@ export async function PUT(
       data: updateData,
     })
 
+    revalidatePath('/')
+
     return NextResponse.json({ banner })
   } catch (error: any) {
     console.error('Error updating banner:', error)
@@ -144,6 +147,8 @@ export async function DELETE(
     await prisma.banner.delete({
       where: { id },
     })
+
+    revalidatePath('/')
 
     return NextResponse.json({ message: 'Banner deleted successfully' })
   } catch (error) {

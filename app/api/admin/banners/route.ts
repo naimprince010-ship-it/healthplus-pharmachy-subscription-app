@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { createBannerSchema, bannerListQuerySchema } from '@/lib/validations/banner'
+import { revalidatePath } from 'next/cache'
 
 /**
  * GET /api/admin/banners
@@ -72,6 +73,8 @@ export async function POST(request: NextRequest) {
     const banner = await prisma.banner.create({
       data: bannerData,
     })
+
+    revalidatePath('/')
 
     return NextResponse.json({ banner }, { status: 201 })
   } catch (error: any) {

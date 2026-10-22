@@ -173,7 +173,7 @@ export function BannerForm({ mode, bannerId, initialData }: BannerFormProps) {
                     {...register('location')}
                     className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
                   >
-                    {Object.entries(BANNER_LOCATIONS).map(([key, value]) => (
+                    {Object.entries(BANNER_LOCATIONS).filter(([, value]) => value === BANNER_LOCATIONS.HOME_HERO).map(([key, value]) => (
                       <option key={value} value={value}>
                         {BANNER_LOCATION_LABELS[key as keyof typeof BANNER_LOCATIONS]}
                       </option>
