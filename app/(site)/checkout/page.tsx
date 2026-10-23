@@ -111,7 +111,7 @@ export default function CheckoutPage() {
   const [couponApplied, setCouponApplied] = useState(false);
   const [couponDiscount, setCouponDiscount] = useState(0);
   // Online (bKash/Nagad) is disabled until a verified payment gateway exists (audit P1-02).
-  const [paymentMethod, setPaymentMethod] = useState<"COD">("COD");
+  const [paymentMethod, setPaymentMethod] = useState<'COD'>('COD');
   const [orderSummaryExpanded, setOrderSummaryExpanded] = useState(false);
   const [settings, setSettings] = useState<CheckoutSettings>(DEFAULT_SETTINGS);
   const [hasSubmittedOrder, setHasSubmittedOrder] = useState(false);
