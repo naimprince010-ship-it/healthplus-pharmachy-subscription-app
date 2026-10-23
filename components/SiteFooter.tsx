@@ -1,126 +1,126 @@
-import { Prisma } from '@prisma/client'
-import { prisma } from '@/lib/prisma'
-import { Footer } from '@/components/Footer'
-import { isMedicineShopEnabled } from '@/lib/site-features'
+import { Prisma } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import { Footer } from "@/components/Footer";
+import { isMedicineShopEnabled } from "@/lib/site-features";
 
 // Footer settings type
 interface FooterSettingsData {
-  brandName: string
-  brandDescription: string
-  drugLicense: string | null
-  tradeLicense: string | null
-  quickLinks: { label: string; href: string }[]
-  quickLinksTitle: string
-  supportLinks: { label: string; href: string }[]
-  supportLinksTitle: string
-  contactTitle: string
-  address: string
-  phone: string
-  email: string | null
-  socialLinks: { platform: string; url: string }[]
-  googlePlayUrl: string | null
-  appStoreUrl: string | null
-  copyrightText: string
-  developerCredit: string | null
-  paymentMethods: { name: string; iconKey: string }[]
-  bgColor: string
-  textColor: string
-  headingColor: string
-  hoverColor: string
-  copyrightBgColor: string
+  brandName: string;
+  brandDescription: string;
+  drugLicense: string | null;
+  tradeLicense: string | null;
+  quickLinks: { label: string; href: string }[];
+  quickLinksTitle: string;
+  supportLinks: { label: string; href: string }[];
+  supportLinksTitle: string;
+  contactTitle: string;
+  address: string;
+  phone: string;
+  email: string | null;
+  socialLinks: { platform: string; url: string }[];
+  googlePlayUrl: string | null;
+  appStoreUrl: string | null;
+  copyrightText: string;
+  developerCredit: string | null;
+  paymentMethods: { name: string; iconKey: string }[];
+  bgColor: string;
+  textColor: string;
+  headingColor: string;
+  hoverColor: string;
+  copyrightBgColor: string;
 }
 
 // Default footer settings (used when database table doesn't exist yet)
 const DEFAULT_SETTINGS: FooterSettingsData = {
-  brandName: 'Halalzi',
-  brandDescription: 'অরিজিনাল কসমেটিক্স, নারীদের পণ্য ও দৈনন্দিন বাজারের বিশ্বস্ত ঠিকানা।',
+  brandName: "Halalzi",
+  brandDescription:
+    "অরিজিনাল কসমেটিক্স, নারীদের পণ্য ও দৈনন্দিন বাজারের বিশ্বস্ত ঠিকানা।",
   drugLicense: null,
   tradeLicense: null,
   quickLinks: [
-    { label: 'হোম', href: '/' },
-    { label: 'সব পণ্য', href: '/products' },
-    { label: 'আমাদের সম্পর্কে', href: '/about' },
-    { label: 'মেম্বারশিপ প্ল্যান', href: '/membership' },
-    { label: 'বিউটি ও গ্রোসারি', href: '/products' },
-    { label: 'অফারসমূহ', href: '/offers' },
+    { label: "হোম", href: "/" },
+    { label: "সব পণ্য", href: "/products" },
+    { label: "আমাদের সম্পর্কে", href: "/about" },
+    { label: "মেম্বারশিপ প্ল্যান", href: "/membership" },
+    { label: "বিউটি ও গ্রোসারি", href: "/products" },
+    { label: "অফারসমূহ", href: "/offers" },
   ],
-  quickLinksTitle: 'কুইক লিংকস',
+  quickLinksTitle: "কুইক লিংকস",
   supportLinks: [
-    { label: 'প্রাইভেসি পলিসি', href: '/pages/privacy' },
-    { label: 'রিফান্ড ও রিটার্ন পলিসি', href: '/pages/refund' },
-    { label: 'শর্তাবলী', href: '/pages/terms' },
-    { label: 'সচরাচর জিজ্ঞাসিত প্রশ্ন', href: '/pages/faq' },
+    { label: "প্রাইভেসি পলিসি", href: "/pages/privacy" },
+    { label: "রিফান্ড ও রিটার্ন পলিসি", href: "/pages/refund" },
+    { label: "শর্তাবলী", href: "/pages/terms" },
+    { label: "সচরাচর জিজ্ঞাসিত প্রশ্ন", href: "/pages/faq" },
   ],
-  supportLinksTitle: 'কাস্টমার সাপোর্ট',
-  contactTitle: 'যোগাযোগ',
-  address: 'ঢাকা, বাংলাদেশ',
-  phone: '01700000000',
+  supportLinksTitle: "কাস্টমার সাপোর্ট",
+  contactTitle: "যোগাযোগ",
+  address: "ঢাকা, বাংলাদেশ",
+  phone: "01700000000",
   email: null,
   socialLinks: [
-    { platform: 'facebook', url: 'https://facebook.com' },
-    { platform: 'youtube', url: 'https://youtube.com' },
+    { platform: "facebook", url: "https://facebook.com" },
+    { platform: "youtube", url: "https://youtube.com" },
   ],
   googlePlayUrl: null,
   appStoreUrl: null,
-  copyrightText: '© 2025 Halalzi. All rights reserved.',
+  copyrightText: "© 2025 Halalzi. All rights reserved.",
   developerCredit: null,
-  paymentMethods: [
-    { name: 'bKash', iconKey: 'bkash' },
-    { name: 'Nagad', iconKey: 'nagad' },
-    { name: 'Visa', iconKey: 'visa' },
-    { name: 'Mastercard', iconKey: 'mastercard' },
-  ],
-  bgColor: '#0b3b32',
-  textColor: '#e0e0e0',
-  headingColor: '#ffffff',
-  hoverColor: '#0A9F6E',
-  copyrightBgColor: '#04241e',
-}
+  paymentMethods: [{ name: "Cash on delivery", iconKey: "cod" }],
+  bgColor: "#0b3b32",
+  textColor: "#e0e0e0",
+  headingColor: "#ffffff",
+  hoverColor: "#0A9F6E",
+  copyrightBgColor: "#04241e",
+};
 
 export async function SiteFooter() {
-  let settings = DEFAULT_SETTINGS
-  const medicineShopEnabled = isMedicineShopEnabled()
+  let settings = DEFAULT_SETTINGS;
+  const medicineShopEnabled = isMedicineShopEnabled();
 
   try {
-    const footerSettings = await prisma.footerSettings.findFirst()
+    const footerSettings = await prisma.footerSettings.findFirst();
     if (footerSettings) {
       settings = {
         brandName: footerSettings.brandName,
         brandDescription: footerSettings.brandDescription,
         drugLicense: footerSettings.drugLicense,
         tradeLicense: footerSettings.tradeLicense,
-        quickLinks: footerSettings.quickLinks as typeof DEFAULT_SETTINGS.quickLinks,
+        quickLinks:
+          footerSettings.quickLinks as typeof DEFAULT_SETTINGS.quickLinks,
         quickLinksTitle: footerSettings.quickLinksTitle,
-        supportLinks: footerSettings.supportLinks as typeof DEFAULT_SETTINGS.supportLinks,
+        supportLinks:
+          footerSettings.supportLinks as typeof DEFAULT_SETTINGS.supportLinks,
         supportLinksTitle: footerSettings.supportLinksTitle,
         contactTitle: footerSettings.contactTitle,
         address: footerSettings.address,
         phone: footerSettings.phone,
         email: footerSettings.email,
-        socialLinks: footerSettings.socialLinks as typeof DEFAULT_SETTINGS.socialLinks,
+        socialLinks:
+          footerSettings.socialLinks as typeof DEFAULT_SETTINGS.socialLinks,
         googlePlayUrl: footerSettings.googlePlayUrl,
         appStoreUrl: footerSettings.appStoreUrl,
         copyrightText: footerSettings.copyrightText,
         developerCredit: footerSettings.developerCredit,
-        paymentMethods: footerSettings.paymentMethods as typeof DEFAULT_SETTINGS.paymentMethods,
+        paymentMethods:
+          footerSettings.paymentMethods as typeof DEFAULT_SETTINGS.paymentMethods,
         bgColor: footerSettings.bgColor,
         textColor: footerSettings.textColor,
         headingColor: footerSettings.headingColor,
         hoverColor: footerSettings.hoverColor,
         copyrightBgColor: footerSettings.copyrightBgColor,
-      }
+      };
     }
   } catch (err) {
     // Handle case where FooterSettings table doesn't exist yet (before migration)
     if (
       err instanceof Prisma.PrismaClientKnownRequestError &&
-      err.code === 'P2021'
+      err.code === "P2021"
     ) {
       console.warn(
-        'FooterSettings table does not exist yet; using default settings.',
-      )
+        "FooterSettings table does not exist yet; using default settings.",
+      );
     } else {
-      console.error('Failed to fetch footer settings:', err)
+      console.error("Failed to fetch footer settings:", err);
     }
     // Use default settings on error
   }
@@ -129,9 +129,22 @@ export async function SiteFooter() {
     settings = {
       ...settings,
       brandDescription: DEFAULT_SETTINGS.brandDescription,
-      quickLinks: settings.quickLinks.filter((link) => !/ঔষধ|ওষুধ|medicine|prescription|প্রেসক্রিপশন/i.test(`${link.label} ${link.href}`)),
-    }
+      quickLinks: settings.quickLinks.filter(
+        (link) =>
+          !/ঔষধ|ওষুধ|medicine|prescription|প্রেসক্রিপশন/i.test(
+            `${link.label} ${link.href}`,
+          ),
+      ),
+    };
   }
 
-  return <Footer settings={settings} medicineShopEnabled={medicineShopEnabled} />
+  // Checkout currently accepts COD only. Do not advertise stale methods from footer settings.
+  settings = {
+    ...settings,
+    paymentMethods: [{ name: "Cash on delivery", iconKey: "cod" }],
+  };
+
+  return (
+    <Footer settings={settings} medicineShopEnabled={medicineShopEnabled} />
+  );
 }

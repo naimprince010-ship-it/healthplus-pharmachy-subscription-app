@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { MessageCircle, Minus, Plus, ShoppingCart, Truck } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { getEffectivePrices } from "@/lib/pricing";
+import { trackAddToCart } from "@/lib/trackEvent";
 
 type Variant = {
   id: string;
@@ -91,7 +92,10 @@ export function ProductPurchasePanel(p: Props) {
     observer.observe(footer);
     return () => observer.disconnect();
   }, []);
-  const add = (checkout = false) => {
+  const add = (
+    checkout = false,
+    source: "buy_box" | "sticky_bar" = "buy_box",
+  ) => {
     if (out) return;
     addItem({
       id: variant ? `${p.productId}-${variant.id}` : p.productId,
@@ -108,7 +112,20 @@ export function ProductPurchasePanel(p: Props) {
       slug: p.slug,
       unitLabelBn: variant?.unitLabel,
     });
-    if (checkout) router.push("/checkout");
+    trackAddToCart(
+      {
+        item_id: p.productId,
+        item_name: p.name,
+        item_category: p.category,
+        price,
+        quantity: qty,
+      },
+      source,
+    );
+    if (checkout) {
+      sessionStorage.setItem("halalzi_checkout_source", "buy_now");
+      router.push("/checkout");
+    }
   };
   const remaining = p.freeDeliveryThreshold
     ? Math.max(0, p.freeDeliveryThreshold - total)
@@ -248,7 +265,7 @@ export function ProductPurchasePanel(p: Props) {
               </div>
               <button
                 type="button"
-                onClick={() => add()}
+                onClick={() => add(false, "sticky_bar")}
                 className="min-h-11 rounded-xl bg-teal-700 px-8 font-bold text-white"
               >
                 কার্টে যোগ করুন
@@ -277,7 +294,7 @@ export function ProductPurchasePanel(p: Props) {
             </div>
             <button
               type="button"
-              onClick={() => add()}
+              onClick={() => add(false, "sticky_bar")}
               className="h-12 rounded-xl bg-teal-700 text-sm font-bold text-white"
             >
               কার্টে যোগ

@@ -40,14 +40,27 @@ function map(p: RecommendationProduct): ProductCardProps {
     cartInfo: { kind: "product", productId: p.id },
   };
 }
-function Grid({ title, items }: { title: string; items: ProductCardProps[] }) {
+function Grid({
+  title,
+  items,
+  source,
+}: {
+  title: string;
+  items: ProductCardProps[];
+  source: "similar" | "brand";
+}) {
   if (!items.length) return null;
   return (
     <section>
       <h2 className="mb-4 text-2xl font-bold">{title}</h2>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 lg:gap-4">
         {items.map((i) => (
-          <ProductCard key={i.id} product={i} variant="compact" />
+          <ProductCard
+            key={i.id}
+            product={i}
+            variant="compact"
+            analyticsSource={source}
+          />
         ))}
       </div>
     </section>
@@ -93,8 +106,12 @@ export async function ProductRecommendationSections({
   ]);
   return (
     <div className="space-y-10">
-      <Grid title="একই ধরনের পণ্য" items={similar.map(map)} />
-      <Grid title={`${brandName}-এর আরও পণ্য`} items={brand.map(map)} />
+      <Grid title="একই ধরনের পণ্য" items={similar.map(map)} source="similar" />
+      <Grid
+        title={`${brandName}-এর আরও পণ্য`}
+        items={brand.map(map)}
+        source="brand"
+      />
     </div>
   );
 }

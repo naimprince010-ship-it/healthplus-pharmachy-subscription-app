@@ -2,8 +2,17 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import Image from "next/image";
+import { CategoryIcon } from "@/components/icons/CategoryIcons";
 
-type Item = { id: string; name: string; slug: string; price: number };
+type Item = {
+  id: string;
+  name: string;
+  slug: string;
+  price: number;
+  imageUrl: string | null;
+  category: string;
+};
 
 export function RecentlyViewed({ current }: { current: Item }) {
   const [items, setItems] = useState<Item[]>([]);
@@ -38,8 +47,26 @@ export function RecentlyViewed({ current }: { current: Item }) {
           <Link
             key={item.id}
             href={`/products/${item.slug}`}
-            className="rounded-xl border bg-white p-4"
+            className="rounded-xl border bg-white p-3"
           >
+            <div className="relative mb-3 aspect-square overflow-hidden rounded-xl bg-slate-50">
+              {item.imageUrl ? (
+                <Image
+                  src={item.imageUrl}
+                  alt=""
+                  fill
+                  sizes="160px"
+                  className="object-contain p-2"
+                />
+              ) : (
+                <div
+                  className="flex h-full items-center justify-center opacity-40"
+                  aria-hidden
+                >
+                  <CategoryIcon name={item.category} className="h-12 w-12" />
+                </div>
+              )}
+            </div>
             <p className="line-clamp-2 min-h-10 text-sm font-semibold">
               {item.name}
             </p>
