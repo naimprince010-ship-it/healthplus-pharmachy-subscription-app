@@ -99,7 +99,7 @@ export function MobileHome({ homeSections, heroBanners = [], offer, freeDelivery
   return (
     <div className="min-h-screen bg-white" style={{ paddingBottom: showFreeDeliveryBar ? 'calc(172px + env(safe-area-inset-bottom))' : 'calc(136px + env(safe-area-inset-bottom))' }}>
       <section className="bg-white p-4 md:p-0 md:pb-4">
-        {heroBanners.length > 0 ? <HeroBannerSlider banners={heroBanners} interval={4500} fallback={<MobileOfferHero offer={offer} />} /> : <MobileOfferHero offer={offer} />}
+        {heroBanners.length > 0 ? <HeroBannerSlider banners={heroBanners} interval={4500} fallback={<MobileOfferHero offer={offer} />} device="mobile" /> : <MobileOfferHero offer={offer} />}
       </section>
       <div className="scrollbar-hide snap-x snap-mandatory overflow-x-auto bg-white px-3 py-3 md:px-0">
         <div className="flex min-w-max gap-2">{BENEFITS.map(({ label, icon: Icon }) => <div key={label} className="flex h-11 snap-start items-center gap-2 rounded-full border border-teal-100 bg-teal-50 px-4 text-xs font-bold text-[#0B4F4A]"><Icon className="h-4 w-4" />{label}</div>)}</div>

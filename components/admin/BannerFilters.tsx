@@ -34,8 +34,6 @@ export function BannerFilters() {
         >
           <option value="all">All Locations</option>
           <option value="HOME_HERO">Home Hero</option>
-          <option value="HOME_MID">Home Mid Section</option>
-          <option value="CATEGORY_TOP">Category Top</option>
         </select>
       </div>
 
