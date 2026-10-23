@@ -10,17 +10,10 @@ interface SiteWhatsAppButtonProps {
 export function SiteWhatsAppButton({ phone }: SiteWhatsAppButtonProps) {
   const pathname = usePathname();
 
-  // Hide global WhatsApp button on cart page (cart has its own floating chat widget)
-  if (pathname === "/cart") {
+  // Cart and product detail pages already provide their own contextual actions.
+  if (pathname === "/cart" || /^\/products\/[^/]+\/?$/.test(pathname)) {
     return null;
   }
 
-  const isProductDetail = /^\/products\/[^/]+\/?$/.test(pathname);
-
-  return (
-    <WhatsAppButton
-      phone={phone}
-      className={isProductDetail ? "hidden lg:block" : ""}
-    />
-  );
+  return <WhatsAppButton phone={phone} />;
 }

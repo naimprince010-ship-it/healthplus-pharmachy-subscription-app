@@ -16,6 +16,7 @@ import { FrequentlyBoughtTogether } from "@/components/product-detail/Frequently
 import { RecentlyViewed } from "@/components/product-detail/RecentlyViewed";
 import { ProductReviews } from "@/components/ProductReviews";
 import { ProductRecommendationSections } from "./ProductRecommendationSections";
+import { ProductViewTracker } from "@/components/product-detail/ProductViewTracker";
 
 export const runtime = "nodejs";
 export const revalidate = 300;
@@ -245,6 +246,12 @@ export default async function ProductPage({ params }: Props) {
 
   return (
     <>
+      <ProductViewTracker
+        id={p.id}
+        name={p.name}
+        price={prices.price}
+        category={p.category.name}
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(productLd) }}
@@ -444,10 +451,15 @@ export default async function ProductPage({ params }: Props) {
                 name: p.name,
                 slug: p.slug,
                 price: prices.price,
+                imageUrl: image,
+                category: p.category.name,
               }}
             />
             <section className="rounded-2xl bg-white p-5 sm:p-7">
-              <ProductReviews productId={p.id} />
+              <ProductReviews
+                productId={p.id}
+                initialReviewCount={reviewStats?._count.rating || 0}
+              />
             </section>
           </div>
         </div>

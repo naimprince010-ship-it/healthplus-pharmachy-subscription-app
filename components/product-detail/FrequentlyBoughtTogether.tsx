@@ -1,6 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { useCart } from "@/contexts/CartContext";
+import { trackAddToCart } from "@/lib/trackEvent";
 type Item = {
   id: string;
   name: string;
@@ -28,7 +29,7 @@ export function FrequentlyBoughtTogether({
   );
   if (!items.length) return null;
   const addAll = () =>
-    [anchor, ...chosen].forEach((i) =>
+    [anchor, ...chosen].forEach((i) => {
       addItem({
         id: i.id,
         productId: i.id,
@@ -39,8 +40,18 @@ export function FrequentlyBoughtTogether({
         quantity: 1,
         category: i.category,
         slug: i.slug,
-      }),
-    );
+      });
+      trackAddToCart(
+        {
+          item_id: i.id,
+          item_name: i.name,
+          item_category: i.category,
+          price: i.price,
+          quantity: 1,
+        },
+        "bundle",
+      );
+    });
   return (
     <section className="rounded-2xl border border-orange-100 bg-orange-50 p-5">
       <h2 className="text-xl font-bold">একসাথে কেনা হয়</h2>
