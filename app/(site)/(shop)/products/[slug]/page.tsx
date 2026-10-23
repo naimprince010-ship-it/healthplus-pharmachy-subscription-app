@@ -390,27 +390,46 @@ export default async function ProductPage({ params }: Props) {
                       </p>
                     </details>
                   )}
-                  {info.length > 0 && (
-                    <details className="py-4">
-                      <summary className="min-h-11 cursor-pointer font-bold">
-                        পণ্যের তথ্য
-                      </summary>
-                      <table className="mt-2 w-full text-sm">
-                        <tbody>
-                          {info.map(([k, v]) => (
-                            <tr key={k} className="border-b last:border-0">
-                              <th className="py-3 text-left font-medium text-slate-500">
-                                {k}
-                              </th>
-                              <td className="py-3 text-right font-semibold">
-                                {v}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </details>
-                  )}
+                  {info.length > 0 &&
+                    (p.description || features.length || p.ingredients ? (
+                      <details className="py-4">
+                        <summary className="min-h-11 cursor-pointer font-bold">
+                          পণ্যের তথ্য
+                        </summary>
+                        <table className="mt-2 w-full text-sm">
+                          <tbody>
+                            {info.map(([k, v]) => (
+                              <tr key={k} className="border-b last:border-0">
+                                <th className="py-3 text-left font-medium text-slate-500">
+                                  {k}
+                                </th>
+                                <td className="py-3 text-right font-semibold">
+                                  {v}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </details>
+                    ) : (
+                      <div className="py-4">
+                        <h3 className="font-bold">পণ্যের তথ্য</h3>
+                        <table className="mt-2 w-full text-sm">
+                          <tbody>
+                            {info.map(([k, v]) => (
+                              <tr key={k} className="border-b last:border-0">
+                                <th className="py-3 text-left font-medium text-slate-500">
+                                  {k}
+                                </th>
+                                <td className="py-3 text-right font-semibold">
+                                  {v}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ))}
                 </div>
               </section>
             )}

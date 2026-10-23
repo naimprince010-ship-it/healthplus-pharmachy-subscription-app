@@ -1,19 +1,26 @@
-'use client'
+"use client";
 
-import { usePathname } from 'next/navigation'
-import { WhatsAppButton } from '@/components/WhatsAppButton'
+import { usePathname } from "next/navigation";
+import { WhatsAppButton } from "@/components/WhatsAppButton";
 
 interface SiteWhatsAppButtonProps {
-  phone?: string
+  phone?: string;
 }
 
 export function SiteWhatsAppButton({ phone }: SiteWhatsAppButtonProps) {
-  const pathname = usePathname()
+  const pathname = usePathname();
 
   // Hide global WhatsApp button on cart page (cart has its own floating chat widget)
-  if (pathname === '/cart') {
-    return null
+  if (pathname === "/cart") {
+    return null;
   }
 
-  return <WhatsAppButton phone={phone} />
+  const isProductDetail = /^\/products\/[^/]+\/?$/.test(pathname);
+
+  return (
+    <WhatsAppButton
+      phone={phone}
+      className={isProductDetail ? "hidden lg:block" : ""}
+    />
+  );
 }

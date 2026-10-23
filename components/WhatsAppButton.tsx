@@ -1,23 +1,28 @@
-'use client'
+"use client";
 
-import { trackWhatsAppClick } from '@/lib/trackEvent'
+import { trackWhatsAppClick } from "@/lib/trackEvent";
 
 interface WhatsAppButtonProps {
-  phone?: string
-  message?: string
+  phone?: string;
+  message?: string;
+  className?: string;
 }
 
 export function WhatsAppButton({
-  phone = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '',
-  message = 'হ্যালো! আমার সাহায্য দরকার।'
+  phone = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "",
+  message = "হ্যালো! আমার সাহায্য দরকার।",
+  className = "",
 }: WhatsAppButtonProps) {
   const handleClick = () => {
-    trackWhatsAppClick('floating_button')
-    const cleanPhone = phone.replace(/[^\d+]/g, '')
-    if (!cleanPhone) return
-    const encodedMessage = encodeURIComponent(message)
-    window.open(`https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodedMessage}`, '_blank')
-  }
+    trackWhatsAppClick("floating_button");
+    const cleanPhone = phone.replace(/[^\d+]/g, "");
+    if (!cleanPhone) return;
+    const encodedMessage = encodeURIComponent(message);
+    window.open(
+      `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodedMessage}`,
+      "_blank",
+    );
+  };
 
   return (
     <>
@@ -40,20 +45,25 @@ export function WhatsAppButton({
       <button
         onClick={handleClick}
         aria-label="Contact us on WhatsApp"
-        className="wa-btn fixed bottom-[calc(80px+env(safe-area-inset-bottom))] right-4 z-50 lg:bottom-6"
-        style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+        className={`wa-btn fixed bottom-[calc(80px+env(safe-area-inset-bottom))] right-4 z-50 lg:bottom-6 ${className}`}
+        style={{
+          background: "none",
+          border: "none",
+          padding: 0,
+          cursor: "pointer",
+        }}
       >
         {/* Ping ring */}
         <span
           className="wa-ping absolute inset-0 rounded-full"
-          style={{ backgroundColor: '#25D366', pointerEvents: 'none' }}
+          style={{ backgroundColor: "#25D366", pointerEvents: "none" }}
         />
 
         {/* Main button */}
         <span
           className="relative flex h-12 w-12 items-center justify-center rounded-full shadow-xl"
           style={{
-            background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
+            background: "linear-gradient(135deg, #25D366 0%, #128C7E 100%)",
           }}
         >
           {/* WhatsApp SVG icon */}
@@ -76,5 +86,5 @@ export function WhatsAppButton({
         </span>
       </button>
     </>
-  )
+  );
 }

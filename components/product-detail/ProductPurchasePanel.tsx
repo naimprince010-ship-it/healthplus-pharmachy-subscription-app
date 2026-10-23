@@ -47,6 +47,7 @@ export function ProductPurchasePanel(p: Props) {
   const [qty, setQty] = useState(1);
   const anchor = useRef<HTMLDivElement>(null);
   const [sticky, setSticky] = useState(false);
+  const [footerVisible, setFooterVisible] = useState(false);
   const first = p.variants.find((v) => v.isDefault) ?? p.variants[0] ?? null;
   const [variantId, setVariantId] = useState(first?.id ?? null);
   const variant = p.variants.find((v) => v.id === variantId) ?? first;
@@ -81,6 +82,15 @@ export function ProductPurchasePanel(p: Props) {
     observer.observe(node);
     return () => observer.disconnect();
   }, []);
+  useEffect(() => {
+    const footer = document.querySelector("footer");
+    if (!footer) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      setFooterVisible(entry.isIntersecting);
+    });
+    observer.observe(footer);
+    return () => observer.disconnect();
+  }, []);
   const add = (checkout = false) => {
     if (out) return;
     addItem({
@@ -111,8 +121,8 @@ export function ProductPurchasePanel(p: Props) {
     `${p.name}\nhttps://halalzi.com/products/${p.slug}`,
   );
   return (
-    <div className="space-y-5">
-      <div ref={anchor}>
+    <div ref={anchor} className="space-y-5">
+      <div>
         <div className="flex flex-wrap items-center gap-3">
           <strong className="text-3xl text-[#0B4F4A]">{money(price)}</strong>
           {discount > 0 && effectiveMrp > price && (
@@ -228,10 +238,10 @@ export function ProductPurchasePanel(p: Props) {
           ক্যাশ অন ডেলিভারি
         </span>
       </div>
-      {sticky && !out && (
+      {sticky && !footerVisible && !out && (
         <>
-          <div className="fixed inset-x-0 bottom-0 z-50 hidden border-t bg-white px-6 py-3 shadow-2xl lg:block">
-            <div className="mx-auto flex max-w-[1320px] items-center justify-between gap-4">
+          <div className="fixed inset-x-0 top-[108px] z-40 hidden h-16 border-b bg-white px-6 shadow-lg lg:block">
+            <div className="mx-auto flex h-full max-w-[1320px] items-center justify-between gap-4">
               <div className="min-w-0">
                 <p className="truncate font-semibold">{p.name}</p>
                 <strong className="text-teal-900">{money(price)}</strong>
